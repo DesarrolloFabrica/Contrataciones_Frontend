@@ -13,6 +13,43 @@ export interface TeacherEvaluationResponse {
   candidateId: string;
 }
 
+type TeacherEvaluationsListResponse =
+  | TeacherEvaluationSummary[]
+  | { data: TeacherEvaluationSummary[] }
+  | { items: TeacherEvaluationSummary[] }
+  | { results: TeacherEvaluationSummary[] }
+  | { evaluations: TeacherEvaluationSummary[] }
+  | { data: { data: TeacherEvaluationSummary[] } }
+  | { data: { items: TeacherEvaluationSummary[] } }
+  | { data: { results: TeacherEvaluationSummary[] } };
+
+function normalizeTeacherEvaluationsList(
+  payload: TeacherEvaluationsListResponse | any
+): TeacherEvaluationSummary[] {
+  if (Array.isArray(payload)) return payload;
+
+  const candidates = [
+    payload?.data,
+    payload?.items,
+    payload?.results,
+    payload?.evaluations,
+
+    // por si viene doble anidado
+    payload?.data?.data,
+    payload?.data?.items,
+    payload?.data?.results,
+    payload?.data?.evaluations,
+  ];
+
+  for (const c of candidates) {
+    if (Array.isArray(c)) return c;
+  }
+
+  // Si llega algo raro, mejor lista vacía (y log para detectar el formato real)
+  console.warn("Respuesta inesperada en GET /teachers/evaluations:", payload);
+  return [];
+}
+
 /**
  * Crea la evaluación en el backend (guarda candidato + AI summary).
  */
@@ -43,22 +80,19 @@ export async function uploadTeacherReport(
   const formData = new FormData();
   formData.append("file", pdfBlob, "reporte-evaluacion.pdf");
 
-  await api.post(
-    `/teachers/evaluations/${evaluationId}/report`,
-    formData,
-    {
-      headers: {
-        "Content-Type": "multipart/form-data",
-      },
-    }
-  );
+  await api.post(`/teachers/evaluations/${evaluationId}/report`, formData, {
+    headers: {
+      "Content-Type": "multipart/form-data",
+    },
+  });
 }
 
-export async function listTeacherEvaluations() {
-  const { data } = await api.get<TeacherEvaluationSummary[]>(
+export async function listTeacherEvaluations(): Promise<TeacherEvaluationSummary[]> {
+  const { data } = await api.get<TeacherEvaluationsListResponse>(
     "/teachers/evaluations"
   );
-  return data;
+
+  return normalizeTeacherEvaluationsList(data);
 }
 
 export async function getTeacherEvaluation(id: string) {
@@ -76,8 +110,6 @@ export async function updateTeacherDecision(
   evaluationId: string,
   payload: CoordinatorDecisionPayload
 ): Promise<TeacherEvaluationSummary> {
-  // Asumimos que el backend tendrá este endpoint:
-  // POST /teachers/evaluations/:id/decision
   const { data } = await api.post<TeacherEvaluationSummary>(
     `/teachers/evaluations/${evaluationId}/decision`,
     payload
