@@ -76,7 +76,6 @@ export async function updateTeacherDecision(
   evaluationId: string,
   payload: CoordinatorDecisionPayload
 ): Promise<TeacherEvaluationSummary> {
-  // Asumimos que el backend tendrá este endpoint:
   // POST /teachers/evaluations/:id/decision
   const { data } = await api.post<TeacherEvaluationSummary>(
     `/teachers/evaluations/${evaluationId}/decision`,
