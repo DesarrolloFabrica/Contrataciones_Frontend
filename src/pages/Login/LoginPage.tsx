@@ -4,7 +4,13 @@ import { useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
 import { BrainCircuit } from "lucide-react";
 
+import BGVideo from "../../assets/videos/Op2_1.mp4";
+import LogoCun from "../../assets/images/LogoCunColor.png";
+
 const LoginPage: React.FC = () => {
+  // ==============================
+  // LÓGICA (NO TOCADA)
+  // ==============================
   const { login } = useAuth();
   const navigate = useNavigate();
   const location = useLocation() as any;
@@ -20,83 +26,127 @@ const LoginPage: React.FC = () => {
 
     const user = login(email.trim(), name.trim() || undefined);
 
-    // Si venía de una ruta protegida, volver allí
     if (from) {
       navigate(from, { replace: true });
       return;
     }
 
-    // Si no, redirigir según rol
     if (user.role === "leader") navigate("/leader", { replace: true });
     else if (user.role === "coordinator") navigate("/coordinator", { replace: true });
     else navigate("/admin", { replace: true });
   };
 
-  return (
-    <div className="min-h-screen bg-[#020202] text-white flex items-center justify-center px-4">
-      <div className="w-full max-w-md bg-[#050505] border border-white/10 rounded-3xl p-8 shadow-2xl relative overflow-hidden">
-        <div className="absolute -top-24 -right-24 w-64 h-64 bg-emerald-500/10 rounded-full blur-3xl" />
+  // ==============================
+  // VARIABLES VISUALES (ESCALABLES)
+  // ==============================
+  const logoSizeClass = "w-24"; // Cambia a w-20 / w-28 / w-32 según necesites
 
-        <div className="relative z-10 space-y-6">
-          <div className="flex items-center gap-3">
-            <div className="p-3 rounded-2xl bg-[#0F0F0F] border border-white/10">
-              <BrainCircuit className="w-6 h-6 text-emerald-400" />
-            </div>
-            <div>
-              <h1 className="text-xl font-bold tracking-tight">OPE-CUN</h1>
-              <p className="text-xs text-gray-400">Acceso a consolas por rol</p>
+  return (
+    <div className="min-h-screen w-full bg-black">
+      {/* IMPORTANTE: relative ayuda a manejar capas si hace falta */}
+      <div className="relative grid h-screen grid-cols-1 lg:grid-cols-[30%_70%]">
+        {/* =========================
+            PANEL IZQUIERDO (BLANCO)
+           ========================= */}
+        <div className="relative z-10 bg-white text-gray-900">
+          <div className="h-full flex items-center justify-center px-6">
+            <div className="w-full max-w-sm">
+              {/* Encabezado (SIN VIDEO AQUÍ) */}
+              <div className="flex flex-col items-center text-center mb-10">
+                {/* Logo (escalable por clase) */}
+                <img
+                  src={LogoCun}
+                  alt="Logo CUN"
+                  className={`w-24 h-auto mb-1`}
+                />
+                <p className="text-xs text-gray-500 mt-2">Acceso a consolas por rol</p>
+              </div>
+
+              {/* Form (sin tarjeta interna) */}
+              <form onSubmit={handleSubmit} className="space-y-4">
+                <input
+                  type="text"
+                  placeholder="Ej. Sofia Coordinadora"
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  className="w-full rounded-2xl bg-gray-200/80 border border-transparent px-4 py-3 text-sm text-gray-900 placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/40"
+                />
+
+                <input
+                  type="email"
+                  required
+                  placeholder="ejemplo@cun.edu.co"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  className="w-full rounded-2xl bg-gray-200/80 border border-transparent px-4 py-3 text-sm text-gray-900 placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/40"
+                />
+
+                <button
+                  type="submit"
+                  className="w-full rounded-2xl py-3 text-sm font-bold tracking-widest uppercase text-white bg-gradient-to-r from-[#91DC00] to-[#31AB2E] hover:from-[#31AB2E] hover:to-[#91DC00] transition"
+                >
+                  Entrar
+                </button>
+
+                <p className="text-[11px] text-gray-500 text-center pt-2">
+                  Usa <span className="text-emerald-700 font-semibold">admin</span> o{" "}
+                  <span className="text-emerald-700 font-semibold">coord</span> en el correo
+                </p>
+              </form>
+
+              {/* Guía rápida (texto plano, sin card) */}
+              <div className="mt-10 text-sm text-gray-700 leading-relaxed">
+                <p className="font-semibold text-gray-900 mb-2">Guía rápida</p>
+                <p className="text-gray-600 mb-2">
+                  Usa un correo “simulado” para elegir el rol:
+                </p>
+                <p>
+                  • contiene{" "}
+                  <span className="text-emerald-700 font-semibold">admin</span> → Admin
+                </p>
+                <p>
+                  • contiene{" "}
+                  <span className="text-emerald-700 font-semibold">coord</span> → Coordinador
+                </p>
+                <p>• cualquier otro → Líder</p>
+              </div>
+
+              <p className="text-[11px] text-gray-400 pt-10 text-center">
+                Tip: si venías de una ruta protegida, el sistema te regresa automáticamente al
+                destino.
+              </p>
             </div>
           </div>
+        </div>
 
-          <p className="text-sm text-gray-400">
-            Usa un correo “simulado” para elegir el rol:
-            <br />
-            <span className="text-gray-300">
-              • contiene <span className="text-emerald-400 font-semibold">admin</span> → Admin
-            </span>
-            <br />
-            <span className="text-gray-300">
-              • contiene <span className="text-emerald-400 font-semibold">coord</span> → Coordinador
-            </span>
-            <br />
-            <span className="text-gray-300">• cualquier otro → Líder</span>
-          </p>
+        {/* =========================
+            COLUMNA DERECHA (VIDEO)
+           ========================= */}
+        <div className="relative hidden lg:block">
+          {/* Video como background */}
+          <video
+            src={BGVideo}
+            autoPlay
+            loop
+            muted
+            playsInline
+            className="absolute inset-0 h-full w-full object-cover"
+          />
 
-          <form className="space-y-4" onSubmit={handleSubmit}>
-            <div className="space-y-2">
-              <label className="text-xs font-semibold text-gray-400">
-                Nombre (opcional)
-              </label>
-              <input
-                type="text"
-                className="w-full bg-[#0A0A0A] border border-white/10 rounded-xl px-4 py-3 text-sm outline-none focus:border-emerald-500/60"
-                placeholder="Ej. Sofia Coordinadora"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-              />
-            </div>
-
-            <div className="space-y-2">
-              <label className="text-xs font-semibold text-gray-400">
-                Correo institucional
-              </label>
-              <input
-                type="email"
-                required
-                className="w-full bg-[#0A0A0A] border border-white/10 rounded-xl px-4 py-3 text-sm outline-none focus:border-emerald-500/60"
-                placeholder="ejemplo@cun.edu.co"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-              />
-            </div>
-
-            <button
-              type="submit"
-              className="w-full mt-4 bg-emerald-600 hover:bg-emerald-500 text-sm font-bold tracking-widest uppercase py-3 rounded-xl transition-colors"
-            >
-              Entrar
-            </button>
-          </form>
+          {/* Overlay real (el tuyo estaba vacío) */}
+          <div
+            className="absolute inset-0 pointer-events-none"
+            style={{
+              background: `
+                radial-gradient(
+                  ellipse at center,
+                  rgba(0,0,0,0.10) 0%,
+                  rgba(0,0,0,0.45) 70%,
+                  rgba(0,0,0,0.75) 100%
+                )
+              `,
+            }}
+          />
         </div>
       </div>
     </div>
