@@ -23,20 +23,7 @@ export default function AdminDetailTabs(props: { tab: AdminTab; setTab: (t: Admi
         <Users className="w-4 h-4" />
         Resumen
       </button>
-
-      <button
-        type="button"
-        onClick={() => setTab("IA")}
-        className={`${pillBase} ${
-          tab === "IA"
-            ? "border-cyan-500/40 bg-cyan-500/10 text-cyan-300"
-            : "border-white/10 bg-white/5 text-neutral-300 hover:border-white/20"
-        }`}
-      >
-        <Activity className="w-4 h-4" />
-        IA
-      </button>
-
+      
       <button
         type="button"
         onClick={() => setTab("COORDINADOR")}
@@ -63,7 +50,19 @@ export default function AdminDetailTabs(props: { tab: AdminTab; setTab: (t: Admi
         Auditoría
       </button>
 
-      <button
+      {/* <button
+        type="button"
+        onClick={() => setTab("IA")}
+        className={`${pillBase} ${
+          tab === "IA"
+            ? "border-cyan-500/40 bg-cyan-500/10 text-cyan-300"
+            : "border-white/10 bg-white/5 text-neutral-300 hover:border-white/20"
+        }`}
+      >
+        <Activity className="w-4 h-4" />
+        IA
+      </button> */}
+      {/* <button
         type="button"
         onClick={() => setTab("TECNICO")}
         className={`${pillBase} ${
@@ -74,7 +73,7 @@ export default function AdminDetailTabs(props: { tab: AdminTab; setTab: (t: Admi
       >
         <Wrench className="w-4 h-4" />
         Técnico
-      </button>
+      </button> */}
     </div>
   );
 }

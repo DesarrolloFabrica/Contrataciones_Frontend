@@ -2,10 +2,37 @@
 import type {
   TeacherForm,
   TeacherAiResult,
-  CoordinatorDecisionPayload,
   TeacherEvaluationSummary,
 } from "../types";
-import api from "./apiClient";
+import apiClient from "./apiClient";
+
+/**
+ * Tipos que refleja el backend (TeacherExecutiveSummaryDto)
+ */
+export interface TeacherExecutiveSummary {
+  evaluationId: string;
+
+  candidateName: string;
+  schoolName: string | null;
+  programName: string | null;
+
+  aiScore: number | null;
+  aiRecommendation: string | null;
+
+  coordinatorDecision: {
+    verdict: "PENDING" | "APPROVED" | "REJECTED" | null;
+    notes: string | null;
+    decidedAt: string | null;
+  };
+
+  adminDecision: {
+    verdict: "PENDING" | "APPROVED" | "REJECTED" | null;
+    notes: string | null;
+    decidedAt: string | null;
+  };
+
+  finalStatus: "PENDING" | "APPROVED" | "REJECTED";
+}
 
 // Lo que devuelve el backend en POST /teachers/evaluations
 export interface TeacherEvaluationResponse {
@@ -13,12 +40,21 @@ export interface TeacherEvaluationResponse {
   candidateId: string;
 }
 
-// ...
-
 type ListEvalResponse =
   | TeacherEvaluationSummary[]
   | { items: TeacherEvaluationSummary[] }
-  | any; // por si acaso
+  | any;
+
+/**
+ * Payload flexible para la decisión del coordinador.
+ * Acepta tanto { status, comment } como { verdict, notes } por compatibilidad.
+ */
+export type CoordinatorDecisionPayload = {
+  status?: "PENDING" | "APPROVED" | "REJECTED";
+  verdict?: "PENDING" | "APPROVED" | "REJECTED";
+  comment?: string;
+  notes?: string;
+};
 
 /**
  * Crea la evaluación en el backend (guarda candidato + AI summary).
@@ -28,7 +64,7 @@ export async function createTeacherEvaluation(
   form: TeacherForm,
   aiResult: TeacherAiResult
 ): Promise<TeacherEvaluationResponse> {
-  const { data } = await api.post<TeacherEvaluationResponse>(
+  const { data } = await apiClient.post<TeacherEvaluationResponse>(
     "/teachers/evaluations",
     {
       orgId,
@@ -50,7 +86,7 @@ export async function uploadTeacherReport(
   const formData = new FormData();
   formData.append("file", pdfBlob, "reporte-evaluacion.pdf");
 
-  await api.post(
+  await apiClient.post(
     `/teachers/evaluations/${evaluationId}/report`,
     formData,
     {
@@ -61,9 +97,11 @@ export async function uploadTeacherReport(
   );
 }
 
-
+/**
+ * Lista de evaluaciones para dashboard (admin / leader / coord).
+ */
 export async function listTeacherEvaluations(): Promise<TeacherEvaluationSummary[]> {
-  const res = await api.get<ListEvalResponse>("/teachers/evaluations");
+  const res = await apiClient.get<ListEvalResponse>("/teachers/evaluations");
 
   console.log("listTeacherEvaluations raw response:", res.data);
 
@@ -81,26 +119,49 @@ export async function listTeacherEvaluations(): Promise<TeacherEvaluationSummary
   return [];
 }
 
+/**
+ * Detalle técnico de una evaluación (formRawData + aiRawJson, etc.).
+ */
 export async function getTeacherEvaluation(id: string) {
-  const { data } = await api.get(`/teachers/evaluations/${id}`);
+  const { data } = await apiClient.get(`/teachers/evaluations/${id}`);
   return data;
 }
 
 export async function getTeacherEvaluationById(id: string) {
-  const { data } = await api.get(`/teachers/evaluations/${id}`);
-  return data; // incluye formRawData y aiRawJson
+  const { data } = await apiClient.get(`/teachers/evaluations/${id}`);
+  return data;
 }
 
-// 🔹 NUEVO: actualizar decisión del coordinador
-export async function updateTeacherDecision(
+/**
+ * Resumen ejecutivo consolidado (para panel derecho del admin).
+ */
+export async function getExecutiveSummary(
+  evaluationId: string
+): Promise<TeacherExecutiveSummary> {
+  const { data } = await apiClient.get<TeacherExecutiveSummary>(
+    `/teachers/evaluations/${evaluationId}/executive-summary`
+  );
+  return data;
+}
+
+/**
+ * Actualiza decisión del coordinador (tab COORDINADOR) y devuelve
+ * el resumen ejecutivo actualizado.
+ *
+ * Backend: POST /teachers/evaluations/:id/coordinator-decision
+ */
+export async function updateCoordinatorDecision(
   evaluationId: string,
   payload: CoordinatorDecisionPayload
-): Promise<TeacherEvaluationSummary> {
-  // Asumimos que el backend tendrá este endpoint:
-  // POST /teachers/evaluations/:id/decision
-  const { data } = await api.post<TeacherEvaluationSummary>(
-    `/teachers/evaluations/${evaluationId}/decision`,
-    payload
+): Promise<TeacherExecutiveSummary> {
+  const body = {
+    status: payload.status ?? payload.verdict, // aceptamos ambas claves
+    comment: payload.comment ?? payload.notes ?? undefined,
+  };
+
+  const { data } = await apiClient.post<TeacherExecutiveSummary>(
+    `/teachers/evaluations/${evaluationId}/coordinator-decision`,
+    body
   );
 
   return data;
