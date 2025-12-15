@@ -1,7 +1,7 @@
 // src/pages/admin/components/AdminDetailPanel.tsx
 import React from "react";
 import { Download, LayoutDashboard } from "lucide-react";
-import type { AdminTab } from "../utils/adminTypes";
+import type { AdminTab } from "../adminTypes";
 import AdminDetailTabs from "./AdminDetailTabs";
 import AdminDetailContent from "./AdminDetailContent";
 import type { TeacherEvaluationSummary } from "../../../types";
@@ -28,7 +28,9 @@ export default function AdminDetailPanel(props: {
             <LayoutDashboard size={16} className="text-emerald-400" />
             Detalle Ejecutivo
           </h3>
-          <p className="text-[11px] text-neutral-500 mt-1">IA + decisiones + señales clave (solo frontend por ahora).</p>
+          <p className="text-[11px] text-neutral-500 mt-1">
+            IA + decisiones + señales clave (solo frontend por ahora).
+          </p>
         </div>
 
         {selectedDetail && (

@@ -1,13 +1,14 @@
 // src/pages/admin/utils/adminSelectors.ts
 import type { TeacherEvaluationSummary } from "../../../types";
-import type { AdminMetrics, RiskBucket, SchoolSummary } from "./adminTypes";
+import type { AdminMetrics, RiskBucket, SchoolSummary } from "../adminTypes";
 
 export const getBucket = (veredict: string | undefined | null): RiskBucket => {
   if (!veredict) return "DESCONOCIDO";
   const v = veredict.toLowerCase();
   if (v.includes("no recomendar")) return "NO_RECOMENDAR";
   if (v.includes("precauc")) return "PRECAUCION";
-  if (v.includes("recomendar") || v.includes("recomendada")) return "RECOMENDADA";
+  if (v.includes("recomendar") || v.includes("recomendada"))
+    return "RECOMENDADA";
   return "DESCONOCIDO";
 };
 
@@ -28,7 +29,9 @@ export const filterEvaluations = (
   let base = evaluations;
 
   if (selectedSchool !== "TODAS") {
-    base = base.filter((ev) => (ev.candidate?.schoolNameSnapshot ?? "") === selectedSchool);
+    base = base.filter(
+      (ev) => (ev.candidate?.schoolNameSnapshot ?? "") === selectedSchool
+    );
   }
 
   const q = search.trim().toLowerCase();
@@ -48,9 +51,17 @@ export const filterEvaluations = (
   });
 };
 
-export const computeMetrics = (evaluations: TeacherEvaluationSummary[]): AdminMetrics => {
+export const computeMetrics = (
+  evaluations: TeacherEvaluationSummary[]
+): AdminMetrics => {
   if (evaluations.length === 0) {
-    return { total: 0, avgScore: 0, recommended: 0, caution: 0, notRecommended: 0 };
+    return {
+      total: 0,
+      avgScore: 0,
+      recommended: 0,
+      caution: 0,
+      notRecommended: 0,
+    };
   }
 
   const total = evaluations.length;
@@ -76,7 +87,9 @@ export const computeMetrics = (evaluations: TeacherEvaluationSummary[]): AdminMe
   };
 };
 
-export const computeSchoolsSummary = (evaluations: TeacherEvaluationSummary[]): SchoolSummary[] => {
+export const computeSchoolsSummary = (
+  evaluations: TeacherEvaluationSummary[]
+): SchoolSummary[] => {
   const map = new Map<string, SchoolSummary>();
 
   evaluations.forEach((ev) => {
@@ -107,6 +120,7 @@ export const computeSchoolsSummary = (evaluations: TeacherEvaluationSummary[]): 
     .sort((a, b) => b.total - a.total);
 };
 
-export const pct = (num: number, den: number) => (den > 0 ? (num / den) * 100 : 0);
+export const pct = (num: number, den: number) =>
+  den > 0 ? (num / den) * 100 : 0;
 
 export const clampPct = (v: number) => Math.max(0, Math.min(100, v));

@@ -1,7 +1,7 @@
 // src/pages/admin/components/AdminKpiGrid.tsx
 import React from "react";
 import { Activity, AlertCircle, FileText, TrendingUp } from "lucide-react";
-import type { AdminMetrics } from "../utils/adminTypes";
+import type { AdminMetrics } from "../adminTypes";
 import { clampPct } from "../utils/adminSelectors";
 
 export default function AdminKpiGrid(props: {
@@ -20,9 +20,13 @@ export default function AdminKpiGrid(props: {
           <div className="p-3 bg-emerald-500/10 rounded-xl text-emerald-400">
             <FileText size={24} />
           </div>
-          <span className="text-[10px] font-bold uppercase text-neutral-500 tracking-wider">Total</span>
+          <span className="text-[10px] font-bold uppercase text-neutral-500 tracking-wider">
+            Total
+          </span>
         </div>
-        <div className="text-4xl font-bold text-white mb-1 tracking-tight">{metrics.total}</div>
+        <div className="text-4xl font-bold text-white mb-1 tracking-tight">
+          {metrics.total}
+        </div>
         <div className="text-xs text-neutral-400">Evaluaciones registradas</div>
       </div>
 
@@ -33,13 +37,17 @@ export default function AdminKpiGrid(props: {
           <div className="p-3 bg-cyan-500/10 rounded-xl text-cyan-400">
             <Activity size={24} />
           </div>
-          <span className="text-[10px] font-bold uppercase text-neutral-500 tracking-wider">Promedio</span>
+          <span className="text-[10px] font-bold uppercase text-neutral-500 tracking-wider">
+            Promedio
+          </span>
         </div>
         <div className="text-4xl font-bold text-white mb-1 tracking-tight">
           {metrics.avgScore.toFixed(1)}
           <span className="text-lg text-neutral-600 font-medium">/100</span>
         </div>
-        <div className="text-xs text-neutral-400">Score de idoneidad global</div>
+        <div className="text-xs text-neutral-400">
+          Score de idoneidad global
+        </div>
       </div>
 
       {/* Approved */}
@@ -48,10 +56,16 @@ export default function AdminKpiGrid(props: {
           <div className="p-3 bg-emerald-500/10 rounded-xl text-emerald-400">
             <TrendingUp size={24} />
           </div>
-          <span className="text-[10px] font-bold uppercase text-neutral-500 tracking-wider">Aprobados</span>
+          <span className="text-[10px] font-bold uppercase text-neutral-500 tracking-wider">
+            Aprobados
+          </span>
         </div>
-        <div className="text-4xl font-bold text-white mb-1 tracking-tight">{recommendedPct.toFixed(0)}%</div>
-        <div className="text-xs text-neutral-400 mb-3">{metrics.recommended} candidatos viables</div>
+        <div className="text-4xl font-bold text-white mb-1 tracking-tight">
+          {recommendedPct.toFixed(0)}%
+        </div>
+        <div className="text-xs text-neutral-400 mb-3">
+          {metrics.recommended} candidatos viables
+        </div>
         <div className="w-full bg-neutral-800 h-1.5 rounded-full overflow-hidden">
           <div
             className="h-full bg-emerald-500 shadow-[0_0_10px_rgba(16,185,129,0.5)]"
@@ -66,10 +80,16 @@ export default function AdminKpiGrid(props: {
           <div className="p-3 bg-rose-500/10 rounded-xl text-rose-400">
             <AlertCircle size={24} />
           </div>
-          <span className="text-[10px] font-bold uppercase text-neutral-500 tracking-wider">Riesgo Alto</span>
+          <span className="text-[10px] font-bold uppercase text-neutral-500 tracking-wider">
+            Riesgo Alto
+          </span>
         </div>
-        <div className="text-4xl font-bold text-white mb-1 tracking-tight">{highRiskPct.toFixed(0)}%</div>
-        <div className="text-xs text-neutral-400 mb-3">{metrics.notRecommended} no recomendados</div>
+        <div className="text-4xl font-bold text-white mb-1 tracking-tight">
+          {highRiskPct.toFixed(0)}%
+        </div>
+        <div className="text-xs text-neutral-400 mb-3">
+          {metrics.notRecommended} no recomendados
+        </div>
         <div className="w-full bg-neutral-800 h-1.5 rounded-full overflow-hidden">
           <div
             className="h-full bg-rose-500 shadow-[0_0_10px_rgba(244,63,94,0.5)]"

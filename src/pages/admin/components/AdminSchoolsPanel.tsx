@@ -1,10 +1,12 @@
 // src/pages/admin/components/AdminSchoolsPanel.tsx
 import React from "react";
 import { Building2 } from "lucide-react";
-import type { SchoolSummary } from "../utils/adminTypes";
+import type { SchoolSummary } from "../adminTypes";
 import { clampPct } from "../utils/adminSelectors";
 
-export default function AdminSchoolsPanel(props: { schoolsSummary: SchoolSummary[] }) {
+export default function AdminSchoolsPanel(props: {
+  schoolsSummary: SchoolSummary[];
+}) {
   const { schoolsSummary } = props;
 
   return (
@@ -39,24 +41,39 @@ export default function AdminSchoolsPanel(props: { schoolsSummary: SchoolSummary
               <div className="space-y-3">
                 <div>
                   <div className="flex justify-between text-[10px] mb-1">
-                    <span className="text-neutral-500 font-medium">Score Promedio</span>
-                    <span className="text-cyan-400 font-mono">{s.avgScore.toFixed(1)}</span>
+                    <span className="text-neutral-500 font-medium">
+                      Score Promedio
+                    </span>
+                    <span className="text-cyan-400 font-mono">
+                      {s.avgScore.toFixed(1)}
+                    </span>
                   </div>
                   <div className="w-full bg-neutral-800 h-1.5 rounded-full overflow-hidden">
-                    <div className="h-full bg-cyan-500" style={{ width: `${clampPct(s.avgScore)}%` }} />
+                    <div
+                      className="h-full bg-cyan-500"
+                      style={{ width: `${clampPct(s.avgScore)}%` }}
+                    />
                   </div>
                 </div>
 
                 <div>
                   <div className="flex justify-between text-[10px] mb-1">
-                    <span className="text-neutral-500 font-medium">Tasa Aprobación</span>
-                    <span className={`font-mono ${recRate >= 70 ? "text-emerald-400" : "text-rose-400"}`}>
+                    <span className="text-neutral-500 font-medium">
+                      Tasa Aprobación
+                    </span>
+                    <span
+                      className={`font-mono ${
+                        recRate >= 70 ? "text-emerald-400" : "text-rose-400"
+                      }`}
+                    >
                       {recRate.toFixed(0)}%
                     </span>
                   </div>
                   <div className="w-full bg-neutral-800 h-1.5 rounded-full overflow-hidden">
                     <div
-                      className={`h-full rounded-full transition-all ${recRate >= 70 ? "bg-emerald-500" : "bg-rose-500"}`}
+                      className={`h-full rounded-full transition-all ${
+                        recRate >= 70 ? "bg-emerald-500" : "bg-rose-500"
+                      }`}
                       style={{ width: `${clampPct(recRate)}%` }}
                     />
                   </div>
@@ -67,7 +84,9 @@ export default function AdminSchoolsPanel(props: { schoolsSummary: SchoolSummary
         })}
 
         {schoolsSummary.length === 0 && (
-          <div className="text-center text-neutral-600 text-sm py-10">Sin datos disponibles</div>
+          <div className="text-center text-neutral-600 text-sm py-10">
+            Sin datos disponibles
+          </div>
         )}
       </div>
     </div>

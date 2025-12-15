@@ -1,12 +1,15 @@
 // src/pages/admin/components/AdminDetailTabs.tsx
 import React from "react";
 import { Activity, ScrollText, ShieldCheck, Users, Wrench } from "lucide-react";
-import type { AdminTab } from "../utils/adminTypes";
+import type { AdminTab } from "../adminTypes";
 
 const pillBase =
   "px-3 py-1 rounded-full border text-[11px] uppercase tracking-widest transition inline-flex items-center gap-2";
 
-export default function AdminDetailTabs(props: { tab: AdminTab; setTab: (t: AdminTab) => void }) {
+export default function AdminDetailTabs(props: {
+  tab: AdminTab;
+  setTab: (t: AdminTab) => void;
+}) {
   const { tab, setTab } = props;
 
   return (

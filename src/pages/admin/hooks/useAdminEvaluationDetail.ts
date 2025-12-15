@@ -1,9 +1,13 @@
 // src/pages/admin/hooks/useAdminEvaluationDetail.ts
 import { useCallback, useMemo, useState } from "react";
-import type { AnalysisResult, InterviewData, TeacherEvaluationSummary } from "../../../types";
+import type {
+  AnalysisResult,
+  InterviewData,
+  TeacherEvaluationSummary,
+} from "../../../types";
 import { getTeacherEvaluationById } from "../../../services/teachersService";
 import { generateAnalysisPdfFromData } from "../../../services/pdfReport";
-import type { AdminTab } from "../utils/adminTypes";
+import type { AdminTab } from "../adminTypes";
 
 export function useAdminEvaluationDetail(params: {
   evaluations: TeacherEvaluationSummary[];
@@ -34,7 +38,8 @@ export function useAdminEvaluationDetail(params: {
     try {
       const detail = await getTeacherEvaluationById(id);
       const analysis: AnalysisResult = detail.aiRawJson;
-      const interview: InterviewData = (detail.interview as InterviewData) ?? ({} as InterviewData);
+      const interview: InterviewData =
+        (detail.interview as InterviewData) ?? ({} as InterviewData);
       setSelectedDetail({ analysis, interview, raw: detail });
     } catch (e) {
       console.error("Admin: error cargando detalle", e);
@@ -54,7 +59,11 @@ export function useAdminEvaluationDetail(params: {
   const exportPdf = useCallback(async () => {
     if (!selectedDetail) return;
     try {
-      await generateAnalysisPdfFromData(selectedDetail.analysis, selectedDetail.interview, { download: true });
+      await generateAnalysisPdfFromData(
+        selectedDetail.analysis,
+        selectedDetail.interview,
+        { download: true }
+      );
     } catch (e) {
       console.error("Admin: error exportando PDF", e);
       alert("No se pudo generar el PDF.");
