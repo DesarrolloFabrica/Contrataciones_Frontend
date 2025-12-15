@@ -16,6 +16,18 @@ type Props = {
   clearCredentials: () => void;
 };
 
+const emailLooksValid = (email: string) =>
+  /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim());
+
+const roleLabel = (role: AdminUserRole) => {
+  switch (role) {
+    case "COORDINATOR": return "Coordinador";
+    case "LEADER": return "Líder";
+    case "ADMIN": return "Administrador";
+    default: return role;
+  }
+};
+
 const AdminUserFormModal: React.FC<Props> = ({
   open,
   onClose,
@@ -40,16 +52,29 @@ const AdminUserFormModal: React.FC<Props> = ({
   const [mustChangePassword, setMustChangePassword] = useState(true);
 
   const [localError, setLocalError] = useState<string | null>(null);
+  const [saving, setSaving] = useState(false);
 
-  const title = useMemo(
-    () => (isEdit ? "Editar usuario" : "Crear coordinador"),
-    [isEdit]
-  );
+  // ✅ NO useMemo para esto (no aporta y evita problemas)
+  const title = isEdit ? "Editar usuario" : "Crear usuario";
+
+  // ✅ Validación (esto sí puede ser useMemo)
+  const validationError = useMemo(() => {
+    if (!name.trim() || !lastName.trim()) return "Nombre y apellido son obligatorios.";
+
+    if (!isEdit) {
+      if (!email.trim()) return "El correo es obligatorio.";
+      if (!emailLooksValid(email)) return "El correo no parece válido.";
+      if (!generatePassword && password.trim().length < 8)
+        return "La contraseña manual debe tener mínimo 8 caracteres.";
+    }
+    return null;
+  }, [name, lastName, email, isEdit, generatePassword, password]);
 
   useEffect(() => {
     if (!open) return;
 
     setLocalError(null);
+    setSaving(false);
 
     if (editingUser) {
       setName(editingUser.name);
@@ -59,7 +84,6 @@ const AdminUserFormModal: React.FC<Props> = ({
       setRole(editingUser.role);
       setMustChangePassword(editingUser.mustChangePassword);
 
-      // en edición no mostramos password
       setGeneratePassword(true);
       setPassword("");
     } else {
@@ -75,6 +99,7 @@ const AdminUserFormModal: React.FC<Props> = ({
     }
   }, [open, editingUser, clearCredentials]);
 
+  // ✅ AHORA sí: retorno temprano después de hooks (OK)
   if (!open) return null;
 
   const close = () => {
@@ -82,52 +107,10 @@ const AdminUserFormModal: React.FC<Props> = ({
     onClose();
   };
 
-  const handleSubmit = () => {
-    setLocalError(null);
-
-    if (!name.trim() || !lastName.trim()) {
-      setLocalError("Nombre y apellido son obligatorios.");
-      return;
-    }
-
-    if (!isEdit) {
-      const res = onCreate({
-        name,
-        lastName,
-        email,
-        cedula: cedula.trim() ? cedula.trim() : null,
-        role,
-        mustChangePassword,
-        generatePassword,
-        password: generatePassword ? undefined : password,
-      });
-
-      if (!res.ok) {
-        setLocalError("No se pudo crear el usuario. Revisa los campos.");
-        return;
-      }
-    } else {
-      // update básico (no tocamos email ni password acá)
-      const res = onUpdate(editingUser!.id, {
-        name: name.trim(),
-        lastName: lastName.trim(),
-        cedula: cedula.trim() ? cedula.trim() : null,
-        role,
-        mustChangePassword,
-      });
-      if (!res.ok) {
-        setLocalError("No se pudo actualizar el usuario.");
-        return;
-      }
-      close();
-    }
-  };
-
   const copy = async (text: string) => {
     try {
       await navigator.clipboard.writeText(text);
     } catch {
-      // fallback
       const el = document.createElement("textarea");
       el.value = text;
       document.body.appendChild(el);
@@ -136,6 +119,66 @@ const AdminUserFormModal: React.FC<Props> = ({
       document.body.removeChild(el);
     }
   };
+
+  const handleSubmit = async () => {
+    setLocalError(null);
+
+    if (validationError) {
+      setLocalError(validationError);
+      return;
+    }
+
+    setSaving(true);
+
+    if (!isEdit) {
+      const res = onCreate({
+        name: name.trim(),
+        lastName: lastName.trim(),
+        email: email.trim(),
+        cedula: cedula.trim() ? cedula.trim() : null,
+        role,
+        mustChangePassword,
+        generatePassword,
+        password: generatePassword ? undefined : password.trim(),
+      });
+
+      if (!res.ok) {
+        setLocalError("No se pudo crear el usuario. Revisa los campos.");
+        setSaving(false);
+        return;
+      }
+
+      // ✅ dejamos abierto para copiar credenciales
+      setSaving(false);
+      return;
+    }
+
+    const res = onUpdate(editingUser!.id, {
+      name: name.trim(),
+      lastName: lastName.trim(),
+      cedula: cedula.trim() ? cedula.trim() : null,
+      role,
+      mustChangePassword,
+    });
+
+    if (!res.ok) {
+      setLocalError("No se pudo actualizar el usuario.");
+      setSaving(false);
+      return;
+    }
+
+    setSaving(false);
+    close();
+  };
+
+  const primaryDisabled =
+    saving || !!validationError || (!isEdit && !!lastCreatedCredentials);
+
+  const primaryLabel = isEdit
+    ? "Guardar cambios"
+    : lastCreatedCredentials
+    ? "Usuario creado"
+    : "Crear usuario";
 
   return (
     <div className="fixed inset-0 z-50">
@@ -152,13 +195,13 @@ const AdminUserFormModal: React.FC<Props> = ({
             <div>
               <p className="text-[11px] uppercase tracking-widest text-emerald-400 font-bold flex items-center gap-2">
                 <Sparkles className="w-4 h-4" />
-                Admin · Gestión de Usuarios
+                Gestión de usuarios
               </p>
               <h3 className="text-xl font-black text-white mt-1">{title}</h3>
               <p className="text-xs text-gray-500 mt-1">
                 {isEdit
-                  ? "Edita datos del usuario (sin exponer contraseñas)."
-                  : "Crea un coordinador y genera credenciales seguras."}
+                  ? "Actualiza datos del usuario (sin exponer contraseñas)."
+                  : "Crea un usuario y genera credenciales seguras."}
               </p>
             </div>
 
@@ -173,18 +216,16 @@ const AdminUserFormModal: React.FC<Props> = ({
 
           {/* body */}
           <div className="px-6 py-5 space-y-5">
-            {/* credentials created panel */}
             {!isEdit && lastCreatedCredentials && (
               <div className="bg-emerald-500/10 border border-emerald-500/20 rounded-2xl p-4">
                 <div className="flex items-start justify-between gap-3">
-                  <div>
+                  <div className="min-w-0">
                     <p className="text-[11px] uppercase tracking-widest text-emerald-300 font-bold flex items-center gap-2">
                       <CheckCircle2 className="w-4 h-4" />
                       Credenciales generadas
                     </p>
                     <p className="text-xs text-gray-300 mt-1">
-                      Estas credenciales se muestran <b>solo una vez</b>.
-                      Compártelas por un canal seguro.
+                      Estas credenciales se muestran <b>solo una vez</b>. Compártelas por un canal seguro.
                     </p>
 
                     <div className="mt-3 grid grid-cols-1 md:grid-cols-2 gap-3">
@@ -192,7 +233,7 @@ const AdminUserFormModal: React.FC<Props> = ({
                         <p className="text-[10px] uppercase tracking-widest text-gray-500">
                           Email
                         </p>
-                        <p className="text-sm text-white mt-1">
+                        <p className="text-sm text-white mt-1 truncate">
                           {lastCreatedCredentials.email}
                         </p>
                       </div>
@@ -200,7 +241,7 @@ const AdminUserFormModal: React.FC<Props> = ({
                         <p className="text-[10px] uppercase tracking-widest text-gray-500">
                           Contraseña temporal
                         </p>
-                        <p className="text-sm text-white mt-1">
+                        <p className="text-sm text-white mt-1 truncate">
                           {lastCreatedCredentials.password}
                         </p>
                       </div>
@@ -263,11 +304,6 @@ const AdminUserFormModal: React.FC<Props> = ({
                   }`}
                   placeholder="coordinador@cun.edu.co"
                 />
-                {isEdit && (
-                  <p className="text-[11px] text-gray-600 mt-1">
-                    En edición no cambiamos el correo (para evitar inconsistencias).
-                  </p>
-                )}
               </div>
 
               <div>
@@ -291,9 +327,9 @@ const AdminUserFormModal: React.FC<Props> = ({
                   onChange={(e) => setRole(e.target.value as AdminUserRole)}
                   className="mt-1 w-full bg-[#0A0A0A] border border-white/10 rounded-xl px-3 py-2 text-sm text-gray-200 outline-none focus:border-emerald-500/50"
                 >
-                  <option value="COORDINATOR">COORDINATOR</option>
-                  <option value="LEADER">LEADER</option>
-                  <option value="ADMIN">ADMIN</option>
+                  <option value="COORDINATOR">{roleLabel("COORDINATOR")}</option>
+                  <option value="LEADER">{roleLabel("LEADER")}</option>
+                  <option value="ADMIN">{roleLabel("ADMIN")}</option>
                 </select>
               </div>
 
@@ -305,18 +341,13 @@ const AdminUserFormModal: React.FC<Props> = ({
                   className="w-4 h-4"
                 />
                 <div>
-                  <p className="text-sm text-gray-200">
-                    Forzar cambio de contraseña
-                  </p>
-                  <p className="text-xs text-gray-500">
-                    Recomendado en primer inicio.
-                  </p>
+                  <p className="text-sm text-gray-200">Forzar cambio de contraseña</p>
+                  <p className="text-xs text-gray-500">Recomendado en primer inicio.</p>
                 </div>
               </div>
             </div>
 
-            {/* password only for create */}
-            {!isEdit && (
+            {!isEdit && !lastCreatedCredentials && (
               <div className="bg-[#090909] border border-white/10 rounded-2xl p-4">
                 <p className="text-[11px] uppercase tracking-widest text-gray-500 font-bold">
                   Contraseña
@@ -350,9 +381,9 @@ const AdminUserFormModal: React.FC<Props> = ({
               </div>
             )}
 
-            {localError && (
+            {(localError || validationError) && (
               <div className="bg-rose-500/10 border border-rose-500/20 rounded-2xl p-3 text-sm text-rose-200">
-                {localError}
+                {localError ?? validationError}
               </div>
             )}
           </div>
@@ -363,14 +394,20 @@ const AdminUserFormModal: React.FC<Props> = ({
               className="px-4 py-2 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-xs font-bold uppercase tracking-widest"
               onClick={close}
             >
-              Cancelar
+              {lastCreatedCredentials ? "Cerrar" : "Cancelar"}
             </button>
 
             <button
-              className="px-5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold uppercase tracking-widest shadow-md transition-colors"
+              disabled={primaryDisabled}
+              className={[
+                "px-5 py-2 rounded-xl text-xs font-bold uppercase tracking-widest shadow-md transition-colors",
+                primaryDisabled
+                  ? "bg-white/5 text-neutral-500 border border-white/10 cursor-not-allowed"
+                  : "bg-emerald-600 hover:bg-emerald-500 text-white",
+              ].join(" ")}
               onClick={handleSubmit}
             >
-              {isEdit ? "Guardar cambios" : "Crear usuario"}
+              {saving ? "Guardando..." : primaryLabel}
             </button>
           </div>
         </div>

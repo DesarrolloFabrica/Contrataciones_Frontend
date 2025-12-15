@@ -1,5 +1,5 @@
 // src/pages/admin/hooks/useAdminUsers.ts
-import { useEffect, useMemo, useState, useCallback } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import type {
   AdminUser,
   AdminUserStatus,
@@ -7,102 +7,36 @@ import type {
   CreateAdminUserDto,
   UpdateAdminUserDto,
   ResetPasswordResult,
+  AdminAuditAction,
 } from "../adminTypes";
+import { adminMockDb } from "../utils/adminMockDb";
 
 type StatusFilter = "ALL" | AdminUserStatus;
 
-const LS_KEY = "OPECUN_ADMIN_USERS_V1";
+const normalizeEmail = (email: string) => email.trim().toLowerCase();
+const safeTrim = (s?: string | null) => (s ?? "").trim();
 
-function nowIso() {
-  return new Date().toISOString();
-}
+const isValidEmail = (email: string) =>
+  /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email);
 
-function uid() {
-  return Math.random().toString(16).slice(2) + Date.now().toString(16);
-}
-
-function normalizeEmail(email: string) {
-  return email.trim().toLowerCase();
-}
-
-function safeTrim(s?: string | null) {
-  return (s ?? "").trim();
-}
-
-function isValidEmail(email: string) {
-  return /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email);
-}
-
-function generatePassword(length = 12) {
-  const chars =
-    "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz23456789!@#$%&*?";
-  let out = "";
-  for (let i = 0; i < length; i++) {
-    out += chars[Math.floor(Math.random() * chars.length)];
-  }
-  return out;
-}
-
-function readUsers(): AdminUser[] {
+/**
+ * ✅ ÚNICO punto para auditoría del sistema
+ * Soporta ambas firmas (logSystemEvent / addSystemAudit)
+ */
+async function auditSystem(action: AdminAuditAction, meta: Record<string, any>) {
   try {
-    const raw = localStorage.getItem(LS_KEY);
-    if (!raw) return [];
-    const parsed = JSON.parse(raw) as AdminUser[];
-    return Array.isArray(parsed) ? parsed : [];
-  } catch {
-    return [];
+    if ((adminMockDb as any).logSystemEvent) {
+      (adminMockDb as any).logSystemEvent(action, meta);
+      return;
+    }
+    if ((adminMockDb as any).addSystemAudit) {
+      await (adminMockDb as any).addSystemAudit({ action, meta });
+      return;
+    }
+  } catch (e) {
+    // No bloquea UI si falla auditoría (mock)
+    console.warn("Audit system failed:", e);
   }
-}
-
-function writeUsers(users: AdminUser[]) {
-  localStorage.setItem(LS_KEY, JSON.stringify(users));
-}
-
-function seedIfEmpty() {
-  const existing = readUsers();
-  if (existing.length > 0) return existing;
-
-  const seed: AdminUser[] = [
-    {
-      id: uid(),
-      name: "Camilo",
-      lastName: "Rojas",
-      email: "camilo.rojas@cun.edu.co",
-      cedula: "1010101010",
-      role: "COORDINATOR",
-      status: "ACTIVE",
-      mustChangePassword: true,
-      createdAt: nowIso(),
-      updatedAt: nowIso(),
-    },
-    {
-      id: uid(),
-      name: "Sebastián",
-      lastName: "Montes",
-      email: "sebastian.montes@cun.edu.co",
-      cedula: "2020202020",
-      role: "COORDINATOR",
-      status: "ACTIVE",
-      mustChangePassword: true,
-      createdAt: nowIso(),
-      updatedAt: nowIso(),
-    },
-    {
-      id: uid(),
-      name: "Admin",
-      lastName: "Global",
-      email: "admin@cun.edu.co",
-      cedula: null,
-      role: "ADMIN",
-      status: "ACTIVE",
-      mustChangePassword: false,
-      createdAt: nowIso(),
-      updatedAt: nowIso(),
-    },
-  ];
-
-  writeUsers(seed);
-  return seed;
 }
 
 export function useAdminUsers() {
@@ -114,27 +48,27 @@ export function useAdminUsers() {
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("ALL");
   const [roleFilter, setRoleFilter] = useState<AdminUserRole | "ALL">("ALL");
 
-  // para UX: mostrar contraseña temporal una sola vez
   const [lastCreatedCredentials, setLastCreatedCredentials] = useState<{
     email: string;
     password: string;
   } | null>(null);
 
-  const load = useCallback(() => {
+  const load = useCallback(async () => {
     setLoading(true);
     setError(null);
+
     try {
-      const seeded = seedIfEmpty();
-      // orden por fecha desc
-      const sorted = [...seeded].sort((a, b) => {
-        const da = new Date(a.createdAt).getTime();
-        const db = new Date(b.createdAt).getTime();
+      const list = await adminMockDb.listUsers();
+      const sorted = [...list].sort((a, b) => {
+        const da = a.createdAt ? new Date(a.createdAt).getTime() : 0;
+        const db = b.createdAt ? new Date(b.createdAt).getTime() : 0;
         return db - da;
       });
       setUsers(sorted);
     } catch (e) {
       console.error(e);
       setError("No se pudo cargar el módulo de usuarios.");
+      setUsers([]);
     } finally {
       setLoading(false);
     }
@@ -147,16 +81,12 @@ export function useAdminUsers() {
   const filteredUsers = useMemo(() => {
     let base = [...users];
 
-    if (roleFilter !== "ALL") {
-      base = base.filter((u) => u.role === roleFilter);
-    }
-
-    if (statusFilter !== "ALL") {
+    if (roleFilter !== "ALL") base = base.filter((u) => u.role === roleFilter);
+    if (statusFilter !== "ALL")
       base = base.filter((u) => u.status === statusFilter);
-    }
 
-    if (search.trim()) {
-      const q = search.trim().toLowerCase();
+    const q = search.trim().toLowerCase();
+    if (q) {
       base = base.filter((u) => {
         const name = `${u.name} ${u.lastName}`.toLowerCase();
         const email = u.email.toLowerCase();
@@ -176,114 +106,148 @@ export function useAdminUsers() {
     return { total, active, inactive, coordinators };
   }, [users]);
 
-  const createUser = useCallback((dto: CreateAdminUserDto) => {
-    setError(null);
+  const createUser = useCallback(
+    async (dto: CreateAdminUserDto) => {
+      setError(null);
 
-    const email = normalizeEmail(dto.email);
+      const email = normalizeEmail(dto.email);
 
-    if (!safeTrim(dto.name) || !safeTrim(dto.lastName)) {
-      setError("Nombre y apellido son obligatorios.");
-      return { ok: false as const };
-    }
-    if (!isValidEmail(email)) {
-      setError("El correo no es válido.");
-      return { ok: false as const };
-    }
-
-    // unique email
-    if (users.some((u) => normalizeEmail(u.email) === email)) {
-      setError("Ya existe un usuario con ese correo.");
-      return { ok: false as const };
-    }
-
-    let password = "";
-    if (dto.generatePassword) {
-      password = generatePassword(12);
-    } else {
-      password = dto.password ?? "";
-      if (password.trim().length < 8) {
-        setError("La contraseña debe tener al menos 8 caracteres.");
+      // ✅ validaciones claras
+      if (!safeTrim(dto.name) || !safeTrim(dto.lastName)) {
+        setError("Nombre y apellido son obligatorios.");
         return { ok: false as const };
       }
-    }
+      if (!isValidEmail(email)) {
+        setError("El correo no es válido.");
+        return { ok: false as const };
+      }
+      if (users.some((u) => normalizeEmail(u.email) === email)) {
+        setError("Ya existe un usuario con ese correo.");
+        return { ok: false as const };
+      }
 
-    const newUser: AdminUser = {
-      id: uid(),
-      name: safeTrim(dto.name),
-      lastName: safeTrim(dto.lastName),
-      email,
-      cedula: dto.cedula ? safeTrim(dto.cedula) : null,
-      role: dto.role,
-      status: "ACTIVE",
-      mustChangePassword: dto.mustChangePassword,
-      createdAt: nowIso(),
-      updatedAt: nowIso(),
-    };
+      if (!dto.generatePassword) {
+        const p = dto.password ?? "";
+        if (p.trim().length < 8) {
+          setError("La contraseña debe tener al menos 8 caracteres.");
+          return { ok: false as const };
+        }
+      }
 
-    const next = [newUser, ...users];
-    setUsers(next);
-    writeUsers(next);
+      try {
+        const res = await adminMockDb.createUser({
+          ...dto,
+          email,
+          name: safeTrim(dto.name),
+          lastName: safeTrim(dto.lastName),
+          cedula: dto.cedula ? safeTrim(dto.cedula) : null,
+          password: dto.generatePassword ? undefined : dto.password,
+        });
 
-    // 👇 solo se muestra una vez en UI
-    setLastCreatedCredentials({ email, password });
+        await load();
 
-    return { ok: true as const, user: newUser, password };
-  }, [users]);
+        // ✅ la contraseña que mostramos una sola vez
+        const passwordToShow = dto.generatePassword
+          ? res.password?.temporaryPassword || ""
+          : dto.password ?? "";
 
-  const updateUser = useCallback((id: string, patch: UpdateAdminUserDto) => {
-    setError(null);
-    const next = users.map((u) => {
-      if (u.id !== id) return u;
-      return {
-        ...u,
-        ...patch,
-        cedula: patch.cedula === undefined ? u.cedula : patch.cedula,
-        updatedAt: nowIso(),
-      };
-    });
-    setUsers(next);
-    writeUsers(next);
-    return { ok: true as const };
-  }, [users]);
+        setLastCreatedCredentials({ email, password: passwordToShow });
 
-  const toggleActive = useCallback((id: string) => {
-    setError(null);
-    const target = users.find((u) => u.id === id);
-    if (!target) return { ok: false as const };
+        await auditSystem("USER_CREATED", {
+          email,
+          role: dto.role,
+          generated: dto.generatePassword,
+        });
 
-    const nextStatus: AdminUserStatus =
-      target.status === "ACTIVE" ? "INACTIVE" : "ACTIVE";
+        return {
+          ok: true as const,
+          user: res.user,
+          password: passwordToShow,
+        };
+      } catch (e) {
+        console.error(e);
+        setError("No se pudo crear el usuario.");
+        return { ok: false as const };
+      }
+    },
+    [users, load]
+  );
 
-    return updateUser(id, { status: nextStatus });
-  }, [users, updateUser]);
+  const updateUser = useCallback(
+    async (id: string, patch: UpdateAdminUserDto) => {
+      setError(null);
+      try {
+        await adminMockDb.updateUser(id, {
+          ...patch,
+          cedula:
+            patch.cedula === undefined
+              ? undefined
+              : patch.cedula?.trim() || null,
+        });
 
-  const resetPassword = useCallback((id: string): ResetPasswordResult | null => {
-    setError(null);
-    const target = users.find((u) => u.id === id);
-    if (!target) return null;
+        await load();
 
-    const temp = generatePassword(12);
+        await auditSystem("USER_UPDATED", { userId: id, patch });
 
-    // en backend real: guardar hash + mustChangePassword=true
-    // aquí solo devolvemos la temporal para UI
-    updateUser(id, { mustChangePassword: true });
+        return { ok: true as const };
+      } catch (e) {
+        console.error(e);
+        setError("No se pudo actualizar el usuario.");
+        return { ok: false as const };
+      }
+    },
+    [load]
+  );
 
-    return { userId: id, temporaryPassword: temp };
-  }, [users, updateUser]);
+  const toggleActive = useCallback(
+    async (id: string) => {
+      setError(null);
+      try {
+        const updated = await adminMockDb.toggleUserActive(id);
+        await load();
+
+        await auditSystem("USER_TOGGLED", { userId: id, status: updated.status });
+
+        return { ok: true as const };
+      } catch (e) {
+        console.error(e);
+        setError("No se pudo cambiar el estado del usuario.");
+        return { ok: false as const };
+      }
+    },
+    [load]
+  );
+
+  const resetPassword = useCallback(
+    async (id: string): Promise<ResetPasswordResult | null> => {
+      setError(null);
+      try {
+        const res = await adminMockDb.resetPassword(id);
+        await load();
+
+        await auditSystem("PASSWORD_RESET", { userId: id });
+
+        return res;
+      } catch (e) {
+        console.error(e);
+        setError("No se pudo resetear la contraseña.");
+        return null;
+      }
+    },
+    [load]
+  );
 
   const clearCredentials = useCallback(() => {
     setLastCreatedCredentials(null);
   }, []);
 
   return {
-    // state
     loading,
     error,
     users,
     filteredUsers,
     metrics,
 
-    // filters
     search,
     setSearch,
     statusFilter,
@@ -291,14 +255,12 @@ export function useAdminUsers() {
     roleFilter,
     setRoleFilter,
 
-    // actions
     reload: load,
     createUser,
     updateUser,
     toggleActive,
     resetPassword,
 
-    // UX
     lastCreatedCredentials,
     clearCredentials,
   };

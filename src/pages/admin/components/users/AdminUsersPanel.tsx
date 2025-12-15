@@ -34,10 +34,15 @@ const AdminUsersPanel: React.FC = () => {
       { value: "ALL", label: "Todos los roles" },
       { value: "COORDINATOR", label: "Coordinadores" },
       { value: "LEADER", label: "Líderes" },
-      { value: "ADMIN", label: "Admins" },
+      { value: "ADMIN", label: "Administradores" },
     ],
     []
   );
+
+  const showEmpty =
+    !users.loading &&
+    !users.error &&
+    (users.filteredUsers?.length ?? 0) === 0;
 
   return (
     <section className="bg-[#050505]/70 border border-white/10 rounded-3xl p-5 md:p-6 shadow-xl">
@@ -51,7 +56,7 @@ const AdminUsersPanel: React.FC = () => {
               Usuarios
             </h2>
             <p className="text-xs text-gray-500">
-              Crea coordinadores y administra accesos (mock listo para backend).
+              Administra accesos, roles y recuperación de contraseñas.
             </p>
           </div>
         </div>
@@ -61,7 +66,7 @@ const AdminUsersPanel: React.FC = () => {
           onClick={openCreate}
           className="px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs uppercase tracking-widest shadow-md transition-colors"
         >
-          + Crear coordinador
+          + Crear usuario
         </button>
       </div>
 
@@ -90,13 +95,51 @@ const AdminUsersPanel: React.FC = () => {
         </div>
       )}
 
-      {!users.loading && !users.error && (
+      {!users.loading && !users.error && !showEmpty && (
         <AdminUsersTable
           users={users.filteredUsers}
           onEdit={openEdit}
           onToggleActive={users.toggleActive}
           onResetPassword={users.resetPassword}
         />
+      )}
+
+      {showEmpty && (
+        <div className="mt-4 rounded-2xl border border-white/10 bg-black/20 p-6">
+          <p className="text-sm text-white font-semibold">Sin resultados</p>
+          <p className="text-xs text-neutral-400 mt-1">
+            No encontramos usuarios con los filtros actuales. Prueba limpiar la búsqueda
+            o seleccionar “Todos los roles”.
+          </p>
+
+          <div className="mt-4 flex flex-wrap gap-2">
+            <button
+              type="button"
+              onClick={() => users.setSearch("")}
+              className="px-3 py-2 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-xs font-bold uppercase tracking-widest"
+            >
+              Limpiar búsqueda
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                users.setSearch("");
+                users.setRoleFilter("ALL");
+                users.setStatusFilter("ALL");
+              }}
+              className="px-3 py-2 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-xs font-bold uppercase tracking-widest"
+            >
+              Limpiar filtros
+            </button>
+            <button
+              type="button"
+              onClick={openCreate}
+              className="px-3 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold uppercase tracking-widest"
+            >
+              Crear usuario
+            </button>
+          </div>
+        </div>
       )}
 
       <AdminUserFormModal

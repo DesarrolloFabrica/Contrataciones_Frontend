@@ -1,13 +1,12 @@
-// src/pages/admin/AdminConsole.tsx
-import React, { useState } from "react";
+import React, { useCallback, useMemo, useState } from "react";
 import { AlertCircle, Loader2, Users, FileText } from "lucide-react";
 
 import AdminHeader from "./components/AdminHeader";
-import AdminKpiGrid from "./components/AdminKpiGrid";
-import AdminFiltersBar from "./components/AdminFiltersBar";
-import AdminSchoolsPanel from "./components/AdminSchoolsPanel";
-import AdminEvaluationsPanel from "./components/AdminEvaluationsPanel";
-import AdminDetailPanel from "./components/AdminDetailPanel";
+import AdminKpiGrid from "./components/evaluations/AdminKpiGrid";
+import AdminFiltersBar from "./components/evaluations/AdminFiltersBar";
+import AdminSchoolsPanel from "./components/evaluations/AdminSchoolsPanel";
+import AdminEvaluationsPanel from "./components/evaluations/AdminEvaluationsPanel";
+import AdminDetailPanel from "./components/evaluations/AdminDetailPanel";
 
 import AdminUsersPanel from "./components/users/AdminUsersPanel";
 
@@ -22,12 +21,25 @@ const AdminConsole: React.FC = () => {
   const admin = useAdminEvaluations();
   const detail = useAdminEvaluationDetail({ evaluations: admin.evaluations });
 
+  const hasSelection = useMemo(
+    () => view === "EVALUATIONS" && !!detail.selectedId,
+    [view, detail.selectedId]
+  );
+
   const tabBtn = (active: boolean) =>
     `px-4 py-2 rounded-xl text-xs font-bold uppercase tracking-widest border transition-colors flex items-center gap-2 ${
       active
         ? "bg-emerald-600 text-white border-emerald-500/40"
         : "bg-white/5 text-gray-300 border-white/10 hover:bg-white/10"
     }`;
+
+  const handleSwitchView = useCallback(
+    (next: AdminView) => {
+      setView(next);
+      if (next !== "EVALUATIONS") detail.clearSelection();
+    },
+    [detail]
+  );
 
   return (
     <div className="min-h-screen w-full bg-[#020202] text-white font-sans relative overflow-x-hidden selection:bg-emerald-500/30">
@@ -40,7 +52,7 @@ const AdminConsole: React.FC = () => {
 
       <div className="relative z-10 max-w-7xl mx-auto px-6 py-10 space-y-8">
         <AdminHeader
-          hasSelection={!!detail.selectedId}
+          hasSelection={hasSelection}
           onClearSelection={detail.clearSelection}
         />
 
@@ -49,7 +61,7 @@ const AdminConsole: React.FC = () => {
           <button
             type="button"
             className={tabBtn(view === "EVALUATIONS")}
-            onClick={() => setView("EVALUATIONS")}
+            onClick={() => handleSwitchView("EVALUATIONS")}
           >
             <FileText className="w-4 h-4" />
             Evaluaciones
@@ -58,20 +70,21 @@ const AdminConsole: React.FC = () => {
           <button
             type="button"
             className={tabBtn(view === "USERS")}
-            onClick={() => setView("USERS")}
+            onClick={() => handleSwitchView("USERS")}
           >
             <Users className="w-4 h-4" />
             Usuarios
           </button>
         </div>
 
+        {/* VISTA: EVALUACIONES */}
         {view === "EVALUATIONS" && (
           <>
             {admin.loading && (
               <div className="flex flex-col items-center justify-center py-24 text-neutral-500 gap-4">
                 <Loader2 className="w-10 h-10 animate-spin text-emerald-500" />
                 <p className="text-sm font-medium animate-pulse">
-                  Sincronizando métricas globales...
+                  Sincronizando evaluaciones...
                 </p>
               </div>
             )}
@@ -99,36 +112,39 @@ const AdminConsole: React.FC = () => {
                   schoolOptions={admin.schoolOptions}
                 />
 
-                <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
-                  <div className="lg:col-span-4">
-                    <AdminSchoolsPanel schoolsSummary={admin.schoolsSummary} />
-                  </div>
+           <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+  {/* IZQUIERDA */}
+  <div className="lg:col-span-4 space-y-6">
+    <AdminSchoolsPanel schoolsSummary={admin.schoolsSummary} />
 
-                  <div className="lg:col-span-4">
-                    <AdminEvaluationsPanel
-                      filteredEvaluations={admin.filteredEvaluations}
-                      selectedId={detail.selectedId}
-                      onSelect={detail.handleSelectEvaluation}
-                    />
-                  </div>
+    <AdminEvaluationsPanel
+      filteredEvaluations={admin.filteredEvaluations}
+      selectedId={detail.selectedId}
+      onSelect={detail.handleSelectEvaluation}
+    />
+  </div>
 
-                  <div className="lg:col-span-4">
-                    <AdminDetailPanel
-                      selectedId={detail.selectedId}
-                      selectedSummary={detail.selectedSummary}
-                      loadingDetail={detail.loadingDetail}
-                      selectedDetail={detail.selectedDetail}
-                      tab={detail.tab}
-                      setTab={detail.setTab}
-                      onExportPdf={detail.exportPdf}
-                    />
-                  </div>
-                </div>
+  {/* DERECHA */}
+  <div className="lg:col-span-8">
+    <AdminDetailPanel
+      selectedId={detail.selectedId}
+      selectedSummary={detail.selectedSummary}
+      loadingDetail={detail.loadingDetail}
+      selectedDetail={detail.selectedDetail}
+      tab={detail.tab}
+      setTab={detail.setTab}
+      onExportPdf={detail.exportPdf}
+    />
+  </div>
+</div>
+
+
               </>
             )}
           </>
         )}
 
+        {/* VISTA: USUARIOS */}
         {view === "USERS" && <AdminUsersPanel />}
       </div>
     </div>

@@ -1,17 +1,39 @@
 // src/pages/admin/components/users/AdminUserRowActions.tsx
-import React, { useEffect, useMemo, useRef, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState, useCallback } from "react";
 import { createPortal } from "react-dom";
-import { MoreVertical, Pencil, Power, KeyRound } from "lucide-react";
+import {
+  MoreVertical,
+  Pencil,
+  Power,
+  KeyRound,
+  Copy,
+  AlertTriangle,
+  X,
+  CheckCircle2,
+} from "lucide-react";
 import type { AdminUser, ResetPasswordResult } from "../../adminTypes";
 
 type Props = {
   user: AdminUser;
   onEdit: () => void;
-  onToggleActive: () => void;
-  onResetPassword: () => ResetPasswordResult | null;
+  onToggleActive: () => void; // se mantiene sync (en tabla lo envuelves async)
+  onResetPassword: () => Promise<ResetPasswordResult | null>;
 };
 
 type Pos = { top: number; left: number; width: number };
+
+const copyText = async (text: string) => {
+  try {
+    await navigator.clipboard.writeText(text);
+  } catch {
+    const el = document.createElement("textarea");
+    el.value = text;
+    document.body.appendChild(el);
+    el.select();
+    document.execCommand("copy");
+    document.body.removeChild(el);
+  }
+};
 
 const AdminUserRowActions: React.FC<Props> = ({
   user,
@@ -25,48 +47,103 @@ const AdminUserRowActions: React.FC<Props> = ({
   const [open, setOpen] = useState(false);
   const [pos, setPos] = useState<Pos | null>(null);
 
+  const [busy, setBusy] = useState<null | "reset" | "toggle">(null);
+
+  // mini-dialogs
+  const [confirmToggleOpen, setConfirmToggleOpen] = useState(false);
+  const [resetResult, setResetResult] = useState<ResetPasswordResult | null>(null);
+  const [copied, setCopied] = useState(false);
+
   const isActive = user.status === "ACTIVE";
+
+  const closeMenu = useCallback(() => setOpen(false), []);
+  const closeAllOverlays = useCallback(() => {
+    setOpen(false);
+    setConfirmToggleOpen(false);
+    setResetResult(null);
+    setCopied(false);
+    setBusy(null);
+  }, []);
+
+  const handleEdit = useCallback(() => {
+    onEdit();
+  }, [onEdit]);
+
+  const handleToggleConfirm = useCallback(() => {
+    setConfirmToggleOpen(true);
+  }, []);
+
+  const runToggle = useCallback(async () => {
+    try {
+      setBusy("toggle");
+      onToggleActive();
+    } finally {
+      setBusy(null);
+      setConfirmToggleOpen(false);
+    }
+  }, [onToggleActive]);
+
+  const runReset = useCallback(async () => {
+    try {
+      setBusy("reset");
+      setCopied(false);
+
+      const res = await onResetPassword();
+      if (!res) {
+        // sin alerts: mostramos un mensaje controlado
+        setResetResult({
+          userId: user.id,
+          temporaryPassword: "",
+        } as any);
+        return;
+      }
+
+      setResetResult(res);
+    } catch (e) {
+      console.error(e);
+      setResetResult({
+        userId: user.id,
+        temporaryPassword: "",
+      } as any);
+    } finally {
+      setBusy(null);
+    }
+  }, [onResetPassword, user.id]);
 
   const items = useMemo(
     () => [
       {
         id: "edit",
-        label: "Editar usuario",
+        label: "Editar",
         icon: <Pencil className="w-4 h-4 text-cyan-300" />,
-        onClick: () => onEdit(),
+        onClick: handleEdit,
+        disabled: busy !== null,
       },
       {
         id: "reset",
-        label: "Resetear contraseña",
+        label: busy === "reset" ? "Reseteando..." : "Resetear contraseña",
         icon: <KeyRound className="w-4 h-4 text-amber-300" />,
-        onClick: () => {
-          const res = onResetPassword();
-          if (!res) {
-            alert("No se pudo resetear la contraseña (mock).");
-            return;
-          }
-          alert(
-            `Contraseña temporal generada:\n\n${res.temporaryPassword}\n\nCompártela por un canal seguro.`
-          );
-        },
+        onClick: runReset,
+        disabled: busy !== null,
       },
       {
         id: "toggle",
-        label: isActive ? "Desactivar" : "Activar",
+        label: isActive ? "Desactivar usuario" : "Activar usuario",
         icon: <Power className="w-4 h-4 text-rose-300" />,
-        onClick: () => onToggleActive(),
+        onClick: handleToggleConfirm,
+        disabled: busy !== null,
       },
     ],
-    [onEdit, onResetPassword, onToggleActive, isActive]
+    [handleEdit, runReset, handleToggleConfirm, isActive, busy]
   );
 
-  const computePosition = () => {
+  const computePosition = useCallback(() => {
     const el = btnRef.current;
     if (!el) return;
 
     const r = el.getBoundingClientRect();
     const menuWidth = 240;
-    const menuHeight = 44 + items.length * 44; // header + items (aprox)
+    const menuHeight = 44 + items.length * 44;
 
     const vw = window.innerWidth;
     const vh = window.innerHeight;
@@ -76,13 +153,10 @@ const AdminUserRowActions: React.FC<Props> = ({
 
     const spaceBelow = vh - r.bottom;
     const openUp = spaceBelow < menuHeight + 12;
-
     const top = openUp ? r.top - menuHeight - 10 : r.bottom + 10;
 
     setPos({ top, left, width: menuWidth });
-  };
-
-  const close = () => setOpen(false);
+  }, [items.length]);
 
   useEffect(() => {
     if (!open) return;
@@ -92,13 +166,13 @@ const AdminUserRowActions: React.FC<Props> = ({
     const onScroll = () => computePosition();
 
     window.addEventListener("resize", onResize);
-    window.addEventListener("scroll", onScroll, true); // captura scroll dentro de contenedores
+    window.addEventListener("scroll", onScroll, true);
 
     return () => {
       window.removeEventListener("resize", onResize);
       window.removeEventListener("scroll", onScroll, true);
     };
-  }, [open]);
+  }, [open, computePosition]);
 
   useEffect(() => {
     if (!open) return;
@@ -107,14 +181,23 @@ const AdminUserRowActions: React.FC<Props> = ({
       const t = e.target as Node;
       if (btnRef.current?.contains(t)) return;
       if (menuRef.current?.contains(t)) return;
-      close();
+      closeMenu();
     };
 
     document.addEventListener("mousedown", onPointerDown);
     return () => document.removeEventListener("mousedown", onPointerDown);
-  }, [open]);
+  }, [open, closeMenu]);
 
-  const toggle = () => {
+  // ✅ ESC cierra overlays
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") closeAllOverlays();
+    };
+    document.addEventListener("keydown", onKey);
+    return () => document.removeEventListener("keydown", onKey);
+  }, [closeAllOverlays]);
+
+  const toggleMenu = () => {
     if (!open) computePosition();
     setOpen((v) => !v);
   };
@@ -124,18 +207,19 @@ const AdminUserRowActions: React.FC<Props> = ({
       <button
         ref={btnRef}
         className="p-2 rounded-xl bg-white/5 border border-white/10 hover:bg-white/10 transition-colors"
-        onClick={toggle}
+        onClick={toggleMenu}
         title="Acciones"
         aria-label="Acciones"
       >
         <MoreVertical className="w-4 h-4 text-gray-200" />
       </button>
 
-      {open && pos &&
+      {/* MENU */}
+      {open &&
+        pos &&
         createPortal(
           <div className="fixed inset-0 z-[9999]" aria-hidden="true">
-            {/* overlay invisible para cerrar */}
-            <div className="absolute inset-0" onClick={close} />
+            <div className="absolute inset-0" onClick={closeMenu} />
 
             <div
               ref={menuRef}
@@ -143,24 +227,212 @@ const AdminUserRowActions: React.FC<Props> = ({
               style={{ top: pos.top, left: pos.left, width: pos.width }}
             >
               <div className="bg-[#0B0B0B]/95 backdrop-blur-xl border border-white/10 rounded-2xl shadow-2xl overflow-hidden">
-                <div className="px-3 py-2 text-[10px] uppercase tracking-widest text-neutral-500 border-b border-white/5">
+                <div className="px-3 py-2 text-[10px] uppercase tracking-widest text-neutral-500 border-b border-white/5 flex items-center justify-between">
                   Acciones
+                  <button
+                    type="button"
+                    onClick={closeMenu}
+                    className="p-1 rounded-lg hover:bg-white/5"
+                    title="Cerrar"
+                  >
+                    <X className="w-4 h-4 text-neutral-400" />
+                  </button>
                 </div>
 
                 <div className="p-1">
                   {items.map((it) => (
                     <button
                       key={it.id}
-                      className="w-full px-3 py-2.5 text-left text-sm hover:bg-white/5 rounded-xl flex items-center gap-2 transition-colors"
-                      onClick={() => {
-                        close();
-                        it.onClick();
+                      disabled={!!it.disabled}
+                      className={`w-full px-3 py-2.5 text-left text-sm rounded-xl flex items-center gap-2 transition-colors
+                        ${it.disabled ? "opacity-50 cursor-not-allowed" : "hover:bg-white/5"}
+                      `}
+                      onClick={async () => {
+                        closeMenu();
+                        await it.onClick();
                       }}
                     >
                       {it.icon}
                       {it.label}
                     </button>
                   ))}
+                </div>
+              </div>
+            </div>
+          </div>,
+          document.body
+        )}
+
+      {/* CONFIRM TOGGLE */}
+      {confirmToggleOpen &&
+        createPortal(
+          <div className="fixed inset-0 z-[10000]">
+            <div
+              className="absolute inset-0 bg-black/70 backdrop-blur-sm"
+              onClick={() => setConfirmToggleOpen(false)}
+            />
+            <div className="absolute inset-0 flex items-center justify-center p-4">
+              <div className="w-full max-w-md bg-[#070707] border border-white/10 rounded-3xl shadow-2xl overflow-hidden">
+                <div className="px-6 py-5 border-b border-white/10 flex items-start justify-between">
+                  <div>
+                    <p className="text-[11px] uppercase tracking-widest text-yellow-300 font-bold flex items-center gap-2">
+                      <AlertTriangle className="w-4 h-4" />
+                      Confirmar acción
+                    </p>
+                    <h3 className="text-lg font-black text-white mt-1">
+                      {isActive ? "Desactivar usuario" : "Activar usuario"}
+                    </h3>
+                    <p className="text-xs text-neutral-400 mt-1">
+                      {isActive
+                        ? "El usuario no podrá iniciar sesión hasta que lo actives de nuevo."
+                        : "El usuario recuperará acceso al sistema."}
+                    </p>
+                  </div>
+
+                  <button
+                    className="p-2 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 transition-colors"
+                    onClick={() => setConfirmToggleOpen(false)}
+                    title="Cerrar"
+                  >
+                    <X className="w-4 h-4 text-gray-200" />
+                  </button>
+                </div>
+
+                <div className="px-6 py-5">
+                  <div className="rounded-2xl border border-white/10 bg-black/30 p-4">
+                    <p className="text-sm text-white font-semibold">
+                      {user.name} {user.lastName}
+                    </p>
+                    <p className="text-xs text-neutral-500">{user.email}</p>
+                  </div>
+                </div>
+
+                <div className="px-6 py-5 border-t border-white/10 flex items-center justify-between">
+                  <button
+                    type="button"
+                    className="px-4 py-2 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-xs font-bold uppercase tracking-widest"
+                    onClick={() => setConfirmToggleOpen(false)}
+                    disabled={busy === "toggle"}
+                  >
+                    Cancelar
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={runToggle}
+                    disabled={busy === "toggle"}
+                    className={`px-5 py-2 rounded-xl text-xs font-bold uppercase tracking-widest shadow-md transition-colors ${
+                      busy === "toggle"
+                        ? "bg-white/5 text-neutral-500 border border-white/10 cursor-not-allowed"
+                        : isActive
+                        ? "bg-rose-600 hover:bg-rose-500 text-white"
+                        : "bg-emerald-600 hover:bg-emerald-500 text-white"
+                    }`}
+                  >
+                    {busy === "toggle"
+                      ? "Procesando..."
+                      : isActive
+                      ? "Desactivar"
+                      : "Activar"}
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>,
+          document.body
+        )}
+
+      {/* RESET RESULT */}
+      {resetResult &&
+        createPortal(
+          <div className="fixed inset-0 z-[10000]">
+            <div
+              className="absolute inset-0 bg-black/70 backdrop-blur-sm"
+              onClick={() => setResetResult(null)}
+            />
+            <div className="absolute inset-0 flex items-center justify-center p-4">
+              <div className="w-full max-w-md bg-[#070707] border border-white/10 rounded-3xl shadow-2xl overflow-hidden">
+                <div className="px-6 py-5 border-b border-white/10 flex items-start justify-between">
+                  <div>
+                    <p className="text-[11px] uppercase tracking-widest text-amber-300 font-bold flex items-center gap-2">
+                      <KeyRound className="w-4 h-4" />
+                      Contraseña temporal
+                    </p>
+                    <h3 className="text-lg font-black text-white mt-1">
+                      Reset de contraseña
+                    </h3>
+                    <p className="text-xs text-neutral-400 mt-1">
+                      Comparte esta contraseña por un canal seguro. Se recomienda forzar cambio al iniciar.
+                    </p>
+                  </div>
+
+                  <button
+                    className="p-2 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 transition-colors"
+                    onClick={() => setResetResult(null)}
+                    title="Cerrar"
+                  >
+                    <X className="w-4 h-4 text-gray-200" />
+                  </button>
+                </div>
+
+                <div className="px-6 py-5 space-y-3">
+                  <div className="rounded-2xl border border-white/10 bg-black/30 p-4">
+                    <p className="text-sm text-white font-semibold">
+                      {user.name} {user.lastName}
+                    </p>
+                    <p className="text-xs text-neutral-500">{user.email}</p>
+                  </div>
+
+                  {resetResult.temporaryPassword ? (
+                    <div className="rounded-2xl border border-emerald-500/20 bg-emerald-500/10 p-4">
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="min-w-0">
+                          <p className="text-[11px] uppercase tracking-widest text-emerald-300 font-bold flex items-center gap-2">
+                            <CheckCircle2 className="w-4 h-4" />
+                            Generada correctamente
+                          </p>
+                          <p className="text-sm text-white mt-2 break-all">
+                            {resetResult.temporaryPassword}
+                          </p>
+                          <p className="text-[11px] text-neutral-400 mt-2">
+                            Esta contraseña se muestra una sola vez.
+                          </p>
+                        </div>
+
+                        <button
+                          type="button"
+                          onClick={async () => {
+                            await copyText(resetResult.temporaryPassword);
+                            setCopied(true);
+                            setTimeout(() => setCopied(false), 1200);
+                          }}
+                          className="px-3 py-2 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-xs font-bold uppercase tracking-widest flex items-center gap-2"
+                        >
+                          <Copy className="w-4 h-4" />
+                          {copied ? "Copiado" : "Copiar"}
+                        </button>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="rounded-2xl border border-rose-500/20 bg-rose-500/10 p-4">
+                      <p className="text-sm text-rose-200 font-semibold">
+                        No se pudo generar la contraseña temporal.
+                      </p>
+                      <p className="text-xs text-neutral-400 mt-1">
+                        Intenta de nuevo o revisa la conexión con el backend.
+                      </p>
+                    </div>
+                  )}
+                </div>
+
+                <div className="px-6 py-5 border-t border-white/10 flex items-center justify-end">
+                  <button
+                    type="button"
+                    className="px-4 py-2 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-xs font-bold uppercase tracking-widest"
+                    onClick={() => setResetResult(null)}
+                  >
+                    Cerrar
+                  </button>
                 </div>
               </div>
             </div>
