@@ -163,4 +163,35 @@ export interface AuditEvent {
   // metadata libre (pero tipada como record simple)
   metadata?: Record<string, string | number | boolean | null>;
 }
+//user
+export type UserRole = "ADMIN" | "COORDINADOR" | "LIDER";
 
+export interface AuthUser {
+  id: string;
+  email: string;
+  role: UserRole;
+  schoolId: string | null;
+}
+
+export interface AuthResponse {
+  accessToken: string;
+  user: AuthUser;
+}
+export type BackendRole = "ADMIN" | "COORDINADOR" | "LIDER";
+
+export interface BackendSchoolSummary {
+  id: string;
+  name: string;
+}
+
+export interface BackendUser {
+  id: string;
+  email: string;
+  fullName: string;
+  role: BackendRole;
+  schoolId?: string | null;
+  school?: BackendSchoolSummary | null;
+  isActive: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
