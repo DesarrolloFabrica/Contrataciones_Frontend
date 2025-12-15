@@ -130,3 +130,37 @@ export interface TeacherEvaluationSummary {
   coordinatorDecisionAt?: string | null;
   coordinatorDecisionComment?: string | null;
 }
+
+// ===== AUDIT TRAIL (FRONTEND-ONLY POR AHORA) =====
+
+export type AuditActorRole = "leader" | "coordinator" | "admin" | "system";
+
+export interface AuditActor {
+  id?: string | null;
+  name?: string | null;
+  email?: string | null;
+  role: AuditActorRole;
+}
+
+export type AuditEventType =
+  | "EVALUATION_CREATED"
+  | "EVALUATION_OPENED"
+  | "AI_ANALYSIS_STARTED"
+  | "AI_ANALYSIS_FINISHED"
+  | "REPORT_PDF_DOWNLOADED"
+  | "REPORT_PDF_UPLOADED"
+  | "COORDINATOR_DECISION_SET"
+  | "COORDINATOR_COMMENT_SET"
+  | "LOGIN"
+  | "LOGOUT";
+
+export interface AuditEvent {
+  id: string; // uuid
+  type: AuditEventType;
+  at: string; // ISO date
+  evaluationId?: string | null; // si aplica
+  actor: AuditActor;
+  // metadata libre (pero tipada como record simple)
+  metadata?: Record<string, string | number | boolean | null>;
+}
+

@@ -19,6 +19,10 @@ import GaugeChart from "./GaugeChart";
 import ComparativeBars from "./ComparativeBars";
 import { generateAnalysisPdfFromData } from "../services/pdfReport";
 import { uploadTeacherReport } from "../services/teachersService";
+import { auditAppend } from "../services/auditService";
+import { actorFromUser } from "../services/auditActor";
+import { useAuth } from "../context/AuthContext";
+
 
 // --- UTILIDADES VISUALES ---
 
@@ -115,21 +119,33 @@ const AnalysisResults: React.FC<AnalysisResultsProps> = ({
   evaluationId,
 }) => {
   const [isDownloading, setIsDownloading] = useState(false);
+  const { user } = useAuth();
 
   const handleDownloadPDF = async () => {
     try {
       setIsDownloading(true);
+      const actor = actorFromUser(user);
 
       // genera el PDF, lo descarga en el navegador y devuelve el Blob
       const pdfBlob = await generateAnalysisPdfFromData(result, interviewData);
+      auditAppend({
+        type: "REPORT_PDF_DOWNLOADED",
+        actor,
+        evaluationId: evaluationId ?? null,
+        metadata: { download: true },
+      });
+
 
       // si ya tenemos el id de la evaluación, lo subimos al backend
       if (evaluationId) {
         await uploadTeacherReport(evaluationId, pdfBlob);
-      } else {
-        console.warn(
-          "No hay evaluationId: solo se descargó el PDF localmente, no se subió a Drive."
-        );
+
+        auditAppend({
+          type: "REPORT_PDF_UPLOADED",
+          actor,
+          evaluationId,
+          metadata: { upload: true },
+        });
       }
     } catch (error) {
       console.error("Error al generar o subir el PDF:", error);
