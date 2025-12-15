@@ -1,12 +1,22 @@
 // src/pages/admin/components/AdminDetailTabs.tsx
 import React from "react";
-import { Activity, ScrollText, ShieldCheck, Users, Wrench } from "lucide-react";
+import {
+  Activity,
+  ScrollText,
+  ShieldCheck,
+  Users,
+  Wrench,
+  Crown,
+} from "lucide-react";
 import type { AdminTab } from "../utils/adminTypes";
 
 const pillBase =
   "px-3 py-1 rounded-full border text-[11px] uppercase tracking-widest transition inline-flex items-center gap-2";
 
-export default function AdminDetailTabs(props: { tab: AdminTab; setTab: (t: AdminTab) => void }) {
+export default function AdminDetailTabs(props: {
+  tab: AdminTab;
+  setTab: (t: AdminTab) => void;
+}) {
   const { tab, setTab } = props;
 
   return (
@@ -23,7 +33,7 @@ export default function AdminDetailTabs(props: { tab: AdminTab; setTab: (t: Admi
         <Users className="w-4 h-4" />
         Resumen
       </button>
-      
+
       <button
         type="button"
         onClick={() => setTab("COORDINADOR")}
@@ -39,6 +49,20 @@ export default function AdminDetailTabs(props: { tab: AdminTab; setTab: (t: Admi
 
       <button
         type="button"
+        onClick={() => setTab("ADMIN")}
+        className={`${pillBase} ${
+          tab === "ADMIN"
+            ? "border-cyan-500/40 bg-cyan-500/10 text-cyan-300"
+            : "border-white/10 bg-white/5 text-neutral-300 hover:border-white/20"
+        }`}
+      >
+        <Crown className="w-4 h-4" />
+        Admin
+      </button>
+
+      {/* Si luego quieres reactivar estos tabs, solo descomenta */}
+      {/* <button
+        type="button"
         onClick={() => setTab("AUDITORIA")}
         className={`${pillBase} ${
           tab === "AUDITORIA"
@@ -50,7 +74,7 @@ export default function AdminDetailTabs(props: { tab: AdminTab; setTab: (t: Admi
         Auditoría
       </button>
 
-      {/* <button
+      <button
         type="button"
         onClick={() => setTab("IA")}
         className={`${pillBase} ${
@@ -61,8 +85,9 @@ export default function AdminDetailTabs(props: { tab: AdminTab; setTab: (t: Admi
       >
         <Activity className="w-4 h-4" />
         IA
-      </button> */}
-      {/* <button
+      </button>
+
+      <button
         type="button"
         onClick={() => setTab("TECNICO")}
         className={`${pillBase} ${

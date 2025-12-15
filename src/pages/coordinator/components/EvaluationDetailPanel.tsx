@@ -31,6 +31,7 @@ type Props = {
 };
 
 export default function EvaluationDetailPanel({
+  selectedId,
   selectedDetail,
   loadingDetail,
   onExportPdf,
@@ -92,6 +93,7 @@ export default function EvaluationDetailPanel({
         <div className="mt-2">
           {detailTab === "DECISION" && (
             <DecisionTab
+              selectedId={selectedId}
               decision={decision}
               decisionComment={decisionComment}
               setDecisionComment={setDecisionComment}
@@ -100,7 +102,9 @@ export default function EvaluationDetailPanel({
             />
           )}
 
-          {detailTab === "AI" && <AiSummaryTab analysis={selectedDetail.analysis} />}
+          {detailTab === "AI" && (
+            <AiSummaryTab analysis={selectedDetail.analysis} />
+          )}
 
           {detailTab === "AUDIT" && (
             <AuditTab
@@ -111,7 +115,9 @@ export default function EvaluationDetailPanel({
             />
           )}
 
-          {detailTab === "TECH" && <TechTab analysis={selectedDetail.analysis} />}
+          {detailTab === "TECH" && (
+            <TechTab analysis={selectedDetail.analysis} />
+          )}
         </div>
       )}
     </div>

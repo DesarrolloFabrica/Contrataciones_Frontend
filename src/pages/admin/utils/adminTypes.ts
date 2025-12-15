@@ -3,7 +3,7 @@ import type { AnalysisResult, InterviewData, TeacherEvaluationSummary } from "..
 
 export type RiskBucket = "RECOMENDADA" | "PRECAUCION" | "NO_RECOMENDAR" | "DESCONOCIDO";
 
-export type AdminTab = "RESUMEN" | "IA" | "COORDINADOR" | "AUDITORIA" | "TECNICO";
+export type AdminTab = "RESUMEN" | "IA" | "COORDINADOR" | "AUDITORIA" | "TECNICO" | "ADMIN";
 
 export interface AdminMetrics {
   total: number;

@@ -57,8 +57,20 @@ export type CoordinatorDecisionPayload = {
 };
 
 /**
- * Crea la evaluación en el backend (guarda candidato + AI summary).
+ * Payload flexible para la decisión del admin.
+ * Igual idea que el del coordinador.
  */
+export type AdminDecisionPayload = {
+  status?: "PENDING" | "APPROVED" | "REJECTED";
+  verdict?: "PENDING" | "APPROVED" | "REJECTED";
+  comment?: string;
+  notes?: string;
+};
+
+/* ------------------------------------------------------------------ */
+/*  Crear evaluación + PDF                                            */
+/* ------------------------------------------------------------------ */
+
 export async function createTeacherEvaluation(
   orgId: string,
   form: TeacherForm,
@@ -76,9 +88,6 @@ export async function createTeacherEvaluation(
   return data;
 }
 
-/**
- * Sube el PDF de esa evaluación al backend, que a su vez lo guarda en Drive.
- */
 export async function uploadTeacherReport(
   evaluationId: string,
   pdfBlob: Blob
@@ -97,9 +106,10 @@ export async function uploadTeacherReport(
   );
 }
 
-/**
- * Lista de evaluaciones para dashboard (admin / leader / coord).
- */
+/* ------------------------------------------------------------------ */
+/*  Listado + detalle técnico                                         */
+/* ------------------------------------------------------------------ */
+
 export async function listTeacherEvaluations(): Promise<TeacherEvaluationSummary[]> {
   const res = await apiClient.get<ListEvalResponse>("/teachers/evaluations");
 
@@ -119,9 +129,6 @@ export async function listTeacherEvaluations(): Promise<TeacherEvaluationSummary
   return [];
 }
 
-/**
- * Detalle técnico de una evaluación (formRawData + aiRawJson, etc.).
- */
 export async function getTeacherEvaluation(id: string) {
   const { data } = await apiClient.get(`/teachers/evaluations/${id}`);
   return data;
@@ -132,9 +139,10 @@ export async function getTeacherEvaluationById(id: string) {
   return data;
 }
 
-/**
- * Resumen ejecutivo consolidado (para panel derecho del admin).
- */
+/* ------------------------------------------------------------------ */
+/*  Resumen ejecutivo                                                 */
+/* ------------------------------------------------------------------ */
+
 export async function getExecutiveSummary(
   evaluationId: string
 ): Promise<TeacherExecutiveSummary> {
@@ -144,25 +152,103 @@ export async function getExecutiveSummary(
   return data;
 }
 
+/* ------------------------------------------------------------------ */
+/*  Decisión del coordinador                                          */
+/* ------------------------------------------------------------------ */
+
+export type CoordinatorDecisionStatusApi =
+  | "PENDING"
+  | "APPROVED"
+  | "REJECTED";
+
+export interface CoordinatorDecisionUpdateDto {
+  status: CoordinatorDecisionStatusApi;
+  comment?: string;
+}
+
 /**
- * Actualiza decisión del coordinador (tab COORDINADOR) y devuelve
- * el resumen ejecutivo actualizado.
- *
- * Backend: POST /teachers/evaluations/:id/coordinator-decision
+ * Canonical coordinador:
+ * POST /teachers/evaluations/:id/coordinator-decision
+ * Devuelve TeacherExecutiveSummary actualizado.
+ */
+export async function saveCoordinatorDecision(
+  evaluationId: string,
+  payload: CoordinatorDecisionUpdateDto
+): Promise<TeacherExecutiveSummary> {
+  const { data } = await apiClient.post<TeacherExecutiveSummary>(
+    `/teachers/evaluations/${evaluationId}/coordinator-decision`,
+    payload
+  );
+  return data;
+}
+
+/**
+ * Adapter payload viejo → canonical coordinador.
  */
 export async function updateCoordinatorDecision(
   evaluationId: string,
   payload: CoordinatorDecisionPayload
 ): Promise<TeacherExecutiveSummary> {
-  const body = {
-    status: payload.status ?? payload.verdict, // aceptamos ambas claves
+  const status = payload.status ?? payload.verdict;
+  if (!status) {
+    throw new Error(
+      "Coordinator decision requires a status/verdict ('PENDING' | 'APPROVED' | 'REJECTED')."
+    );
+  }
+
+  const body: CoordinatorDecisionUpdateDto = {
+    status: status as CoordinatorDecisionStatusApi,
     comment: payload.comment ?? payload.notes ?? undefined,
   };
 
-  const { data } = await apiClient.post<TeacherExecutiveSummary>(
-    `/teachers/evaluations/${evaluationId}/coordinator-decision`,
-    body
-  );
+  return saveCoordinatorDecision(evaluationId, body);
+}
 
+/* ------------------------------------------------------------------ */
+/*  Decisión del admin                                                */
+/* ------------------------------------------------------------------ */
+
+export type AdminDecisionStatusApi = "PENDING" | "APPROVED" | "REJECTED";
+
+export interface AdminDecisionUpdateDto {
+  status: AdminDecisionStatusApi;
+  comment?: string;
+}
+
+/**
+ * Canonical admin:
+ * POST /teachers/evaluations/:id/admin-decision
+ * Devuelve TeacherExecutiveSummary actualizado.
+ */
+export async function saveAdminDecision(
+  evaluationId: string,
+  payload: AdminDecisionUpdateDto
+): Promise<TeacherExecutiveSummary> {
+  const { data } = await apiClient.post<TeacherExecutiveSummary>(
+    `/teachers/evaluations/${evaluationId}/admin-decision`,
+    payload
+  );
   return data;
+}
+
+/**
+ * Adapter flexible para el admin (mismo estilo que coordinador).
+ */
+export async function updateAdminDecision(
+  evaluationId: string,
+  payload: AdminDecisionPayload
+): Promise<TeacherExecutiveSummary> {
+  const status = payload.status ?? payload.verdict;
+  if (!status) {
+    throw new Error(
+      "Admin decision requires a status/verdict ('PENDING' | 'APPROVED' | 'REJECTED')."
+    );
+  }
+
+  const body: AdminDecisionUpdateDto = {
+    status: status as AdminDecisionStatusApi,
+    comment: payload.comment ?? payload.notes ?? undefined,
+  };
+
+  return saveAdminDecision(evaluationId, body);
 }

@@ -26,9 +26,11 @@ export default function AdminDetailPanel(props: {
         <div>
           <h3 className="text-white font-bold text-sm flex items-center gap-2 uppercase tracking-wide">
             <LayoutDashboard size={16} className="text-emerald-400" />
-            Detalle Ejecutivo
+            Detalle ejecutivo
           </h3>
-          <p className="text-[11px] text-neutral-500 mt-1">IA + decisiones + señales clave (solo frontend por ahora).</p>
+          <p className="text-[11px] text-neutral-500 mt-1">
+            IA + decisiones + señales clave.
+          </p>
         </div>
 
         {selectedDetail && (
