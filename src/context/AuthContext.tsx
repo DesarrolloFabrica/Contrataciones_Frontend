@@ -1,5 +1,7 @@
 // src/context/AuthContext.tsx
 import React, { createContext, useContext, useEffect, useState } from "react";
+import { auditAppend } from "../services/auditService";
+import type { AuditActor } from "../types";
 
 export type Role = "leader" | "coordinator" | "admin";
 
@@ -66,11 +68,38 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
       name: name || email.split("@")[0],
       role,
     };
+
+    const actor: AuditActor = {
+      id: newUser.id,
+      name: newUser.name,
+      email: newUser.email,
+      role: newUser.role,
+    };
+
+    auditAppend({
+      type: "LOGIN",
+      actor,
+      metadata: { email: newUser.email, role: newUser.role },
+    });
+
     setUser(newUser);
     return newUser;
   };
 
   const logout = () => {
+
+    if (user) {
+  auditAppend({
+    type: "LOGOUT",
+    actor: {
+      id: user.id,
+      name: user.name,
+      email: user.email,
+      role: user.role,
+    },
+    metadata: { email: user.email, role: user.role },
+  });
+}
     setUser(null);
   };
 

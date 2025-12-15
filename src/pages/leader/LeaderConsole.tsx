@@ -18,6 +18,9 @@ import InterviewForm from "../../components/InterviewForm";
 import AnalysisResults from "../../components/AnalysisResults";
 import LoadingState from "../../components/LoadingState";
 import EvaluationsHistory from "../../components/EvaluationsHistory";
+import { useAuth } from "../../context/AuthContext";
+import { auditAppend } from "../../services/auditService";
+import { actorFromUser } from "../../services/auditActor";
 
 const ORG_ID = import.meta.env.VITE_ORG_ID ?? "ORG_DEFAULT";
 
@@ -83,6 +86,8 @@ const mapFormToInterviewData = (form: TeacherForm): InterviewData => ({
 const LeaderConsole: React.FC = () => {
   const [mode, setMode] = useState<ViewMode>("analyze");
 
+
+  const { user } = useAuth();
   const [interviewData, setInterviewData] =
     useState<InterviewData | null>(null);
   const [analysisResult, setAnalysisResult] =
@@ -95,21 +100,44 @@ const LeaderConsole: React.FC = () => {
   // 1) flujo normal: analizar desde el formulario
   const handleFormSubmit = useCallback(
     async (data: InterviewData) => {
+      const actor = actorFromUser(user);
       setIsLoading(true);
       setError(null);
       setAnalysisResult(null);
       setInterviewData(data);
       setEvaluationId(null);
+      auditAppend({
+        type: "AI_ANALYSIS_STARTED",
+        actor,
+        metadata: { orgId: ORG_ID },
+      });
 
       try {
         const aiResult: TeacherAiResult = await analyzeTeacherInterview(data);
 
         if (aiResult.rawOutput) {
           setAnalysisResult(aiResult.rawOutput);
+
+          auditAppend({
+            type: "AI_ANALYSIS_FINISHED",
+            actor,
+            metadata: {
+              orgId: ORG_ID,
+              overallScore: aiResult.rawOutput.overallScore ?? null,
+              risk: aiResult.rawOutput.overallRiskLevel ?? null,
+              verdict: aiResult.rawOutput.finalVerdict ?? null,
+            },
+          });
         }
 
         const form = mapToTeacherForm(data);
         const saved = await createTeacherEvaluation(ORG_ID, form, aiResult);
+        auditAppend({
+            type: "EVALUATION_CREATED",
+            actor,
+            evaluationId: saved.id,
+            metadata: { orgId: ORG_ID, candidateId: saved.candidateId },
+          });
         // el backend devuelve { id, candidateId }, donde id = id de la evaluación
         setEvaluationId(saved.id);
       } catch (err) {
@@ -120,15 +148,18 @@ const LeaderConsole: React.FC = () => {
             : "Ocurrió un error durante el proceso."
         );
       } finally {
+        
         setIsLoading(false);
       }
+      
     },
-    []
+    [user]
   );
 
   // 2) abrir detalle desde el historial
   const handleOpenEvaluationFromHistory = useCallback(
     async (id: string) => {
+      const actor = actorFromUser(user);
       setIsLoading(true);
       setError(null);
       setAnalysisResult(null);
@@ -137,6 +168,12 @@ const LeaderConsole: React.FC = () => {
 
       try {
         const detail = await getTeacherEvaluationById(id);
+                  auditAppend({
+          type: "EVALUATION_OPENED",
+          actor,
+          evaluationId: detail.id,
+          metadata: { source: "leader-history" },
+        });
         // detail.formRawData y detail.aiRawJson salen tal cual del backend
         const form: TeacherForm = detail.formRawData;
         const analysis: AnalysisResult = detail.aiRawJson;
@@ -160,7 +197,7 @@ const LeaderConsole: React.FC = () => {
         setIsLoading(false);
       }
     },
-    []
+    [user]
   );
 
   const handleReset = useCallback(() => {
