@@ -86,12 +86,13 @@ const mapFormToInterviewData = (form: TeacherForm): InterviewData => ({
 const LeaderConsole: React.FC = () => {
   const [mode, setMode] = useState<ViewMode>("analyze");
 
-
   const { user } = useAuth();
-  const [interviewData, setInterviewData] =
-    useState<InterviewData | null>(null);
-  const [analysisResult, setAnalysisResult] =
-    useState<AnalysisResult | null>(null);
+  const [interviewData, setInterviewData] = useState<InterviewData | null>(
+    null
+  );
+  const [analysisResult, setAnalysisResult] = useState<AnalysisResult | null>(
+    null
+  );
   const [evaluationId, setEvaluationId] = useState<string | null>(null);
 
   const [isLoading, setIsLoading] = useState<boolean>(false);
@@ -133,11 +134,11 @@ const LeaderConsole: React.FC = () => {
         const form = mapToTeacherForm(data);
         const saved = await createTeacherEvaluation(ORG_ID, form, aiResult);
         auditAppend({
-            type: "EVALUATION_CREATED",
-            actor,
-            evaluationId: saved.id,
-            metadata: { orgId: ORG_ID, candidateId: saved.candidateId },
-          });
+          type: "EVALUATION_CREATED",
+          actor,
+          evaluationId: saved.id,
+          metadata: { orgId: ORG_ID, candidateId: saved.candidateId },
+        });
         // el backend devuelve { id, candidateId }, donde id = id de la evaluación
         setEvaluationId(saved.id);
       } catch (err) {
@@ -148,10 +149,8 @@ const LeaderConsole: React.FC = () => {
             : "Ocurrió un error durante el proceso."
         );
       } finally {
-        
         setIsLoading(false);
       }
-      
     },
     [user]
   );
@@ -168,7 +167,7 @@ const LeaderConsole: React.FC = () => {
 
       try {
         const detail = await getTeacherEvaluationById(id);
-                  auditAppend({
+        auditAppend({
           type: "EVALUATION_OPENED",
           actor,
           evaluationId: detail.id,
