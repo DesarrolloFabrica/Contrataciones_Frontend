@@ -1,5 +1,7 @@
+// src/pages/admin/AdminConsole.tsx
 import React, { useCallback, useMemo, useState } from "react";
 import { AlertCircle, Loader2, Users, FileText } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 
 import AdminHeader from "./components/AdminHeader";
 import AdminKpiGrid from "./components/evaluations/AdminKpiGrid";
@@ -16,6 +18,8 @@ import { useAdminEvaluationDetail } from "./hooks/useAdminEvaluationDetail";
 type AdminView = "EVALUATIONS" | "USERS";
 
 const AdminConsole: React.FC = () => {
+  const navigate = useNavigate();
+
   const [view, setView] = useState<AdminView>("EVALUATIONS");
 
   const admin = useAdminEvaluations();
@@ -41,6 +45,25 @@ const AdminConsole: React.FC = () => {
     [detail]
   );
 
+  // ✅ Logout (soluciona el missing prop)
+  const handleLogout = useCallback(() => {
+    // Ajusta estos keys a los que realmente uses (deja varios por compatibilidad)
+    localStorage.removeItem("token");
+    localStorage.removeItem("access_token");
+    localStorage.removeItem("AUTH_TOKEN");
+    localStorage.removeItem("ADMIN_TOKEN");
+
+    // Limpia selección para evitar estados raros
+    detail.clearSelection();
+
+    // Navega al login
+    try {
+      navigate("/login", { replace: true });
+    } catch {
+      window.location.href = "/login";
+    }
+  }, [detail, navigate]);
+
   return (
     <div className="min-h-screen w-full bg-[#020202] text-white font-sans relative overflow-x-hidden selection:bg-emerald-500/30">
       {/* Background Ambient Effects */}
@@ -54,6 +77,7 @@ const AdminConsole: React.FC = () => {
         <AdminHeader
           hasSelection={hasSelection}
           onClearSelection={detail.clearSelection}
+          onLogout={handleLogout} // ✅ FIX
         />
 
         {/* Tabs Admin */}
@@ -112,33 +136,31 @@ const AdminConsole: React.FC = () => {
                   schoolOptions={admin.schoolOptions}
                 />
 
-           <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
-  {/* IZQUIERDA */}
-  <div className="lg:col-span-4 space-y-6">
-    <AdminSchoolsPanel schoolsSummary={admin.schoolsSummary} />
+                <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+                  {/* IZQUIERDA */}
+                  <div className="lg:col-span-4 space-y-6">
+                    <AdminSchoolsPanel schoolsSummary={admin.schoolsSummary} />
 
-    <AdminEvaluationsPanel
-      filteredEvaluations={admin.filteredEvaluations}
-      selectedId={detail.selectedId}
-      onSelect={detail.handleSelectEvaluation}
-    />
-  </div>
+                    <AdminEvaluationsPanel
+                      filteredEvaluations={admin.filteredEvaluations}
+                      selectedId={detail.selectedId}
+                      onSelect={detail.handleSelectEvaluation}
+                    />
+                  </div>
 
-  {/* DERECHA */}
-  <div className="lg:col-span-8">
-    <AdminDetailPanel
-      selectedId={detail.selectedId}
-      selectedSummary={detail.selectedSummary}
-      loadingDetail={detail.loadingDetail}
-      selectedDetail={detail.selectedDetail}
-      tab={detail.tab}
-      setTab={detail.setTab}
-      onExportPdf={detail.exportPdf}
-    />
-  </div>
-</div>
-
-
+                  {/* DERECHA */}
+                  <div className="lg:col-span-8">
+                    <AdminDetailPanel
+                      selectedId={detail.selectedId}
+                      selectedSummary={detail.selectedSummary}
+                      loadingDetail={detail.loadingDetail}
+                      selectedDetail={detail.selectedDetail}
+                      tab={detail.tab}
+                      setTab={detail.setTab}
+                      onExportPdf={detail.exportPdf}
+                    />
+                  </div>
+                </div>
               </>
             )}
           </>
