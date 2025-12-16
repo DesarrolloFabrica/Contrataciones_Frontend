@@ -1,19 +1,70 @@
 // src/components/TeacherEvaluationItem.tsx
-import React from "react";
-import { TeacherEvaluationSummary } from "../types";
+import React, { useMemo } from "react";
+import type { TeacherEvaluationSummary } from "../types";
 
 interface TeacherEvaluationItemProps {
   evaluation: TeacherEvaluationSummary;
   selected?: boolean;
-  onClick?: () => void;
 
   /**
-   * Estado de la decisión del coordinador que queremos mostrar en la UI.
-   * Por ahora puede venir de:
-   *  - local state del coordinador
-   *  - o del backend (coordinatorDecisionStatus)
+   * Si lo quieres clickable, NO lo hagas botón aquí.
+   * Haz clickable el wrapper externo (Panel) para evitar "button dentro de button".
    */
+  onClick?: () => void;
+
   decisionStatus?: "PENDIENTE" | "APROBADO" | "RECHAZADO";
+}
+
+const pillBase =
+  "inline-flex items-center px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-widest border";
+
+function getIaBadge(verdict: string) {
+  const v = (verdict ?? "").toLowerCase();
+
+  if (v.includes("no recomendar")) {
+    return {
+      cls: "bg-rose-500/10 text-rose-300 border-rose-500/30",
+      label: verdict || "No recomendar",
+    };
+  }
+  if (v.includes("precauc")) {
+    return {
+      cls: "bg-amber-500/10 text-amber-300 border-amber-500/30",
+      label: verdict || "Precaución",
+    };
+  }
+  if (v.includes("recomendar") || v.includes("recomendada")) {
+    return {
+      cls: "bg-emerald-500/10 text-emerald-300 border-emerald-500/30",
+      label: verdict || "Recomendada",
+    };
+  }
+
+  return {
+    cls: "bg-slate-500/10 text-slate-300 border-slate-500/30",
+    label: verdict || "Sin veredicto",
+  };
+}
+
+function getDecisionBadge(decisionStatus?: "PENDIENTE" | "APROBADO" | "RECHAZADO") {
+  if (!decisionStatus) return null;
+
+  if (decisionStatus === "APROBADO") {
+    return {
+      cls: "bg-emerald-600/15 text-emerald-300 border-emerald-500/40",
+      label: "Aprobado coordinación",
+    };
+  }
+  if (decisionStatus === "RECHAZADO") {
+    return {
+      cls: "bg-rose-600/15 text-rose-300 border-rose-500/40",
+      label: "Rechazado coordinación",
+    };
+  }
+  return {
+    cls: "bg-slate-600/20 text-slate-200 border-slate-500/40",
+    label: "Pendiente coordinación",
+  };
 }
 
 const TeacherEvaluationItem: React.FC<TeacherEvaluationItemProps> = ({
@@ -22,105 +73,96 @@ const TeacherEvaluationItem: React.FC<TeacherEvaluationItemProps> = ({
   onClick,
   decisionStatus,
 }) => {
-  const createdAt = evaluation.createdAt ? new Date(evaluation.createdAt) : null;
-  const dateLabel = createdAt
-    ? createdAt.toLocaleString("es-CO", {
-        year: "numeric",
-        month: "short",
-        day: "2-digit",
-        hour: "2-digit",
-        minute: "2-digit",
-      })
-    : "Fecha no disponible";
+  const dateLabel = useMemo(() => {
+    const createdAt = evaluation.createdAt ? new Date(evaluation.createdAt) : null;
+    if (!createdAt || isNaN(createdAt.getTime())) return "Fecha no disponible";
+
+    return createdAt.toLocaleString("es-CO", {
+      year: "numeric",
+      month: "short",
+      day: "2-digit",
+      hour: "2-digit",
+      minute: "2-digit",
+    });
+  }, [evaluation.createdAt]);
 
   const verdict = evaluation.aiFinalRecommendation || "";
+  const ia = useMemo(() => getIaBadge(verdict), [verdict]);
+  const decision = useMemo(() => getDecisionBadge(decisionStatus), [decisionStatus]);
 
-  // Badge de veredicto IA
-  let iaBadgeColor =
-    "bg-slate-500/10 text-slate-300 border border-slate-500/30";
-  if (verdict.toLowerCase().includes("no recomendar")) {
-    iaBadgeColor =
-      "bg-rose-500/10 text-rose-300 border border-rose-500/30";
-  } else if (verdict.toLowerCase().includes("precauc")) {
-    iaBadgeColor =
-      "bg-amber-500/10 text-amber-300 border border-amber-500/30";
-  } else if (
-    verdict.toLowerCase().includes("recomendada") ||
-    verdict.toLowerCase().includes("contratación recomendada") ||
-    verdict.toLowerCase().includes("recomendar")
-  ) {
-    iaBadgeColor =
-      "bg-emerald-500/10 text-emerald-300 border border-emerald-500/30";
-  }
+  const score = Math.round(evaluation.aiTeachingSuitabilityScore || 0);
 
-  // Badge de decisión humana (coordinador)
-  let decisionLabel = "Pendiente";
-  let decisionColor =
-    "bg-slate-600/20 text-slate-200 border border-slate-500/40";
-
-  if (decisionStatus === "APROBADO") {
-    decisionLabel = "Aprobado coordinación";
-    decisionColor =
-      "bg-emerald-600/15 text-emerald-300 border border-emerald-500/40";
-  } else if (decisionStatus === "RECHAZADO") {
-    decisionLabel = "Rechazado coordinación";
-    decisionColor =
-      "bg-rose-600/15 text-rose-300 border border-rose-500/40";
-  }
-
-  const Wrapper: React.ElementType = onClick ? "button" : "div";
+  // Solo estilos "clickable", pero sin convertirlo en button.
+  const clickableCls = onClick ? "cursor-pointer" : "cursor-default";
 
   return (
-    <Wrapper
-      type={onClick ? "button" : undefined}
+    <div
       onClick={onClick}
-      className={`w-full text-left px-3 py-3 rounded-2xl border ${
+      role={onClick ? "button" : undefined}
+      tabIndex={onClick ? 0 : -1}
+      aria-pressed={onClick ? selected : undefined}
+      onKeyDown={(e) => {
+        if (!onClick) return;
+        if (e.key === "Enter" || e.key === " ") {
+          e.preventDefault();
+          onClick();
+        }
+      }}
+      className={[
+        "w-full text-left px-4 py-3 rounded-2xl border transition-all duration-200",
+        "flex items-start justify-between gap-4",
+        "focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/30 focus-visible:ring-offset-0",
         selected
-          ? "border-emerald-500/70 bg-emerald-500/5"
-          : "border-white/5 bg-[#090909] hover:border-emerald-500/40"
-      } transition-colors duration-200 flex items-center justify-between gap-3`}
+          ? "border-emerald-500/60 bg-emerald-500/5"
+          : "border-white/5 bg-[#090909] hover:border-emerald-500/35 hover:bg-white/[0.02]",
+        clickableCls,
+      ].join(" ")}
     >
-      {/* IZQUIERDA: datos del candidato */}
-      <div className="space-y-1">
-        <p className="text-sm font-semibold text-white">
+      {/* IZQUIERDA */}
+      <div className="min-w-0 space-y-1">
+        <p className="text-sm font-semibold text-white truncate">
           {evaluation.candidate?.fullName ?? "Candidato sin nombre"}
         </p>
-        <p className="text-[11px] text-gray-500 flex flex-wrap gap-2 items-center">
+
+        <div className="text-[11px] text-gray-500 flex flex-wrap items-center gap-2">
           {evaluation.candidate?.schoolNameSnapshot && (
-            <span>{evaluation.candidate.schoolNameSnapshot}</span>
+            <span className="truncate max-w-[220px]">
+              {evaluation.candidate.schoolNameSnapshot}
+            </span>
           )}
+
           {evaluation.candidate?.programNameSnapshot && (
             <>
               <span className="w-1 h-1 rounded-full bg-gray-600" />
-              <span>{evaluation.candidate.programNameSnapshot}</span>
+              <span className="truncate max-w-[260px]">
+                {evaluation.candidate.programNameSnapshot}
+              </span>
             </>
           )}
-          <span className="w-1 h-1 rounded-full bg-gray-600" />
-          <span>{dateLabel}</span>
-        </p>
+        </div>
 
-        {/* badge de decisión humana (si estamos en un contexto donde importa) */}
-        {decisionStatus && (
-          <div
-            className={`inline-flex items-center px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-widest ${decisionColor}`}
-          >
-            {decisionLabel}
+        <p className="text-[11px] text-neutral-600">{dateLabel}</p>
+
+        {decision && (
+          <div className={`${pillBase} ${decision.cls} normal-case mt-2`}>
+            {decision.label}
           </div>
         )}
       </div>
 
-      {/* DERECHA: score y veredicto IA */}
-      <div className="text-right space-y-1">
-        <div
-          className={`inline-flex items-center px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-widest ${iaBadgeColor}`}
-        >
-          {verdict || "Sin veredicto"}
+      {/* DERECHA */}
+      <div className="text-right flex flex-col items-end gap-2 shrink-0">
+        <div className={`${pillBase} ${ia.cls} normal-case max-w-[240px] truncate`}>
+          {ia.label}
         </div>
-        <p className="text-xs text-emerald-400 font-semibold">
-          Score {Math.round(evaluation.aiTeachingSuitabilityScore || 0)}/100
-        </p>
+
+        <div className="text-xs font-semibold">
+          <span className="text-neutral-400">Score </span>
+          <span className="text-emerald-400">{score}</span>
+          <span className="text-neutral-500">/100</span>
+        </div>
       </div>
-    </Wrapper>
+    </div>
   );
 };
 

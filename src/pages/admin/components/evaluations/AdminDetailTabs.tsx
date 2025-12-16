@@ -1,14 +1,7 @@
 // src/pages/admin/components/AdminDetailTabs.tsx
 import React from "react";
-import {
-  Activity,
-  ScrollText,
-  ShieldCheck,
-  Users,
-  Wrench,
-  Crown,
-} from "lucide-react";
-import type { AdminTab } from "../utils/adminTypes";
+import { Activity, ShieldCheck, Wrench, Users } from "lucide-react";
+import type { AdminTab } from "../../adminTypes";
 
 const pillBase =
   "px-3 py-1 rounded-full border text-[11px] uppercase tracking-widest transition inline-flex items-center gap-2";
@@ -44,34 +37,7 @@ export default function AdminDetailTabs(props: {
         }`}
       >
         <ShieldCheck className="w-4 h-4" />
-        Coordinador
-      </button>
-
-      <button
-        type="button"
-        onClick={() => setTab("ADMIN")}
-        className={`${pillBase} ${
-          tab === "ADMIN"
-            ? "border-cyan-500/40 bg-cyan-500/10 text-cyan-300"
-            : "border-white/10 bg-white/5 text-neutral-300 hover:border-white/20"
-        }`}
-      >
-        <Crown className="w-4 h-4" />
-        Admin
-      </button>
-
-      {/* Si luego quieres reactivar estos tabs, solo descomenta */}
-      {/* <button
-        type="button"
-        onClick={() => setTab("AUDITORIA")}
-        className={`${pillBase} ${
-          tab === "AUDITORIA"
-            ? "border-yellow-500/40 bg-yellow-500/10 text-yellow-300"
-            : "border-white/10 bg-white/5 text-neutral-300 hover:border-white/20"
-        }`}
-      >
-        <ScrollText className="w-4 h-4" />
-        Auditoría
+        Decisiones
       </button>
 
       <button
@@ -97,8 +63,8 @@ export default function AdminDetailTabs(props: {
         }`}
       >
         <Wrench className="w-4 h-4" />
-        Técnico
-      </button> */}
+        Soporte
+      </button>
     </div>
   );
 }
