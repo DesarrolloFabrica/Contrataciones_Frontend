@@ -88,6 +88,9 @@ export interface TeacherAiResult {
   rawOutput?: AnalysisResult; // seguimos guardando el JSON completo si lo necesitas
 }
 
+
+
+
 // 🔹 NUEVO: estados de decisión del coordinador
 export type CoordinatorDecisionStatus = 'PENDIENTE' | 'APROBADO' | 'RECHAZADO';
 
@@ -130,6 +133,8 @@ export interface TeacherEvaluationSummary {
   coordinatorDecisionAt?: string | null;
   coordinatorDecisionComment?: string | null;
 }
+
+
 
 // ===== AUDIT TRAIL (FRONTEND-ONLY POR AHORA) =====
 

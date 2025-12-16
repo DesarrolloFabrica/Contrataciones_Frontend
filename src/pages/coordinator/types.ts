@@ -1,21 +1,25 @@
+// src/pages/coordinator/types.ts
+
 // ✅ Tabs del panel derecho
 export type DetailTabKey = "DECISION" | "AI" | "NOTES";
 
 // ✅ Decisión local coordinador
 export type LocalDecision = "PENDIENTE" | "APROBADO" | "RECHAZADO";
 
-// ✅ Timeline (si lo sigues usando, si no lo puedes borrar luego)
+// ✅ Filtro de estado en la lista (lo que te falta)
+export type DecisionFilter = "ALL" | LocalDecision;
+
+// ✅ Timeline (si lo sigues usando)
 export type TimelineTab = "EVAL" | "GLOBAL";
 
-// ✅ Criterios tipados (en vez de Record<string, boolean>)
+// ✅ Criterios tipados
 export type CoordinatorCriteriaKey =
   | "docs_ok"
   | "profile_fit"
   | "risk_ok"
   | "communication_ok";
 
-
-  export type CoordinatorCriteria = {
+export type CoordinatorCriteria = {
   docs_ok: boolean;
   profile_fit: boolean;
   risk_ok: boolean;
