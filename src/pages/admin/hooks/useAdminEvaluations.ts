@@ -17,23 +17,32 @@ export function useAdminEvaluations() {
 
   const [search, setSearch] = useState("");
   const [selectedSchool, setSelectedSchool] = useState<string>("TODAS");
+useEffect(() => {
+  let alive = true;
 
-  useEffect(() => {
-    const load = async () => {
-      setLoading(true);
-      setError(null);
-      try {
-        const data = await listTeacherEvaluations();
-        setEvaluations(data);
-      } catch (err) {
-        console.error("Error al cargar evaluaciones (admin):", err);
-        setError("No se pudo cargar la información global de evaluaciones. Intenta de nuevo más tarde.");
-      } finally {
-        setLoading(false);
-      }
-    };
-    load();
-  }, []);
+  const load = async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const data = await listTeacherEvaluations();
+      if (!alive) return;
+      setEvaluations(data);
+    } catch (err) {
+      if (!alive) return;
+      console.error("Error al cargar evaluaciones (admin):", err);
+      setError("No se pudo cargar la información global de evaluaciones. Intenta de nuevo más tarde.");
+    } finally {
+      if (!alive) return;
+      setLoading(false);
+    }
+  };
+
+  load();
+  return () => {
+    alive = false;
+  };
+}, []);
+
 
   const schoolOptions = useMemo(() => buildSchoolOptions(evaluations), [evaluations]);
 

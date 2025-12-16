@@ -4,8 +4,9 @@ import { useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
 import { BrainCircuit } from "lucide-react";
 
-import BGVideo from "../../assets/videos/Op2_1.mp4";
+import BGImg from "../../assets/images/Gemini_Generated_Image_wsary2wsary2wsar (1).png";
 import LogoCun from "../../assets/images/LogoCunColor.png";
+import LogoCun2 from "../../assets/images/LogoCun.png";
 
 const LoginPage: React.FC = () => {
   // ==============================
@@ -43,8 +44,8 @@ const LoginPage: React.FC = () => {
 
   return (
     <div className="min-h-screen w-full bg-black">
-      {/* IMPORTANTE: relative ayuda a manejar capas si hace falta */}
-      <div className="relative grid h-screen grid-cols-1 lg:grid-cols-[30%_70%]">
+      {/* ✅ Grid ocupa toda la pantalla */}
+      <div className="relative grid min-h-screen grid-cols-1 lg:grid-cols-[30%_70%]">
         {/* =========================
             PANEL IZQUIERDO (BLANCO)
            ========================= */}
@@ -53,11 +54,10 @@ const LoginPage: React.FC = () => {
             <div className="w-full max-w-sm">
               {/* Encabezado (SIN VIDEO AQUÍ) */}
               <div className="flex flex-col items-center text-center mb-10">
-                {/* Logo (escalable por clase) */}
                 <img
                   src={LogoCun}
                   alt="Logo CUN"
-                  className={`w-24 h-auto mb-1`}
+                  className={`${logoSizeClass} h-auto mb-1`}
                 />
                 <p className="text-xs text-gray-500 mt-2">Acceso a consolas por rol</p>
               </div>
@@ -97,23 +97,18 @@ const LoginPage: React.FC = () => {
               {/* Guía rápida (texto plano, sin card) */}
               <div className="mt-10 text-sm text-gray-700 leading-relaxed">
                 <p className="font-semibold text-gray-900 mb-2">Guía rápida</p>
-                <p className="text-gray-600 mb-2">
-                  Usa un correo “simulado” para elegir el rol:
+                <p className="text-gray-600 mb-2">Usa un correo “simulado” para elegir el rol:</p>
+                <p>
+                  • contiene <span className="text-emerald-700 font-semibold">admin</span> → Admin
                 </p>
                 <p>
-                  • contiene{" "}
-                  <span className="text-emerald-700 font-semibold">admin</span> → Admin
-                </p>
-                <p>
-                  • contiene{" "}
-                  <span className="text-emerald-700 font-semibold">coord</span> → Coordinador
+                  • contiene <span className="text-emerald-700 font-semibold">coord</span> → Coordinador
                 </p>
                 <p>• cualquier otro → Líder</p>
               </div>
 
               <p className="text-[11px] text-gray-400 pt-10 text-center">
-                Tip: si venías de una ruta protegida, el sistema te regresa automáticamente al
-                destino.
+                Tip: si venías de una ruta protegida, el sistema te regresa automáticamente al destino.
               </p>
             </div>
           </div>
@@ -122,32 +117,49 @@ const LoginPage: React.FC = () => {
         {/* =========================
             COLUMNA DERECHA (VIDEO)
            ========================= */}
-        <div className="relative hidden lg:block">
-          {/* Video como background */}
-          <video
-            src={BGVideo}
-            autoPlay
-            loop
-            muted
-            playsInline
-            className="absolute inset-0 h-full w-full object-cover"
-          />
+        {/* ✅ CLAVE: h-full para ocupar toda la altura del grid (no 520px) */}
+        <div className="relative hidden lg:flex h-full bg-black items-center justify-center  overflow-hidden">
+          <div className="relative w-full max-w-[1800px] max-h-[100vh] aspect-square  overflow-hidden">
+            {/* Imagen principal */}
+            <img
+              src={BGImg} // ← tu imagen
+              alt="Background visual"
+              className="
+                absolute inset-0
+                h-full w-full
+                object-cover
+                object-[50%_20%]
+              "
+            />
 
-          {/* Overlay real (el tuyo estaba vacío) */}
-          <div
-            className="absolute inset-0 pointer-events-none"
-            style={{
-              background: `
-                radial-gradient(
-                  ellipse at center,
-                  rgba(0,0,0,0.10) 0%,
-                  rgba(0,0,0,0.45) 70%,
-                  rgba(0,0,0,0.75) 100%
-                )
-              `,
-            }}
-          />
-        </div>
+            {/* Overlay */}
+            <div
+              className="absolute inset-0 pointer-events-none"
+              style={{
+                background: `
+                  radial-gradient(
+                    ellipse at center,
+                    rgba(0,0,0,0.10) 0%,
+                    rgba(0,0,0,0.45) 70%,
+                    rgba(0,0,0,0.75) 100%
+                  )
+                `,
+              }}
+            />
+            {/* Logo inferior izquierdo */}
+              <img
+                src={LogoCun2} // o el logo que quieras
+                alt="Logo CUN"
+                className="
+                  absolute bottom-6 right-6
+                  w-28 md:w-32
+                  opacity-80
+                  drop-shadow-[0_4px_12px_rgba(0,0,0,0.45)]
+                  pointer-events-none
+                "
+              />
+          </div>
+</div>
       </div>
     </div>
   );
