@@ -1,6 +1,6 @@
 // src/pages/admin/components/AdminDetailTabs.tsx
 import React from "react";
-import { Activity, ShieldCheck, Wrench, Users } from "lucide-react";
+import { Activity, Crown, ShieldCheck, Users, Wrench } from "lucide-react";
 import type { AdminTab } from "../../adminTypes";
 
 const pillBase =
@@ -26,7 +26,20 @@ export default function AdminDetailTabs(props: {
         <Users className="w-4 h-4" />
         Resumen
       </button>
-
+      
+      <button
+        type="button"
+        onClick={() => setTab("ADMIN")}
+        className={`${pillBase} ${
+          tab === "ADMIN"
+            ? "border-cyan-500/40 bg-cyan-500/10 text-cyan-300"
+            : "border-white/10 bg-white/5 text-neutral-300 hover:border-white/20"
+        }`}
+      >
+        <Crown className="w-4 h-4" />
+        Admin
+      </button>
+        
       <button
         type="button"
         onClick={() => setTab("COORDINADOR")}
@@ -37,7 +50,7 @@ export default function AdminDetailTabs(props: {
         }`}
       >
         <ShieldCheck className="w-4 h-4" />
-        Decisiones
+        Coordinador
       </button>
 
       <button
