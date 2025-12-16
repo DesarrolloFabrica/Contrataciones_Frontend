@@ -177,42 +177,7 @@ const AdminConsole: React.FC = () => {
                       onExportPdf={detail.exportPdf}
                     />
 
-                    {/* ✅ SOLO RESUMEN DE ACTIVIDAD (para no duplicar) */}
-                    <div className="bg-[#0f1110] rounded-3xl border border-white/10 overflow-hidden">
-                      <div className="p-5 border-b border-white/5 flex items-center justify-between gap-3">
-                        <div>
-                          <p className="text-sm font-bold text-white uppercase tracking-wide">
-                            Actividad reciente de la evaluación
-                          </p>
-                          <p className="text-xs text-neutral-500 mt-1">
-                            Últimos movimientos relacionados con la evaluación seleccionada.
-                          </p>
-                        </div>
-
-                        <button
-                          type="button"
-                          onClick={() => handleSwitchView("AUDIT")}
-                          className="text-xs px-3 py-2 rounded-xl border border-white/10 bg-white/5 hover:bg-white/10"
-                        >
-                          Ver auditoría global
-                        </button>
-                      </div>
-
-                      <div className="p-4">
-                        {!detail.selectedId ? (
-                          <div className="text-sm text-neutral-500 py-6 text-center">
-                            Selecciona una evaluación para ver su actividad reciente.
-                          </div>
-                        ) : (
-                          <AdminAuditTimeline
-                            title="Últimos eventos"
-                            events={auditByEval.audit ?? []}
-                            compact
-                            limit={6}
-                          />
-                        )}
-                      </div>
-                    </div>
+                    
                   </div>
                 </div>
               </>
