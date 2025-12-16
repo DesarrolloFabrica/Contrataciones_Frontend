@@ -1,6 +1,6 @@
 // src/pages/admin/AdminConsole.tsx
 import React, { useCallback, useMemo, useState } from "react";
-import { AlertCircle, Loader2, Users, FileText } from "lucide-react";
+import { AlertCircle, Loader2, Users, FileText, ScrollText } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 
 import AdminHeader from "./components/AdminHeader";
@@ -9,17 +9,24 @@ import AdminFiltersBar from "./components/evaluations/AdminFiltersBar";
 import AdminSchoolsPanel from "./components/evaluations/AdminSchoolsPanel";
 import AdminEvaluationsPanel from "./components/evaluations/AdminEvaluationsPanel";
 import AdminDetailPanel from "./components/evaluations/AdminDetailPanel";
-
 import AdminUsersPanel from "./components/users/AdminUsersPanel";
+
+//temporal
+import AdminAuditTimelinePreview from "./components/audit/AdminAuditTimelinePreview";
+
+
+// ✅ AUDIT
+import AdminAuditGlobalPanel from "./components/audit/AdminAuditGlobalPanel";
+import AdminAuditTimeline from "./components/audit/AdminAuditTimeline";
+import { useAdminAudit } from "./hooks/useAdminAudit";
 
 import { useAdminEvaluations } from "./hooks/useAdminEvaluations";
 import { useAdminEvaluationDetail } from "./hooks/useAdminEvaluationDetail";
 
-type AdminView = "EVALUATIONS" | "USERS";
+type AdminView = "EVALUATIONS" | "USERS" | "AUDIT";
 
 const AdminConsole: React.FC = () => {
   const navigate = useNavigate();
-
   const [view, setView] = useState<AdminView>("EVALUATIONS");
 
   const admin = useAdminEvaluations();
@@ -45,24 +52,25 @@ const AdminConsole: React.FC = () => {
     [detail]
   );
 
-  // ✅ Logout (soluciona el missing prop)
   const handleLogout = useCallback(() => {
-    // Ajusta estos keys a los que realmente uses (deja varios por compatibilidad)
     localStorage.removeItem("token");
     localStorage.removeItem("access_token");
     localStorage.removeItem("AUTH_TOKEN");
     localStorage.removeItem("ADMIN_TOKEN");
 
-    // Limpia selección para evitar estados raros
     detail.clearSelection();
 
-    // Navega al login
     try {
       navigate("/login", { replace: true });
     } catch {
       window.location.href = "/login";
     }
   }, [detail, navigate]);
+
+  // ✅ Auditoría por evaluación seleccionada (solo para mini-resumen en Evaluaciones)
+  const auditByEval = useAdminAudit(
+    detail.selectedId ? { entityType: "EVALUATION", entityId: detail.selectedId } : undefined
+  );
 
   return (
     <div className="min-h-screen w-full bg-[#020202] text-white font-sans relative overflow-x-hidden selection:bg-emerald-500/30">
@@ -77,7 +85,7 @@ const AdminConsole: React.FC = () => {
         <AdminHeader
           hasSelection={hasSelection}
           onClearSelection={detail.clearSelection}
-          onLogout={handleLogout} // ✅ FIX
+          onLogout={handleLogout}
         />
 
         {/* Tabs Admin */}
@@ -98,6 +106,15 @@ const AdminConsole: React.FC = () => {
           >
             <Users className="w-4 h-4" />
             Usuarios
+          </button>
+
+          <button
+            type="button"
+            className={tabBtn(view === "AUDIT")}
+            onClick={() => handleSwitchView("AUDIT")}
+          >
+            <ScrollText className="w-4 h-4" />
+            Auditoría
           </button>
         </div>
 
@@ -149,7 +166,7 @@ const AdminConsole: React.FC = () => {
                   </div>
 
                   {/* DERECHA */}
-                  <div className="lg:col-span-8">
+                  <div className="lg:col-span-8 space-y-6">
                     <AdminDetailPanel
                       selectedId={detail.selectedId}
                       selectedSummary={detail.selectedSummary}
@@ -159,6 +176,43 @@ const AdminConsole: React.FC = () => {
                       setTab={detail.setTab}
                       onExportPdf={detail.exportPdf}
                     />
+
+                    {/* ✅ SOLO RESUMEN DE ACTIVIDAD (para no duplicar) */}
+                    <div className="bg-[#0f1110] rounded-3xl border border-white/10 overflow-hidden">
+                      <div className="p-5 border-b border-white/5 flex items-center justify-between gap-3">
+                        <div>
+                          <p className="text-sm font-bold text-white uppercase tracking-wide">
+                            Actividad reciente de la evaluación
+                          </p>
+                          <p className="text-xs text-neutral-500 mt-1">
+                            Últimos movimientos relacionados con la evaluación seleccionada.
+                          </p>
+                        </div>
+
+                        <button
+                          type="button"
+                          onClick={() => handleSwitchView("AUDIT")}
+                          className="text-xs px-3 py-2 rounded-xl border border-white/10 bg-white/5 hover:bg-white/10"
+                        >
+                          Ver auditoría global
+                        </button>
+                      </div>
+
+                      <div className="p-4">
+                        {!detail.selectedId ? (
+                          <div className="text-sm text-neutral-500 py-6 text-center">
+                            Selecciona una evaluación para ver su actividad reciente.
+                          </div>
+                        ) : (
+                          <AdminAuditTimeline
+                            title="Últimos eventos"
+                            events={auditByEval.audit ?? []}
+                            compact
+                            limit={6}
+                          />
+                        )}
+                      </div>
+                    </div>
                   </div>
                 </div>
               </>
@@ -168,6 +222,16 @@ const AdminConsole: React.FC = () => {
 
         {/* VISTA: USUARIOS */}
         {view === "USERS" && <AdminUsersPanel />}
+
+        {/* VISTA: AUDITORÍA (único lugar para global) */}
+        {view === "AUDIT" && (
+          <div className="space-y-6">
+            <AdminAuditGlobalPanel />
+
+            {/* ✅ SOLO PARA PRUEBAS */}
+          <AdminAuditTimelinePreview />
+          </div>
+        )}
       </div>
     </div>
   );

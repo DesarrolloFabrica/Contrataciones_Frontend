@@ -50,7 +50,7 @@ export default function AdminAuditGlobalPanel() {
               Auditoría Global
             </div>
             <div className="text-xs text-neutral-500 mt-1">
-              Registro de actividad del sistema (usuarios + evaluaciones + acciones).
+              Solo cambios importantes (usuarios + decisiones). Se oculta ruido como “detalle consultado”.
             </div>
           </div>
         </div>
@@ -97,7 +97,11 @@ export default function AdminAuditGlobalPanel() {
             No hay eventos de auditoría para este filtro.
           </div>
         ) : (
-          <AdminAuditTimeline events={audit} />
+          <AdminAuditTimeline
+            title="Historial de actividad"
+            events={audit}
+            hideAdminEvents // ✅ oculta lo que hace el Admin
+          />
         )}
       </div>
     </div>
