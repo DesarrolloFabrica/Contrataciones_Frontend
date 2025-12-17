@@ -1,4 +1,5 @@
-import React, { useMemo } from "react";
+// src/pages/coordinator/components/EvaluationDetailPanel.tsx
+import React from "react";
 import { FileText, Loader2, Search } from "lucide-react";
 import type { AnalysisResult, InterviewData } from "../../../types";
 
@@ -6,8 +7,15 @@ import DetailTabs from "./DetailTabs";
 import DecisionTab from "./DecisionTab";
 import AiSummaryTab from "./AiSummaryTab";
 import NotesTab from "./NotesTab";
+import AuditTab from "./AuditTab";
+import TechTab from "./TechTab";
 
-import type { CoordinatorCriteria, DetailTabKey, LocalDecision } from "../types";
+import type {
+  CoordinatorCriteria,
+  DetailTabKey,
+  LocalDecision,
+  TimelineTab,
+} from "../types";
 
 type Props = {
   selectedId: string | null;
@@ -24,22 +32,26 @@ type Props = {
   setDecisionComment: (v: string) => void;
   onDecisionCommentBlur: () => void;
 
-  // ✅ Decisión (local)
   onApplyDecision: (d: LocalDecision) => void;
 
-  // ✅ NUEVO (Notas)
   notes: string;
   setNotes: (v: string) => void;
   criteria: CoordinatorCriteria;
   setCriteria: (next: CoordinatorCriteria) => void;
 
-  // ✅ NUEVO (Validación + envío)
   canSubmitDecision: boolean;
   missingReasons: string[];
   onSubmitDecision: () => void;
+
+  // ✅ ANTIGUO (Auditoría) -> opcional para no romper CoordinatorConsole
+  timelineTab?: TimelineTab;
+  setTimelineTab?: (v: TimelineTab) => void;
+  activityByEval?: any[];
+  activityGlobal?: any[];
 };
 
 export default function EvaluationDetailPanel({
+  selectedId,
   selectedDetail,
   loadingDetail,
   onExportPdf,
@@ -57,8 +69,19 @@ export default function EvaluationDetailPanel({
   canSubmitDecision,
   missingReasons,
   onSubmitDecision,
+  timelineTab,
+  setTimelineTab,
+  activityByEval,
+  activityGlobal,
 }: Props) {
   const hasDetail = !!selectedDetail && !loadingDetail;
+
+  const canShowAudit =
+    detailTab === "AUDIT" &&
+    !!timelineTab &&
+    !!setTimelineTab &&
+    Array.isArray(activityByEval) &&
+    Array.isArray(activityGlobal);
 
   return (
     <div className="bg-[#050505]/90 border border-white/10 rounded-3xl p-5 md:p-6 shadow-xl flex flex-col">
@@ -97,7 +120,8 @@ export default function EvaluationDetailPanel({
         <div className="flex flex-1 flex-col items-center justify-center text-gray-500 gap-3">
           <Search className="w-8 h-8" />
           <p className="text-sm text-center max-w-sm">
-            Selecciona una evaluación en el panel izquierdo para ver el informe completo generado por IA.
+            Selecciona una evaluación en el panel izquierdo para ver el informe
+            completo generado por IA.
           </p>
         </div>
       )}
@@ -106,6 +130,7 @@ export default function EvaluationDetailPanel({
         <div className="mt-2">
           {detailTab === "DECISION" && (
             <DecisionTab
+              selectedId={selectedId}
               decision={decision}
               decisionComment={decisionComment}
               setDecisionComment={setDecisionComment}
@@ -117,10 +142,6 @@ export default function EvaluationDetailPanel({
             />
           )}
 
-          {detailTab === "AI" && (
-            <AiSummaryTab analysis={selectedDetail.analysis} />
-          )}
-
           {detailTab === "NOTES" && (
             <NotesTab
               notes={notes}
@@ -129,6 +150,19 @@ export default function EvaluationDetailPanel({
               setCriteria={setCriteria}
             />
           )}
+
+          {detailTab === "AI" && <AiSummaryTab analysis={selectedDetail.analysis} />}
+
+          {canShowAudit && (
+            <AuditTab
+              timelineTab={timelineTab!}
+              setTimelineTab={setTimelineTab!}
+              activityByEval={activityByEval!}
+              activityGlobal={activityGlobal!}
+            />
+          )}
+
+          {detailTab === "TECH" && <TechTab analysis={selectedDetail.analysis} />}
         </div>
       )}
     </div>

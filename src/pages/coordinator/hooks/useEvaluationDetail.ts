@@ -1,3 +1,4 @@
+// src/pages/coordinator/hooks/useEvaluationDetail.ts
 import { useCallback, useMemo, useState } from "react";
 import type { Dispatch, SetStateAction } from "react";
 
@@ -78,7 +79,7 @@ export const useEvaluationDetail = ({
     return notesByEval[selectedId] ?? emptyNotes();
   }, [notesByEval, selectedId]);
 
-  // ✅ setters que escriben sobre notesByEval (SIN redeclarar variables)
+  // ✅ setters que escriben sobre notesByEval
   const setNotes = useCallback(
     (v: string) => {
       if (!selectedId) return;
@@ -127,7 +128,9 @@ export const useEvaluationDetail = ({
       setDecisionComment("");
 
       // ✅ asegura notas base para esa evaluación
-      setNotesByEval((prev) => (prev[id] ? prev : { ...prev, [id]: emptyNotes() }));
+      setNotesByEval((prev) =>
+        prev[id] ? prev : { ...prev, [id]: emptyNotes() }
+      );
 
       try {
         const detail = await getTeacherEvaluationById(id);
@@ -140,15 +143,17 @@ export const useEvaluationDetail = ({
         setLoadingDetail(false);
       }
     },
-    [actor, bumpAudit, evaluations, localDecisions, evaluations, localDecisions]
+    [actor, bumpAudit, evaluations, localDecisions, setNotesByEval]
   );
 
   const exportPdf = useCallback(async () => {
     if (!selectedDetail || !selectedId) return;
     try {
-      await generateAnalysisPdfFromData(selectedDetail.analysis, selectedDetail.interview, {
-        download: true,
-      });
+      await generateAnalysisPdfFromData(
+        selectedDetail.analysis,
+        selectedDetail.interview,
+        { download: true }
+      );
 
       auditAppend({
         type: "REPORT_PDF_DOWNLOADED",
@@ -178,7 +183,13 @@ export const useEvaluationDetail = ({
         type: "COORDINATOR_DECISION_SET",
         actor,
         evaluationId: selectedId,
-        metadata: { status: newDecision, decidedAt, decidedById, decidedByName },
+        metadata: {
+          status: newDecision,
+          decidedAt,
+          decidedById,
+          decidedByName,
+          source: "coordinator-local",
+        },
       });
 
       bumpAudit();
@@ -204,20 +215,33 @@ export const useEvaluationDetail = ({
   // -----------------------------
   // ✅ VALIDACIÓN OBLIGATORIA (antes de enviar)
   // -----------------------------
+
   const checkedCount = useMemo(() => {
     return Object.values(currentNotes.criteria).filter(Boolean).length;
   }, [currentNotes.criteria]);
 
+  // ✅ Nota efectiva: primero NOTAS, si está vacía usa el comentario de DECISIÓN
+  const effectiveNote = useMemo(() => {
+    const n = (currentNotes.notes ?? "").trim();
+    if (n.length) return n;
+    return (decisionComment ?? "").trim();
+  }, [currentNotes.notes, decisionComment]);
+
+  const effectiveNoteLen = useMemo(() => effectiveNote.length, [effectiveNote]);
+
   const missingReasons = useMemo(() => {
     const out: string[] = [];
     if (!selectedId) out.push("Selecciona una evaluación.");
-    if (decision === "PENDIENTE") out.push("Selecciona una decisión (Aprobar o Rechazar).");
-    if ((currentNotes.notes ?? "").trim().length < 30) {
+    if (decision === "PENDIENTE")
+      out.push("Selecciona una decisión (Aprobar o Rechazar).");
+
+    // ✅ ahora sí valida la nota efectiva
+    if (effectiveNoteLen < 30)
       out.push("Escribe una nota breve (mínimo 30 caracteres).");
-    }
+
     if (checkedCount < 2) out.push("Marca al menos 2 criterios en Notas.");
     return out;
-  }, [checkedCount, currentNotes.notes, decision, selectedId]);
+  }, [checkedCount, decision, selectedId, effectiveNoteLen]);
 
   const canSubmitDecision = missingReasons.length === 0;
 
@@ -227,20 +251,28 @@ export const useEvaluationDetail = ({
 
     // 🔥 luego conecta backend real (POST)
     auditAppend({
-      type: "COORDINATOR_DECISION_SET",
+      type: "COORDINATOR_DECISION_SUBMITTED",
       actor,
       evaluationId: selectedId,
       metadata: {
         status: decision,
         criteria: currentNotes.criteria,
-        noteLen: (currentNotes.notes ?? "").trim().length,
+        noteLen: effectiveNoteLen,
         source: "coordinator-submit",
       },
     });
 
     bumpAudit();
-    alert("✅ Decisión enviada al admin (mock).");
-  }, [actor, bumpAudit, canSubmitDecision, currentNotes.criteria, currentNotes.notes, decision, selectedId]);
+    alert("✅ Decisión enviada al administrador.");
+  }, [
+    actor,
+    bumpAudit,
+    canSubmitDecision,
+    currentNotes.criteria,
+    decision,
+    effectiveNoteLen,
+    selectedId,
+  ]);
 
   return {
     selectedId,

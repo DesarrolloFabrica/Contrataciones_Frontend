@@ -45,28 +45,6 @@ type ListEvalResponse =
   | { items: TeacherEvaluationSummary[] }
   | any;
 
-/**
- * Payload flexible para la decisión del coordinador.
- * Acepta tanto { status, comment } como { verdict, notes } por compatibilidad.
- */
-export type CoordinatorDecisionPayload = {
-  status?: "PENDING" | "APPROVED" | "REJECTED";
-  verdict?: "PENDING" | "APPROVED" | "REJECTED";
-  comment?: string;
-  notes?: string;
-};
-
-/**
- * Payload flexible para la decisión del admin.
- * Igual idea que el del coordinador.
- */
-export type AdminDecisionPayload = {
-  status?: "PENDING" | "APPROVED" | "REJECTED";
-  verdict?: "PENDING" | "APPROVED" | "REJECTED";
-  comment?: string;
-  notes?: string;
-};
-
 /* ------------------------------------------------------------------ */
 /*  Crear evaluación + PDF                                            */
 /* ------------------------------------------------------------------ */
@@ -156,14 +134,38 @@ export async function getExecutiveSummary(
 /*  Decisión del coordinador                                          */
 /* ------------------------------------------------------------------ */
 
-export type CoordinatorDecisionStatusApi =
-  | "PENDING"
-  | "APPROVED"
-  | "REJECTED";
+export type CoordinatorDecisionStatusApi = "PENDING" | "APPROVED" | "REJECTED";
+
+// ✅ NUEVO: criterios del tab NOTAS
+export type CoordinatorCriteriaPayload = Record<string, boolean>;
+
+/**
+ * Payload flexible para la decisión del coordinador.
+ * - Compat viejo: { status, comment } o { verdict, notes } (donde "notes" era comentario)
+ * - Nuevo: notesBrief + criteria (tab NOTAS)
+ */
+export type CoordinatorDecisionPayload = {
+  status?: CoordinatorDecisionStatusApi;
+  verdict?: CoordinatorDecisionStatusApi;
+
+  // comentario (tab DECISIÓN)
+  comment?: string;
+  notes?: string; // compat: notes == comment
+
+  // ✅ nuevos (tab NOTAS)
+  notesBrief?: string; // -> backend dto.notes
+  criteria?: CoordinatorCriteriaPayload; // -> backend dto.criteria
+};
 
 export interface CoordinatorDecisionUpdateDto {
   status: CoordinatorDecisionStatusApi;
+
+  // comentario (backend dto.comment)
   comment?: string;
+
+  // ✅ nuevos (backend dto.notes / dto.criteria)
+  notes?: string;
+  criteria?: CoordinatorCriteriaPayload;
 }
 
 /**
@@ -183,7 +185,7 @@ export async function saveCoordinatorDecision(
 }
 
 /**
- * Adapter payload viejo → canonical coordinador.
+ * Adapter flexible → canonical coordinador.
  */
 export async function updateCoordinatorDecision(
   evaluationId: string,
@@ -197,8 +199,13 @@ export async function updateCoordinatorDecision(
   }
 
   const body: CoordinatorDecisionUpdateDto = {
-    status: status as CoordinatorDecisionStatusApi,
+    status,
+    // compat vieja: notes (viejo) se interpreta como comment
     comment: payload.comment ?? payload.notes ?? undefined,
+
+    // nuevos (tab NOTAS)
+    notes: payload.notesBrief ?? undefined,
+    criteria: payload.criteria ?? undefined,
   };
 
   return saveCoordinatorDecision(evaluationId, body);
@@ -207,6 +214,17 @@ export async function updateCoordinatorDecision(
 /* ------------------------------------------------------------------ */
 /*  Decisión del admin                                                */
 /* ------------------------------------------------------------------ */
+
+/**
+ * Payload flexible para la decisión del admin.
+ * Acepta tanto { status, comment } como { verdict, notes } por compatibilidad.
+ */
+export type AdminDecisionPayload = {
+  status?: "PENDING" | "APPROVED" | "REJECTED";
+  verdict?: "PENDING" | "APPROVED" | "REJECTED";
+  comment?: string;
+  notes?: string;
+};
 
 export type AdminDecisionStatusApi = "PENDING" | "APPROVED" | "REJECTED";
 
