@@ -18,8 +18,8 @@ export default function DetailTabs({ value, onChange }: Props) {
   const tabs = useMemo(
     () => [
       { id: "DECISION" as const, label: "Decisión", Icon: FileText },
-      { id: "AI" as const, label: "Resumen IA", Icon: BrainCircuit },
       { id: "NOTES" as const, label: "Notas", Icon: NotebookPen },
+      { id: "AI" as const, label: "Resumen IA", Icon: BrainCircuit },
     ],
     []
   );

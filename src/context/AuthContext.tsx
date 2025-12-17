@@ -36,6 +36,15 @@ function mapBackendRoleToUiRole(backendRole: BackendRole): Role {
   return "leader";
 }
 
+// 🔹 helper para poner el header en axios
+function setAxiosAuthHeader(token?: string) {
+  if (token) {
+    api.defaults.headers.common["Authorization"] = `Bearer ${token}`;
+  } else {
+    delete api.defaults.headers.common["Authorization"];
+  }
+}
+
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
   children,
 }) => {
@@ -54,17 +63,24 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
         user?: AuthUser;
       };
 
+      if (parsed.accessToken) {
+        setAxiosAuthHeader(parsed.accessToken);
+      }
+
       if (parsed.user) {
         setUser(parsed.user);
       }
     } catch (err) {
       console.warn("No se pudo leer auth desde localStorage", err);
+      localStorage.removeItem(AUTH_STORAGE_KEY);
+      setAxiosAuthHeader(undefined);
     }
   }, []);
 
-  // 🔹 login: ahora SÍ llama al backend
+  // 🔹 login: llama al backend y guarda token + usuario
   const login = async (email: string, name?: string): Promise<AuthUser> => {
-    // 1) llamar al backend
+    const cleanEmail = email.toLowerCase().trim();
+
     const resp = await api.post<{
       accessToken: string;
       user: {
@@ -72,32 +88,39 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
         email: string;
         role: BackendRole;
         schoolId: string | null;
+        fullName?: string;
       };
-    }>("/auth/login-by-email", { email });
+    }>("/auth/login-by-email", { email: cleanEmail });
 
-    const backendUser = resp.data.user;
+    const { accessToken, user: backendUser } = resp.data;
+
     const uiRole = mapBackendRoleToUiRole(backendUser.role);
 
-    // 2) construir AuthUser para el frontend
     const authUser: AuthUser = {
       id: backendUser.id,
       email: backendUser.email,
-      name: name || backendUser.email.split("@")[0],
+      name:
+        name?.trim() ||
+        backendUser.fullName ||
+        backendUser.email.split("@")[0],
       role: uiRole,
       backendRole: backendUser.role,
       schoolId: backendUser.schoolId,
     };
 
-    // 3) guardar token + user en localStorage (clave cun-auth)
+    // 👉 Muy importante: inyectar el header de una vez
+    setAxiosAuthHeader(accessToken);
+
+    // Y guardar todo en localStorage
     localStorage.setItem(
       AUTH_STORAGE_KEY,
       JSON.stringify({
-        accessToken: resp.data.accessToken,
+        accessToken,
         user: authUser,
       })
     );
 
-    // 4) log de auditoría
+    // Log de auditoría
     const actor: AuditActor = {
       id: authUser.id,
       name: authUser.name,
@@ -131,6 +154,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
 
     setUser(null);
     localStorage.removeItem(AUTH_STORAGE_KEY);
+    setAxiosAuthHeader(undefined);
   };
 
   return (

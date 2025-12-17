@@ -16,7 +16,6 @@ const api = axios.create({
   baseURL: API_BASE_URL,
 });
 
-// Interceptor para meter el Bearer token
 api.interceptors.request.use((config) => {
   if (typeof window !== "undefined") {
     const raw = localStorage.getItem(AUTH_STORAGE_KEY);
@@ -24,11 +23,19 @@ api.interceptors.request.use((config) => {
       try {
         const parsed = JSON.parse(raw) as { accessToken?: string };
         if (parsed.accessToken) {
-          const headers: AxiosRequestHeaders = (config.headers ||
-            {}) as AxiosRequestHeaders;
+          const headers: AxiosRequestHeaders =
+            (config.headers || {}) as AxiosRequestHeaders;
 
           headers.Authorization = `Bearer ${parsed.accessToken}`;
           config.headers = headers;
+
+          console.log(
+            "[apiClient] ->",
+            config.method?.toUpperCase(),
+            config.url,
+            "| Authorization:",
+            headers.Authorization
+          );
         }
       } catch {
         localStorage.removeItem(AUTH_STORAGE_KEY);

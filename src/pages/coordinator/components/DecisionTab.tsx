@@ -1,10 +1,17 @@
 // src/pages/coordinator/components/DecisionTab.tsx
-import React, { useState } from "react";
-import { CheckCircle2, Loader2, XCircle } from "lucide-react";
-import { LocalDecision } from "../types";
+import React, { useMemo, useState } from "react";
+import {
+  CheckCircle2,
+  XCircle,
+  Send,
+  AlertTriangle,
+  Loader2,
+} from "lucide-react";
+import type { LocalDecision } from "../types";
 import {
   saveCoordinatorDecision,
   type CoordinatorDecisionStatusApi,
+  type CoordinatorCriteriaPayload,
 } from "../../../services/teachersService";
 
 type Props = {
@@ -15,13 +22,19 @@ type Props = {
   setDecisionComment: (v: string) => void;
   onDecisionCommentBlur: () => void;
 
-  // sigue siendo el handler del hook: actualiza estado local, timeline, etc.
+  // ✅ SOLO estado local
   onApplyDecision: (d: LocalDecision) => void;
 
-  // ✅ Validación + submit
+  // ✅ Datos del tab NOTAS (para persistirlos al enviar)
+  notes: string;
+  criteria: CoordinatorCriteriaPayload;
+
+  // ✅ Validación externa (Notes/criteria/etc)
   canSubmitDecision: boolean;
   missingReasons: string[];
-  onSubmitDecision: () => void;
+
+  // ✅ Acción del padre (timeline, submit admin, etc.)
+  onSubmitDecision?: () => void;
 };
 
 const DecisionTab: React.FC<Props> = ({
@@ -31,6 +44,8 @@ const DecisionTab: React.FC<Props> = ({
   setDecisionComment,
   onDecisionCommentBlur,
   onApplyDecision,
+  notes,
+  criteria,
   canSubmitDecision,
   missingReasons,
   onSubmitDecision,
@@ -38,27 +53,72 @@ const DecisionTab: React.FC<Props> = ({
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  // ✅ normalizadores para evitar .trim() en undefined/null
+  const commentText = useMemo(
+    () => (decisionComment ?? "").toString(),
+    [decisionComment]
+  );
+  const notesText = useMemo(() => (notes ?? "").toString(), [notes]);
+
   const mapLocalToApi = (d: LocalDecision): CoordinatorDecisionStatusApi => {
     if (d === "APROBADO") return "APPROVED";
     if (d === "RECHAZADO") return "REJECTED";
     return "PENDING";
   };
 
-  const handleApply = async (newDecision: LocalDecision) => {
-    // siempre actualizamos primero la UX local (como antes)
-    onApplyDecision(newDecision);
+  // ✅ validación adicional requerida para “Enviar”
+  const decisionPicked = decision !== "PENDIENTE";
+  const hasComment = commentText.trim().length > 0;
 
-    // si por alguna razón no hay id seleccionado, no llamamos a backend
-    if (!selectedId) return;
+  const extraMissing = useMemo(() => {
+    const extra: string[] = [];
+    if (!decisionPicked) extra.push("Selecciona Aprobar o Rechazar.");
+    if (!hasComment) extra.push("Escribe un comentario del coordinador.");
+    if (!selectedId) extra.push("Selecciona una evaluación para enviar.");
+    return extra;
+  }, [decisionPicked, hasComment, selectedId]);
+
+  const allMissingReasons = useMemo(() => {
+    const set = new Set<string>([...extraMissing, ...(missingReasons ?? [])]);
+    return Array.from(set);
+  }, [extraMissing, missingReasons]);
+
+  const canSendNow = useMemo(() => {
+    return (
+      !!selectedId &&
+      !saving &&
+      decisionPicked &&
+      hasComment &&
+      canSubmitDecision
+    );
+  }, [selectedId, saving, decisionPicked, hasComment, canSubmitDecision]);
+
+  // ✅ Aprobar/Rechazar = SOLO local
+  const handleApply = (newDecision: LocalDecision) => {
+    onApplyDecision(newDecision);
+    setError(null);
+  };
+
+  // ✅ Enviar = backend (incluye NOTAS) + luego callback del padre
+  const handleSubmit = async () => {
+    if (!selectedId || !canSendNow) return;
 
     setSaving(true);
     setError(null);
 
     try {
       await saveCoordinatorDecision(selectedId, {
-        status: mapLocalToApi(newDecision),
-        comment: decisionComment.trim() || undefined,
+        status: mapLocalToApi(decision),
+        comment: commentText.trim() || undefined,
+
+        // ✅ nuevos campos (tab NOTAS)
+        notes: notesText.trim() || undefined,
+        criteria:
+          criteria && Object.keys(criteria ?? {}).length ? criteria : undefined,
       });
+
+      // ✅ solo después de guardar OK
+      onSubmitDecision?.();
     } catch (err) {
       console.error("Error guardando decisión del coordinador:", err);
       setError(
@@ -78,7 +138,9 @@ const DecisionTab: React.FC<Props> = ({
               Decisión del Coordinador
             </p>
             <p className="text-sm text-gray-300">
-              Esta decisión se guarda en backend y alimenta la aprobación final del admin.
+              El coordinador define la recomendación y deja trazabilidad para el
+              admin. La decisión solo se envía al presionar{" "}
+              <b>Enviar decisión</b>.
             </p>
           </div>
 
@@ -112,13 +174,9 @@ const DecisionTab: React.FC<Props> = ({
               decision === "APROBADO"
                 ? "bg-emerald-600 text-white"
                 : "bg-[#111] text-gray-300 hover:bg-emerald-600/10 hover:text-emerald-300"
-            } ${saving ? "opacity-70 cursor-wait" : ""}`}
+            } ${saving ? "opacity-70 cursor-not-allowed" : ""}`}
           >
-            {saving && decision === "APROBADO" ? (
-              <Loader2 className="w-4 h-4 animate-spin" />
-            ) : (
-              <CheckCircle2 className="w-4 h-4" />
-            )}
+            <CheckCircle2 className="w-4 h-4" />
             Aprobar candidato
           </button>
 
@@ -130,13 +188,9 @@ const DecisionTab: React.FC<Props> = ({
               decision === "RECHAZADO"
                 ? "bg-rose-600 text-white"
                 : "bg-[#111] text-gray-300 hover:bg-rose-600/10 hover:text-rose-300"
-            } ${saving ? "opacity-70 cursor-wait" : ""}`}
+            } ${saving ? "opacity-70 cursor-not-allowed" : ""}`}
           >
-            {saving && decision === "RECHAZADO" ? (
-              <Loader2 className="w-4 h-4 animate-spin" />
-            ) : (
-              <XCircle className="w-4 h-4" />
-            )}
+            <XCircle className="w-4 h-4" />
             Rechazar candidato
           </button>
         </div>
@@ -146,24 +200,56 @@ const DecisionTab: React.FC<Props> = ({
             Comentario del coordinador
           </label>
           <textarea
-            value={decisionComment}
+            value={commentText}
             onChange={(e) => setDecisionComment(e.target.value)}
             onBlur={onDecisionCommentBlur}
             rows={3}
             placeholder="Ej. Recomendado por horas. Fortalezas: experiencia, claridad. Riesgo: disponibilidad limitada."
             className="w-full bg-[#0A0A0A] border border-white/10 rounded-xl px-3 py-2 text-sm text-gray-200 outline-none focus:border-emerald-500/50 resize-none"
+            disabled={saving}
           />
         </div>
 
-        {error && (
-          <p className="text-[11px] text-rose-400">
-            {error}
-          </p>
+        {/* ✅ Bloque de validación combinado */}
+        {!canSendNow && allMissingReasons.length > 0 && (
+          <div className="rounded-2xl border border-amber-500/20 bg-amber-500/10 p-3 text-amber-200">
+            <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-widest">
+              <AlertTriangle className="w-4 h-4" />
+              Falta completar para enviar
+            </div>
+            <ul className="mt-2 text-sm list-disc pl-5 space-y-1">
+              {allMissingReasons.map((r) => (
+                <li key={r}>{r}</li>
+              ))}
+            </ul>
+          </div>
         )}
 
+        {error && <p className="text-[11px] text-rose-400">{error}</p>}
+
+        <div className="flex justify-end">
+          <button
+            type="button"
+            onClick={handleSubmit}
+            disabled={!canSendNow}
+            className={`px-4 py-2 rounded-xl text-xs font-bold uppercase tracking-widest inline-flex items-center gap-2 border transition ${
+              canSendNow
+                ? "bg-emerald-600 text-white border-emerald-500/40 hover:bg-emerald-500"
+                : "bg-white/5 text-gray-500 border-white/10 cursor-not-allowed"
+            }`}
+          >
+            {saving ? (
+              <Loader2 className="w-4 h-4 animate-spin" />
+            ) : (
+              <Send className="w-4 h-4" />
+            )}
+            {saving ? "Enviando..." : "Enviar decisión"}
+          </button>
+        </div>
+
         <p className="text-[11px] text-gray-500">
-          La decisión registrada aquí se usa luego para trazabilidad y paneles de
-          administración.
+          La decisión registrada aquí se usa luego para trazabilidad y paneles
+          de administración.
         </p>
       </div>
     </div>

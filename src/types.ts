@@ -151,8 +151,10 @@ export type AuditEventType =
   | "REPORT_PDF_UPLOADED"
   | "COORDINATOR_DECISION_SET"
   | "COORDINATOR_COMMENT_SET"
+  | "COORDINATOR_DECISION_SUBMITTED"
   | "LOGIN"
   | "LOGOUT";
+
 
 export interface AuditEvent {
   id: string; // uuid
