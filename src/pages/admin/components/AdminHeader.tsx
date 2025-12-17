@@ -1,6 +1,6 @@
 // src/pages/admin/components/AdminHeader.tsx
 import React from "react";
-import { LayoutDashboard, ScrollText } from "lucide-react";
+import { LayoutDashboard, ScrollText, LogOut } from "lucide-react";
 
 const pillBase =
   "px-3 py-1 rounded-full border text-[11px] uppercase tracking-widest transition inline-flex items-center gap-2";
@@ -8,6 +8,7 @@ const pillBase =
 export default function AdminHeader(props: {
   hasSelection: boolean;
   onClearSelection: () => void;
+  onLogout: () => void; // ✅ NUEVO
 }) {
   return (
     <header className="flex flex-col md:flex-row justify-between items-start md:items-end gap-6 border-b border-white/10 pb-8">
@@ -22,10 +23,12 @@ export default function AdminHeader(props: {
           </span>
         </h1>
         <p className="text-neutral-400 mt-2 max-w-2xl text-sm leading-relaxed">
-          Vista ejecutiva: métricas, distribución por escuelas, lista completa y detalle del reporte (IA + decisiones).
+          Vista ejecutiva: métricas, distribución por escuelas, lista completa y
+          detalle del reporte (IA + decisiones).
         </p>
       </div>
 
+      {/* Acciones (derecha) */}
       <div className="flex items-center gap-2">
         {props.hasSelection && (
           <button
@@ -37,6 +40,19 @@ export default function AdminHeader(props: {
             Cerrar detalle
           </button>
         )}
+
+        {/* ✅ Cerrar sesión */}
+        <button
+          onClick={props.onLogout}
+          className={[
+            pillBase,
+            "border-rose-500/20 bg-rose-500/10 text-rose-200 hover:bg-rose-500/15 hover:border-rose-500/30",
+          ].join(" ")}
+          type="button"
+        >
+          <LogOut className="w-4 h-4 text-rose-300" />
+          Cerrar sesión
+        </button>
       </div>
     </header>
   );
