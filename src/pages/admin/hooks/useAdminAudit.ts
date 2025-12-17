@@ -1,50 +1,52 @@
 // src/pages/admin/hooks/useAdminAudit.ts
 import { useCallback, useEffect, useMemo, useState } from "react";
-import type { AdminAuditEvent } from "../adminTypes";
+import type { AdminAuditEvent, AdminAuditEntityType } from "../adminTypes";
 import { adminMockDb } from "../utils/adminMockDb";
 
 type Opts = {
-  entityType?: "USER" | "EVALUATION" | "SYSTEM";
-  entityId?: string;
+  entityType?: AdminAuditEntityType; // "USER" | "EVALUATION" | "SYSTEM"
+  entityId?: string;                // si viene -> detalle; si NO viene -> global
 };
 
-const MAX_EVENTS = 50; // ✅ límite razonable para UI
+const MAX_EVENTS = 50;
 
 export const useAdminAudit = (opts?: Opts) => {
   const [audit, setAudit] = useState<AdminAuditEvent[]>([]);
   const [loadingAudit, setLoadingAudit] = useState(false);
   const [errorAudit, setErrorAudit] = useState<string | null>(null);
 
-  // ✅ key estable para saber cuándo recargar
+  // ✅ key estable para recargar cuando cambie filtro (incluye GLOBAL)
   const key = useMemo(() => {
-    if (!opts?.entityType || !opts?.entityId) return null;
-    return `${opts.entityType}:${opts.entityId}`;
+    const t = opts?.entityType ?? "ALL";
+    const id = opts?.entityId ?? "GLOBAL";
+    return `${t}:${id}`;
   }, [opts?.entityType, opts?.entityId]);
 
   const refreshAudit = useCallback(async () => {
-    if (!opts?.entityType || !opts?.entityId) {
-      setAudit([]);
-      return;
-    }
-
     setLoadingAudit(true);
     setErrorAudit(null);
 
     try {
-      const res = await adminMockDb.listAudit(
-        opts.entityType,
-        opts.entityId
-      );
+      let res: AdminAuditEvent[] = [];
 
-      // ✅ Orden descendente + límite
+      // ✅ Si hay entityId -> detalle por entidad
+      if (opts?.entityId) {
+        // si no mandan entityType, asumimos SYSTEM
+        const type = opts.entityType ?? "SYSTEM";
+        res = await adminMockDb.listAudit(type, opts.entityId);
+      } else {
+        // ✅ GLOBAL (con filtro opcional por entityType)
+        res = await adminMockDb.listAuditGlobal(opts?.entityType);
+      }
+
       const ordered = [...res]
         .sort((a, b) => (a.at < b.at ? 1 : -1))
         .slice(0, MAX_EVENTS);
 
       setAudit(ordered);
     } catch (e) {
-      console.error("Admin: error cargando historial", e);
-      setErrorAudit("No se pudo cargar el historial de cambios.");
+      console.error("Admin: error cargando auditoría", e);
+      setErrorAudit("No se pudo cargar el historial de auditoría.");
       setAudit([]);
     } finally {
       setLoadingAudit(false);

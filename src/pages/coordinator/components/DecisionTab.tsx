@@ -17,6 +17,11 @@ type Props = {
 
   // sigue siendo el handler del hook: actualiza estado local, timeline, etc.
   onApplyDecision: (d: LocalDecision) => void;
+
+  // ✅ Validación + submit
+  canSubmitDecision: boolean;
+  missingReasons: string[];
+  onSubmitDecision: () => void;
 };
 
 const DecisionTab: React.FC<Props> = ({
@@ -26,6 +31,9 @@ const DecisionTab: React.FC<Props> = ({
   setDecisionComment,
   onDecisionCommentBlur,
   onApplyDecision,
+  canSubmitDecision,
+  missingReasons,
+  onSubmitDecision,
 }) => {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -142,7 +150,7 @@ const DecisionTab: React.FC<Props> = ({
             onChange={(e) => setDecisionComment(e.target.value)}
             onBlur={onDecisionCommentBlur}
             rows={3}
-            placeholder="Ej. Se recomienda perfilar para curso corto, no para nombramiento de planta..."
+            placeholder="Ej. Recomendado por horas. Fortalezas: experiencia, claridad. Riesgo: disponibilidad limitada."
             className="w-full bg-[#0A0A0A] border border-white/10 rounded-xl px-3 py-2 text-sm text-gray-200 outline-none focus:border-emerald-500/50 resize-none"
           />
         </div>

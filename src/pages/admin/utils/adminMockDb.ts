@@ -125,7 +125,7 @@ export const adminMockDb = {
 
     db.users.unshift(user);
 
-    // USER audit (directo al usuario)
+    // USER audit
     addAudit(db, {
       entityType: "USER",
       entityId: user.id,
@@ -260,9 +260,21 @@ export const adminMockDb = {
   ): Promise<AdminAuditEvent[]> {
     const db = load();
     let a = db.audit;
+
     if (entityType) a = a.filter((x) => x.entityType === entityType);
     if (entityId) a = a.filter((x) => x.entityId === entityId);
+
     return Promise.resolve(a);
+  },
+
+  // ✅ NUEVO: auditoría global (con filtro opcional)
+  listAuditGlobal(
+    entityType?: AdminAuditEntityType
+  ): Promise<AdminAuditEvent[]> {
+    const db = load();
+    const all = db.audit ?? [];
+    const filtered = entityType ? all.filter((x) => x.entityType === entityType) : all;
+    return Promise.resolve(filtered);
   },
 
   // -------------------------
@@ -321,7 +333,7 @@ export const adminMockDb = {
     });
   },
 
-  // ✅ ALIAS PROMISE (para que TS NO llore si usas addSystemAudit en hooks)
+  // ✅ ALIAS PROMISE
   addSystemAudit(params: {
     action: AdminAuditAction;
     meta?: Record<string, any>;

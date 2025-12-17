@@ -132,7 +132,7 @@ function compactMetadata(ev: AuditEvent) {
 }
 
 const AuditTimeline: React.FC<Props> = ({ title = "Actividad", events, emptyText, compact }) => {
-  const [openMap, setOpenMap] = useState<Record<number, boolean>>({});
+  const [openMap, setOpenMap] = useState<Record<string, boolean>>({});
 
   const grouped = useMemo(() => {
     const sorted = [...(events ?? [])].sort((a, b) => {
@@ -190,13 +190,20 @@ const AuditTimeline: React.FC<Props> = ({ title = "Actividad", events, emptyText
 
             <div className="space-y-2">
               {g.items.map((ev, idx) => {
-                const d = safeDate(ev.at);
-                const label = humanizeType(ev);
-                const meta = compactMetadata(ev);
-                const hasMeta = meta && Object.keys(meta).length > 0;
-                const isOpen = !!openMap[idx];
-                const actorName = ev.actor?.name ?? "Sistema";
-                const actorRole = ev.actor?.role ?? null;
+              const d = safeDate(ev.at);
+              const label = humanizeType(ev);
+              const meta = compactMetadata(ev);
+              const hasMeta = meta && Object.keys(meta).length > 0;
+
+              // ✅ clave única por evento (evita colisiones entre días)
+              const eventKey =
+                ev.id ??
+                `${ev.type}-${ev.at ?? "no-date"}-${ev.evaluationId ?? "no-eval"}-${idx}`;
+
+              const isOpen = !!openMap[eventKey];
+
+              const actorName = ev.actor?.name ?? "Sistema";
+              const actorRole = ev.actor?.role ?? null;
 
                 return (
                   <div
@@ -248,7 +255,7 @@ const AuditTimeline: React.FC<Props> = ({ title = "Actividad", events, emptyText
                       {(ev.metadata && Object.keys(ev.metadata).length > 0) && (
                         <button
                           type="button"
-                          onClick={() => setOpenMap((p) => ({ ...p, [idx]: !p[idx] }))}
+                          onClick={() => setOpenMap((p) => ({ ...p, [eventKey]: !p[eventKey] }))}
                           className="text-gray-500 hover:text-gray-200 border border-white/10 rounded-lg px-2 py-1 text-xs flex items-center gap-1"
                         >
                           Detalles <ChevronDown className={`w-4 h-4 transition-transform ${isOpen ? "rotate-180" : ""}`} />
@@ -258,7 +265,7 @@ const AuditTimeline: React.FC<Props> = ({ title = "Actividad", events, emptyText
 
                     {isOpen && ev.metadata && (
                       <pre className="mt-3 text-[11px] text-gray-400 bg-black/40 border border-white/10 rounded-xl p-3 overflow-auto">
-{JSON.stringify(ev.metadata, null, 2)}
+                        {JSON.stringify(ev.metadata, null, 2)}
                       </pre>
                     )}
                   </div>

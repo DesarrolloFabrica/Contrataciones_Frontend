@@ -1,5 +1,7 @@
+// src/pages/admin/AdminConsole.tsx
 import React, { useCallback, useMemo, useState } from "react";
-import { AlertCircle, Loader2, Users, FileText } from "lucide-react";
+import { AlertCircle, Loader2, Users, FileText, ScrollText } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 
 import AdminHeader from "./components/AdminHeader";
 import AdminKpiGrid from "./components/evaluations/AdminKpiGrid";
@@ -7,15 +9,24 @@ import AdminFiltersBar from "./components/evaluations/AdminFiltersBar";
 import AdminSchoolsPanel from "./components/evaluations/AdminSchoolsPanel";
 import AdminEvaluationsPanel from "./components/evaluations/AdminEvaluationsPanel";
 import AdminDetailPanel from "./components/evaluations/AdminDetailPanel";
-
 import AdminUsersPanel from "./components/users/AdminUsersPanel";
+
+//temporal
+import AdminAuditTimelinePreview from "./components/audit/AdminAuditTimelinePreview";
+
+
+// ✅ AUDIT
+import AdminAuditGlobalPanel from "./components/audit/AdminAuditGlobalPanel";
+import AdminAuditTimeline from "./components/audit/AdminAuditTimeline";
+import { useAdminAudit } from "./hooks/useAdminAudit";
 
 import { useAdminEvaluations } from "./hooks/useAdminEvaluations";
 import { useAdminEvaluationDetail } from "./hooks/useAdminEvaluationDetail";
 
-type AdminView = "EVALUATIONS" | "USERS";
+type AdminView = "EVALUATIONS" | "USERS" | "AUDIT";
 
 const AdminConsole: React.FC = () => {
+  const navigate = useNavigate();
   const [view, setView] = useState<AdminView>("EVALUATIONS");
 
   const admin = useAdminEvaluations();
@@ -41,6 +52,26 @@ const AdminConsole: React.FC = () => {
     [detail]
   );
 
+  const handleLogout = useCallback(() => {
+    localStorage.removeItem("token");
+    localStorage.removeItem("access_token");
+    localStorage.removeItem("AUTH_TOKEN");
+    localStorage.removeItem("ADMIN_TOKEN");
+
+    detail.clearSelection();
+
+    try {
+      navigate("/login", { replace: true });
+    } catch {
+      window.location.href = "/login";
+    }
+  }, [detail, navigate]);
+
+  // ✅ Auditoría por evaluación seleccionada (solo para mini-resumen en Evaluaciones)
+  const auditByEval = useAdminAudit(
+    detail.selectedId ? { entityType: "EVALUATION", entityId: detail.selectedId } : undefined
+  );
+
   return (
     <div className="min-h-screen w-full bg-[#020202] text-white font-sans relative overflow-x-hidden selection:bg-emerald-500/30">
       {/* Background Ambient Effects */}
@@ -54,6 +85,7 @@ const AdminConsole: React.FC = () => {
         <AdminHeader
           hasSelection={hasSelection}
           onClearSelection={detail.clearSelection}
+          onLogout={handleLogout}
         />
 
         {/* Tabs Admin */}
@@ -74,6 +106,15 @@ const AdminConsole: React.FC = () => {
           >
             <Users className="w-4 h-4" />
             Usuarios
+          </button>
+
+          <button
+            type="button"
+            className={tabBtn(view === "AUDIT")}
+            onClick={() => handleSwitchView("AUDIT")}
+          >
+            <ScrollText className="w-4 h-4" />
+            Auditoría
           </button>
         </div>
 
@@ -112,33 +153,33 @@ const AdminConsole: React.FC = () => {
                   schoolOptions={admin.schoolOptions}
                 />
 
-           <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
-  {/* IZQUIERDA */}
-  <div className="lg:col-span-4 space-y-6">
-    <AdminSchoolsPanel schoolsSummary={admin.schoolsSummary} />
+                <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+                  {/* IZQUIERDA */}
+                  <div className="lg:col-span-4 space-y-6">
+                    <AdminSchoolsPanel schoolsSummary={admin.schoolsSummary} />
 
-    <AdminEvaluationsPanel
-      filteredEvaluations={admin.filteredEvaluations}
-      selectedId={detail.selectedId}
-      onSelect={detail.handleSelectEvaluation}
-    />
-  </div>
+                    <AdminEvaluationsPanel
+                      filteredEvaluations={admin.filteredEvaluations}
+                      selectedId={detail.selectedId}
+                      onSelect={detail.handleSelectEvaluation}
+                    />
+                  </div>
 
-  {/* DERECHA */}
-  <div className="lg:col-span-8">
-    <AdminDetailPanel
-      selectedId={detail.selectedId}
-      selectedSummary={detail.selectedSummary}
-      loadingDetail={detail.loadingDetail}
-      selectedDetail={detail.selectedDetail}
-      tab={detail.tab}
-      setTab={detail.setTab}
-      onExportPdf={detail.exportPdf}
-    />
-  </div>
-</div>
+                  {/* DERECHA */}
+                  <div className="lg:col-span-8 space-y-6">
+                    <AdminDetailPanel
+                      selectedId={detail.selectedId}
+                      selectedSummary={detail.selectedSummary}
+                      loadingDetail={detail.loadingDetail}
+                      selectedDetail={detail.selectedDetail}
+                      tab={detail.tab}
+                      setTab={detail.setTab}
+                      onExportPdf={detail.exportPdf}
+                    />
 
-
+                    
+                  </div>
+                </div>
               </>
             )}
           </>
@@ -146,6 +187,16 @@ const AdminConsole: React.FC = () => {
 
         {/* VISTA: USUARIOS */}
         {view === "USERS" && <AdminUsersPanel />}
+
+        {/* VISTA: AUDITORÍA (único lugar para global) */}
+        {view === "AUDIT" && (
+          <div className="space-y-6">
+            <AdminAuditGlobalPanel />
+
+            {/* ✅ SOLO PARA PRUEBAS */}
+          <AdminAuditTimelinePreview />
+          </div>
+        )}
       </div>
     </div>
   );
