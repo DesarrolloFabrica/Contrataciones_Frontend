@@ -1,12 +1,13 @@
-// src/pages/coordinator/components/EvaluationDetailPanel.tsx
+import React, { useMemo } from "react";
 import { FileText, Loader2, Search } from "lucide-react";
 import type { AnalysisResult, InterviewData } from "../../../types";
+
 import DetailTabs from "./DetailTabs";
 import DecisionTab from "./DecisionTab";
 import AiSummaryTab from "./AiSummaryTab";
-import AuditTab from "./AuditTab";
-import TechTab from "./TechTab";
-import type { DetailTabKey, LocalDecision, TimelineTab } from "../types";
+import NotesTab from "./NotesTab";
+
+import type { CoordinatorCriteria, DetailTabKey, LocalDecision } from "../types";
 
 type Props = {
   selectedId: string | null;
@@ -22,16 +23,23 @@ type Props = {
   decisionComment: string;
   setDecisionComment: (v: string) => void;
   onDecisionCommentBlur: () => void;
+
+  // ✅ Decisión (local)
   onApplyDecision: (d: LocalDecision) => void;
 
-  timelineTab: TimelineTab;
-  setTimelineTab: (v: TimelineTab) => void;
-  activityByEval: any[];
-  activityGlobal: any[];
+  // ✅ NUEVO (Notas)
+  notes: string;
+  setNotes: (v: string) => void;
+  criteria: CoordinatorCriteria;
+  setCriteria: (next: CoordinatorCriteria) => void;
+
+  // ✅ NUEVO (Validación + envío)
+  canSubmitDecision: boolean;
+  missingReasons: string[];
+  onSubmitDecision: () => void;
 };
 
 export default function EvaluationDetailPanel({
-  selectedId,
   selectedDetail,
   loadingDetail,
   onExportPdf,
@@ -42,11 +50,16 @@ export default function EvaluationDetailPanel({
   setDecisionComment,
   onDecisionCommentBlur,
   onApplyDecision,
-  timelineTab,
-  setTimelineTab,
-  activityByEval,
-  activityGlobal,
+  notes,
+  setNotes,
+  criteria,
+  setCriteria,
+  canSubmitDecision,
+  missingReasons,
+  onSubmitDecision,
 }: Props) {
+  const hasDetail = !!selectedDetail && !loadingDetail;
+
   return (
     <div className="bg-[#050505]/90 border border-white/10 rounded-3xl p-5 md:p-6 shadow-xl flex flex-col">
       <div className="flex items-center justify-between mb-4">
@@ -59,7 +72,7 @@ export default function EvaluationDetailPanel({
           </p>
         </div>
 
-        {selectedDetail && (
+        {hasDetail && (
           <button
             type="button"
             onClick={onExportPdf}
@@ -93,12 +106,14 @@ export default function EvaluationDetailPanel({
         <div className="mt-2">
           {detailTab === "DECISION" && (
             <DecisionTab
-              selectedId={selectedId}
               decision={decision}
               decisionComment={decisionComment}
               setDecisionComment={setDecisionComment}
               onDecisionCommentBlur={onDecisionCommentBlur}
               onApplyDecision={onApplyDecision}
+              canSubmitDecision={canSubmitDecision}
+              missingReasons={missingReasons}
+              onSubmitDecision={onSubmitDecision}
             />
           )}
 
@@ -106,17 +121,13 @@ export default function EvaluationDetailPanel({
             <AiSummaryTab analysis={selectedDetail.analysis} />
           )}
 
-          {detailTab === "AUDIT" && (
-            <AuditTab
-              timelineTab={timelineTab}
-              setTimelineTab={setTimelineTab}
-              activityByEval={activityByEval}
-              activityGlobal={activityGlobal}
+          {detailTab === "NOTES" && (
+            <NotesTab
+              notes={notes}
+              setNotes={setNotes}
+              criteria={criteria}
+              setCriteria={setCriteria}
             />
-          )}
-
-          {detailTab === "TECH" && (
-            <TechTab analysis={selectedDetail.analysis} />
           )}
         </div>
       )}
