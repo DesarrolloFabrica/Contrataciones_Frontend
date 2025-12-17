@@ -195,3 +195,30 @@ export interface BackendUser {
   createdAt: string;
   updatedAt: string;
 }
+export type BackendUserRole = "ADMIN" | "COORDINADOR" | "LIDER";
+
+export interface BackendAuthUser {
+  id: string;
+  email: string;
+  fullName?: string;
+  role: BackendUserRole;
+  schoolId?: string | null;
+}
+
+// Respuesta del endpoint POST /auth/login-by-email
+export interface AuthApiResponse {
+  accessToken: string;
+  user: BackendAuthUser;
+}
+
+// Lo que guardamos en localStorage para que el interceptor ponga el token
+export interface StoredAuth {
+  accessToken: string;
+  user: {
+    id: string;
+    email: string;
+    name: string;
+    role: "admin" | "coordinator" | "leader";
+    schoolId?: string | null;
+  };
+}
