@@ -1,15 +1,12 @@
+// src/pages/coordinator/types.ts
+
 // ✅ Tabs del panel derecho
-export type DetailTabKey =
-  | "DECISION"
-  | "AI"
-  | "NOTES"
-  | "AUDIT"
-  | "TECH";
+export type DetailTabKey = "DECISION" | "AI" | "NOTES" | "AUDIT" | "TECH";
 
 // ✅ Decisión local coordinador
 export type LocalDecision = "PENDIENTE" | "APROBADO" | "RECHAZADO";
 
-// ✅ Filtro de estado en la lista (lo que te falta)
+// ✅ Filtro de estado en la lista
 export type DecisionFilter = "ALL" | LocalDecision;
 
 // ✅ Timeline (si lo sigues usando)

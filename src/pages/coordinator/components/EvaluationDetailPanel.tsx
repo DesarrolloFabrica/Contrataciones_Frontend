@@ -1,5 +1,5 @@
 // src/pages/coordinator/components/EvaluationDetailPanel.tsx
-import React from "react";
+import React, { useMemo } from "react";
 import { FileText, Loader2, Search } from "lucide-react";
 import type { AnalysisResult, InterviewData } from "../../../types";
 
@@ -32,18 +32,21 @@ type Props = {
   setDecisionComment: (v: string) => void;
   onDecisionCommentBlur: () => void;
 
+  // ✅ Decisión (local)
   onApplyDecision: (d: LocalDecision) => void;
 
+  // ✅ Notas
   notes: string;
   setNotes: (v: string) => void;
   criteria: CoordinatorCriteria;
   setCriteria: (next: CoordinatorCriteria) => void;
 
+  // ✅ Validación + envío
   canSubmitDecision: boolean;
   missingReasons: string[];
   onSubmitDecision: () => void;
 
-  // ✅ ANTIGUO (Auditoría) -> opcional para no romper CoordinatorConsole
+  // ✅ Auditoría / Tech (opcionales para no romper si aún no los pasas)
   timelineTab?: TimelineTab;
   setTimelineTab?: (v: TimelineTab) => void;
   activityByEval?: any[];
@@ -76,12 +79,15 @@ export default function EvaluationDetailPanel({
 }: Props) {
   const hasDetail = !!selectedDetail && !loadingDetail;
 
-  const canShowAudit =
-    detailTab === "AUDIT" &&
-    !!timelineTab &&
-    !!setTimelineTab &&
-    Array.isArray(activityByEval) &&
-    Array.isArray(activityGlobal);
+  const canShowAudit = useMemo(() => {
+    return (
+      detailTab === "AUDIT" &&
+      !!timelineTab &&
+      !!setTimelineTab &&
+      Array.isArray(activityByEval) &&
+      Array.isArray(activityGlobal)
+    );
+  }, [detailTab, timelineTab, setTimelineTab, activityByEval, activityGlobal]);
 
   return (
     <div className="bg-[#050505]/90 border border-white/10 rounded-3xl p-5 md:p-6 shadow-xl flex flex-col">
@@ -142,6 +148,10 @@ export default function EvaluationDetailPanel({
             />
           )}
 
+          {detailTab === "AI" && (
+            <AiSummaryTab analysis={selectedDetail.analysis} />
+          )}
+
           {detailTab === "NOTES" && (
             <NotesTab
               notes={notes}
@@ -150,8 +160,6 @@ export default function EvaluationDetailPanel({
               setCriteria={setCriteria}
             />
           )}
-
-          {detailTab === "AI" && <AiSummaryTab analysis={selectedDetail.analysis} />}
 
           {canShowAudit && (
             <AuditTab
@@ -162,7 +170,9 @@ export default function EvaluationDetailPanel({
             />
           )}
 
-          {detailTab === "TECH" && <TechTab analysis={selectedDetail.analysis} />}
+          {detailTab === "TECH" && (
+            <TechTab analysis={selectedDetail.analysis} />
+          )}
         </div>
       )}
     </div>

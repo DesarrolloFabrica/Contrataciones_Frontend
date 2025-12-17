@@ -114,9 +114,7 @@ const DecisionTab: React.FC<Props> = ({
         // ✅ nuevos campos (tab NOTAS)
         notes: notesText.trim() || undefined,
         criteria:
-          criteria && Object.keys(criteria ?? {}).length
-            ? criteria
-            : undefined,
+          criteria && Object.keys(criteria ?? {}).length ? criteria : undefined,
       });
 
       // ✅ solo después de guardar OK

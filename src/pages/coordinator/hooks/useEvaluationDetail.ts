@@ -106,7 +106,6 @@ export const useEvaluationDetail = ({
     async (id: string) => {
       setSelectedId(id);
 
-      // ✅ log simple (mock)
       auditAppend({
         type: "EVALUATION_OPENED",
         actor,
@@ -128,14 +127,14 @@ export const useEvaluationDetail = ({
       setDecisionComment("");
 
       // ✅ asegura notas base para esa evaluación
-      setNotesByEval((prev) =>
-        prev[id] ? prev : { ...prev, [id]: emptyNotes() }
-      );
+      setNotesByEval((prev) => (prev[id] ? prev : { ...prev, [id]: emptyNotes() }));
 
       try {
         const detail = await getTeacherEvaluationById(id);
+
         const analysis: AnalysisResult = detail.aiRawJson;
         const interview = mapFormToInterviewData(detail);
+
         setSelectedDetail({ analysis, interview });
       } catch (err) {
         console.error("Error al cargar detalle:", err);
@@ -199,7 +198,7 @@ export const useEvaluationDetail = ({
 
   const onDecisionCommentBlur = useCallback(() => {
     if (!selectedId) return;
-    const text = decisionComment.trim();
+    const text = (decisionComment ?? "").trim();
     if (!text) return;
 
     auditAppend({
@@ -215,16 +214,15 @@ export const useEvaluationDetail = ({
   // -----------------------------
   // ✅ VALIDACIÓN OBLIGATORIA (antes de enviar)
   // -----------------------------
-
   const checkedCount = useMemo(() => {
-    return Object.values(currentNotes.criteria).filter(Boolean).length;
+    return Object.values(currentNotes.criteria ?? {}).filter(Boolean).length;
   }, [currentNotes.criteria]);
 
   // ✅ Nota efectiva: primero NOTAS, si está vacía usa el comentario de DECISIÓN
   const effectiveNote = useMemo(() => {
-    const n = (currentNotes.notes ?? "").trim();
+    const n = ((currentNotes.notes ?? "") as string).trim();
     if (n.length) return n;
-    return (decisionComment ?? "").trim();
+    return ((decisionComment ?? "") as string).trim();
   }, [currentNotes.notes, decisionComment]);
 
   const effectiveNoteLen = useMemo(() => effectiveNote.length, [effectiveNote]);
@@ -235,7 +233,6 @@ export const useEvaluationDetail = ({
     if (decision === "PENDIENTE")
       out.push("Selecciona una decisión (Aprobar o Rechazar).");
 
-    // ✅ ahora sí valida la nota efectiva
     if (effectiveNoteLen < 30)
       out.push("Escribe una nota breve (mínimo 30 caracteres).");
 
@@ -249,9 +246,9 @@ export const useEvaluationDetail = ({
     if (!selectedId) return;
     if (!canSubmitDecision) return;
 
-    // 🔥 luego conecta backend real (POST)
+    // (mock) esto es solo auditoría local; el POST real ya lo hace DecisionTab al guardar en backend
     auditAppend({
-      type: "COORDINATOR_DECISION_SUBMITTED",
+      type: "COORDINATOR_DECISION_SET",
       actor,
       evaluationId: selectedId,
       metadata: {
