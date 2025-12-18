@@ -1,7 +1,8 @@
 // src/context/AuthContext.tsx
 import React, { createContext, useContext, useEffect, useState } from "react";
 import api, { AUTH_STORAGE_KEY } from "../services/apiClient";
-import { auditAppend, type AuditActor } from "../services/auditService";
+import { auditAppend } from "../services/auditService";
+import type { AuditActor } from "../types";
 
 // Roles que ya usas en el frontend (para rutas, etc.)
 export type Role = "leader" | "coordinator" | "admin";
@@ -18,11 +19,13 @@ export interface AuthUser {
   // rol real de BD
   backendRole: BackendRole;
   schoolId: string | null;
+  mustResetPassword?: boolean;
 }
 
 interface AuthContextValue {
   user: AuthUser | null;
-  login: (email: string, name?: string) => Promise<AuthUser>;
+  // ✅ NUEVO: ahora login requiere password
+  login: (email: string, password: string) => Promise<AuthUser>;
   logout: () => void;
 }
 
@@ -35,7 +38,7 @@ function mapBackendRoleToUiRole(backendRole: BackendRole): Role {
   return "leader";
 }
 
-// 🔹 helper para poner / quitar el Authorization en axios
+// helper para poner el header en axios
 function setAxiosAuthHeader(token?: string) {
   if (token) {
     api.defaults.headers.common["Authorization"] = `Bearer ${token}`;
@@ -49,7 +52,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
 }) => {
   const [user, setUser] = useState<AuthUser | null>(null);
 
-  // 🔹 Cargar auth desde localStorage cuando monta el app
+  // Cargar auth desde localStorage cuando monta el app
   useEffect(() => {
     if (typeof window === "undefined") return;
 
@@ -62,13 +65,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
         user?: AuthUser;
       };
 
-      if (parsed.accessToken) {
-        setAxiosAuthHeader(parsed.accessToken);
-      }
-
-      if (parsed.user) {
-        setUser(parsed.user);
-      }
+      if (parsed.accessToken) setAxiosAuthHeader(parsed.accessToken);
+      if (parsed.user) setUser(parsed.user);
     } catch (err) {
       console.warn("No se pudo leer auth desde localStorage", err);
       localStorage.removeItem(AUTH_STORAGE_KEY);
@@ -76,71 +74,44 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
     }
   }, []);
 
-  // 🔹 login: llama al backend y guarda token + usuario
- // 🔹 login: llama al backend y guarda token + usuario
-  const login = async (email: string, name?: string): Promise<AuthUser> => {
+  // ✅ login: email + password
+  const login = async (email: string, password: string): Promise<AuthUser> => {
     const cleanEmail = email.toLowerCase().trim();
 
-    let resp;
-    try {
-      resp = await api.post("/auth/login-by-email", { email: cleanEmail });
-    } catch (error: any) {
-      console.error("[login] Error llamando al backend:", error?.response?.data || error);
+    const resp = await api.post<{
+      accessToken: string;
+      user: {
+        id: string;
+        email: string;
+        role: BackendRole;
+        schoolId: string | null;
+        fullName?: string;
+        mustResetPassword?: boolean;
+      };
+    }>("/auth/login", { email: cleanEmail, password });
 
-      const msg =
-        error?.response?.data?.message ??
-        "No se pudo iniciar sesión. Verifica tu correo institucional.";
+    const { accessToken, user: backendUser } = resp.data;
 
-      throw new Error(msg);
-    }
-
-    const data: any = resp.data;
-    console.log("[login] resp.data =", data);
-
-    if (!data || !data.user) {
-      console.error("[login] Respuesta sin 'user':", data);
-      throw new Error(
-        "Error en el servidor: la respuesta de login no contiene información de usuario."
-      );
-    }
-
-    const backendUser = data.user;
-    const backendRole = backendUser.role as BackendRole | undefined;
-
-    if (!backendRole) {
-      console.error("[login] Usuario sin 'role' en la respuesta:", backendUser);
-      throw new Error(
-        "Tu usuario no tiene un rol asignado en el sistema. Contacta al administrador."
-      );
-    }
-
-    const uiRole = mapBackendRoleToUiRole(backendRole);
+    const uiRole = mapBackendRoleToUiRole(backendUser.role);
 
     const authUser: AuthUser = {
       id: backendUser.id,
       email: backendUser.email,
-      name:
-        name?.trim() ||
-        backendUser.fullName ||
-        backendUser.email.split("@")[0],
+      name: backendUser.fullName || backendUser.email.split("@")[0],
       role: uiRole,
-      backendRole,
+      backendRole: backendUser.role,
       schoolId: backendUser.schoolId,
+      mustResetPassword: backendUser.mustResetPassword,
     };
 
-    // 👉 Inyectar el header Authorization
-    setAxiosAuthHeader(data.accessToken);
-
-    // 👉 Guardar en localStorage
+    // Inyectar header y persistir
+    setAxiosAuthHeader(accessToken);
     localStorage.setItem(
       AUTH_STORAGE_KEY,
-      JSON.stringify({
-        accessToken: data.accessToken,
-        user: authUser,
-      })
+      JSON.stringify({ accessToken, user: authUser })
     );
 
-    // 👉 Auditoría
+    // Auditoría
     const actor: AuditActor = {
       id: authUser.id,
       name: authUser.name,
@@ -186,8 +157,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
 
 export function useAuth(): AuthContextValue {
   const ctx = useContext(AuthContext);
-  if (!ctx) {
-    throw new Error("useAuth debe usarse dentro de AuthProvider");
-  }
+  if (!ctx) throw new Error("useAuth debe usarse dentro de AuthProvider");
   return ctx;
 }

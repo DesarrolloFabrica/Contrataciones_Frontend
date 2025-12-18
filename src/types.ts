@@ -136,9 +136,9 @@ export interface TeacherEvaluationSummary {
 export type AuditActorRole = "leader" | "coordinator" | "admin" | "system";
 
 export interface AuditActor {
-  id?: string | null;
-  name?: string | null;
-  email?: string | null;
+  id: string;
+  name: string;
+  email: string;
   role: AuditActorRole;
 }
 
@@ -168,17 +168,21 @@ export interface AuditEvent {
 //user
 export type UserRole = "ADMIN" | "COORDINADOR" | "LIDER";
 
-export interface AuthUser {
+export type AuthUser = {
   id: string;
   email: string;
-  role: UserRole;
+  fullName: string;
+  role: "ADMIN" | "COORDINADOR" | "LIDER";
   schoolId: string | null;
-}
+  mustResetPassword?: boolean; // opcional si aún no lo usas
+};
 
-export interface AuthResponse {
+export type AuthResponse = {
   accessToken: string;
   user: AuthUser;
-}
+};
+
+
 export type BackendRole = "ADMIN" | "COORDINADOR" | "LIDER";
 
 export interface BackendSchoolSummary {
