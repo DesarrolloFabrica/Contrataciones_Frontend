@@ -1,8 +1,7 @@
 // src/context/AuthContext.tsx
 import React, { createContext, useContext, useEffect, useState } from "react";
 import api, { AUTH_STORAGE_KEY } from "../services/apiClient";
-import { auditAppend } from "../services/auditService";
-import type { AuditActor } from "../types";
+import { auditAppend, type AuditActor } from "../services/auditService";
 
 // Roles que ya usas en el frontend (para rutas, etc.)
 export type Role = "leader" | "coordinator" | "admin";
@@ -36,7 +35,7 @@ function mapBackendRoleToUiRole(backendRole: BackendRole): Role {
   return "leader";
 }
 
-// 🔹 helper para poner el header en axios
+// 🔹 helper para poner / quitar el Authorization en axios
 function setAxiosAuthHeader(token?: string) {
   if (token) {
     api.defaults.headers.common["Authorization"] = `Bearer ${token}`;
@@ -78,23 +77,44 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
   }, []);
 
   // 🔹 login: llama al backend y guarda token + usuario
+ // 🔹 login: llama al backend y guarda token + usuario
   const login = async (email: string, name?: string): Promise<AuthUser> => {
     const cleanEmail = email.toLowerCase().trim();
 
-    const resp = await api.post<{
-      accessToken: string;
-      user: {
-        id: string;
-        email: string;
-        role: BackendRole;
-        schoolId: string | null;
-        fullName?: string;
-      };
-    }>("/auth/login-by-email", { email: cleanEmail });
+    let resp;
+    try {
+      resp = await api.post("/auth/login-by-email", { email: cleanEmail });
+    } catch (error: any) {
+      console.error("[login] Error llamando al backend:", error?.response?.data || error);
 
-    const { accessToken, user: backendUser } = resp.data;
+      const msg =
+        error?.response?.data?.message ??
+        "No se pudo iniciar sesión. Verifica tu correo institucional.";
 
-    const uiRole = mapBackendRoleToUiRole(backendUser.role);
+      throw new Error(msg);
+    }
+
+    const data: any = resp.data;
+    console.log("[login] resp.data =", data);
+
+    if (!data || !data.user) {
+      console.error("[login] Respuesta sin 'user':", data);
+      throw new Error(
+        "Error en el servidor: la respuesta de login no contiene información de usuario."
+      );
+    }
+
+    const backendUser = data.user;
+    const backendRole = backendUser.role as BackendRole | undefined;
+
+    if (!backendRole) {
+      console.error("[login] Usuario sin 'role' en la respuesta:", backendUser);
+      throw new Error(
+        "Tu usuario no tiene un rol asignado en el sistema. Contacta al administrador."
+      );
+    }
+
+    const uiRole = mapBackendRoleToUiRole(backendRole);
 
     const authUser: AuthUser = {
       id: backendUser.id,
@@ -104,23 +124,23 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
         backendUser.fullName ||
         backendUser.email.split("@")[0],
       role: uiRole,
-      backendRole: backendUser.role,
+      backendRole,
       schoolId: backendUser.schoolId,
     };
 
-    // 👉 Muy importante: inyectar el header de una vez
-    setAxiosAuthHeader(accessToken);
+    // 👉 Inyectar el header Authorization
+    setAxiosAuthHeader(data.accessToken);
 
-    // Y guardar todo en localStorage
+    // 👉 Guardar en localStorage
     localStorage.setItem(
       AUTH_STORAGE_KEY,
       JSON.stringify({
-        accessToken,
+        accessToken: data.accessToken,
         user: authUser,
       })
     );
 
-    // Log de auditoría
+    // 👉 Auditoría
     const actor: AuditActor = {
       id: authUser.id,
       name: authUser.name,
