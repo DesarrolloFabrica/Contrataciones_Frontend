@@ -1,12 +1,21 @@
 // src/pages/coordinator/components/EvaluationDetailPanel.tsx
+import React, { useMemo } from "react";
 import { FileText, Loader2, Search } from "lucide-react";
 import type { AnalysisResult, InterviewData } from "../../../types";
+
 import DetailTabs from "./DetailTabs";
 import DecisionTab from "./DecisionTab";
 import AiSummaryTab from "./AiSummaryTab";
+import NotesTab from "./NotesTab";
 import AuditTab from "./AuditTab";
 import TechTab from "./TechTab";
-import type { DetailTabKey, LocalDecision, TimelineTab } from "../types";
+
+import type {
+  CoordinatorCriteria,
+  DetailTabKey,
+  LocalDecision,
+  TimelineTab,
+} from "../types";
 
 type Props = {
   selectedId: string | null;
@@ -22,15 +31,30 @@ type Props = {
   decisionComment: string;
   setDecisionComment: (v: string) => void;
   onDecisionCommentBlur: () => void;
+
+  // ✅ Decisión (local)
   onApplyDecision: (d: LocalDecision) => void;
 
-  timelineTab: TimelineTab;
-  setTimelineTab: (v: TimelineTab) => void;
-  activityByEval: any[];
-  activityGlobal: any[];
+  // ✅ Notas
+  notes: string;
+  setNotes: (v: string) => void;
+  criteria: CoordinatorCriteria;
+  setCriteria: (next: CoordinatorCriteria) => void;
+
+  // ✅ Validación + envío
+  canSubmitDecision: boolean;
+  missingReasons: string[];
+  onSubmitDecision: () => void;
+
+  // ✅ Auditoría / Tech (opcionales para no romper si aún no los pasas)
+  timelineTab?: TimelineTab;
+  setTimelineTab?: (v: TimelineTab) => void;
+  activityByEval?: any[];
+  activityGlobal?: any[];
 };
 
 export default function EvaluationDetailPanel({
+  selectedId,
   selectedDetail,
   loadingDetail,
   onExportPdf,
@@ -41,11 +65,30 @@ export default function EvaluationDetailPanel({
   setDecisionComment,
   onDecisionCommentBlur,
   onApplyDecision,
+  notes,
+  setNotes,
+  criteria,
+  setCriteria,
+  canSubmitDecision,
+  missingReasons,
+  onSubmitDecision,
   timelineTab,
   setTimelineTab,
   activityByEval,
   activityGlobal,
 }: Props) {
+  const hasDetail = !!selectedDetail && !loadingDetail;
+
+  const canShowAudit = useMemo(() => {
+    return (
+      detailTab === "AUDIT" &&
+      !!timelineTab &&
+      !!setTimelineTab &&
+      Array.isArray(activityByEval) &&
+      Array.isArray(activityGlobal)
+    );
+  }, [detailTab, timelineTab, setTimelineTab, activityByEval, activityGlobal]);
+
   return (
     <div className="bg-[#050505]/90 border border-white/10 rounded-3xl p-5 md:p-6 shadow-xl flex flex-col">
       <div className="flex items-center justify-between mb-4">
@@ -58,7 +101,7 @@ export default function EvaluationDetailPanel({
           </p>
         </div>
 
-        {selectedDetail && (
+        {hasDetail && (
           <button
             type="button"
             onClick={onExportPdf}
@@ -83,7 +126,8 @@ export default function EvaluationDetailPanel({
         <div className="flex flex-1 flex-col items-center justify-center text-gray-500 gap-3">
           <Search className="w-8 h-8" />
           <p className="text-sm text-center max-w-sm">
-            Selecciona una evaluación en el panel izquierdo para ver el informe completo generado por IA.
+            Selecciona una evaluación en el panel izquierdo para ver el informe
+            completo generado por IA.
           </p>
         </div>
       )}
@@ -92,26 +136,43 @@ export default function EvaluationDetailPanel({
         <div className="mt-2">
           {detailTab === "DECISION" && (
             <DecisionTab
+              selectedId={selectedId}
               decision={decision}
               decisionComment={decisionComment}
               setDecisionComment={setDecisionComment}
               onDecisionCommentBlur={onDecisionCommentBlur}
               onApplyDecision={onApplyDecision}
+              canSubmitDecision={canSubmitDecision}
+              missingReasons={missingReasons}
+              onSubmitDecision={onSubmitDecision}
             />
           )}
 
-          {detailTab === "AI" && <AiSummaryTab analysis={selectedDetail.analysis} />}
+          {detailTab === "AI" && (
+            <AiSummaryTab analysis={selectedDetail.analysis} />
+          )}
 
-          {detailTab === "AUDIT" && (
+          {detailTab === "NOTES" && (
+            <NotesTab
+              notes={notes}
+              setNotes={setNotes}
+              criteria={criteria}
+              setCriteria={setCriteria}
+            />
+          )}
+
+          {canShowAudit && (
             <AuditTab
-              timelineTab={timelineTab}
-              setTimelineTab={setTimelineTab}
-              activityByEval={activityByEval}
-              activityGlobal={activityGlobal}
+              timelineTab={timelineTab!}
+              setTimelineTab={setTimelineTab!}
+              activityByEval={activityByEval!}
+              activityGlobal={activityGlobal!}
             />
           )}
 
-          {detailTab === "TECH" && <TechTab analysis={selectedDetail.analysis} />}
+          {detailTab === "TECH" && (
+            <TechTab analysis={selectedDetail.analysis} />
+          )}
         </div>
       )}
     </div>

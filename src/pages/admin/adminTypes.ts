@@ -11,7 +11,7 @@ export type RiskBucket =
   | "NO_RECOMENDAR"
   | "DESCONOCIDO";
 
-export type AdminTab = "RESUMEN" | "IA" | "COORDINADOR" | "TECNICO";
+export type AdminTab = "RESUMEN" | "IA" | "COORDINADOR" | "TECNICO" | "ADMIN";
 
 export interface AdminMetrics {
   total: number;
@@ -185,4 +185,16 @@ export interface AdminSettings {
   cautionMinScore: number;
   highRiskMaxScore: number;
 }
+export type TimelineTab = "EVAL" | "GLOBAL";
+
+export type AuditEvent = {
+  id?: string;
+  type: string;
+  at?: string; // ISO
+  actor?: { id?: string | null; name?: string | null; role?: string | null } | null;
+  evaluationId?: string | null;
+  metadata?: Record<string, any> | null;
+};
+
+
 

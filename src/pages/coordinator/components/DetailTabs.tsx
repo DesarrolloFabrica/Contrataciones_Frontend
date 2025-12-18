@@ -1,37 +1,45 @@
-import React from "react";
-import { DetailTabKey } from "../types";
-
-const TABS: Array<{ key: DetailTabKey; label: string }> = [
-  { key: "DECISION", label: "Decisión" },
-  { key: "AI", label: "Resumen IA" },
-  { key: "AUDIT", label: "Actividad" },
-  { key: "TECH", label: "Detalle técnico (IA)" },
-];
+import React, { useMemo } from "react";
+import { FileText, BrainCircuit, NotebookPen } from "lucide-react";
+import type { DetailTabKey } from "../types";
 
 type Props = {
   value: DetailTabKey;
-  onChange: (k: DetailTabKey) => void;
+  onChange: (v: DetailTabKey) => void;
 };
 
-const DetailTabs: React.FC<Props> = ({ value, onChange }) => {
+const tabBtn = (active: boolean) =>
+  `px-4 py-2 rounded-xl text-xs font-bold uppercase tracking-widest border transition-colors flex items-center gap-2 ${
+    active
+      ? "bg-emerald-600 text-white border-emerald-500/40"
+      : "bg-white/5 text-gray-300 border-white/10 hover:bg-white/10"
+  }`;
+
+export default function DetailTabs({ value, onChange }: Props) {
+  const tabs = useMemo(
+    () => [
+      { id: "DECISION" as const, label: "Decisión", Icon: FileText },
+      { id: "NOTES" as const, label: "Notas", Icon: NotebookPen },
+      { id: "AI" as const, label: "Resumen IA", Icon: BrainCircuit },
+    ],
+    []
+  );
+
   return (
-    <div className="flex items-center gap-2 mb-4 flex-wrap">
-      {TABS.map((t) => (
-        <button
-          key={t.key}
-          type="button"
-          onClick={() => onChange(t.key)}
-          className={`px-3 py-1 rounded-full border text-[11px] uppercase tracking-widest ${
-            value === t.key
-              ? "border-emerald-500 bg-emerald-500/10 text-emerald-300"
-              : "border-white/10 text-gray-400 hover:border-emerald-500/40"
-          }`}
-        >
-          {t.label}
-        </button>
-      ))}
+    <div className="flex flex-wrap items-center gap-2 mt-2 mb-4">
+      {(tabs ?? []).map((t) => {
+        const active = value === t.id;
+        return (
+          <button
+            key={t.id}
+            type="button"
+            className={tabBtn(active)}
+            onClick={() => onChange(t.id)}
+          >
+            <t.Icon className="w-4 h-4" />
+            {t.label}
+          </button>
+        );
+      })}
     </div>
   );
-};
-
-export default DetailTabs;
+}

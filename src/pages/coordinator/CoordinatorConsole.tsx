@@ -33,7 +33,7 @@ const CoordinatorConsole: React.FC = () => {
   const evals = useCoordinatorEvaluations();
 
   // -----------------------------
-  // 2) Hook detalle (✅ tipado fuerte para que aparezca clearSelection)
+  // 2) Hook detalle
   // -----------------------------
   const detail: ReturnType<typeof useEvaluationDetail> = useEvaluationDetail({
     user,
@@ -44,9 +44,20 @@ const CoordinatorConsole: React.FC = () => {
   });
 
   // -----------------------------
-  // 3) Tabs panel derecho
+  // 3) Tabs panel derecho (✅ ahora: DECISION | AI | NOTES)
   // -----------------------------
   const [detailTab, setDetailTab] = useState<DetailTabKey>("DECISION");
+
+  // -----------------------------
+  // 3.1) NUEVO: notas + criterios (para NotesTab)
+  // -----------------------------
+  const [notes, setNotes] = useState("");
+  const [criteria, setCriteria] = useState<Record<string, boolean>>({
+    docs_ok: false,
+    profile_fit: false,
+    risk_ok: false,
+    communication_ok: false,
+  });
 
   // -----------------------------
   // 4) Filtros obligatorios (Escuela + Programa)
@@ -94,6 +105,16 @@ const CoordinatorConsole: React.FC = () => {
     evals.setSearch("");
     setDetailTab("DECISION");
     detail.clearSelection();
+
+    // ✅ si cambias escuela, las notas/criterios se reinician
+    setNotes("");
+    setCriteria({
+      docs_ok: false,
+      profile_fit: false,
+      risk_ok: false,
+      communication_ok: false,
+    });
+
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [schoolFilter]);
 
@@ -101,6 +122,16 @@ const CoordinatorConsole: React.FC = () => {
     evals.setSearch("");
     setDetailTab("DECISION");
     detail.clearSelection();
+
+    // ✅ si cambias programa, reinicia notas/criterios
+    setNotes("");
+    setCriteria({
+      docs_ok: false,
+      profile_fit: false,
+      risk_ok: false,
+      communication_ok: false,
+    });
+
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [programFilter]);
 
@@ -280,6 +311,15 @@ const CoordinatorConsole: React.FC = () => {
                 onSelectEvaluation={(id) => {
                   detail.handleSelectEvaluation(id);
                   setDetailTab("DECISION");
+
+                  // ✅ al cambiar evaluación, limpia notas/criterios
+                  setNotes("");
+                  setCriteria({
+                    docs_ok: false,
+                    profile_fit: false,
+                    risk_ok: false,
+                    communication_ok: false,
+                  });
                 }}
               />
 
@@ -295,11 +335,19 @@ const CoordinatorConsole: React.FC = () => {
                 setDecisionComment={detail.setDecisionComment}
                 onDecisionCommentBlur={detail.onDecisionCommentBlur}
                 onApplyDecision={detail.applyDecision}
-                timelineTab={detail.timelineTab}
-                setTimelineTab={detail.setTimelineTab}
-                activityByEval={detail.activityByEval}
-                activityGlobal={detail.activityGlobal}
+
+                // ✅ NOTES
+                notes={detail.notes}
+                setNotes={detail.setNotes}
+                criteria={detail.criteria}
+                setCriteria={detail.setCriteria}
+
+                // ✅ VALIDACIÓN + SUBMIT
+                canSubmitDecision={detail.canSubmitDecision}
+                missingReasons={detail.missingReasons}
+                onSubmitDecision={detail.submitDecisionToAdmin}
               />
+
             </section>
           </>
         )}

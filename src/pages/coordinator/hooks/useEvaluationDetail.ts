@@ -10,10 +10,17 @@ import type {
 
 import { getTeacherEvaluationById } from "../../../services/teachersService";
 import { generateAnalysisPdfFromData } from "../../../services/pdfReport";
-import { auditAppend, auditList } from "../../../services/auditService";
+import { auditAppend } from "../../../services/auditService";
 import { actorFromUser } from "../../../services/auditActor";
 
-import type { LocalDecision, TimelineTab } from "../types";
+import type {
+  LocalDecision,
+  CoordinatorCriteria,
+  CoordinatorNotesByEval,
+  CoordinatorNotes,
+} from "../types";
+
+import { DEFAULT_CRITERIA } from "../types";
 import { mapFormToInterviewData } from "../utils/mapFormToInterviewData";
 
 type Params = {
@@ -24,6 +31,13 @@ type Params = {
   setLocalDecisions: Dispatch<SetStateAction<Record<string, LocalDecision>>>;
 };
 
+const emptyCriteria = (): CoordinatorCriteria => ({ ...DEFAULT_CRITERIA });
+
+const emptyNotes = (): CoordinatorNotes => ({
+  notes: "",
+  criteria: emptyCriteria(),
+});
+
 export const useEvaluationDetail = ({
   user,
   actor,
@@ -32,6 +46,7 @@ export const useEvaluationDetail = ({
   setLocalDecisions,
 }: Params) => {
   const [selectedId, setSelectedId] = useState<string | null>(null);
+
   const [selectedDetail, setSelectedDetail] = useState<{
     analysis: AnalysisResult;
     interview: InterviewData;
@@ -42,9 +57,12 @@ export const useEvaluationDetail = ({
   const [decision, setDecision] = useState<LocalDecision>("PENDIENTE");
   const [decisionComment, setDecisionComment] = useState("");
 
-  const [timelineTab, setTimelineTab] = useState<TimelineTab>("EVAL");
-  const [auditTick, setAuditTick] = useState(0);
-  const bumpAudit = () => setAuditTick((t) => t + 1);
+  // ✅ NOTAS por evaluación (persisten por id)
+  const [notesByEval, setNotesByEval] = useState<CoordinatorNotesByEval>({});
+
+  const bumpAudit = useCallback(() => {
+    // placeholder por si luego quieres forzar refresh de auditoría
+  }, []);
 
   const clearSelection = useCallback(() => {
     setSelectedId(null);
@@ -52,8 +70,37 @@ export const useEvaluationDetail = ({
     setLoadingDetail(false);
     setDecision("PENDIENTE");
     setDecisionComment("");
-    setTimelineTab("EVAL");
+    // ojo: no borramos notesByEval para que queden guardadas mientras navegas
   }, []);
+
+  // ✅ notas actuales según selectedId
+  const currentNotes = useMemo(() => {
+    if (!selectedId) return emptyNotes();
+    return notesByEval[selectedId] ?? emptyNotes();
+  }, [notesByEval, selectedId]);
+
+  // ✅ setters que escriben sobre notesByEval
+  const setNotes = useCallback(
+    (v: string) => {
+      if (!selectedId) return;
+      setNotesByEval((prev) => ({
+        ...prev,
+        [selectedId]: { ...(prev[selectedId] ?? emptyNotes()), notes: v },
+      }));
+    },
+    [selectedId]
+  );
+
+  const setCriteria = useCallback(
+    (next: CoordinatorCriteria) => {
+      if (!selectedId) return;
+      setNotesByEval((prev) => ({
+        ...prev,
+        [selectedId]: { ...(prev[selectedId] ?? emptyNotes()), criteria: next },
+      }));
+    },
+    [selectedId]
+  );
 
   const handleSelectEvaluation = useCallback(
     async (id: string) => {
@@ -79,10 +126,15 @@ export const useEvaluationDetail = ({
       setDecision(current);
       setDecisionComment("");
 
+      // ✅ asegura notas base para esa evaluación
+      setNotesByEval((prev) => (prev[id] ? prev : { ...prev, [id]: emptyNotes() }));
+
       try {
         const detail = await getTeacherEvaluationById(id);
+
         const analysis: AnalysisResult = detail.aiRawJson;
         const interview = mapFormToInterviewData(detail);
+
         setSelectedDetail({ analysis, interview });
       } catch (err) {
         console.error("Error al cargar detalle:", err);
@@ -90,7 +142,7 @@ export const useEvaluationDetail = ({
         setLoadingDetail(false);
       }
     },
-    [actor, evaluations, localDecisions]
+    [actor, bumpAudit, evaluations, localDecisions, setNotesByEval]
   );
 
   const exportPdf = useCallback(async () => {
@@ -113,7 +165,7 @@ export const useEvaluationDetail = ({
       console.error("Error al generar PDF:", err);
       alert("No se pudo generar el PDF del reporte.");
     }
-  }, [actor, selectedDetail, selectedId]);
+  }, [actor, bumpAudit, selectedDetail, selectedId]);
 
   const applyDecision = useCallback(
     (newDecision: LocalDecision) => {
@@ -130,17 +182,23 @@ export const useEvaluationDetail = ({
         type: "COORDINATOR_DECISION_SET",
         actor,
         evaluationId: selectedId,
-        metadata: { status: newDecision, decidedAt, decidedById, decidedByName },
+        metadata: {
+          status: newDecision,
+          decidedAt,
+          decidedById,
+          decidedByName,
+          source: "coordinator-local",
+        },
       });
 
       bumpAudit();
     },
-    [actor, selectedId, setLocalDecisions, user]
+    [actor, bumpAudit, selectedId, setLocalDecisions, user]
   );
 
   const onDecisionCommentBlur = useCallback(() => {
     if (!selectedId) return;
-    const text = decisionComment.trim();
+    const text = (decisionComment ?? "").trim();
     if (!text) return;
 
     auditAppend({
@@ -151,35 +209,93 @@ export const useEvaluationDetail = ({
     });
 
     bumpAudit();
-  }, [actor, decisionComment, selectedId]);
+  }, [actor, bumpAudit, decisionComment, selectedId]);
 
-  const activityByEval = useMemo(() => {
-    if (!selectedId) return [];
-    return auditList({ evaluationId: selectedId, limit: 120 });
-  }, [selectedId, auditTick]);
+  // -----------------------------
+  // ✅ VALIDACIÓN OBLIGATORIA (antes de enviar)
+  // -----------------------------
+  const checkedCount = useMemo(() => {
+    return Object.values(currentNotes.criteria ?? {}).filter(Boolean).length;
+  }, [currentNotes.criteria]);
 
-  const activityGlobal = useMemo(() => {
-    return auditList({ limit: 120 });
-  }, [auditTick]);
+  // ✅ Nota efectiva: primero NOTAS, si está vacía usa el comentario de DECISIÓN
+  const effectiveNote = useMemo(() => {
+    const n = ((currentNotes.notes ?? "") as string).trim();
+    if (n.length) return n;
+    return ((decisionComment ?? "") as string).trim();
+  }, [currentNotes.notes, decisionComment]);
+
+  const effectiveNoteLen = useMemo(() => effectiveNote.length, [effectiveNote]);
+
+  const missingReasons = useMemo(() => {
+    const out: string[] = [];
+    if (!selectedId) out.push("Selecciona una evaluación.");
+    if (decision === "PENDIENTE")
+      out.push("Selecciona una decisión (Aprobar o Rechazar).");
+
+    if (effectiveNoteLen < 30)
+      out.push("Escribe una nota breve (mínimo 30 caracteres).");
+
+    if (checkedCount < 2) out.push("Marca al menos 2 criterios en Notas.");
+    return out;
+  }, [checkedCount, decision, selectedId, effectiveNoteLen]);
+
+  const canSubmitDecision = missingReasons.length === 0;
+
+  const submitDecisionToAdmin = useCallback(async () => {
+    if (!selectedId) return;
+    if (!canSubmitDecision) return;
+
+    // (mock) esto es solo auditoría local; el POST real ya lo hace DecisionTab al guardar en backend
+    auditAppend({
+      type: "COORDINATOR_DECISION_SET",
+      actor,
+      evaluationId: selectedId,
+      metadata: {
+        status: decision,
+        criteria: currentNotes.criteria,
+        noteLen: effectiveNoteLen,
+        source: "coordinator-submit",
+      },
+    });
+
+    bumpAudit();
+    alert("✅ Decisión enviada al administrador.");
+  }, [
+    actor,
+    bumpAudit,
+    canSubmitDecision,
+    currentNotes.criteria,
+    decision,
+    effectiveNoteLen,
+    selectedId,
+  ]);
 
   return {
     selectedId,
     selectedDetail,
     loadingDetail,
+
     decision,
     decisionComment,
-    timelineTab,
+
+    // ✅ notas + criterios (para NotesTab)
+    notes: currentNotes.notes,
+    criteria: currentNotes.criteria,
+    setNotes,
+    setCriteria,
+
+    // ✅ validación + submit
+    canSubmitDecision,
+    missingReasons,
+    submitDecisionToAdmin,
 
     setDecisionComment,
-    setTimelineTab,
 
-    clearSelection, // ✅ EXISTE y TS lo ve
+    clearSelection,
     handleSelectEvaluation,
     exportPdf,
     applyDecision,
     onDecisionCommentBlur,
-
-    activityByEval,
-    activityGlobal,
   };
 };

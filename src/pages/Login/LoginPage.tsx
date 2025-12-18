@@ -1,4 +1,3 @@
-// src/pages/LoginPage.tsx
 import React, { useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
@@ -10,32 +9,45 @@ import Enciendete from "../../assets/images/Enciendete.png";
 import VideoFondo from "../../assets/videos/Op2_1.mp4";
 
 const LoginPage: React.FC = () => {
-  // ==============================
-  // LÓGICA (NO TOCADA)
-  // ==============================
   const { login } = useAuth();
   const navigate = useNavigate();
   const location = useLocation() as any;
 
   const [email, setEmail] = useState("");
   const [name, setName] = useState("");
+  const [error, setError] = useState<string | null>(null);
 
   const from = location.state?.from?.pathname;
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setError(null);
+
     if (!email.trim()) return;
 
-    const user = login(email.trim(), name.trim() || undefined);
+    try {
+      const user = await login(email.trim(), name.trim() || undefined);
 
-    if (from) {
-      navigate(from, { replace: true });
-      return;
+      if (from) {
+        navigate(from, { replace: true });
+        return;
+      }
+
+      if (user.role === "leader") {
+        navigate("/leader", { replace: true });
+      } else if (user.role === "coordinator") {
+        navigate("/coordinator", { replace: true });
+      } else {
+        navigate("/admin", { replace: true });
+      }
+    } catch (err: any) {
+      console.error("Error en login:", err);
+      const msg =
+        err?.response?.data?.message ||
+        err?.message ||
+        "No se pudo iniciar sesión. Verifica tu correo institucional.";
+      setError(msg);
     }
-
-    if (user.role === "leader") navigate("/leader", { replace: true });
-    else if (user.role === "coordinator") navigate("/coordinator", { replace: true });
-    else navigate("/admin", { replace: true });
   };
 
   const logoSizeClass = "w-24";

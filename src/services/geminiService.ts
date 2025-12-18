@@ -9,11 +9,15 @@ import {
 // Tomar la API key desde Vite
 const apiKey = import.meta.env.VITE_GEMINI_API_KEY as string | undefined;
 
+// ⚠️ IMPORTANTE: ya NO lanzamos error aquí
 if (!apiKey) {
-  throw new Error("VITE_GEMINI_API_KEY no está configurada en .env.local");
+  console.warn(
+    "⚠️ VITE_GEMINI_API_KEY no está configurada. La IA del frontend estará deshabilitada en este entorno."
+  );
 }
 
-const ai = new GoogleGenAI({ apiKey });
+// Si hay key, creamos el cliente. Si no, lo dejamos en null.
+const ai = apiKey ? new GoogleGenAI({ apiKey }) : null;
 
 const analysisSchema = {
   type: Type.OBJECT,
@@ -52,7 +56,7 @@ const analysisSchema = {
           reporteAnalitico: {
             type: Type.STRING,
             description:
-              "Reporte detallado que justifica el puntaje. Debe incluir un análisis comparativo con datos o estadísticas simuladas para dar contexto. Por ejemplo: 'Su plan de acción ante la reprobación es un 30% más estructurado que el promedio de los candidatos'.",
+              "Reporte detallado que justifica el puntaje. Debe incluir un análisis comparativo con datos o estadísticas simuladas para dar contexto.",
           },
           oportunidades: {
             type: Type.STRING,
@@ -67,7 +71,7 @@ const analysisSchema = {
           observacionesCorregidas: {
             type: Type.STRING,
             description:
-              "El texto original del usuario para esta categoría, pero corregido gramaticalmente y ortográficamente para mayor claridad y profesionalismo. Resume las ideas principales.",
+              "Texto original del usuario para esta categoría, pero corregido gramaticalmente y ortográficamente.",
           },
         },
         required: [
@@ -89,7 +93,7 @@ const analysisSchema = {
     resignationRiskWindow: {
       type: Type.STRING,
       description:
-        "Ventana de tiempo estimada en la que el candidato podría renunciar, basada en patrones históricos. Ejemplos: 'Días 1-5 (Inicio de clases)', 'Días 10-20 (Cierre de primer corte)'.",
+        "Ventana de tiempo estimada en la que el candidato podría renunciar.",
     },
     temporalRiskFactors: {
       type: Type.ARRAY,
@@ -100,7 +104,7 @@ const analysisSchema = {
     finalVerdict: {
       type: Type.STRING,
       description:
-        "Veredicto final: una recomendación clara sobre si proceder con la contratación ('Contratación Recomendada', 'Contratar con Precaución', 'No Recomendar Contratación').",
+        "Veredicto final: recomendación clara sobre la contratación.",
     },
   },
   required: [
@@ -153,29 +157,32 @@ function buildPrompt(data: InterviewData): string {
     - Plan ante feedback negativo: ${data.scenarioFeedback}
 
     **Instrucciones de Análisis:**
-    1.  **Evalúa cada una de las 4 categorías** asignando un puntaje de 0 a 100.
-    2.  Para cada categoría, escribe un **Reporte Analítico** que justifique el puntaje, incluyendo un análisis comparativo con estadísticas simuladas para dar contexto.
-    3.  Para cada categoría, identifica **Oportunidades** y **Recomendaciones**.
-    4.  **IMPORTANTE: Para cada categoría, toma las observaciones del entrevistador correspondientes, corrige cualquier error de ortografía y gramática, mejora la redacción para que sea clara y profesional, y devuelve este texto consolidado y pulido en el campo 'observacionesCorregidas'.**
-    5.  **Calcula un puntaje global** ponderando las categorías: Manejo de Aula (35%), Coherencia y Compromiso (30%), Actitud Frente a la IA (20%), Disponibilidad y Condiciones (15%).
-    6.  **Determina un nivel de riesgo general** (Bajo, Medio, Alto).
-    7.  **Escribe un resumen ejecutivo**.
-    8.  **Proporciona recomendaciones de mitigación** generales.
-    9.  **Emite un veredicto final** claro.
-    10. **Proyecta una ventana temporal de renuncia.** Basándote en los siguientes patrones históricos, estima el período más probable en que el candidato podría renunciar si fuera contratado. Justifica tu estimación con los factores de riesgo específicos detectados.
-        - **Renuncia Temprana (Días 1-5):** Generalmente causada por incompatibilidad de horarios, conflictos con otro empleo, o rechazo a condiciones contractuales clave (comités, etc.).
-        - **Renuncia Media (Días 5-10):** A menudo relacionada con falta de recursos, problemas de conectividad (para modalidad virtual), o dificultades iniciales de adaptación a la carga de trabajo.
-        - **Renuncia Tardía (Días 10-20):** Típicamente surge por sobrecarga laboral, conflictos con el feedback recibido, o problemas graves en el manejo de aula.
+    1. Evalúa cada una de las 4 categorías asignando un puntaje de 0 a 100.
+    2. Para cada categoría, escribe un Reporte Analítico que justifique el puntaje.
+    3. Para cada categoría, identifica Oportunidades y Recomendaciones.
+    4. IMPORTANTE: Para cada categoría, corrige y mejora la redacción de las observaciones y devuélvelas como 'observacionesCorregidas'.
+    5. Calcula un puntaje global ponderado.
+    6. Determina un nivel de riesgo general (Bajo / Medio / Alto).
+    7. Escribe un resumen ejecutivo.
+    8. Proporciona recomendaciones de mitigación generales.
+    9. Emite un veredicto final claro.
+    10. Proyecta una ventana temporal de renuncia y justifícala.
 
-    **Formato de Salida:**
-    Debes devolver tu análisis estrictamente en formato JSON, siguiendo el esquema proporcionado. No incluyas texto o explicaciones fuera del JSON.
+    Devuelve SOLO JSON con el esquema indicado.
   `;
 }
 
-// Función original, la dejamos igual para la UI
+// --- Función principal de análisis ---
 export const analyzeInterviewData = async (
   data: InterviewData
 ): Promise<AnalysisResult> => {
+  // 👉 Aquí sí validamos que exista el cliente antes de usarlo
+  if (!ai) {
+    throw new Error(
+      "La función de análisis con IA no está disponible en este entorno (falta VITE_GEMINI_API_KEY)."
+    );
+  }
+
   const prompt = buildPrompt(data);
 
   try {
@@ -221,7 +228,7 @@ export const analyzeInterviewData = async (
   }
 };
 
-// NUEVO: helper que empaqueta el resultado para el backend
+// --- Helper que empaqueta el resultado para el backend ---
 export const analyzeTeacherInterview = async (
   data: InterviewData
 ): Promise<TeacherAiResult> => {

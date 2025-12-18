@@ -151,8 +151,10 @@ export type AuditEventType =
   | "REPORT_PDF_UPLOADED"
   | "COORDINATOR_DECISION_SET"
   | "COORDINATOR_COMMENT_SET"
+  | "COORDINATOR_DECISION_SUBMITTED"
   | "LOGIN"
   | "LOGOUT";
+
 
 export interface AuditEvent {
   id: string; // uuid
@@ -163,4 +165,62 @@ export interface AuditEvent {
   // metadata libre (pero tipada como record simple)
   metadata?: Record<string, string | number | boolean | null>;
 }
+//user
+export type UserRole = "ADMIN" | "COORDINADOR" | "LIDER";
 
+export interface AuthUser {
+  id: string;
+  email: string;
+  role: UserRole;
+  schoolId: string | null;
+}
+
+export interface AuthResponse {
+  accessToken: string;
+  user: AuthUser;
+}
+export type BackendRole = "ADMIN" | "COORDINADOR" | "LIDER";
+
+export interface BackendSchoolSummary {
+  id: string;
+  name: string;
+}
+
+export interface BackendUser {
+  id: string;
+  email: string;
+  fullName: string;
+  role: BackendRole;
+  schoolId?: string | null;
+  school?: BackendSchoolSummary | null;
+  isActive: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+export type BackendUserRole = "ADMIN" | "COORDINADOR" | "LIDER";
+
+export interface BackendAuthUser {
+  id: string;
+  email: string;
+  fullName?: string;
+  role: BackendUserRole;
+  schoolId?: string | null;
+}
+
+// Respuesta del endpoint POST /auth/login-by-email
+export interface AuthApiResponse {
+  accessToken: string;
+  user: BackendAuthUser;
+}
+
+// Lo que guardamos en localStorage para que el interceptor ponga el token
+export interface StoredAuth {
+  accessToken: string;
+  user: {
+    id: string;
+    email: string;
+    name: string;
+    role: "admin" | "coordinator" | "leader";
+    schoolId?: string | null;
+  };
+}
