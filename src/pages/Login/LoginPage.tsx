@@ -6,7 +6,7 @@ import BGImg from "../../assets/images/Gemini_Generated_Image_wsary2wsary2wsar (
 import LogoCun from "../../assets/images/LogoCunColor.png";
 import LogoCun2 from "../../assets/images/LogoCun.png";
 import Enciendete from "../../assets/images/Enciendete.png";
-import VideoFondo from "../../assets/videos/Op2_1.mp4";
+import BGVideo from "../../assets/videos/Op2_1.mp4";
 
 const LoginPage: React.FC = () => {
   const { login } = useAuth();
@@ -14,7 +14,7 @@ const LoginPage: React.FC = () => {
   const location = useLocation() as any;
 
   const [email, setEmail] = useState("");
-  const [name, setName] = useState("");
+  const [password, setPassword] = useState(""); // ✅ NUEVO
   const [error, setError] = useState<string | null>(null);
 
   const from = location.state?.from?.pathname;
@@ -23,19 +23,22 @@ const LoginPage: React.FC = () => {
     e.preventDefault();
     setError(null);
 
-    if (!email.trim()) return;
+    if (!email.trim() || !password) return;
 
     try {
-      const user = await login(email.trim(), name.trim() || undefined);
+      // ✅ ahora login(email, password)
+      const user = await login(email.trim(), password);
 
       if (from) {
         navigate(from, { replace: true });
         return;
       }
 
-      if (user.role === "leader") {
+      const role = (user.role || "").toUpperCase();
+
+      if (role === "LIDER") {
         navigate("/leader", { replace: true });
-      } else if (user.role === "coordinator") {
+      } else if (role === "COORDINADOR") {
         navigate("/coordinator", { replace: true });
       } else {
         navigate("/admin", { replace: true });
@@ -45,19 +48,14 @@ const LoginPage: React.FC = () => {
       const msg =
         err?.response?.data?.message ||
         err?.message ||
-        "No se pudo iniciar sesión. Verifica tu correo institucional.";
+        "No se pudo iniciar sesión. Verifica tu correo y contraseña.";
       setError(msg);
     }
   };
 
-  const logoSizeClass = "w-24";
-
   return (
     <div className="min-h-screen w-full bg-black">
-      <div className="relative grid min-h-screen grid-cols-1 lg:grid-cols-[30%_70%]">
-        {/* =========================
-            PANEL IZQUIERDO
-        ========================= */}
+      <div className="relative grid h-screen grid-cols-1 lg:grid-cols-[30%_70%]">
         <div className="relative z-10 bg-white text-gray-900">
           <div className="h-full flex items-center justify-center px-6">
             <div className="w-full max-w-sm">
@@ -65,7 +63,7 @@ const LoginPage: React.FC = () => {
                 <img
                   src={LogoCun}
                   alt="Logo CUN"
-                  className={`${logoSizeClass} h-auto mb-1`}
+                  className="w-24 h-auto mb-1"
                 />
                 <p className="text-xs text-gray-500 mt-2">
                   Acceso a consolas por rol
@@ -73,14 +71,6 @@ const LoginPage: React.FC = () => {
               </div>
 
               <form onSubmit={handleSubmit} className="space-y-4">
-                <input
-                  type="text"
-                  placeholder="Ej. Sofia Coordinadora"
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                  className="w-full rounded-2xl bg-gray-200/80 px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/40"
-                />
-
                 <input
                   type="email"
                   required
@@ -90,6 +80,16 @@ const LoginPage: React.FC = () => {
                   className="w-full rounded-2xl bg-gray-200/80 px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/40"
                 />
 
+                {/* ✅ NUEVO: password */}
+                <input
+                  type="password"
+                  required
+                  placeholder="Contraseña"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  className="w-full rounded-2xl bg-gray-200/80 border border-transparent px-4 py-3 text-sm text-gray-900 placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/40"
+                />
+
                 <button
                   type="submit"
                   className="w-full rounded-2xl py-3 text-sm font-bold uppercase tracking-widest text-white bg-gradient-to-r from-[#91DC00] to-[#31AB2E]"
@@ -97,72 +97,40 @@ const LoginPage: React.FC = () => {
                   Entrar
                 </button>
 
-                <p className="text-[11px] text-gray-500 text-center pt-2">
-                  Usa <span className="font-semibold text-emerald-700">admin</span> o{" "}
-                  <span className="font-semibold text-emerald-700">coord</span>
-                </p>
+                {error && (
+                  <p className="text-sm text-red-600 text-center">{error}</p>
+                )}
               </form>
 
-              <div className="mt-10 text-sm text-gray-700">
-                <p className="font-semibold mb-2">Guía rápida</p>
-                <p>• admin → Admin</p>
-                <p>• coord → Coordinador</p>
-                <p>• cualquier otro → Líder</p>
-              </div>
+              <p className="text-[11px] text-gray-400 pt-10 text-center">
+                Tip: si venías de una ruta protegida, el sistema te regresa automáticamente al destino.
+              </p>
             </div>
           </div>
         </div>
 
-        {/* =========================
-            COLUMNA DERECHA (VIDEO)
-        ========================= */}
-        <div className="relative hidden lg:flex h-full bg-black items-center justify-center overflow-hidden">
-          <div className="relative w-full h-full overflow-hidden">
-
-            {/* VIDEO DE FONDO */}
-            <video
-              src={VideoFondo}
-              autoPlay
-              loop
-              muted
-              playsInline
-              className="
-                absolute inset-0
-                w-full h-full
-                object-cover
-                scale-100
-              "
-            />
-
-           
-
-           
-
-            {/* LOGO INFERIOR */}
-            <img
-              src={LogoCun2}
-              alt="Logo CUN"
-              className="
-                absolute bottom-6 right-6
-                w-28 md:w-32
-                opacity-90
-                drop-shadow-[0_6px_14px_rgba(0,0,0,0.6)]
-                pointer-events-none
-              "
-            />
-
-            <img
-              src={Enciendete}
-              alt="Divergente"
-              className="
-                absolute bottom-6 left-6
-                w-28 md:w-32
-                
-                drop-shadow-[0_6px_14px_rgba(0,0,0,0.6)]
-                pointer-events-none
-              "
-            />
-          </div>
+        <div className="relative hidden lg:block">
+          <video
+            src={BGVideo}
+            autoPlay
+            loop
+            muted
+            playsInline
+            className="absolute inset-0 h-full w-full object-cover"
+          />
+          <div
+            className="absolute inset-0 pointer-events-none"
+            style={{
+              background: `
+                radial-gradient(
+                  ellipse at center,
+                  rgba(0,0,0,0.10) 0%,
+                  rgba(0,0,0,0.45) 70%,
+                  rgba(0,0,0,0.75) 100%
+                )
+              `,
+            }}
+          />
         </div>
       </div>
     </div>
