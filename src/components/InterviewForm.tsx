@@ -1,10 +1,7 @@
 // src/components/InterviewForm.tsx
-import React, {
-  useState,
-  useEffect,
-  useCallback,
-  useRef,
-} from "react";
+// ✅ Ajustado: agrega documentNumber al initialFormData + input de Cédula en "Identidad y Trayectoria"
+
+import React, { useState, useEffect, useCallback, useRef } from "react";
 import {
   User,
   Clock,
@@ -21,17 +18,14 @@ import {
 } from "lucide-react";
 import { InterviewData } from "../types";
 import { schools } from "../data/schools";
-import {
-  approvedExample,
-  mediumExample,
-  rejectedExample,
-} from "../data/exampleData";
+import { approvedExample, mediumExample, rejectedExample } from "../data/exampleData";
 
 interface InterviewFormProps {
   onSubmit: (data: InterviewData) => void;
 }
 
 const initialFormData: InterviewData = {
+  documentNumber: "",
   candidateName: "",
   age: "",
   school: "",
@@ -64,9 +58,7 @@ const SectionHeader: React.FC<{ title: string; icon: React.ReactNode }> =
         </div>
       </div>
       <div className="flex flex-col">
-        <h3 className="text-xl font-bold text-white tracking-tight">
-          {title}
-        </h3>
+        <h3 className="text-xl font-bold text-white tracking-tight">{title}</h3>
         <div className="h-0.5 w-12 bg-gradient-to-r from-emerald-500/50 to-transparent mt-2 rounded-full" />
       </div>
     </div>
@@ -79,9 +71,7 @@ const FormSection: React.FC<{
 }> = React.memo(({ title, icon, children }) => (
   <div className="relative group rounded-3xl p-[1px] bg-gradient-to-b from-white/[0.08] to-transparent transition-all duration-500 hover:from-emerald-500/30">
     <div className="relative bg-[#050505] p-6 md:p-10 rounded-3xl overflow-hidden h-full">
-      {/* Efecto de luz ambiental en la esquina */}
       <div className="absolute -top-24 -right-24 w-48 h-48 bg-emerald-500/5 rounded-full blur-3xl group-hover:bg-emerald-500/10 transition-colors duration-700" />
-
       <SectionHeader title={title} icon={icon} />
       <div className="space-y-8 relative z-10">{children}</div>
     </div>
@@ -104,7 +94,6 @@ const FormField: React.FC<{
   </div>
 ));
 
-// Estilos base para inputs con efecto "Glass" y profundidad
 const baseInputStyles =
   "w-full bg-[#0A0A0A] border border-white/5 text-gray-200 text-sm rounded-xl px-4 py-4 outline-none transition-all duration-300 placeholder:text-gray-700 focus:bg-[#0F0F0F] focus:border-emerald-500/40 focus:ring-1 focus:ring-emerald-500/40 focus:shadow-[0_0_20px_-5px_rgba(16,185,129,0.1)] hover:border-white/10 hover:bg-[#0F0F0F]";
 
@@ -114,7 +103,10 @@ const TextInput: React.FC<{
   onChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
   type?: string;
   placeholder?: string;
-}> = ({ name, value, onChange, type = "text", placeholder }) => (
+  required?: boolean;
+  inputMode?: React.HTMLAttributes<HTMLInputElement>["inputMode"];
+  pattern?: string;
+}> = ({ name, value, onChange, type = "text", placeholder, required = true, inputMode, pattern }) => (
   <input
     type={type}
     id={name}
@@ -123,12 +115,13 @@ const TextInput: React.FC<{
     onChange={onChange}
     className={baseInputStyles}
     placeholder={placeholder}
-    required
+    required={required}
     autoComplete="off"
+    inputMode={inputMode}
+    pattern={pattern}
   />
 );
 
-// TextArea con auto-resize (sin scroll interno)
 const TextArea: React.FC<{
   name: keyof InterviewData;
   value: string;
@@ -138,7 +131,6 @@ const TextArea: React.FC<{
 }> = ({ name, value, onChange, rows = 3, placeholder }) => {
   const ref = useRef<HTMLTextAreaElement | null>(null);
 
-  // Auto-ajuste de altura cada vez que cambia el contenido
   useEffect(() => {
     if (!ref.current) return;
     ref.current.style.height = "auto";
@@ -184,11 +176,7 @@ const SelectInput: React.FC<{
         </option>
       )}
       {options.map((opt) => (
-        <option
-          key={opt.value}
-          value={opt.value}
-          className="bg-[#1a1a1a] py-2"
-        >
+        <option key={opt.value} value={opt.value} className="bg-[#1a1a1a] py-2">
           {opt.label}
         </option>
       ))}
@@ -207,14 +195,9 @@ const InterviewForm: React.FC<InterviewFormProps> = ({ onSubmit }) => {
 
   useEffect(() => {
     if (formData.school) {
-      const selectedSchool = schools.find(
-        (s) => s.name === formData.school
-      );
+      const selectedSchool = schools.find((s) => s.name === formData.school);
       setAvailablePrograms(selectedSchool ? selectedSchool.programs : []);
-      if (
-        selectedSchool &&
-        !selectedSchool.programs.includes(formData.program)
-      ) {
+      if (selectedSchool && !selectedSchool.programs.includes(formData.program)) {
         setFormData((prev) => ({ ...prev, program: "" }));
       }
     } else {
@@ -230,7 +213,15 @@ const InterviewForm: React.FC<InterviewFormProps> = ({ onSubmit }) => {
         | React.ChangeEvent<HTMLSelectElement>
     ) => {
       const { name, value } = e.target;
-      setFormData((prev) => ({ ...prev, [name]: value }));
+
+      // ✅ normaliza CC: solo dígitos
+      if (name === "documentNumber") {
+        const onlyDigits = value.replace(/\D+/g, "");
+        setFormData((prev) => ({ ...prev, documentNumber: onlyDigits }));
+        return;
+      }
+
+      setFormData((prev) => ({ ...prev, [name]: value } as InterviewData));
     },
     []
   );
@@ -251,9 +242,7 @@ const InterviewForm: React.FC<InterviewFormProps> = ({ onSubmit }) => {
   };
 
   return (
-    // Fondo global con texturas y luces ambientales
     <div className="min-h-screen w-f bg-[#020202] text-gray-200 selection:bg-emerald-500/30 font-sans relative overflow-hidden">
-      {/* Luces de Fondo (Blobs) */}
       <div className="fixed top-0 left-0 w-full h-full overflow-hidden pointer-events-none z-0">
         <div
           className="absolute top-[-10%] left-[10%] w-[500px] h-[500px] bg-emerald-500/5 rounded-full blur-[120px] mix-blend-screen animate-pulse"
@@ -263,7 +252,6 @@ const InterviewForm: React.FC<InterviewFormProps> = ({ onSubmit }) => {
       </div>
 
       <div className="relative z-10 max-w-7xl mx-auto px-6 py-16 space-y-16">
-        {/* Header Hero */}
         <header className="text-center space-y-6">
           <div className="inline-flex items-center gap-2.5 px-5 py-2 rounded-full border border-emerald-500/20 bg-emerald-500/5 text-emerald-400 text-xs font-bold uppercase tracking-widest backdrop-blur-md shadow-[0_0_20px_-5px_rgba(16,185,129,0.2)]">
             <BrainCircuit className="w-4 h-4" />
@@ -278,13 +266,12 @@ const InterviewForm: React.FC<InterviewFormProps> = ({ onSubmit }) => {
               </span>
             </h2>
             <p className="text-base md:text-lg text-gray-400 font-light leading-relaxed">
-              Utiliza nuestra IA para analizar la coherencia pedagógica,
-              ética y técnica de los candidatos en tiempo real.
+              Utiliza nuestra IA para analizar la coherencia pedagógica, ética y técnica de los
+              candidatos en tiempo real.
             </p>
           </div>
         </header>
 
-        {/* Barra de Herramientas (Ejemplos) */}
         <div className="sticky top-4 z-50 flex justify-center">
           <div className="bg-[#0A0A0A]/90 backdrop-blur-xl p-1.5 rounded-2xl border border-white/10 shadow-2xl flex flex-wrap justify-center gap-1">
             <button
@@ -317,17 +304,24 @@ const InterviewForm: React.FC<InterviewFormProps> = ({ onSubmit }) => {
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-10">
-          {/* Section: Basic Info */}
-          <FormSection
-            title="Identidad y Trayectoria"
-            icon={<User className="w-6 h-6" />}
-          >
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
+          <FormSection title="Identidad y Trayectoria" icon={<User className="w-6 h-6" />}>
+            {/* ✅ NUEVO: CC + Nombre + Edad */}
+            <div className="grid grid-cols-1 md:grid-cols-6 gap-8">
+              <div className="md:col-span-2">
+                <FormField label="Cédula (CC)" name="documentNumber">
+                  <TextInput
+                    name="documentNumber"
+                    value={formData.documentNumber}
+                    onChange={handleChange}
+                    placeholder="Ej. 1030123456"
+                    inputMode="numeric"
+                    pattern="[0-9]+"
+                  />
+                </FormField>
+              </div>
+
               <div className="md:col-span-3">
-                <FormField
-                  label="Nombre del Candidato"
-                  name="candidateName"
-                >
+                <FormField label="Nombre del Candidato" name="candidateName">
                   <TextInput
                     name="candidateName"
                     value={formData.candidateName}
@@ -336,6 +330,7 @@ const InterviewForm: React.FC<InterviewFormProps> = ({ onSubmit }) => {
                   />
                 </FormField>
               </div>
+
               <div className="md:col-span-1">
                 <FormField label="Edad" name="age">
                   <TextInput
@@ -350,48 +345,31 @@ const InterviewForm: React.FC<InterviewFormProps> = ({ onSubmit }) => {
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-              <FormField
-                label="Escuela o Coordinación"
-                name="school"
-              >
+              <FormField label="Escuela o Coordinación" name="school">
                 <SelectInput
                   name="school"
                   value={formData.school}
                   onChange={handleChange}
-                  options={schools.map((s) => ({
-                    value: s.name,
-                    label: s.name,
-                  }))}
+                  options={schools.map((s) => ({ value: s.name, label: s.name }))}
                   placeholder="Seleccione una opción..."
                 />
               </FormField>
-              <FormField
-                label="Programa Académico"
-                name="program"
-              >
+              <FormField label="Programa Académico" name="program">
                 <SelectInput
                   name="program"
                   value={formData.program}
                   onChange={handleChange}
-                  options={availablePrograms.map((p) => ({
-                    value: p,
-                    label: p,
-                  }))}
+                  options={availablePrograms.map((p) => ({ value: p, label: p }))}
                   disabled={!formData.school}
                   placeholder={
-                    formData.school
-                      ? "Seleccione el programa..."
-                      : "Requiere seleccionar escuela"
+                    formData.school ? "Seleccione el programa..." : "Requiere seleccionar escuela"
                   }
                 />
               </FormField>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-              <FormField
-                label="Resumen Profesional"
-                name="careerSummary"
-              >
+              <FormField label="Resumen Profesional" name="careerSummary">
                 <TextArea
                   name="careerSummary"
                   value={formData.careerSummary}
@@ -400,10 +378,7 @@ const InterviewForm: React.FC<InterviewFormProps> = ({ onSubmit }) => {
                   placeholder="Describa la trayectoria y aspiraciones del candidato..."
                 />
               </FormField>
-              <FormField
-                label="Experiencia Docente"
-                name="previousExperience"
-              >
+              <FormField label="Experiencia Docente" name="previousExperience">
                 <TextArea
                   name="previousExperience"
                   value={formData.previousExperience}
@@ -415,17 +390,11 @@ const InterviewForm: React.FC<InterviewFormProps> = ({ onSubmit }) => {
             </div>
           </FormSection>
 
-          {/* Section 1: Disponibilidad */}
-          <FormSection
-            title="Disponibilidad y Compromiso"
-            icon={<Clock className="w-6 h-6" />}
-          >
+          {/* Resto del formulario (sin cambios) */}
+          <FormSection title="Disponibilidad y Compromiso" icon={<Clock className="w-6 h-6" />}>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
               <div className="md:col-span-2">
-                <FormField
-                  label="Horario Disponible"
-                  name="availabilityDetails"
-                >
+                <FormField label="Horario Disponible" name="availabilityDetails">
                   <TextInput
                     name="availabilityDetails"
                     value={formData.availabilityDetails}
@@ -435,19 +404,13 @@ const InterviewForm: React.FC<InterviewFormProps> = ({ onSubmit }) => {
                 </FormField>
               </div>
               <div className="md:col-span-1">
-                <FormField
-                  label="Disposición a Comités"
-                  name="acceptsCommittees"
-                >
+                <FormField label="Disposición a Comités" name="acceptsCommittees">
                   <SelectInput
                     name="acceptsCommittees"
                     value={formData.acceptsCommittees}
                     onChange={handleChange}
                     options={[
-                      {
-                        value: "Sí",
-                        label: "Totalmente disponible",
-                      },
+                      { value: "Sí", label: "Totalmente disponible" },
                       { value: "No", label: "No disponible" },
                       { value: "Depende", label: "Condicionado" },
                     ]}
@@ -455,10 +418,8 @@ const InterviewForm: React.FC<InterviewFormProps> = ({ onSubmit }) => {
                 </FormField>
               </div>
             </div>
-            <FormField
-              label="Conflictos de Interés / Otros Empleos"
-              name="otherJobs"
-            >
+
+            <FormField label="Conflictos de Interés / Otros Empleos" name="otherJobs">
               <TextArea
                 name="otherJobs"
                 value={formData.otherJobs}
@@ -469,15 +430,8 @@ const InterviewForm: React.FC<InterviewFormProps> = ({ onSubmit }) => {
             </FormField>
           </FormSection>
 
-          {/* Section 2: Manejo Aula */}
-          <FormSection
-            title="Estrategia Pedagógica"
-            icon={<Users className="w-6 h-6" />}
-          >
-            <FormField
-              label="Metodología de Evaluación"
-              name="evaluationMethodology"
-            >
+          <FormSection title="Estrategia Pedagógica" icon={<Users className="w-6 h-6" />}>
+            <FormField label="Metodología de Evaluación" name="evaluationMethodology">
               <TextArea
                 name="evaluationMethodology"
                 value={formData.evaluationMethodology}
@@ -485,11 +439,9 @@ const InterviewForm: React.FC<InterviewFormProps> = ({ onSubmit }) => {
                 placeholder="Describa instrumentos, rúbricas y criterios de evaluación..."
               />
             </FormField>
+
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-              <FormField
-                label="Plan de Retención (Alto Fracaso)"
-                name="failureRatePlan"
-              >
+              <FormField label="Plan de Retención (Alto Fracaso)" name="failureRatePlan">
                 <TextArea
                   name="failureRatePlan"
                   value={formData.failureRatePlan}
@@ -497,10 +449,7 @@ const InterviewForm: React.FC<InterviewFormProps> = ({ onSubmit }) => {
                   placeholder="Estrategia ante un 50% de reprobación..."
                 />
               </FormField>
-              <FormField
-                label="Manejo de Estudiantes Difíciles"
-                name="apatheticStudentPlan"
-              >
+              <FormField label="Manejo de Estudiantes Difíciles" name="apatheticStudentPlan">
                 <TextArea
                   name="apatheticStudentPlan"
                   value={formData.apatheticStudentPlan}
@@ -511,15 +460,8 @@ const InterviewForm: React.FC<InterviewFormProps> = ({ onSubmit }) => {
             </div>
           </FormSection>
 
-          {/* Section 3: IA */}
-          <FormSection
-            title="Integración de Inteligencia Artificial"
-            icon={<Bot className="w-6 h-6" />}
-          >
-            <FormField
-              label="Uso Actual de Herramientas IA"
-              name="aiToolsUsage"
-            >
+          <FormSection title="Integración de Inteligencia Artificial" icon={<Bot className="w-6 h-6" />}>
+            <FormField label="Uso Actual de Herramientas IA" name="aiToolsUsage">
               <TextArea
                 name="aiToolsUsage"
                 value={formData.aiToolsUsage}
@@ -528,11 +470,9 @@ const InterviewForm: React.FC<InterviewFormProps> = ({ onSubmit }) => {
                 placeholder="Herramientas utilizadas (ChatGPT, Midjourney, etc.) y su aplicación..."
               />
             </FormField>
+
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-              <FormField
-                label="Ética y IA en el Aula"
-                name="ethicalAiMeasures"
-              >
+              <FormField label="Ética y IA en el Aula" name="ethicalAiMeasures">
                 <TextArea
                   name="ethicalAiMeasures"
                   value={formData.ethicalAiMeasures}
@@ -540,10 +480,7 @@ const InterviewForm: React.FC<InterviewFormProps> = ({ onSubmit }) => {
                   placeholder="¿Cómo fomenta el uso responsable?"
                 />
               </FormField>
-              <FormField
-                label="Detección y Manejo de Plagio IA"
-                name="aiPlagiarismPrevention"
-              >
+              <FormField label="Detección y Manejo de Plagio IA" name="aiPlagiarismPrevention">
                 <TextArea
                   name="aiPlagiarismPrevention"
                   value={formData.aiPlagiarismPrevention}
@@ -554,16 +491,9 @@ const InterviewForm: React.FC<InterviewFormProps> = ({ onSubmit }) => {
             </div>
           </FormSection>
 
-          {/* Section 4: Coherencia */}
-          <FormSection
-            title="Casos Éticos y Resolución de Conflictos"
-            icon={<ShieldCheck className="w-6 h-6" />}
-          >
+          <FormSection title="Casos Éticos y Resolución de Conflictos" icon={<ShieldCheck className="w-6 h-6" />}>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-              <FormField
-                label="Caso: Nota Límite (2.9)"
-                name="scenario29"
-              >
+              <FormField label="Caso: Nota Límite (2.9)" name="scenario29">
                 <TextArea
                   name="scenario29"
                   value={formData.scenario29}
@@ -572,10 +502,8 @@ const InterviewForm: React.FC<InterviewFormProps> = ({ onSubmit }) => {
                   placeholder="Reacción ante solicitud de ayuda para aprobar..."
                 />
               </FormField>
-              <FormField
-                label="Caso: Ausencia Inesperada"
-                name="scenarioCoverage"
-              >
+
+              <FormField label="Caso: Ausencia Inesperada" name="scenarioCoverage">
                 <TextArea
                   name="scenarioCoverage"
                   value={formData.scenarioCoverage}
@@ -584,10 +512,8 @@ const InterviewForm: React.FC<InterviewFormProps> = ({ onSubmit }) => {
                   placeholder="Protocolo de comunicación y reposición..."
                 />
               </FormField>
-              <FormField
-                label="Caso: Feedback Negativo"
-                name="scenarioFeedback"
-              >
+
+              <FormField label="Caso: Feedback Negativo" name="scenarioFeedback">
                 <TextArea
                   name="scenarioFeedback"
                   value={formData.scenarioFeedback}
@@ -599,7 +525,6 @@ const InterviewForm: React.FC<InterviewFormProps> = ({ onSubmit }) => {
             </div>
           </FormSection>
 
-          {/* Footer Actions */}
           <div className="flex flex-col sm:flex-row items-center justify-center gap-6 pt-12 pb-8 border-t border-white/5">
             <button
               type="button"
