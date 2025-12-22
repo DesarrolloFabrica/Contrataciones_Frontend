@@ -12,7 +12,6 @@ import {
   createTeacherEvaluation,
   getTeacherEvaluationById,
 } from "../../services/teachersService";
-
 import Header from "../../components/Header";
 import InterviewForm from "../../components/InterviewForm";
 import AnalysisResults from "../../components/AnalysisResults";
