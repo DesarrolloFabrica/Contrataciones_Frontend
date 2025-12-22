@@ -1,25 +1,49 @@
 // src/pages/coordinator/utils/candidateKey.ts
-// Helper centralizado para definir la "identidad" de un candidato en frontend.
-// Hoy: no hay cédula desde backend, entonces usamos un fallback estable.
-// Mañana: cuando backend entregue cedula/documentNumber, solo cambias 1 línea aquí.
-
 import type { TeacherEvaluationSummary } from "../../../types";
 
+/**
+ * Normaliza un documento (CC) para que siempre quede comparable.
+ * - Solo deja dígitos (quita puntos, espacios, guiones, etc.)
+ */
+function normalizeDoc(v: unknown): string {
+  return String(v ?? "")
+    .trim()
+    .replace(/\D+/g, ""); // <- SOLO números
+}
+
+/**
+ * Normaliza texto para keys:
+ * - trim
+ * - lower
+ * - quita tildes/diacríticos
+ * - colapsa espacios múltiples
+ */
+function normalizeText(v: unknown): string {
+  return String(v ?? "")
+    .trim()
+    .toLowerCase()
+    .normalize("NFD") // separa letras y tildes
+    .replace(/[\u0300-\u036f]/g, "") // quita tildes
+    .replace(/\s+/g, " "); // colapsa espacios
+}
+
 export function getCandidateKey(ev: TeacherEvaluationSummary): string {
-  // ✅ FUTURO (backend):
-  // cuando exista, descomenta y deja esto como retorno principal:
-  // const cedula = (ev.candidate as any)?.documentNumber?.toString()?.trim();
-  // if (cedula) return cedula;
+  // ✅ 1) principal: documentNumber (camelCase)
+  const doc1 = normalizeDoc(ev.candidate?.documentNumber);
+  if (doc1) return doc1;
 
-  // ✅ HOY (fallback): key “razonable” y consistente
-  // OJO: si hay homónimos exactos en misma escuela+programa, podría agrupar mal.
-  // Igual sirve para avanzar sin backend y luego migrar a cédula.
-  const name = (ev.candidate?.fullName ?? "").trim().toLowerCase();
-  const school = (ev.candidate?.schoolNameSnapshot ?? "").trim().toLowerCase();
-  const program = (ev.candidate?.programNameSnapshot ?? "").trim().toLowerCase();
+  // ✅ 2) compat: document_number (snake_case)
+  const doc2 = normalizeDoc(ev.candidate?.document_number);
+  if (doc2) return doc2;
 
-  // Si name viene vacío, usa el id de la evaluación para no colapsar todo en una sola
+  // ✅ 3) fallback (cuando NO viene CC):
+  // Normalizamos fuerte para evitar duplicados por tildes/espacios.
+  const name = normalizeText(ev.candidate?.fullName);
   if (!name) return `__no_name__::${ev.id}`;
 
+  const school = normalizeText(ev.candidate?.schoolNameSnapshot);
+  const program = normalizeText(ev.candidate?.programNameSnapshot);
+
+  // Nota: como ya filtras por escuela/programa arriba, esto es bastante estable.
   return `${name}||${school}||${program}`;
 }

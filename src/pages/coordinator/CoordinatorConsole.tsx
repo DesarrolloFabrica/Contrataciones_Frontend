@@ -24,48 +24,67 @@ import type {  CandidateGroup, DetailTabKey, LocalDecision } from "./types";
 
 import { getCandidateKey } from "./utils/candidateKey";
 
-function groupByCandidate(
-    evaluations: import("../../types").TeacherEvaluationSummary[]
-  ): CandidateGroup[] {
-    const map = new Map<string, import("../../types").TeacherEvaluationSummary[]>();
-  
-    for (const ev of evaluations) {
-      const docRaw = ev.candidate?.document_number;
-      const doc = (docRaw ?? "").toString().trim();
+import { useLocation } from "react-router-dom";
 
-      // fallback temporal para no perder registros si viene vacío
-      const key = doc || `__MISSING_DOC__:${ev.id}`;
-    
-      if (!map.has(key)) map.set(key, []);
-      map.get(key)!.push(ev);
-    }
-  
-    const groups: CandidateGroup[] = [];
-  
-    for (const [key, interviews] of map.entries()) {
-      const sorted = [...interviews].sort(
-        (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
-      );
-      const latest = sorted[0];
-    
-      groups.push({
-        documentNumber: key,
-        candidateName: latest.candidate?.fullName ?? "Sin nombre",
-        school: latest.candidate?.schoolNameSnapshot ?? "",
-        program: latest.candidate?.programNameSnapshot ?? "",
-        interviews: sorted,
-        latest,
-      });
-    }
-  
-    // ordena candidatos por última entrevista (más reciente arriba)
-    groups.sort(
-      (a, b) =>
-        new Date(b.latest.createdAt).getTime() - new Date(a.latest.createdAt).getTime()
-    );
-  
-    return groups;
+
+
+function normalizeDoc(raw: any): string {
+  // ✅ Normaliza: deja solo dígitos (evita "1.234.567" vs "1234567")
+  const s = (raw ?? "").toString().trim();
+  return s.replace(/\D/g, "");
 }
+
+function groupByCandidate(
+  evaluations: import("../../types").TeacherEvaluationSummary[]
+): CandidateGroup[] {
+  // key estable -> grupo
+  const map = new Map<string, import("../../types").TeacherEvaluationSummary[]>();
+
+  for (const ev of evaluations) {
+    // ✅ key estable (usa doc camel/snake y fallback a nombre+escuela+programa)
+    const key = getCandidateKey(ev);
+
+    // ⚠️ IMPORTANTE: NO uses ev.id como key de fallback, porque eso duplica siempre
+    if (!map.has(key)) map.set(key, []);
+    map.get(key)!.push(ev);
+  }
+
+  const groups: CandidateGroup[] = [];
+
+  for (const [key, interviews] of map.entries()) {
+    // ✅ ordena entrevistas (más reciente primero)
+    const sorted = [...interviews].sort(
+      (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+    );
+
+    const latest = sorted[0];
+
+    // ✅ doc para mostrar (si viene) - normalizado
+    const docDisplay =
+      normalizeDoc(latest.candidate?.documentNumber) ||
+      normalizeDoc(latest.candidate?.document_number) ||
+      "";
+
+    groups.push({
+      key,
+      documentNumber: docDisplay,
+      candidateName: latest.candidate?.fullName ?? "Sin nombre",
+      school: latest.candidate?.schoolNameSnapshot ?? "",
+      program: latest.candidate?.programNameSnapshot ?? "",
+      interviews: sorted,
+      latest,
+    });
+  }
+
+  // ✅ ordena candidatos por su última entrevista
+  groups.sort(
+    (a, b) =>
+      new Date(b.latest.createdAt).getTime() - new Date(a.latest.createdAt).getTime()
+  );
+
+  return groups;
+}
+
 
 const CoordinatorConsole: React.FC = () => {
   const { user } = useAuth();
@@ -91,7 +110,13 @@ const CoordinatorConsole: React.FC = () => {
   // -----------------------------
   // 3) Tabs panel derecho (✅ ahora: DECISION | AI | NOTES)
   // -----------------------------
-  const [detailTab, setDetailTab] = useState<DetailTabKey>("DECISION");
+
+  const [selectedCandidateKey, setSelectedCandidateKey] = useState<string | null>(null);
+
+  
+
+
+  const [detailTab, setDetailTab] = useState<DetailTabKey>("AI");
 
   // 3.2) Qué tarjeta inferior mostrar (detalle vs segunda tarjeta)
   // -----------------------------
@@ -165,7 +190,7 @@ const CoordinatorConsole: React.FC = () => {
   useEffect(() => {
     setProgramFilter("");
     evals.setSearch("");
-    setDetailTab("DECISION");
+    setDetailTab("AI");
     detail.clearSelection();
     setDetailView(null);
 
@@ -186,7 +211,7 @@ const CoordinatorConsole: React.FC = () => {
 
   useEffect(() => {
     evals.setSearch("");
-    setDetailTab("DECISION");
+    setDetailTab("AI");
     detail.clearSelection();
     setDetailView(null);
 
@@ -253,62 +278,32 @@ const CoordinatorConsole: React.FC = () => {
   ]);
 
   
-  const groupedCandidates = useMemo(() => {
-  if (!schoolFilter || !programFilter) return [];
+const groupedCandidates = useMemo(() => {
+  return groupByCandidate(filteredEvaluations);
+}, [filteredEvaluations]);
 
-  const map = new Map<
-    string,
-    {
-      documentNumber: string;
-      interviews: typeof filteredEvaluations;
-      latest: (typeof filteredEvaluations)[number];
-    }
-  >();
+console.log(
+  "Candidatos agrupados:",
+  groupedCandidates.map((g) => ({
+    key: g.key,
+    doc: g.documentNumber,
+    name: g.candidateName,
+    interviews: g.interviews.length,
+  }))
+);
 
-  for (const ev of filteredEvaluations) {
-    // ✅ clave REAL del candidato
-    const doc = (ev.candidate?.document_number ?? "").toString().trim();
-
-    // Si por alguna razón viene vacío, no lo agrupes (o decide un fallback)
-    if (!doc) continue;
-
-    const current = map.get(doc);
-
-    if (!current) {
-      map.set(doc, {
-        documentNumber: doc,
-        interviews: [ev],
-        latest: ev,
-      });
-      continue;
-    }
-
-    current.interviews.push(ev);
-
-    // latest por createdAt
-    const tA = new Date(current.latest.createdAt).getTime();
-    const tB = new Date(ev.createdAt).getTime();
-    if (!isNaN(tB) && (isNaN(tA) || tB > tA)) current.latest = ev;
-  }
-
-  // ✅ CandidateGroup final
-  return Array.from(map.values())
-    .map((g) => ({
-      documentNumber: g.documentNumber,
-      candidateName: g.latest.candidate?.fullName ?? "Sin nombre",
-      school: g.latest.candidate?.schoolNameSnapshot ?? "",
-      program: g.latest.candidate?.programNameSnapshot ?? "",
-      interviews: [...g.interviews].sort(
-        (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
-      ),
-      latest: g.latest,
-    }))
-    .sort((a, b) => new Date(b.latest.createdAt).getTime() - new Date(a.latest.createdAt).getTime());
-}, [filteredEvaluations, schoolFilter, programFilter]);
   
 
 
 
+const selectedCandidateGroup = useMemo(() => {
+  if (!selectedCandidateKey) return null;
+
+  return (
+    groupedCandidates.find((g) => g.key === selectedCandidateKey) ??
+    null
+  );
+}, [groupedCandidates, selectedCandidateKey]);
 
   // -----------------------------
   // 8) UI states
@@ -436,29 +431,31 @@ const CoordinatorConsole: React.FC = () => {
                 decisionFilter={evals.decisionFilter}
                 setDecisionFilter={evals.setDecisionFilter}
                 localDecisions={evals.localDecisions}
-                onSelectEvaluation={(id) => {
-                  detail.handleSelectEvaluation(id);
-                  setDetailTab("DECISION");
-
-                 
+                onSelectEvaluation={(candidateKey, evaluationId) => {
+                  setSelectedCandidateKey(candidateKey);
+                  detail.handleSelectEvaluation(evaluationId);
+                  setDetailTab("AI");
                 }}
-                onOpenDetail={(id) => {
+                onOpenDetail={(candidateKey, evaluationId) => {
+                  setSelectedCandidateKey(candidateKey);
                   setDetailView("DETAIL");
-                  detail.handleSelectEvaluation(id);
-                  setDetailTab("DECISION");
+                  detail.handleSelectEvaluation(evaluationId);
+                  setDetailTab("AI");
                   scrollToDetailSection();
                 }}
-                onOpenSecond={(id) => {
+                onOpenSecond={(candidateKey, evaluationId) => {
+                  setSelectedCandidateKey(candidateKey);
                   setDetailView("SECOND");
-                  detail.handleSelectEvaluation(id);
-                  setDetailTab("DECISION");
+                  detail.handleSelectEvaluation(evaluationId);
+                  setDetailTab("AI");
                   scrollToDetailSection();
                 }}
                 
               />
-
+      
       <div ref={detailSectionRef} />
         {detailView === "DETAIL" && (
+          
           <EvaluationDetailPanel
             selectedId={detail.selectedId}
             selectedDetail={detail.selectedDetail}
@@ -482,6 +479,17 @@ const CoordinatorConsole: React.FC = () => {
             canSubmitDecision={detail.canSubmitDecision}
             missingReasons={detail.missingReasons}
             onSubmitDecision={detail.submitDecisionToAdmin}
+
+            // ✅ ENTREVISTAS (NUEVO)
+            candidateGroup={selectedCandidateGroup}
+              onOpenInterview={(evaluationId) => {
+              // ✅ Abre Leader directamente en la sección del reporte (AnalysisResults)
+              const url = `/leader?evaluationId=${encodeURIComponent(evaluationId)}#report-to-download`;
+                          
+              // ✅ nueva pestaña (no rompe el flujo del coordinador)
+              window.open(url, "_blank", "noopener,noreferrer");
+            }}
+
           />
         )}
         {detailView === "SECOND" && (

@@ -31,12 +31,12 @@ type Props = {
 
   localDecisions: Record<string, LocalDecision>;
 
-  // click normal sobre el item (elige "última entrevista" como representante)
-  onSelectEvaluation: (id: string) => void;
+  // click normal sobre el item (candidateKey + evaluationId)
+  onSelectEvaluation: (candidateKey: string, evaluationId: string) => void;
 
   // botones por candidato
-  onOpenDetail: (id: string) => void;
-  onOpenSecond: (id: string) => void;
+  onOpenDetail: (candidateKey: string, evaluationId: string) => void;
+  onOpenSecond: (candidateKey: string, evaluationId: string) => void;
 };
 
 const EvaluationsListPanel: React.FC<Props> = ({
@@ -191,63 +191,52 @@ const EvaluationsListPanel: React.FC<Props> = ({
         )}
 
         {!mustChooseScope &&
-          groupedCandidates.map((g) => {
-            const ev = g.latest; // ✅ representante del candidato
-            const interviewsCount = g.interviews?.length ?? 0;
+  groupedCandidates.map((g) => {
+  const ev = g.latest;
+  const candidateKey = (g as any).key ?? g.documentNumber; // soporta ambos
 
-            return (
-              <div key={g.documentNumber} className="space-y-2">
-                {/* Item (click normal = seleccionar evaluación) */}
-                <TeacherEvaluationItem
-                  evaluation={ev}
-                  selected={selectedId === ev.id}
-                  onClick={() => onSelectEvaluation(ev.id)}
-                  decisionStatus={
-                    localDecisions[ev.id] ??
-                    (ev.coordinatorDecisionStatus as LocalDecision | undefined)
-                  }
-                />
+  return (
+    <div key={g.key} className="space-y-2">
+      <TeacherEvaluationItem
+        evaluation={ev}
+        selected={selectedId === ev.id}
+        onClick={() => onSelectEvaluation(g.key, ev.id)}
+        decisionStatus={
+          localDecisions[ev.id] ??
+          (ev.coordinatorDecisionStatus as LocalDecision | undefined)
+        }
+      />
 
-                {/* Barra inferior: entrevistas + 2 botones */}
-                <div className="flex items-center justify-between gap-3 px-2">
-                  <span className="text-[11px] text-gray-500">
-                    Entrevistas:{" "}
-                    <b className="text-gray-300">{interviewsCount}</b>
-                  </span>
+      <div className="flex items-center justify-between px-2">
+        <span className="text-xs text-gray-500">
+          Entrevistas: <b className="text-gray-300">{g.interviews.length}</b>
+        </span>
 
-                  <div className="flex items-center gap-2">
-                    <button
-                      type="button"
-                      onClick={(e) => {
-                        e.stopPropagation(); // ✅ no dispara el click del item
-                        onOpenDetail(ev.id); // ✅ abre detalle usando latest.id
-                      }}
-                      className="px-3 py-1.5 rounded-xl text-[11px] uppercase tracking-widest
-                                 border border-emerald-500/25 text-emerald-300
-                                 hover:border-emerald-500/50 hover:bg-emerald-500/10 transition"
-                    >
-                      Ver detalle
-                    </button>
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={() => onOpenDetail(g.key, ev.id)}
+            className="px-3 py-2 rounded-xl border border-emerald-500/25
+                       text-[11px] uppercase tracking-widest text-emerald-300
+                       hover:border-emerald-500/40 hover:bg-emerald-500/10 transition"
+          >
+            Ver detalle
+          </button>
 
-                    <button
-                      type="button"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        onOpenSecond(ev.id);
-                      }}
-                      className="px-3 py-1.5 rounded-xl text-[11px] uppercase tracking-widest
-                                 border border-white/10 text-gray-300
-                                 hover:border-cyan-500/35 hover:bg-cyan-500/10 transition"
-                    >
-                      Comparativa
-                    </button>
-                  </div>
-                </div>
-
-                <div className="h-px bg-white/5" />
-              </div>
-            );
-          })}
+          <button
+            type="button"
+            onClick={() => onOpenSecond(g.key, ev.id)}
+            className="px-3 py-2 rounded-xl border border-white/10
+                       text-[11px] uppercase tracking-widest text-gray-300
+                       hover:border-white/20 hover:bg-white/5 transition"
+          >
+            Comparativa
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+})}
       </div>
     </div>
   );

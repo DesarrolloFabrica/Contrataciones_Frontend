@@ -187,38 +187,8 @@ const TeacherEvaluationItem: React.FC<TeacherEvaluationItemProps> = ({
           <span className="text-neutral-500">/100</span>
         </div>
 
-        {/* ✅ NUEVO: botones por candidato */}
-        <div className="flex items-center gap-2 pt-1">
-          <button
-            type="button"
-            // Evita que el click seleccione el item
-            onClick={(e) => {
-              stop(e);
-              onOpenDetail?.();
-            }}
-            // Evita que Enter/Espacio aquí activen el contenedor padre
-            onKeyDown={(e) => stop(e)}
-            className="px-3 py-1 rounded-lg text-[10px] font-bold uppercase tracking-widest
-                       border border-white/10 bg-white/5 text-gray-200
-                       hover:bg-white/10 hover:border-emerald-500/30 hover:text-emerald-200 transition"
-          >
-            Ver detalle
-          </button>
 
-          <button
-            type="button"
-            onClick={(e) => {
-              stop(e);
-              onOpenSecond?.();
-            }}
-            onKeyDown={(e) => stop(e)}
-            className="px-3 py-1 rounded-lg text-[10px] font-bold uppercase tracking-widest
-                       border border-white/10 bg-white/5 text-gray-200
-                       hover:bg-white/10 hover:border-cyan-500/30 hover:text-cyan-200 transition"
-          >
-            Otra tarjeta
-          </button>
-        </div>
+
       </div>
     </div>
   );

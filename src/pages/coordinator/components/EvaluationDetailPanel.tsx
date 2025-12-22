@@ -6,7 +6,7 @@ import type { AnalysisResult, InterviewData } from "../../../types";
 import DetailTabs from "./DetailTabs";
 import DecisionTab from "./DecisionTab";
 import AiSummaryTab from "./AiSummaryTab";
-import NotesTab from "./NotesTab";
+import InterviewsTab from "./InterviewTab"; // ✅ NUEVO
 import AuditTab from "./AuditTab";
 import TechTab from "./TechTab";
 
@@ -15,6 +15,7 @@ import type {
   DetailTabKey,
   LocalDecision,
   TimelineTab,
+  CandidateGroup, // ✅ NUEVO
 } from "../types";
 
 type Props = {
@@ -32,21 +33,22 @@ type Props = {
   setDecisionComment: (v: string) => void;
   onDecisionCommentBlur: () => void;
 
-  // ✅ Decisión (local)
   onApplyDecision: (d: LocalDecision) => void;
 
-  // ✅ Notas
+  // ✅ “Notas” se reemplaza por entrevistas (por ahora)
   notes: string;
   setNotes: (v: string) => void;
   criteria: CoordinatorCriteria;
   setCriteria: (next: CoordinatorCriteria) => void;
 
-  // ✅ Validación + envío
   canSubmitDecision: boolean;
   missingReasons: string[];
   onSubmitDecision: () => void;
 
-  // ✅ Auditoría / Tech (opcionales para no romper si aún no los pasas)
+  // ✅ NUEVO: grupo del candidato + handler para abrir entrevista
+  candidateGroup: CandidateGroup | null;
+  onOpenInterview: (evaluationId: string) => void;
+
   timelineTab?: TimelineTab;
   setTimelineTab?: (v: TimelineTab) => void;
   activityByEval?: any[];
@@ -72,6 +74,8 @@ export default function EvaluationDetailPanel({
   canSubmitDecision,
   missingReasons,
   onSubmitDecision,
+  candidateGroup,
+  onOpenInterview,
   timelineTab,
   setTimelineTab,
   activityByEval,
@@ -105,7 +109,7 @@ export default function EvaluationDetailPanel({
           <button
             type="button"
             onClick={onExportPdf}
-            className="px-3 py-2 rounded-xl text-[11px] font-bold uppercase tracking-widest bg-emerald-600 hover:bg-emerald-500 text-white flex items-center gap-2"
+            className="px-3 py-2 rounded-xl text-[px] font-bold uppercase tracking-widest bg-emerald-600 hover:bg-emerald-500 text-white flex items-center gap-2"
           >
             <FileText className="w-4 h-4" />
             Exportar PDF
@@ -113,6 +117,7 @@ export default function EvaluationDetailPanel({
         )}
       </div>
 
+      {/* ✅ Los tabs SIEMPRE se muestran */}
       <DetailTabs value={detailTab} onChange={setDetailTab} />
 
       {loadingDetail && (
@@ -152,13 +157,18 @@ export default function EvaluationDetailPanel({
             <AiSummaryTab analysis={selectedDetail.analysis} />
           )}
 
-          {detailTab === "NOTES" && (
-            <NotesTab
-              notes={notes}
-              setNotes={setNotes}
-              criteria={criteria}
-              setCriteria={setCriteria}
+          {detailTab === "INTERVIEWS" && candidateGroup && (
+            <InterviewsTab
+              candidateGroup={candidateGroup}
+              selectedEvaluationId={selectedId}
+              onOpenInterview={onOpenInterview}
             />
+          )}
+
+          {detailTab === "INTERVIEWS" && !candidateGroup && (
+            <div className="text-sm text-gray-400 bg-black/20 border border-white/10 rounded-2xl p-4">
+              No se encontró el grupo del candidato para listar entrevistas.
+            </div>
           )}
 
           {canShowAudit && (
