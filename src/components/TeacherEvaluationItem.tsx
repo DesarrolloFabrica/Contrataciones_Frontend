@@ -7,12 +7,19 @@ interface TeacherEvaluationItemProps {
   selected?: boolean;
 
   /**
-   * Si lo quieres clickable, NO lo hagas botón aquí.
-   * Haz clickable el wrapper externo (Panel) para evitar "button dentro de button".
+   * Click general del item (seleccionar candidato).
+   * OJO: no convertimos el item en <button> para evitar "button dentro de button".
    */
   onClick?: () => void;
 
   decisionStatus?: "PENDIENTE" | "APROBADO" | "RECHAZADO";
+
+  /**
+   * ✅ NUEVO: acciones específicas para los botones dentro del item.
+   * Estos NO deben disparar el onClick general del item.
+   */
+  onOpenDetail?: () => void;
+  onOpenSecond?: () => void;
 }
 
 const pillBase =
@@ -46,7 +53,9 @@ function getIaBadge(verdict: string) {
   };
 }
 
-function getDecisionBadge(decisionStatus?: "PENDIENTE" | "APROBADO" | "RECHAZADO") {
+function getDecisionBadge(
+  decisionStatus?: "PENDIENTE" | "APROBADO" | "RECHAZADO"
+) {
   if (!decisionStatus) return null;
 
   if (decisionStatus === "APROBADO") {
@@ -72,7 +81,12 @@ const TeacherEvaluationItem: React.FC<TeacherEvaluationItemProps> = ({
   selected = false,
   onClick,
   decisionStatus,
+
+  // ✅ nuevos callbacks de botones
+  onOpenDetail,
+  onOpenSecond,
 }) => {
+  // Formateo de fecha (guardamos en memo para evitar recalcular en cada render)
   const dateLabel = useMemo(() => {
     const createdAt = evaluation.createdAt ? new Date(evaluation.createdAt) : null;
     if (!createdAt || isNaN(createdAt.getTime())) return "Fecha no disponible";
@@ -86,14 +100,23 @@ const TeacherEvaluationItem: React.FC<TeacherEvaluationItemProps> = ({
     });
   }, [evaluation.createdAt]);
 
+  // Badges (IA + decisión coordinación)
   const verdict = evaluation.aiFinalRecommendation || "";
   const ia = useMemo(() => getIaBadge(verdict), [verdict]);
-  const decision = useMemo(() => getDecisionBadge(decisionStatus), [decisionStatus]);
+  const decision = useMemo(
+    () => getDecisionBadge(decisionStatus),
+    [decisionStatus]
+  );
 
   const score = Math.round(evaluation.aiTeachingSuitabilityScore || 0);
 
-  // Solo estilos "clickable", pero sin convertirlo en button.
+  // Solo estilos "clickable", sin volverlo button.
   const clickableCls = onClick ? "cursor-pointer" : "cursor-default";
+
+  // Helper para que los botones NO disparen el click del item
+  const stop = (e: React.MouseEvent | React.KeyboardEvent) => {
+    e.stopPropagation();
+  };
 
   return (
     <div
@@ -102,8 +125,10 @@ const TeacherEvaluationItem: React.FC<TeacherEvaluationItemProps> = ({
       tabIndex={onClick ? 0 : -1}
       aria-pressed={onClick ? selected : undefined}
       onKeyDown={(e) => {
+        // Accesibilidad: enter o espacio hace "selección" del item
         if (!onClick) return;
         if (e.key === "Enter" || e.key === " ") {
+          // Si el foco está en el contenedor (no en un botón), activamos selección
           e.preventDefault();
           onClick();
         }
@@ -160,6 +185,39 @@ const TeacherEvaluationItem: React.FC<TeacherEvaluationItemProps> = ({
           <span className="text-neutral-400">Score </span>
           <span className="text-emerald-400">{score}</span>
           <span className="text-neutral-500">/100</span>
+        </div>
+
+        {/* ✅ NUEVO: botones por candidato */}
+        <div className="flex items-center gap-2 pt-1">
+          <button
+            type="button"
+            // Evita que el click seleccione el item
+            onClick={(e) => {
+              stop(e);
+              onOpenDetail?.();
+            }}
+            // Evita que Enter/Espacio aquí activen el contenedor padre
+            onKeyDown={(e) => stop(e)}
+            className="px-3 py-1 rounded-lg text-[10px] font-bold uppercase tracking-widest
+                       border border-white/10 bg-white/5 text-gray-200
+                       hover:bg-white/10 hover:border-emerald-500/30 hover:text-emerald-200 transition"
+          >
+            Ver detalle
+          </button>
+
+          <button
+            type="button"
+            onClick={(e) => {
+              stop(e);
+              onOpenSecond?.();
+            }}
+            onKeyDown={(e) => stop(e)}
+            className="px-3 py-1 rounded-lg text-[10px] font-bold uppercase tracking-widest
+                       border border-white/10 bg-white/5 text-gray-200
+                       hover:bg-white/10 hover:border-cyan-500/30 hover:text-cyan-200 transition"
+          >
+            Otra tarjeta
+          </button>
         </div>
       </div>
     </div>

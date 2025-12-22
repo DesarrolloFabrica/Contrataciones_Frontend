@@ -90,7 +90,7 @@ export default function EvaluationDetailPanel({
   }, [detailTab, timelineTab, setTimelineTab, activityByEval, activityGlobal]);
 
   return (
-    <div className="bg-[#050505]/90 border border-white/10 rounded-3xl p-5 md:p-6 shadow-xl flex flex-col">
+    <div className="bg-[#1F1F1F]/30 border border-white/10 rounded-3xl p-5 md:p-6 shadow-xl flex flex-col">
       <div className="flex items-center justify-between mb-4">
         <div>
           <h3 className="text-sm font-bold uppercase tracking-widest text-gray-400">

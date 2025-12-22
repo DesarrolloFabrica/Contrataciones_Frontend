@@ -1,5 +1,5 @@
 // src/pages/coordinator/types.ts
-
+import type { TeacherEvaluationSummary } from "../../types";
 // ✅ Tabs del panel derecho
 export type DetailTabKey = "DECISION" | "AI" | "NOTES" | "AUDIT" | "TECH";
 
@@ -36,6 +36,15 @@ export const DEFAULT_CRITERIA: CoordinatorCriteria = {
 export type CoordinatorNotes = {
   notes: string;
   criteria: CoordinatorCriteria;
+};
+
+export type CandidateGroup = {
+  documentNumber: string;
+  candidateName: string;
+  school: string;
+  program: string;
+  interviews: TeacherEvaluationSummary[];
+  latest: TeacherEvaluationSummary;
 };
 
 // ✅ Guardado por evaluación

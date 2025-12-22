@@ -1,9 +1,8 @@
-// src/pages/coordinator/components/EvaluationsListPanel.tsx
 import React from "react";
 import { Calendar, FileText, Filter, Search } from "lucide-react";
 import TeacherEvaluationItem from "../../../components/TeacherEvaluationItem";
-import { TeacherEvaluationSummary } from "../../../types";
-import { DecisionFilter, LocalDecision } from "../types";
+import type { DecisionFilter, LocalDecision } from "../types";
+import type { CandidateGroup } from "../types"; // ✅ usa el tipo real
 
 type Props = {
   // scope obligatorio
@@ -18,8 +17,10 @@ type Props = {
 
   mustChooseScope: boolean;
 
-  // lista + filtros
-  filteredEvaluations: TeacherEvaluationSummary[];
+  // ✅ lista agrupada por candidato (NO por evaluación)
+  groupedCandidates: CandidateGroup[];
+
+  // seleccionado (sigue siendo un evaluationId, para compatibilidad con detail hook)
   selectedId: string | null;
 
   search: string;
@@ -30,7 +31,12 @@ type Props = {
 
   localDecisions: Record<string, LocalDecision>;
 
+  // click normal sobre el item (elige "última entrevista" como representante)
   onSelectEvaluation: (id: string) => void;
+
+  // botones por candidato
+  onOpenDetail: (id: string) => void;
+  onOpenSecond: (id: string) => void;
 };
 
 const EvaluationsListPanel: React.FC<Props> = ({
@@ -42,17 +48,20 @@ const EvaluationsListPanel: React.FC<Props> = ({
   programOptions,
   mustChooseScope,
 
-  filteredEvaluations,
+  groupedCandidates,
   selectedId,
   search,
   setSearch,
   decisionFilter,
   setDecisionFilter,
   localDecisions,
+
   onSelectEvaluation,
+  onOpenDetail,
+  onOpenSecond,
 }) => {
   return (
-    <div className="bg-[#050505]/90 border border-white/10 rounded-3xl p-5 md:p-6 shadow-xl flex flex-col">
+    <div className="bg-[#1F1F1F]/30 border border-white/10 rounded-3xl p-5 md:p-6 shadow-xl flex flex-col">
       <div className="flex items-center justify-between mb-4 gap-3">
         <div>
           <h3 className="text-sm font-bold uppercase tracking-widest text-gray-400 flex items-center gap-2">
@@ -168,34 +177,75 @@ const EvaluationsListPanel: React.FC<Props> = ({
       </div>
 
       {/* lista */}
-      <div className="space-y-2 overflow-y-auto pr-1 max-h-[480px]">
+      <div className="space-y-3 overflow-y-auto pr-1 max-h-[480px]">
         {mustChooseScope && (
           <div className="flex items-center justify-center py-10 text-gray-500 text-sm">
             Elige escuela y programa para ver evaluaciones.
           </div>
         )}
 
-        {!mustChooseScope && filteredEvaluations.length === 0 && (
+        {!mustChooseScope && groupedCandidates.length === 0 && (
           <div className="flex items-center justify-center py-10 text-gray-500 text-sm">
             No hay evaluaciones para los filtros actuales.
           </div>
         )}
 
         {!mustChooseScope &&
-          filteredEvaluations.map((ev) => {
-            const isSelected = selectedId === ev.id;
-            const statusForUi =
-              localDecisions[ev.id] ??
-              (ev.coordinatorDecisionStatus as LocalDecision | undefined);
+          groupedCandidates.map((g) => {
+            const ev = g.latest; // ✅ representante del candidato
+            const interviewsCount = g.interviews?.length ?? 0;
 
             return (
-              <TeacherEvaluationItem
-                key={ev.id}
-                evaluation={ev}
-                selected={isSelected}
-                onClick={() => onSelectEvaluation(ev.id)}
-                decisionStatus={statusForUi}
-              />
+              <div key={g.documentNumber} className="space-y-2">
+                {/* Item (click normal = seleccionar evaluación) */}
+                <TeacherEvaluationItem
+                  evaluation={ev}
+                  selected={selectedId === ev.id}
+                  onClick={() => onSelectEvaluation(ev.id)}
+                  decisionStatus={
+                    localDecisions[ev.id] ??
+                    (ev.coordinatorDecisionStatus as LocalDecision | undefined)
+                  }
+                />
+
+                {/* Barra inferior: entrevistas + 2 botones */}
+                <div className="flex items-center justify-between gap-3 px-2">
+                  <span className="text-[11px] text-gray-500">
+                    Entrevistas:{" "}
+                    <b className="text-gray-300">{interviewsCount}</b>
+                  </span>
+
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation(); // ✅ no dispara el click del item
+                        onOpenDetail(ev.id); // ✅ abre detalle usando latest.id
+                      }}
+                      className="px-3 py-1.5 rounded-xl text-[11px] uppercase tracking-widest
+                                 border border-emerald-500/25 text-emerald-300
+                                 hover:border-emerald-500/50 hover:bg-emerald-500/10 transition"
+                    >
+                      Ver detalle
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onOpenSecond(ev.id);
+                      }}
+                      className="px-3 py-1.5 rounded-xl text-[11px] uppercase tracking-widest
+                                 border border-white/10 text-gray-300
+                                 hover:border-cyan-500/35 hover:bg-cyan-500/10 transition"
+                    >
+                      Comparativa
+                    </button>
+                  </div>
+                </div>
+
+                <div className="h-px bg-white/5" />
+              </div>
             );
           })}
       </div>
