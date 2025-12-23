@@ -144,6 +144,8 @@ interface AnalysisResultsProps {
   onReset: () => void;
   // nuevo: id de la evaluación guardada en el backend
   evaluationId?: string;
+  //  NUEVO (solo UI): texto del botón de reset
+  resetLabel?: string;
 }
 
 const REPORT_ELEMENT_ID = "report-to-download";
@@ -153,6 +155,7 @@ const AnalysisResults: React.FC<AnalysisResultsProps> = ({
   interviewData,
   onReset,
   evaluationId,
+  resetLabel = "Analizar otro candidato",
 }) => {
   const [isDownloading, setIsDownloading] = useState(false);
   const { user } = useAuth();

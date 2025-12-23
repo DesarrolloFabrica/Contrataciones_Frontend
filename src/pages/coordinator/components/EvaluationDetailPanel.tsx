@@ -162,6 +162,10 @@ export default function EvaluationDetailPanel({
               candidateGroup={candidateGroup}
               selectedEvaluationId={selectedId}
               onOpenInterview={onOpenInterview}
+              onOpenComparison={() => {
+            // ✅ delega al padre (CoordinatorConsole) mediante onOpenComparison (lo añadiremos en props)
+            // por ahora lo conectamos en el siguiente paso
+          }}
             />
           )}
 

@@ -483,12 +483,9 @@ const selectedCandidateGroup = useMemo(() => {
             // ✅ ENTREVISTAS (NUEVO)
             candidateGroup={selectedCandidateGroup}
               onOpenInterview={(evaluationId) => {
-              // ✅ Abre Leader directamente en la sección del reporte (AnalysisResults)
-              const url = `/leader?evaluationId=${encodeURIComponent(evaluationId)}#report-to-download`;
-                          
-              // ✅ nueva pestaña (no rompe el flujo del coordinador)
-              window.open(url, "_blank", "noopener,noreferrer");
-            }}
+                // ✅ Ruta dedicada del reporte completo (opción B)
+                navigate(`/coordinator/evaluations/${encodeURIComponent(evaluationId)}`);
+              }}
 
           />
         )}

@@ -11,12 +11,16 @@ type Props = {
 
   /** Abrir una evaluación específica (una entrevista) */
   onOpenInterview: (evaluationId: string) => void;
+
+  /** ✅ NUEVO: abrir la tarjeta de comparación IA */
+  onOpenComparison: () => void;
 };
 
 export default function InterviewsTab({
   candidateGroup,
   selectedEvaluationId,
   onOpenInterview,
+  onOpenComparison,
 }: Props) {
   const interviews = candidateGroup.interviews ?? [];
 
@@ -27,6 +31,8 @@ export default function InterviewsTab({
       </div>
     );
   }
+
+  const canCompare = interviews.length >= 2; // ✅ regla pedida
 
   return (
     <div className="space-y-3">
@@ -76,6 +82,31 @@ export default function InterviewsTab({
           );
         })}
       </div>
+
+      {/* ✅ CTA inferior: comparar entrevistas (solo si hay 2+) */}
+      {canCompare && (
+        <div className="pt-3 border-t border-white/10">
+          <button
+            type="button"
+            onClick={onOpenComparison}
+            className="
+              w-full
+              rounded-2xl
+              px-4 py-3
+              text-[11px] font-extrabold uppercase tracking-[0.22em]
+              border border-emerald-500/20
+              bg-emerald-500/10 text-emerald-200
+              hover:bg-emerald-500/15 hover:border-emerald-500/30
+              transition
+            "
+          >
+            Comparar entrevistas con IA
+          </button>
+          <p className="mt-2 text-xs text-white/45">
+            La IA detectará similitudes, diferencias y evolución entre reportes.
+          </p>
+        </div>
+      )}
     </div>
   );
 }
