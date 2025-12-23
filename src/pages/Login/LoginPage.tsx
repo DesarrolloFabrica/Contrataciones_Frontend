@@ -2,8 +2,11 @@ import React, { useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
 
-import BGVideo from "../../assets/videos/Op2_1.mp4";
+import BGImg from "../../assets/images/Gemini_Generated_Image_wsary2wsary2wsar (1).png";
 import LogoCun from "../../assets/images/LogoCunColor.png";
+import LogoCun2 from "../../assets/images/LogoCun.png";
+import Enciendete from "../../assets/images/Enciendete.png";
+import BGVideo from "../../assets/videos/Op2_1.mp4";
 
 const LoginPage: React.FC = () => {
   const { login } = useAuth();
@@ -74,7 +77,7 @@ const LoginPage: React.FC = () => {
                   placeholder="ejemplo@cun.edu.co"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  className="w-full rounded-2xl bg-gray-200/80 border border-transparent px-4 py-3 text-sm text-gray-900 placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/40"
+                  className="w-full rounded-2xl bg-gray-200/80 px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/40"
                 />
 
                 {/* ✅ NUEVO: password */}
@@ -89,7 +92,7 @@ const LoginPage: React.FC = () => {
 
                 <button
                   type="submit"
-                  className="w-full rounded-2xl py-3 text-sm font-bold tracking-widest uppercase text-white bg-gradient-to-r from-[#91DC00] to-[#31AB2E] hover:from-[#31AB2E] hover:to-[#91DC00] transition"
+                  className="w-full rounded-2xl py-3 text-sm font-bold uppercase tracking-widest text-white bg-gradient-to-r from-[#91DC00] to-[#31AB2E]"
                 >
                   Entrar
                 </button>

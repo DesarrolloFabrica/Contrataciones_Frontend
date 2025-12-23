@@ -1,5 +1,5 @@
 // src/pages/coordinator/CoordinatorConsole.tsx
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState, useRef } from "react";
 import {
   Activity,
   AlertCircle,
@@ -20,7 +20,71 @@ import { useEvaluationDetail } from "./hooks/useEvaluationDetail";
 import EvaluationsListPanel from "./components/EvaluationsListPanel";
 import EvaluationDetailPanel from "./components/EvaluationDetailPanel";
 
-import type { DetailTabKey, LocalDecision } from "./types";
+import type {  CandidateGroup, DetailTabKey, LocalDecision } from "./types";
+
+import { getCandidateKey } from "./utils/candidateKey";
+
+import { useLocation } from "react-router-dom";
+
+
+
+function normalizeDoc(raw: any): string {
+  // ✅ Normaliza: deja solo dígitos (evita "1.234.567" vs "1234567")
+  const s = (raw ?? "").toString().trim();
+  return s.replace(/\D/g, "");
+}
+
+function groupByCandidate(
+  evaluations: import("../../types").TeacherEvaluationSummary[]
+): CandidateGroup[] {
+  // key estable -> grupo
+  const map = new Map<string, import("../../types").TeacherEvaluationSummary[]>();
+
+  for (const ev of evaluations) {
+    // ✅ key estable (usa doc camel/snake y fallback a nombre+escuela+programa)
+    const key = getCandidateKey(ev);
+
+    // ⚠️ IMPORTANTE: NO uses ev.id como key de fallback, porque eso duplica siempre
+    if (!map.has(key)) map.set(key, []);
+    map.get(key)!.push(ev);
+  }
+
+  const groups: CandidateGroup[] = [];
+
+  for (const [key, interviews] of map.entries()) {
+    // ✅ ordena entrevistas (más reciente primero)
+    const sorted = [...interviews].sort(
+      (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+    );
+
+    const latest = sorted[0];
+
+    // ✅ doc para mostrar (si viene) - normalizado
+    const docDisplay =
+      normalizeDoc(latest.candidate?.documentNumber) ||
+      normalizeDoc(latest.candidate?.document_number) ||
+      "";
+
+    groups.push({
+      key,
+      documentNumber: docDisplay,
+      candidateName: latest.candidate?.fullName ?? "Sin nombre",
+      school: latest.candidate?.schoolNameSnapshot ?? "",
+      program: latest.candidate?.programNameSnapshot ?? "",
+      interviews: sorted,
+      latest,
+    });
+  }
+
+  // ✅ ordena candidatos por su última entrevista
+  groups.sort(
+    (a, b) =>
+      new Date(b.latest.createdAt).getTime() - new Date(a.latest.createdAt).getTime()
+  );
+
+  return groups;
+}
+
 
 const CoordinatorConsole: React.FC = () => {
   const { user } = useAuth();
@@ -46,8 +110,18 @@ const CoordinatorConsole: React.FC = () => {
   // -----------------------------
   // 3) Tabs panel derecho (✅ ahora: DECISION | AI | NOTES)
   // -----------------------------
-  const [detailTab, setDetailTab] = useState<DetailTabKey>("DECISION");
 
+  const [selectedCandidateKey, setSelectedCandidateKey] = useState<string | null>(null);
+
+  
+
+
+  const [detailTab, setDetailTab] = useState<DetailTabKey>("AI");
+
+  // 3.2) Qué tarjeta inferior mostrar (detalle vs segunda tarjeta)
+  // -----------------------------
+  type DetailView = "DETAIL" | "SECOND" | null;
+  const [detailView, setDetailView] = useState<DetailView>(null);
   // -----------------------------
   // 3.1) NUEVO: notas + criterios (para NotesTab)
   // -----------------------------
@@ -58,6 +132,19 @@ const CoordinatorConsole: React.FC = () => {
     risk_ok: false,
     communication_ok: false,
   });
+
+  const detailSectionRef = useRef<HTMLDivElement | null>(null);
+
+  // ✅ Helper: hace scroll suave hasta la sección inferior
+  const scrollToDetailSection = () => {
+    // Usamos requestAnimationFrame para esperar a que React pinte el panel
+    requestAnimationFrame(() => {
+      detailSectionRef.current?.scrollIntoView({
+        behavior: "smooth",
+        block: "start",
+      });
+    });
+  };
 
   // -----------------------------
   // 4) Filtros obligatorios (Escuela + Programa)
@@ -103,8 +190,9 @@ const CoordinatorConsole: React.FC = () => {
   useEffect(() => {
     setProgramFilter("");
     evals.setSearch("");
-    setDetailTab("DECISION");
+    setDetailTab("AI");
     detail.clearSelection();
+    setDetailView(null);
 
     // ✅ si cambias escuela, las notas/criterios se reinician
     setNotes("");
@@ -114,14 +202,18 @@ const CoordinatorConsole: React.FC = () => {
       risk_ok: false,
       communication_ok: false,
     });
+    if (detailView) {
+    scrollToDetailSection();
+  }
 
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [schoolFilter]);
 
   useEffect(() => {
     evals.setSearch("");
-    setDetailTab("DECISION");
+    setDetailTab("AI");
     detail.clearSelection();
+    setDetailView(null);
 
     // ✅ si cambias programa, reinicia notas/criterios
     setNotes("");
@@ -131,6 +223,9 @@ const CoordinatorConsole: React.FC = () => {
       risk_ok: false,
       communication_ok: false,
     });
+    if (detailView) {
+    scrollToDetailSection();
+  }
 
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [programFilter]);
@@ -173,7 +268,7 @@ const CoordinatorConsole: React.FC = () => {
     }
 
     return base;
-  }, [
+    }, [
     evals.evaluations,
     evals.search,
     evals.decisionFilter,
@@ -181,6 +276,34 @@ const CoordinatorConsole: React.FC = () => {
     schoolFilter,
     programFilter,
   ]);
+
+  
+const groupedCandidates = useMemo(() => {
+  return groupByCandidate(filteredEvaluations);
+}, [filteredEvaluations]);
+
+console.log(
+  "Candidatos agrupados:",
+  groupedCandidates.map((g) => ({
+    key: g.key,
+    doc: g.documentNumber,
+    name: g.candidateName,
+    interviews: g.interviews.length,
+  }))
+);
+
+  
+
+
+
+const selectedCandidateGroup = useMemo(() => {
+  if (!selectedCandidateKey) return null;
+
+  return (
+    groupedCandidates.find((g) => g.key === selectedCandidateKey) ??
+    null
+  );
+}, [groupedCandidates, selectedCandidateKey]);
 
   // -----------------------------
   // 8) UI states
@@ -255,7 +378,7 @@ const CoordinatorConsole: React.FC = () => {
           <>
             {/* MÉTRICAS RÁPIDAS */}
             <section className="grid grid-cols-1 md:grid-cols-3 gap-5 mb-6">
-              <div className="bg-[#050505] border border-white/10 rounded-3xl px-5 py-4 flex flex-col justify-between shadow-lg">
+              <div className="bg-[#1F1F1F]/30 border border-white/10 rounded-3xl px-5 py-4 flex flex-col justify-between shadow-lg">
                 <div className="flex items-center justify-between mb-4">
                   <span className="text-[11px] uppercase tracking-widest text-gray-500">
                     Evaluaciones Totales
@@ -265,7 +388,7 @@ const CoordinatorConsole: React.FC = () => {
                 <p className="text-3xl font-black text-white">{metrics.total}</p>
               </div>
 
-              <div className="bg-[#050505] border border-white/10 rounded-3xl px-5 py-4 flex flex-col justify-between shadow-lg">
+              <div className="bg-[#1F1F1F]/30 border border-white/10 rounded-3xl px-5 py-4 flex flex-col justify-between shadow-lg">
                 <div className="flex items-center justify-between mb-4">
                   <span className="text-[11px] uppercase tracking-widest text-gray-500">
                     Puntaje Global Promedio
@@ -278,7 +401,7 @@ const CoordinatorConsole: React.FC = () => {
                 </p>
               </div>
 
-              <div className="bg-[#050505] border border-white/10 rounded-3xl px-5 py-4 flex flex-col justify-between shadow-lg">
+              <div className="bg-[#1F1F1F]/30 border border-white/10 rounded-3xl px-5 py-4 flex flex-col justify-between shadow-lg">
                 <div className="flex items-center justify-between mb-4">
                   <span className="text-[11px] uppercase tracking-widest text-gray-500">
                     Próxima Fase
@@ -292,7 +415,7 @@ const CoordinatorConsole: React.FC = () => {
             </section>
 
             {/* LISTA + DETALLE */}
-            <section className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <section className="flex flex-col gap-6">
               <EvaluationsListPanel
                 schoolFilter={schoolFilter}
                 setSchoolFilter={setSchoolFilter}
@@ -301,52 +424,101 @@ const CoordinatorConsole: React.FC = () => {
                 schoolOptions={schoolOptions}
                 programOptions={programOptions}
                 mustChooseScope={mustChooseScope}
-                filteredEvaluations={filteredEvaluations}
+                groupedCandidates={groupedCandidates}
                 selectedId={detail.selectedId}
                 search={evals.search}
                 setSearch={evals.setSearch}
                 decisionFilter={evals.decisionFilter}
                 setDecisionFilter={evals.setDecisionFilter}
                 localDecisions={evals.localDecisions}
-                onSelectEvaluation={(id) => {
-                  detail.handleSelectEvaluation(id);
-                  setDetailTab("DECISION");
-
-                  // ✅ al cambiar evaluación, limpia notas/criterios
-                  setNotes("");
-                  setCriteria({
-                    docs_ok: false,
-                    profile_fit: false,
-                    risk_ok: false,
-                    communication_ok: false,
-                  });
+                onSelectEvaluation={(candidateKey, evaluationId) => {
+                  setSelectedCandidateKey(candidateKey);
+                  detail.handleSelectEvaluation(evaluationId);
+                  setDetailTab("AI");
                 }}
+                onOpenDetail={(candidateKey, evaluationId) => {
+                  setSelectedCandidateKey(candidateKey);
+                  setDetailView("DETAIL");
+                  detail.handleSelectEvaluation(evaluationId);
+                  setDetailTab("AI");
+                  scrollToDetailSection();
+                }}
+                onOpenSecond={(candidateKey, evaluationId) => {
+                  setSelectedCandidateKey(candidateKey);
+                  setDetailView("SECOND");
+                  detail.handleSelectEvaluation(evaluationId);
+                  setDetailTab("AI");
+                  scrollToDetailSection();
+                }}
+                
               />
+      
+      <div ref={detailSectionRef} />
+        {detailView === "DETAIL" && (
+          
+          <EvaluationDetailPanel
+            selectedId={detail.selectedId}
+            selectedDetail={detail.selectedDetail}
+            loadingDetail={detail.loadingDetail}
+            onExportPdf={detail.exportPdf}
+            detailTab={detailTab}
+            setDetailTab={setDetailTab}
+            decision={detail.decision}
+            decisionComment={detail.decisionComment}
+            setDecisionComment={detail.setDecisionComment}
+            onDecisionCommentBlur={detail.onDecisionCommentBlur}
+            onApplyDecision={detail.applyDecision}
 
-              <EvaluationDetailPanel
-                selectedId={detail.selectedId}
-                selectedDetail={detail.selectedDetail}
-                loadingDetail={detail.loadingDetail}
-                onExportPdf={detail.exportPdf}
-                detailTab={detailTab}
-                setDetailTab={setDetailTab}
-                decision={detail.decision}
-                decisionComment={detail.decisionComment}
-                setDecisionComment={detail.setDecisionComment}
-                onDecisionCommentBlur={detail.onDecisionCommentBlur}
-                onApplyDecision={detail.applyDecision}
+            // ✅ NOTES
+            notes={detail.notes}
+            setNotes={detail.setNotes}
+            criteria={detail.criteria}
+            setCriteria={detail.setCriteria}
 
-                // ✅ NOTES
-                notes={detail.notes}
-                setNotes={detail.setNotes}
-                criteria={detail.criteria}
-                setCriteria={detail.setCriteria}
+            // ✅ VALIDACIÓN + SUBMIT
+            canSubmitDecision={detail.canSubmitDecision}
+            missingReasons={detail.missingReasons}
+            onSubmitDecision={detail.submitDecisionToAdmin}
 
-                // ✅ VALIDACIÓN + SUBMIT
-                canSubmitDecision={detail.canSubmitDecision}
-                missingReasons={detail.missingReasons}
-                onSubmitDecision={detail.submitDecisionToAdmin}
-              />
+            // ✅ ENTREVISTAS (NUEVO)
+            candidateGroup={selectedCandidateGroup}
+              onOpenInterview={(evaluationId) => {
+                // ✅ Ruta dedicada del reporte completo (opción B)
+                navigate(`/coordinator/evaluations/${encodeURIComponent(evaluationId)}`);
+              }}
+
+          />
+        )}
+        {detailView === "SECOND" && (
+          <div className="bg-[#0B0B0B] border border-white/15 rounded-3xl p-5 md:p-6 shadow-xl">
+            <div className="flex items-center justify-between mb-3">
+              <div>
+                <h3 className="text-sm font-bold uppercase tracking-widest text-gray-400">
+                  Segunda tarjeta
+                </h3>
+                <p className="text-xs text-gray-500 mt-1">
+                  Esta vista aún no necesita funcionalidad.
+                </p>
+              </div>
+        
+              {/* opcional: botón para volver al detalle */}
+              <button
+                type="button"
+                onClick={() => setDetailView("DETAIL")}
+                className="px-3 py-2 rounded-xl text-[11px] uppercase tracking-widest
+                           border border-white/10 text-gray-400 hover:border-emerald-500/40 hover:text-emerald-300 transition"
+              >
+                Volver a detalle
+              </button>
+            </div>
+        
+            <div className="text-sm text-gray-400 bg-black/20 border border-white/10 rounded-2xl p-4">
+              Selecciona un candidato y usa los botones del listado para abrir esta tarjeta.
+            </div>
+          </div>
+        )}
+     
+        
 
             </section>
           </>

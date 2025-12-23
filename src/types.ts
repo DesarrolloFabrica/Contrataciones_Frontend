@@ -120,6 +120,7 @@ export interface TeacherEvaluationSummary {
 
   candidate?: {
     fullName: string;
+    document_number?: string;
     schoolNameSnapshot?: string | null;
     programNameSnapshot?: string | null;
 

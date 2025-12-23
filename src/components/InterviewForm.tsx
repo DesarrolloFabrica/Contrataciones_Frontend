@@ -46,23 +46,35 @@ const initialFormData: InterviewData = {
   scenarioFeedback: "",
 };
 
+// ---------------------------------------------------------------------
+// ✅ AJUSTE VISUAL (sin tocar lógica)
+// Objetivo: que las tarjetas NO se mezclen con el fondo #020202.
+// Aplicamos “Premium neutro”:
+// - Tarjeta: grafito (#0B0D0F) con leve transparencia + blur
+// - Borde/ring: blancos sutiles, verde solo como acento (hover/focus)
+// - Glow interno: blanco MUY suave + emerald MUY suave (sin teñir toda la card)
+// ---------------------------------------------------------------------
+
 // --- COMPONENTES VISUALES AVANZADOS ---
 
-const SectionHeader: React.FC<{ title: string; icon: React.ReactNode }> =
-  React.memo(({ title, icon }) => (
+const SectionHeader: React.FC<{ title: string; icon: React.ReactNode }> = React.memo(
+  ({ title, icon }) => (
     <div className="flex items-center gap-4 mb-8">
       <div className="relative group">
-        <div className="absolute inset-0 bg-emerald-500 blur-lg opacity-20 group-hover:opacity-40 transition-opacity duration-500" />
-        <div className="relative p-3 rounded-2xl bg-[#0F0F0F] border border-white/10 text-emerald-400 shadow-xl">
+        {/* Glow más neutro (menos “verde pintado”) */}
+        <div className="absolute inset-0 bg-emerald-500 blur-lg opacity-10 group-hover:opacity-18 transition-opacity duration-500" />
+        <div className="relative p-3 rounded-2xl bg-[#0E1115] border border-white/10 text-emerald-400 shadow-lg">
           {icon}
         </div>
       </div>
+
       <div className="flex flex-col">
         <h3 className="text-xl font-bold text-white tracking-tight">{title}</h3>
         <div className="h-0.5 w-12 bg-gradient-to-r from-emerald-500/50 to-transparent mt-2 rounded-full" />
       </div>
     </div>
-  ));
+  )
+);
 
 const FormSection: React.FC<{
   title: string;
@@ -86,7 +98,7 @@ const FormField: React.FC<{
   <div className="flex flex-col gap-3 group">
     <label
       htmlFor={name}
-      className="text-xs font-bold uppercase tracking-widest text-gray-500 group-focus-within:text-emerald-400 transition-colors duration-300 ml-1"
+      className="text-xs font-bold uppercase tracking-[0.14em] text-gray-400 group-focus-within:text-emerald-400 transition-colors duration-300 ml-1"
     >
       {label}
     </label>
@@ -95,7 +107,7 @@ const FormField: React.FC<{
 ));
 
 const baseInputStyles =
-  "w-full bg-[#0A0A0A] border border-white/5 text-gray-200 text-sm rounded-xl px-4 py-4 outline-none transition-all duration-300 placeholder:text-gray-700 focus:bg-[#0F0F0F] focus:border-emerald-500/40 focus:ring-1 focus:ring-emerald-500/40 focus:shadow-[0_0_20px_-5px_rgba(16,185,129,0.1)] hover:border-white/10 hover:bg-[#0F0F0F]";
+  "w-full bg-[#07090B] border border-white/[0.10] text-gray-200 text-sm rounded-xl px-4 py-3.5 outline-none transition-all duration-300 placeholder:text-gray-500 focus:bg-[#0F1216] focus:border-emerald-500/25 focus:ring-1 focus:ring-emerald-500/20 focus:shadow-[0_0_18px_-10px_rgba(16,185,129,0.14)] hover:border-white/[0.14] hover:bg-[#0C0F12]";
 
 const TextInput: React.FC<{
   name: keyof InterviewData;
@@ -171,16 +183,18 @@ const SelectInput: React.FC<{
       disabled={disabled}
     >
       {placeholder && (
-        <option value="" className="text-gray-500">
+        <option value="" disabled className="text-gray-500">
           {placeholder}
         </option>
       )}
+
       {options.map((opt) => (
         <option key={opt.value} value={opt.value} className="bg-[#1a1a1a] py-2">
           {opt.label}
         </option>
       ))}
     </select>
+
     <div className="absolute inset-y-0 right-0 flex items-center px-4 pointer-events-none text-gray-600 group-focus-within/select:text-emerald-400 transition-colors">
       <ChevronDown className="w-4 h-4" />
     </div>
@@ -258,7 +272,7 @@ const InterviewForm: React.FC<InterviewFormProps> = ({ onSubmit }) => {
             <span>Sistema Inteligente</span>
           </div>
 
-          <div className="space-y-4 max-w-3xl mx-auto">
+          <div className="relative space-y-4 max-w-3xl mx-auto">
             <h2 className="text-4xl md:text-6xl font-black text-white tracking-tighter leading-[1.1]">
               Evaluación de{" "}
               <span className="text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 to-cyan-400">
@@ -338,7 +352,7 @@ const InterviewForm: React.FC<InterviewFormProps> = ({ onSubmit }) => {
                     value={formData.age}
                     onChange={handleChange}
                     type="number"
-                    placeholder="00"
+                    placeholder="Ej. 35"
                   />
                 </FormField>
               </div>
@@ -403,6 +417,7 @@ const InterviewForm: React.FC<InterviewFormProps> = ({ onSubmit }) => {
                   />
                 </FormField>
               </div>
+
               <div className="md:col-span-1">
                 <FormField label="Disposición a Comités" name="acceptsCommittees">
                   <SelectInput
@@ -529,18 +544,18 @@ const InterviewForm: React.FC<InterviewFormProps> = ({ onSubmit }) => {
             <button
               type="button"
               onClick={resetForm}
-              className="px-8 py-4 rounded-xl text-gray-500 hover:text-white hover:bg-white/5 transition-all text-sm font-bold uppercase tracking-widest flex items-center gap-2"
+              className="px-8 py-4 rounded-xl text-gray-500 hover:text-white hover:bg-white/5 transition-all text-sm font-bold uppercase tracking-widest flex items-center gap-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/15"
             >
               <RotateCcw className="w-4 h-4" /> Resetear
             </button>
 
             <button
               type="submit"
-              className="relative group px-12 py-5 bg-emerald-600 rounded-2xl overflow-hidden shadow-[0_0_40px_-10px_rgba(16,185,129,0.5)] transition-transform hover:scale-[1.02] hover:shadow-[0_0_60px_-10px_rgba(16,185,129,0.6)]"
+              className="relative group px-12 py-5 bg-emerald-600 rounded-2xl overflow-hidden shadow-[0_0_36px_-12px_rgba(16,185,129,0.45)] transition-transform hover:scale-[1.02] hover:shadow-[0_0_52px_-14px_rgba(16,185,129,0.55)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/30"
             >
               <div className="absolute inset-0 bg-gradient-to-r from-emerald-500 via-teal-400 to-emerald-600 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
               <div className="relative flex items-center gap-3 text-white font-black text-sm uppercase tracking-widest">
-                <Sparkles className="w-5 h-5 animate-pulse" />
+                <Sparkles className="w-5 h-5 group-hover:animate-pulse" />
                 <span>Ejecutar Análisis IA</span>
               </div>
             </button>

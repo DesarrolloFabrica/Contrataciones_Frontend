@@ -7,12 +7,19 @@ interface TeacherEvaluationItemProps {
   selected?: boolean;
 
   /**
-   * Si lo quieres clickable, NO lo hagas botón aquí.
-   * Haz clickable el wrapper externo (Panel) para evitar "button dentro de button".
+   * Click general del item (seleccionar candidato).
+   * OJO: no convertimos el item en <button> para evitar "button dentro de button".
    */
   onClick?: () => void;
 
   decisionStatus?: "PENDIENTE" | "APROBADO" | "RECHAZADO";
+
+  /**
+   * ✅ NUEVO: acciones específicas para los botones dentro del item.
+   * Estos NO deben disparar el onClick general del item.
+   */
+  onOpenDetail?: () => void;
+  onOpenSecond?: () => void;
 }
 
 const pillBase =
@@ -46,7 +53,9 @@ function getIaBadge(verdict: string) {
   };
 }
 
-function getDecisionBadge(decisionStatus?: "PENDIENTE" | "APROBADO" | "RECHAZADO") {
+function getDecisionBadge(
+  decisionStatus?: "PENDIENTE" | "APROBADO" | "RECHAZADO"
+) {
   if (!decisionStatus) return null;
 
   if (decisionStatus === "APROBADO") {
@@ -72,7 +81,12 @@ const TeacherEvaluationItem: React.FC<TeacherEvaluationItemProps> = ({
   selected = false,
   onClick,
   decisionStatus,
+
+  // ✅ nuevos callbacks de botones
+  onOpenDetail,
+  onOpenSecond,
 }) => {
+  // Formateo de fecha (guardamos en memo para evitar recalcular en cada render)
   const dateLabel = useMemo(() => {
     const createdAt = evaluation.createdAt ? new Date(evaluation.createdAt) : null;
     if (!createdAt || isNaN(createdAt.getTime())) return "Fecha no disponible";
@@ -86,14 +100,23 @@ const TeacherEvaluationItem: React.FC<TeacherEvaluationItemProps> = ({
     });
   }, [evaluation.createdAt]);
 
+  // Badges (IA + decisión coordinación)
   const verdict = evaluation.aiFinalRecommendation || "";
   const ia = useMemo(() => getIaBadge(verdict), [verdict]);
-  const decision = useMemo(() => getDecisionBadge(decisionStatus), [decisionStatus]);
+  const decision = useMemo(
+    () => getDecisionBadge(decisionStatus),
+    [decisionStatus]
+  );
 
   const score = Math.round(evaluation.aiTeachingSuitabilityScore || 0);
 
-  // Solo estilos "clickable", pero sin convertirlo en button.
+  // Solo estilos "clickable", sin volverlo button.
   const clickableCls = onClick ? "cursor-pointer" : "cursor-default";
+
+  // Helper para que los botones NO disparen el click del item
+  const stop = (e: React.MouseEvent | React.KeyboardEvent) => {
+    e.stopPropagation();
+  };
 
   return (
     <div
@@ -102,8 +125,10 @@ const TeacherEvaluationItem: React.FC<TeacherEvaluationItemProps> = ({
       tabIndex={onClick ? 0 : -1}
       aria-pressed={onClick ? selected : undefined}
       onKeyDown={(e) => {
+        // Accesibilidad: enter o espacio hace "selección" del item
         if (!onClick) return;
         if (e.key === "Enter" || e.key === " ") {
+          // Si el foco está en el contenedor (no en un botón), activamos selección
           e.preventDefault();
           onClick();
         }
@@ -161,6 +186,9 @@ const TeacherEvaluationItem: React.FC<TeacherEvaluationItemProps> = ({
           <span className="text-emerald-400">{score}</span>
           <span className="text-neutral-500">/100</span>
         </div>
+
+
+
       </div>
     </div>
   );
