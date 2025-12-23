@@ -16,6 +16,7 @@ const AuditTab: React.FC<Props> = ({ timelineTab, setTimelineTab, activityByEval
       <div className="flex items-center justify-between">
         <p className="text-[11px] uppercase tracking-widest text-gray-500">Actividad</p>
 
+
         <div className="flex items-center gap-2 text-[11px]">
           <button
             type="button"
