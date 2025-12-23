@@ -3,11 +3,9 @@ import axios, { AxiosRequestHeaders } from "axios";
 
 export const AUTH_STORAGE_KEY = "cun-auth";
 
-const isProd = import.meta.env.PROD;
-
-const API_BASE_URL = isProd
-  ? import.meta.env.VITE_API_BASE_URL          // PROD → Cloud Run
-  : import.meta.env.VITE_API_URL || "http://localhost:3001"; // DEV → local
+// Usamos SIEMPRE la misma variable, en dev y en prod
+const API_BASE_URL =
+  import.meta.env.VITE_API_URL || "http://localhost:3001";
 
 console.log("[apiClient] MODE:", import.meta.env.MODE);
 console.log("[apiClient] usando baseURL:", API_BASE_URL);

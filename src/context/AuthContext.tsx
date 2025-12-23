@@ -24,7 +24,6 @@ export interface AuthUser {
 
 interface AuthContextValue {
   user: AuthUser | null;
-  // ✅ NUEVO: ahora login requiere password
   login: (email: string, password: string) => Promise<AuthUser>;
   logout: () => void;
 }
@@ -78,9 +77,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
   const login = async (email: string, password: string): Promise<AuthUser> => {
     const cleanEmail = email.toLowerCase().trim();
 
-    const resp = await api.post<{
-      accessToken: string;
-      user: {
+    let data: {
+      accessToken?: string;
+      user?: {
         id: string;
         email: string;
         role: BackendRole;
@@ -88,9 +87,30 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
         fullName?: string;
         mustResetPassword?: boolean;
       };
-    }>("/auth/login", { email: cleanEmail, password });
+    };
 
-    const { accessToken, user: backendUser } = resp.data;
+    try {
+      const resp = await api.post<typeof data>("/auth/login", {
+        email: cleanEmail,
+        password,
+      });
+      data = resp.data;
+    } catch (error: any) {
+      console.error("[AuthContext] Error en /auth/login:", error?.response?.data || error);
+      throw error;
+    }
+
+    console.log("[AuthContext] login resp.data =", data);
+
+    const { accessToken, user: backendUser } = data;
+
+    if (!accessToken || !backendUser) {
+      console.error(
+        "[AuthContext] Respuesta inesperada de login, falta accessToken o user:",
+        data
+      );
+      throw new Error("Respuesta de login inválida");
+    }
 
     const uiRole = mapBackendRoleToUiRole(backendUser.role);
 

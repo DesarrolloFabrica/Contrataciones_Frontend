@@ -1,23 +1,28 @@
 // src/services/authService.ts
-import api, { AUTH_STORAGE_KEY } from "./apiClient";
-import type { AuthResponse } from "../types";
+import api from "./apiClient";
 
-/**
- * Login con email + password
- * POST /auth/login
- */
-export async function login(email: string, password: string): Promise<AuthResponse> {
-  const { data } = await api.post<AuthResponse>("/auth/login", {
-    email: email.toLowerCase().trim(),
+export type BackendUser = {
+  id: string;
+  email: string;
+  fullName: string;
+  role: string; // o "ADMIN" | "COORDINATOR" | "LEADER", etc.
+  schoolId?: string | null;
+  mustResetPassword?: boolean;
+};
+
+export type LoginResponse = {
+  accessToken: string;
+  user: BackendUser;
+};
+
+export async function login(
+  email: string,
+  password: string
+): Promise<LoginResponse> {
+  const { data } = await api.post<LoginResponse>("/auth/login", {
+    email,
     password,
   });
 
-  // Persistir sesión (tu interceptor ya lee AUTH_STORAGE_KEY)
-  localStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify(data));
-
   return data;
-}
-
-export function logout() {
-  localStorage.removeItem(AUTH_STORAGE_KEY);
 }
