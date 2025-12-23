@@ -1,0 +1,172 @@
+// src/pages/coordinator/CoordinatorEvaluationReport.tsx
+import React, { useEffect, useMemo, useState, useCallback } from "react";
+import { useNavigate, useParams } from "react-router-dom";
+import { ArrowLeft, Loader2, AlertCircle } from "lucide-react";
+
+import type { AnalysisResult, InterviewData } from "../../types";
+
+// ✅ Trae el detalle completo (mismo endpoint que usa líder y tu hook)
+import { getTeacherEvaluationById } from "../../services/teachersService";
+
+// ✅ Reutilizamos el mismo mapper que ya usa el coordinador (evita duplicar lógica)
+import { mapFormToInterviewData } from "./utils/mapFormToInterviewData";
+
+// ✅ Reutilizamos el mismo componente de reporte del líder
+import AnalysisResults from "../../components/AnalysisResults";
+
+const CoordinatorEvaluationReport: React.FC = () => {
+  const navigate = useNavigate();
+  const { evaluationId } = useParams<{ evaluationId: string }>();
+
+  // -----------------------------
+  // Estado local de carga
+  // -----------------------------
+  const [loading, setLoading] = useState<boolean>(true);
+  const [error, setError] = useState<string | null>(null);
+
+  const [analysis, setAnalysis] = useState<AnalysisResult | null>(null);
+  const [interviewData, setInterviewData] = useState<InterviewData | null>(null);
+
+  // -----------------------------
+  // Helper: volver al panel de coordinador
+  // -----------------------------
+  const handleBack = useCallback(() => {
+    // ✅ vuelve a la consola del coordinador
+    navigate("/coordinator", { replace: false });
+  }, [navigate]);
+
+  // -----------------------------
+  // Cargar detalle desde backend
+  // -----------------------------
+  useEffect(() => {
+    const load = async () => {
+      if (!evaluationId) {
+        setError("No se encontró el id de la evaluación en la URL.");
+        setLoading(false);
+        return;
+      }
+
+      setLoading(true);
+      setError(null);
+
+      try {
+        // ✅ 1) Obtener el detalle completo
+        const detail = await getTeacherEvaluationById(evaluationId);
+
+        // ✅ 2) Extraer el JSON completo de IA (misma llave usada en tu hook)
+        const ai: AnalysisResult = detail.aiRawJson;
+
+        // ✅ 3) Reconstruir InterviewData (misma función del coordinador)
+        const interview: InterviewData = mapFormToInterviewData(detail);
+
+        setAnalysis(ai);
+        setInterviewData(interview);
+      } catch (err) {
+        console.error("Error cargando reporte (coordinator):", err);
+        setError(
+          err instanceof Error
+            ? err.message
+            : "No se pudo cargar el reporte de la evaluación."
+        );
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    load();
+  }, [evaluationId]);
+
+  // -----------------------------
+  // UI
+  // -----------------------------
+  return (
+    <div className="min-h-screen w-full bg-[#020202] text-white font-sans relative overflow-x-hidden">
+      {/* Fondo suave para coherencia visual */}
+      <div className="pointer-events-none absolute inset-0 overflow-hidden">
+        <div className="absolute -top-24 -left-24 h-[420px] w-[420px] rounded-full blur-3xl opacity-25 bg-emerald-500/10" />
+        <div className="absolute -bottom-28 -right-28 h-[520px] w-[520px] rounded-full blur-3xl opacity-20 bg-cyan-500/10" />
+        <div
+          className="absolute inset-0 opacity-[0.06]"
+          style={{
+            background:
+              "radial-gradient(circle at 20% 10%, rgba(255,255,255,0.10) 0%, rgba(0,0,0,0) 45%), radial-gradient(circle at 80% 90%, rgba(255,255,255,0.06) 0%, rgba(0,0,0,0) 45%)",
+          }}
+        />
+      </div>
+
+      {/* Barra superior simple */}
+      <div className="relative z-10 max-w-7xl mx-auto px-4 md:px-8 pt-6">
+        <div className="flex items-center justify-between gap-4">
+          <button
+            type="button"
+            onClick={handleBack}
+            className="inline-flex items-center gap-2 px-4 py-2 rounded-xl
+                       border border-white/10 bg-white/[0.03]
+                       text-white/80 hover:text-white hover:border-emerald-500/30
+                       transition"
+          >
+            <ArrowLeft className="w-4 h-4" />
+            Volver al panel
+          </button>
+
+          <div className="text-xs text-white/45 font-mono">
+            Eval ID: {evaluationId ?? "—"}
+          </div>
+        </div>
+      </div>
+
+      {/* Contenido */}
+      <main className="relative z-10 max-w-7xl mx-auto px-4 md:px-8 py-6">
+        {loading && (
+          <div className="flex flex-col items-center justify-center py-20 text-white/60 gap-3">
+            <Loader2 className="w-8 h-8 animate-spin" />
+            <p className="text-sm">Cargando reporte completo…</p>
+          </div>
+        )}
+
+        {!loading && error && (
+          <div className="flex flex-col items-center justify-center py-16 text-red-300 gap-3">
+            <AlertCircle className="w-8 h-8" />
+            <p className="text-sm text-center max-w-md">{error}</p>
+
+            <button
+              type="button"
+              onClick={handleBack}
+              className="mt-4 px-4 py-2 rounded-xl border border-white/10 text-white/70 hover:text-white hover:border-emerald-500/30 transition"
+            >
+              Volver
+            </button>
+          </div>
+        )}
+
+        {!loading && !error && analysis && interviewData && (
+          <div className="animate-[fadeInUp_320ms_ease-out]">
+            <AnalysisResults
+              // ✅ Igual que el líder
+              result={analysis}
+              interviewData={interviewData}
+
+              // ✅ En coordinador, “reset” lo interpretamos como volver al panel
+              onReset={handleBack}
+
+              // ✅ Útil si el componente exporta / sube PDF
+              evaluationId={evaluationId ?? undefined}
+              resetLabel="Volver al panel"
+            />
+          </div>
+        )}
+      </main>
+
+      <style>
+        {`
+          @keyframes fadeInUp {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+          }
+        `}
+      </style>
+    </div>
+  );
+};
+
+export default CoordinatorEvaluationReport;
