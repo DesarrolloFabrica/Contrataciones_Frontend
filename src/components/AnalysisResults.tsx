@@ -1,5 +1,5 @@
 // src/components/AnalysisResults.tsx
-import React, { useState } from "react";
+import React, { useMemo, useState } from "react";
 import {
   Download,
   AlertTriangle,
@@ -27,49 +27,107 @@ import { useAuth } from "../context/AuthContext";
 // ✅ UTILIDADES VISUALES (SOLO UI)
 // =========================================================
 
-const getRiskBadgeStyles = (level: "Bajo" | "Medio" | "Alto") => {
+type RiskLevel = "Bajo" | "Medio" | "Alto";
+
+const normalize = (s: string) =>
+  (s || "")
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .trim();
+
+/**
+ * Nivel de riesgo (si lo sigues mostrando)
+ * - result.overallRiskLevel
+ * - result.aiRawJson.overallRiskLevel
+ * - fallback por texto
+ */
+const getEffectiveRiskLevel = (result: any): RiskLevel => {
+  const direct = result?.overallRiskLevel;
+  if (direct === "Bajo" || direct === "Medio" || direct === "Alto") return direct;
+
+  const fromRaw = result?.aiRawJson?.overallRiskLevel;
+  if (fromRaw === "Bajo" || fromRaw === "Medio" || fromRaw === "Alto") return fromRaw;
+
+  const v = normalize(result?.finalVerdict ?? "");
+
+  if (v.includes("rechazar") || v.includes("no recomendar") || v.includes("no recomend") || v.includes("alto"))
+    return "Alto";
+
+  if (v.includes("precaucion") || v.includes("con precaucion") || v.includes("medio"))
+    return "Medio";
+
+  return "Bajo";
+};
+
+const getRiskBadgeStyles = (level: RiskLevel) => {
   switch (level) {
     case "Bajo":
       return "bg-emerald-500/10 text-emerald-300 border-emerald-500/20";
     case "Medio":
-      return "bg-amber-500/10 text-amber-300 border-amber-500/20";
+      return "bg-amber-500/10 text-amber-300 border border-amber-500/20";
     case "Alto":
-      return "bg-rose-500/10 text-rose-300 border-rose-500/20";
+      return "bg-rose-500/10 text-rose-300 border border-rose-500/20";
     default:
       return "bg-white/5 text-white/60 border-white/10";
   }
 };
 
-const getVerdictStyles = (verdict: string) => {
-  // 🔒 No cambia lógica: mismos checks, solo estética consistente
-  if (verdict.includes("Recomendada"))
-    return {
-      // Gradiente verde “CUN”
-      bg: "from-[#91DC00]/80 to-[#31AB2E]/80",
-      ring: "ring-emerald-500/25",
-      iconWrap: "bg-black/25 border-white/15",
-      icon: <CheckCircle className="w-6 h-6" />,
-    };
-  if (verdict.includes("Precaución"))
-    return {
-      bg: "from-amber-500/70 to-orange-500/70",
-      ring: "ring-amber-500/25",
-      iconWrap: "bg-black/25 border-white/15",
-      icon: <AlertTriangle className="w-6 h-6" />,
-    };
-  if (verdict.includes("No Recomendar"))
-    return {
-      bg: "from-rose-500/70 to-red-500/70",
-      ring: "ring-rose-500/25",
-      iconWrap: "bg-black/25 border-white/15",
-      icon: <XCircle className="w-6 h-6" />,
-    };
-  return {
-    bg: "from-white/10 to-white/5",
-    ring: "ring-white/15",
-    iconWrap: "bg-black/25 border-white/15",
-    icon: <FileText className="w-6 h-6" />,
-  };
+// =========================================================
+// ✅ NUEVO: Recomendación por overallScore (aiRawJson.overallScore)
+// =========================================================
+
+type HireRecommendationKey =
+  | "NO_RECOMENDAR_CONTRATACION"
+  | "RECOMENDACION_CON_PRECAUCION"
+  | "RECOMENDAR_CONTRATACION"
+  | "CONTRATACION_INMEDIATA";
+
+const getRecommendationFromScore = (score: number): { key: HireRecommendationKey; label: string } => {
+  if (score >= 0 && score <= 49)
+    return { key: "NO_RECOMENDAR_CONTRATACION", label: "NO RECOMENDAR CONTRATACIÓN" };
+
+  if (score >= 50 && score <= 79)
+    return { key: "RECOMENDACION_CON_PRECAUCION", label: "RECOMENDACIÓN CON PRECAUCIÓN" };
+
+  if (score >= 80 && score <= 89)
+    return { key: "RECOMENDAR_CONTRATACION", label: "RECOMENDAR CONTRATACIÓN" };
+
+  return { key: "CONTRATACION_INMEDIATA", label: "CONTRATACIÓN INMEDIATA" };
+};
+
+const getVerdictStylesFromRecommendation = (recKey: HireRecommendationKey) => {
+  switch (recKey) {
+    case "CONTRATACION_INMEDIATA":
+      return {
+        bg: "from-emerald-500/70 to-green-600/70",
+        ring: "ring-emerald-500/25",
+        iconWrap: "bg-black/25 border-white/15",
+        icon: <CheckCircle className="w-6 h-6" />,
+      };
+    case "RECOMENDAR_CONTRATACION":
+      return {
+        bg: "from-sky-500/70 to-blue-600/70",
+        ring: "ring-sky-400/25",
+        iconWrap: "bg-black/25 border-white/15",
+        icon: <CheckCircle className="w-6 h-6" />,
+      };
+    case "RECOMENDACION_CON_PRECAUCION":
+      return {
+        bg: "from-amber-500/70 to-yellow-500/60",
+        ring: "ring-amber-400/25",
+        iconWrap: "bg-black/25 border-white/15",
+        icon: <AlertTriangle className="w-6 h-6" />,
+      };
+    case "NO_RECOMENDAR_CONTRATACION":
+    default:
+      return {
+        bg: "from-rose-500/70 to-red-600/70",
+        ring: "ring-rose-500/25",
+        iconWrap: "bg-black/25 border-white/15",
+        icon: <XCircle className="w-6 h-6" />,
+      };
+  }
 };
 
 // =========================================================
@@ -127,7 +185,6 @@ const DetailSection: React.FC<{
       ${className ?? ""}
     `}
   >
-    {/* Header tipo “sistema” */}
     <div className="px-6 py-4 border-b border-white/10 bg-white/[0.02]">
       <h3 className="text-[11px] font-extrabold uppercase tracking-[0.22em] text-emerald-200/80">
         {title}
@@ -142,9 +199,7 @@ interface AnalysisResultsProps {
   result: AnalysisResult;
   interviewData: InterviewData;
   onReset: () => void;
-  // nuevo: id de la evaluación guardada en el backend
   evaluationId?: string;
-  //  NUEVO (solo UI): texto del botón de reset
   resetLabel?: string;
 }
 
@@ -160,33 +215,79 @@ const AnalysisResults: React.FC<AnalysisResultsProps> = ({
   const [isDownloading, setIsDownloading] = useState(false);
   const { user } = useAuth();
 
-  // =========================================================
-  // 🔒 LÓGICA (NO TOCAR)
-  // =========================================================
+  // ✅ Tomamos overallScore preferentemente de aiRawJson (como llega en /teachers/evaluations)
+  const overallScore = useMemo(() => {
+    const raw = (result as any)?.aiRawJson?.overallScore;
+    const direct = (result as any)?.overallScore;
+    const alt = (result as any)?.aiTeachingSuitabilityScore;
+
+    const n = Number(raw ?? direct ?? alt ?? 0);
+    if (!Number.isFinite(n)) return 0;
+    return Math.max(0, Math.min(100, n));
+  }, [result]);
+
+  // ✅ Fallbacks para el resto (para que funcione tanto con análisis “en vivo” como con evaluations)
+  const categoryAnalyses = useMemo(
+    () => ((result as any)?.aiRawJson?.categoryAnalyses ?? (result as any)?.categoryAnalyses ?? []),
+    [result]
+  );
+
+  const executiveSummary = useMemo(
+    () => ((result as any)?.aiRawJson?.executiveSummary ?? (result as any)?.executiveSummary ?? ""),
+    [result]
+  );
+
+  const mitigationRecommendations = useMemo(
+    () => ((result as any)?.aiRawJson?.mitigationRecommendations ?? (result as any)?.mitigationRecommendations ?? []),
+    [result]
+  );
+
+  const temporalRiskFactors = useMemo(
+    () => ((result as any)?.aiRawJson?.temporalRiskFactors ?? (result as any)?.temporalRiskFactors ?? []),
+    [result]
+  );
+
+  const resignationRiskWindow = useMemo(
+    () => ((result as any)?.aiRawJson?.resignationRiskWindow ?? (result as any)?.resignationRiskWindow ?? "N/A"),
+    [result]
+  );
+
+  // ✅ Recomendación + estilo por score
+  const recommendation = useMemo(() => getRecommendationFromScore(overallScore), [overallScore]);
+  const verdictStyle = useMemo(
+    () => getVerdictStylesFromRecommendation(recommendation.key),
+    [recommendation.key]
+  );
+
+  // (Opcional) mantener riesgo aparte
+  const effectiveRisk: RiskLevel = useMemo(() => getEffectiveRiskLevel(result as any), [result]);
+
   const handleDownloadPDF = async () => {
     try {
       setIsDownloading(true);
       const actor = actorFromUser(user);
 
-      // genera el PDF, lo descarga en el navegador y devuelve el Blob
       const pdfBlob = await generateAnalysisPdfFromData(result, interviewData);
 
       auditAppend({
         type: "REPORT_PDF_DOWNLOADED",
         actor,
-        evaluationId: evaluationId ?? null,
-        metadata: { download: true },
+        metadata: {
+          download: true,
+          evaluationId: evaluationId ?? null,
+        },
       });
 
-      // si ya tenemos el id de la evaluación, lo subimos al backend
       if (evaluationId) {
         await uploadTeacherReport(evaluationId, pdfBlob);
 
         auditAppend({
           type: "REPORT_PDF_UPLOADED",
           actor,
-          evaluationId,
-          metadata: { upload: true },
+          metadata: {
+            upload: true,
+            evaluationId,
+          },
         });
       }
     } catch (error) {
@@ -196,15 +297,8 @@ const AnalysisResults: React.FC<AnalysisResultsProps> = ({
     }
   };
 
-  const verdictStyle = getVerdictStyles(result.finalVerdict);
-
   return (
     <div className="max-w-7xl mx-auto space-y-10 md:space-y-12 animate-in fade-in duration-700 pb-20 font-sans">
-      {/* =========================================================
-          ✅ ACCIONES SUPERIORES (SOLO UI)
-          - Sticky, estilo glass + pill
-          - No toca lógica
-         ========================================================= */}
       <div
         className="
           flex justify-end
@@ -224,7 +318,6 @@ const AnalysisResults: React.FC<AnalysisResultsProps> = ({
             flex gap-3 items-center
           "
         >
-          {/* Botón: Analizar otro candidato (no cambia lógica) */}
           <button
             onClick={onReset}
             className="
@@ -237,10 +330,9 @@ const AnalysisResults: React.FC<AnalysisResultsProps> = ({
               transition-all
             "
           >
-            Analizar otro candidato
+            {resetLabel}
           </button>
 
-          {/* Botón: Exportar PDF (no cambia lógica) */}
           <button
             onClick={handleDownloadPDF}
             disabled={isDownloading}
@@ -257,7 +349,6 @@ const AnalysisResults: React.FC<AnalysisResultsProps> = ({
               hover:brightness-110
             "
             style={{
-              // Gradiente marca (consistente con el chat)
               background: "linear-gradient(90deg, #91DC00, #31AB2E)",
             }}
           >
@@ -274,16 +365,9 @@ const AnalysisResults: React.FC<AnalysisResultsProps> = ({
         </div>
       </div>
 
-      {/* =========================================================
-          ✅ CONTENIDO REPORTE (SOLO UI)
-         ========================================================= */}
       <div id={REPORT_ELEMENT_ID} className="space-y-10 p-4 md:p-8 bg-[#020202]">
-        {/* =========================================================
-            ✅ HERO HEADER (SOLO UI)
-           ========================================================= */}
         <div className="flex flex-col items-start gap-6 border-b border-white/10 pb-8">
           <div>
-            {/* Tag superior tipo “sistema” */}
             <div
               className="
                 inline-flex items-center gap-2
@@ -292,7 +376,6 @@ const AnalysisResults: React.FC<AnalysisResultsProps> = ({
                 font-extrabold uppercase tracking-[0.22em]
                 text-emerald-200/80
                 border border-emerald-500/15
-                
                 bg-emerald-500/10
                 shadow-[0_0_18px_-10px_rgba(16,185,129,0.25)]
               "
@@ -332,9 +415,7 @@ const AnalysisResults: React.FC<AnalysisResultsProps> = ({
             </div>
           </div>
 
-          {/* =========================================================
-              ✅ VEREDICTO (SOLO UI)
-             ========================================================= */}
+          {/* ✅ Veredicto por score (colores según tu regla) */}
           <div
             className={`
               relative
@@ -344,11 +425,9 @@ const AnalysisResults: React.FC<AnalysisResultsProps> = ({
               ring-1 ${verdictStyle.ring}
               shadow-[0_26px_85px_-65px_rgba(0,0,0,0.95)]
               flex flex-col items-start gap-3
-              
               overflow-hidden
             `}
           >
-            {/* brillo sutil encima (solo visual) */}
             <div className="absolute inset-0 opacity-20 bg-[radial-gradient(circle_at_20%_0%,rgba(255,255,255,0.55)_0%,rgba(0,0,0,0)_55%)]" />
 
             <div
@@ -365,23 +444,25 @@ const AnalysisResults: React.FC<AnalysisResultsProps> = ({
 
             <div className="relative z-10">
               <p className="text-[10px] font-extrabold text-white/80 uppercase tracking-[0.22em] mb-1">
-                Veredicto final
+                Recomendación
               </p>
-              <p className="text-lg md:text-xl font-normal text-white/85 leading-relaxed">
-                {result.finalVerdict}
+
+              <p className="text-lg md:text-xl font-normal text-white/90 leading-relaxed">
+                {recommendation.label}
+              </p>
+
+              <p className="mt-2 text-[11px] text-white/70">
+                Score base: <span className="font-semibold">{Math.round(overallScore)}</span>/100
               </p>
             </div>
           </div>
         </div>
 
-        {/* =========================================================
-            ✅ RESUMEN CUANTITATIVO (SOLO UI)
-           ========================================================= */}
         <DetailSection title="Resumen cuantitativo">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
             <MetricCard
               label="Score global"
-              value={`${result.overallScore}/100`}
+              value={`${Math.round(overallScore)}/100`}
               icon={<PieChart className="w-5 h-5" />}
               trend="Puntaje ponderado de ajuste al rol"
             />
@@ -391,10 +472,10 @@ const AnalysisResults: React.FC<AnalysisResultsProps> = ({
               value={
                 <span
                   className={`inline-flex px-2.5 py-1 rounded-lg text-sm border ${getRiskBadgeStyles(
-                    result.overallRiskLevel
+                    effectiveRisk
                   )}`}
                 >
-                  {result.overallRiskLevel}
+                  {effectiveRisk}
                 </span>
               }
               icon={<AlertTriangle className="w-5 h-5" />}
@@ -402,7 +483,7 @@ const AnalysisResults: React.FC<AnalysisResultsProps> = ({
 
             <MetricCard
               label="Ventana de retención"
-              value={result.resignationRiskWindow || "N/A"}
+              value={resignationRiskWindow || "N/A"}
               icon={<Calendar className="w-5 h-5" />}
               trend="Estimación temporal de rotación"
             />
@@ -416,26 +497,21 @@ const AnalysisResults: React.FC<AnalysisResultsProps> = ({
           </div>
         </DetailSection>
 
-        {/* =========================================================
-            ✅ MAPA DE AJUSTE (SOLO UI)
-           ========================================================= */}
         <DetailSection title="Mapa de ajuste y cohesión">
           <div className="grid lg:grid-cols-2 gap-10 items-start">
-            {/* Gauge + barras */}
             <div className="space-y-6">
               <div className="flex justify-center py-4">
-                <GaugeChart value={result.overallScore} label="Ajuste al perfil" size={220} />
+                <GaugeChart value={overallScore} label="Ajuste al perfil" size={220} />
               </div>
 
               <div className="mt-2 p-4 rounded-2xl border border-white/10 bg-white/[0.03] backdrop-blur-md">
                 <h4 className="text-[11px] font-extrabold uppercase tracking-[0.22em] text-white/45 mb-3">
                   Distribución por categoría
                 </h4>
-                <ComparativeBars categoryAnalyses={result.categoryAnalyses} />
+                <ComparativeBars categoryAnalyses={categoryAnalyses} />
               </div>
             </div>
 
-            {/* Resumen ejecutivo IA */}
             <div className="rounded-3xl border border-white/10 bg-white/[0.035] backdrop-blur-md p-6 shadow-[0_18px_70px_-55px_rgba(0,0,0,0.95)]">
               <h4 className="text-sm font-extrabold text-white/85 mb-4 flex items-center gap-2">
                 <Sparkles className="w-4 h-4 text-emerald-300/90" />
@@ -443,18 +519,15 @@ const AnalysisResults: React.FC<AnalysisResultsProps> = ({
               </h4>
 
               <p className="text-sm text-white/60 leading-relaxed text-justify font-light">
-                {result.executiveSummary}
+                {executiveSummary}
               </p>
             </div>
           </div>
         </DetailSection>
 
-        {/* =========================================================
-            ✅ ANÁLISIS DIMENSIONAL (SOLO UI)
-           ========================================================= */}
         <DetailSection title="Análisis dimensional profundo">
           <div className="space-y-4">
-            {result.categoryAnalyses.map((analysis) => (
+            {categoryAnalyses.map((analysis: any) => (
               <div
                 key={analysis.category}
                 className="
@@ -467,7 +540,6 @@ const AnalysisResults: React.FC<AnalysisResultsProps> = ({
                   shadow-[0_14px_55px_-45px_rgba(0,0,0,0.95)]
                 "
               >
-                {/* Cabecera de la dimensión */}
                 <div className="p-5 flex items-center justify-between bg-black/20 border-b border-white/10">
                   <div className="flex items-center gap-4">
                     <div
@@ -489,9 +561,7 @@ const AnalysisResults: React.FC<AnalysisResultsProps> = ({
                     </div>
 
                     <div>
-                      <h4 className="font-black text-white/90 text-lg">
-                        {analysis.category}
-                      </h4>
+                      <h4 className="font-black text-white/90 text-lg">{analysis.category}</h4>
                       <p className="text-[11px] text-white/45 uppercase tracking-[0.22em]">
                         Análisis de profundidad por competencia
                       </p>
@@ -499,20 +569,17 @@ const AnalysisResults: React.FC<AnalysisResultsProps> = ({
                   </div>
 
                   <div className="text-[11px] text-white/35 font-mono hidden sm:block">
-                    ID: {analysis.category.substring(0, 3).toUpperCase()}
+                    ID: {String(analysis.category).substring(0, 3).toUpperCase()}
                   </div>
                 </div>
 
-                {/* Contenido de la dimensión */}
                 <div className="p-5 grid md:grid-cols-2 gap-6">
                   <div className="space-y-4">
                     <div>
                       <p className="text-[11px] font-extrabold uppercase tracking-[0.22em] text-white/40 mb-1">
                         Hallazgos clave
                       </p>
-                      <p className="text-sm text-white/75 leading-relaxed">
-                        {analysis.reporteAnalitico}
-                      </p>
+                      <p className="text-sm text-white/75 leading-relaxed">{analysis.reporteAnalitico}</p>
                     </div>
 
                     <div className="p-4 rounded-2xl bg-emerald-500/5 border border-emerald-500/10">
@@ -528,9 +595,7 @@ const AnalysisResults: React.FC<AnalysisResultsProps> = ({
                       <p className="text-[11px] font-extrabold uppercase tracking-[0.22em] text-white/40 mb-1">
                         Observación IA
                       </p>
-                      <p className="text-sm text-white/55 italic">
-                        "{analysis.observacionesCorregidas}"
-                      </p>
+                      <p className="text-sm text-white/55 italic">"{analysis.observacionesCorregidas}"</p>
                     </div>
 
                     <div className="p-4 rounded-2xl bg-amber-500/5 border border-amber-500/10">
@@ -546,18 +611,12 @@ const AnalysisResults: React.FC<AnalysisResultsProps> = ({
           </div>
         </DetailSection>
 
-        {/* =========================================================
-            ✅ RECOMENDACIONES (SOLO UI)
-           ========================================================= */}
         <div className="grid md:grid-cols-2 gap-8 pt-2">
           <DetailSection title="Plan de mitigación de riesgos">
-            {result.mitigationRecommendations.length > 0 ? (
+            {mitigationRecommendations.length > 0 ? (
               <ul className="space-y-3">
-                {result.mitigationRecommendations.map((rec, i) => (
-                  <li
-                    key={i}
-                    className="flex gap-3 text-sm text-white/70 leading-relaxed"
-                  >
+                {mitigationRecommendations.map((rec: string, i: number) => (
+                  <li key={i} className="flex gap-3 text-sm text-white/70 leading-relaxed">
                     <span className="w-6 h-6 rounded-full bg-rose-500/10 text-rose-200/80 border border-rose-500/15 flex items-center justify-center text-xs font-black shrink-0">
                       {i + 1}
                     </span>
@@ -580,7 +639,7 @@ const AnalysisResults: React.FC<AnalysisResultsProps> = ({
                 <p className="text-[11px] font-extrabold uppercase tracking-[0.22em] text-amber-200/80">
                   Ventana crítica
                 </p>
-                <p className="text-sm text-white/80">{result.resignationRiskWindow}</p>
+                <p className="text-sm text-white/80">{resignationRiskWindow}</p>
               </div>
             </div>
 
@@ -589,23 +648,19 @@ const AnalysisResults: React.FC<AnalysisResultsProps> = ({
                 Indicadores detectados
               </p>
 
-              {result.temporalRiskFactors && result.temporalRiskFactors.length > 0 ? (
+              {temporalRiskFactors && temporalRiskFactors.length > 0 ? (
                 <div className="flex flex-wrap gap-2">
-                  {result.temporalRiskFactors.map((factor, i) => (
+                  {temporalRiskFactors.map((factor: string, i: number) => (
                     <span
                       key={i}
-                      className="px-3 py-1 rounded-full text-[11px]
-                                 bg-white/[0.04] border border-white/10
-                                 text-white/55"
+                      className="px-3 py-1 rounded-full text-[11px] bg-white/[0.04] border border-white/10 text-white/55"
                     >
                       {factor}
                     </span>
                   ))}
                 </div>
               ) : (
-                <p className="text-sm text-white/45 italic">
-                  No se detectaron factores de corto plazo.
-                </p>
+                <p className="text-sm text-white/45 italic">No se detectaron factores de corto plazo.</p>
               )}
             </div>
           </DetailSection>

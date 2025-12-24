@@ -9,9 +9,12 @@ import {
 
 import { analyzeTeacherInterview } from "../../services/geminiService";
 import {
+  createTeacherCandidate,
+  searchTeacherCandidates,
   createTeacherEvaluation,
   getTeacherEvaluationById,
 } from "../../services/teachersService";
+
 import Header from "../../components/Header";
 import InterviewForm from "../../components/InterviewForm";
 import AnalysisResults from "../../components/AnalysisResults";
@@ -25,9 +28,11 @@ const ORG_ID = import.meta.env.VITE_ORG_ID ?? "ORG_DEFAULT";
 
 type ViewMode = "analyze" | "history";
 
+const normalizeDoc = (v: string) => (v ?? "").replace(/\s+/g, "").trim();
+
 const mapToTeacherForm = (data: InterviewData): TeacherForm => ({
   candidate: {
-    documentNumber: (data as any).documentNumber ?? "",
+    documentNumber: data.documentNumber ?? "",
     fullName: data.candidateName,
     age: Number(data.age) || 0,
     schoolName: data.school,
@@ -59,10 +64,7 @@ const mapToTeacherForm = (data: InterviewData): TeacherForm => ({
 
 // inverso: TeacherForm -> InterviewData (para reconstruir el reporte)
 const mapFormToInterviewData = (form: TeacherForm): InterviewData => ({
-  // ✅ NUEVO
-  ...(form.candidate.documentNumber !== undefined
-    ? ({ documentNumber: form.candidate.documentNumber ?? "" } as any)
-    : {}),
+  documentNumber: form.candidate.documentNumber ?? "",
 
   candidateName: form.candidate.fullName,
   age: form.candidate.age ? String(form.candidate.age) : "",
@@ -136,9 +138,54 @@ const LeaderConsole: React.FC = () => {
         }
 
         const form = mapToTeacherForm(data);
-        const saved = await createTeacherEvaluation(ORG_ID, form, aiResult);
 
-        // ✅ FIX: evaluationId va en metadata, no top-level
+        // ✅ NUEVO: backend exige candidateId
+        const cc = normalizeDoc(form.candidate.documentNumber);
+        if (!cc) {
+          throw new Error("La cédula (documentNumber) es obligatoria.");
+        }
+
+        // 1) intentar encontrar candidato por CC
+        let candidateId: string | null = null;
+        try {
+          const matches = await searchTeacherCandidates({
+            orgId: ORG_ID,
+            q: cc,
+            limit: 10,
+          });
+
+          const exact = matches.find(
+            (m) => normalizeDoc(m.documentNumber ?? "") === cc
+          );
+
+          if (exact) candidateId = exact.id;
+        } catch {
+          // si search falla, intentamos crear
+        }
+
+        // 2) si no existe, crear candidato
+        if (!candidateId) {
+          const created = await createTeacherCandidate({
+            orgId: ORG_ID,
+            documentNumber: cc,
+            fullName: form.candidate.fullName,
+            age: form.candidate.age,
+            email: null,
+            phone: null,
+            schoolId: null,
+            programId: null,
+          });
+          candidateId = created.id;
+        }
+
+        // 3) crear evaluación (4 args)
+        const saved = await createTeacherEvaluation(
+          ORG_ID,
+          candidateId,
+          form,
+          aiResult
+        );
+
         auditAppend({
           type: "EVALUATION_CREATED",
           actor,
@@ -153,9 +200,7 @@ const LeaderConsole: React.FC = () => {
       } catch (err) {
         console.error("Error during analysis or save:", err);
         setError(
-          err instanceof Error
-            ? err.message
-            : "Ocurrió un error durante el proceso."
+          err instanceof Error ? err.message : "Ocurrió un error durante el proceso."
         );
       } finally {
         setIsLoading(false);
@@ -177,7 +222,6 @@ const LeaderConsole: React.FC = () => {
       try {
         const detail = await getTeacherEvaluationById(id);
 
-        // ✅ FIX: evaluationId en metadata
         auditAppend({
           type: "EVALUATION_OPENED",
           actor,
@@ -216,9 +260,6 @@ const LeaderConsole: React.FC = () => {
     setError(null);
   }, []);
 
-  // ==============================
-  // VARIABLES VISUALES (SOLO UI)
-  // ==============================
   const brandFrom = "#91DC00";
   const brandTo = "#31AB2E";
 

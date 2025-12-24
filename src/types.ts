@@ -1,13 +1,8 @@
 // src/types.ts
-// ✅ Ajustado: agrega documentNumber en InterviewData y en TeacherForm.candidate
-// (manteniendo el resto tal cual)
-
 export type AcceptsCommitteesOption = "Sí" | "No" | "Depende";
 
 export interface InterviewData {
-  // ✅ NUEVO: CC / documento
   documentNumber: string;
-
   candidateName: string;
   age: string;
   school: string;
@@ -48,13 +43,15 @@ export interface AnalysisResult {
   finalVerdict: string;
 }
 
-// ===== TIPOS PARA BACKEND TEACHERS =====
+/* =========================
+   BACKEND TEACHERS
+   ========================= */
+
+export type DecisionStatusApi = "PENDING" | "APPROVED" | "REJECTED";
 
 export interface TeacherForm {
   candidate: {
-    // ✅ NUEVO: CC / documento
     documentNumber: string;
-
     fullName: string;
     age: number;
     schoolName: string;
@@ -84,7 +81,6 @@ export interface TeacherForm {
   };
 }
 
-// Resultado “compacto” que mandaremos al backend
 export interface TeacherAiResult {
   strengths?: string;
   weaknesses?: string;
@@ -95,52 +91,44 @@ export interface TeacherAiResult {
   rawOutput?: AnalysisResult;
 }
 
-// 🔹 NUEVO: estados de decisión del coordinador
-export type CoordinatorDecisionStatus = "PENDIENTE" | "APROBADO" | "RECHAZADO";
-
-// 🔹 NUEVO: detalle de la decisión
 export interface CoordinatorDecision {
-  status: CoordinatorDecisionStatus;
+  status: DecisionStatusApi;
   comment?: string | null;
   decidedAt?: string | null;
   decidedById?: string | null;
   decidedByName?: string | null;
 }
 
-// 🔹 NUEVO: payload que enviará el frontend al backend
-export interface CoordinatorDecisionPayload {
-  status: CoordinatorDecisionStatus;
-  comment?: string;
-}
-
-// Resumen que devuelve el backend al listar
+// Resumen/listado (alineado a entity TeacherEvaluation + relation candidate)
 export interface TeacherEvaluationSummary {
   id: string;
   createdAt: string;
 
   candidate?: {
+    id: string;
+    documentNumber: string | null;
     fullName: string;
-    document_number?: string;
-    schoolNameSnapshot?: string | null;
-    programNameSnapshot?: string | null;
-
-    // ✅ opcional por si lo quieres mostrar en historial
-    documentNumber?: string | null;
   };
 
-  aiTeachingSuitabilityScore: number;
-  aiFinalRecommendation: string;
-  aiOverallComment: string;
+  aiTeachingSuitabilityScore: number | null;
+  aiFinalRecommendation: string | null;
+  aiOverallComment: string | null;
   aiReportDriveFileId?: string | null;
 
-  coordinatorDecision?: CoordinatorDecision;
-  coordinatorDecisionStatus?: "PENDIENTE" | "APROBADO" | "RECHAZADO" | null;
-  coordinatorDecisionBy?: string | null;
-  coordinatorDecisionAt?: string | null;
+  coordinatorDecisionStatus?: DecisionStatusApi | null;
   coordinatorDecisionComment?: string | null;
+  coordinatorDecisionAt?: string | null;
+
+  adminDecisionStatus?: DecisionStatusApi | null;
+  adminDecisionComment?: string | null;
+  adminDecisionAt?: string | null;
+
+  interviewerUserId?: string | null;
 }
 
-// ===== AUDIT TRAIL (FRONTEND-ONLY POR AHORA) =====
+/* =========================
+   AUDIT TRAIL (front)
+   ========================= */
 
 export type AuditActorRole = "leader" | "coordinator" | "admin" | "system";
 
@@ -173,7 +161,10 @@ export interface AuditEvent {
   metadata?: Record<string, string | number | boolean | null>;
 }
 
-// user/auth/backend (sin cambios)
+/* =========================
+   AUTH / USERS (sin cambios)
+   ========================= */
+
 export type UserRole = "ADMIN" | "COORDINADOR" | "LIDER";
 
 export type AuthUser = {

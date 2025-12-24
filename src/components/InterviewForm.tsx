@@ -1,5 +1,5 @@
 // src/components/InterviewForm.tsx
-// ✅ Ajustado: agrega documentNumber al initialFormData + input de Cédula en "Identidad y Trayectoria"
+// ✅ Ajustado: búsqueda por CC (autocomplete) + botón "Crear candidato" si no hay coincidencias.
 
 import React, { useState, useEffect, useCallback, useRef } from "react";
 import {
@@ -15,14 +15,24 @@ import {
   XCircle,
   ChevronDown,
   BrainCircuit,
+  Loader2,
+  Search,
 } from "lucide-react";
 import { InterviewData } from "../types";
 import { schools } from "../data/schools";
 import { approvedExample, mediumExample, rejectedExample } from "../data/exampleData";
 
+import {
+  createTeacherCandidate,
+  searchTeacherCandidates,
+  type TeacherCandidateSearchItemDto,
+} from "../services/teachersService";
+
 interface InterviewFormProps {
   onSubmit: (data: InterviewData) => void;
 }
+
+const ORG_ID = import.meta.env.VITE_ORG_ID ?? "ORG_DEFAULT";
 
 const initialFormData: InterviewData = {
   documentNumber: "",
@@ -46,22 +56,12 @@ const initialFormData: InterviewData = {
   scenarioFeedback: "",
 };
 
-// ---------------------------------------------------------------------
-// ✅ AJUSTE VISUAL (sin tocar lógica)
-// Objetivo: que las tarjetas NO se mezclen con el fondo #020202.
-// Aplicamos “Premium neutro”:
-// - Tarjeta: grafito (#0B0D0F) con leve transparencia + blur
-// - Borde/ring: blancos sutiles, verde solo como acento (hover/focus)
-// - Glow interno: blanco MUY suave + emerald MUY suave (sin teñir toda la card)
-// ---------------------------------------------------------------------
-
 // --- COMPONENTES VISUALES AVANZADOS ---
 
 const SectionHeader: React.FC<{ title: string; icon: React.ReactNode }> = React.memo(
   ({ title, icon }) => (
     <div className="flex items-center gap-4 mb-8">
       <div className="relative group">
-        {/* Glow más neutro (menos “verde pintado”) */}
         <div className="absolute inset-0 bg-emerald-500 blur-lg opacity-10 group-hover:opacity-18 transition-opacity duration-500" />
         <div className="relative p-3 rounded-2xl bg-[#0E1115] border border-white/10 text-emerald-400 shadow-lg">
           {icon}
@@ -207,6 +207,15 @@ const InterviewForm: React.FC<InterviewFormProps> = ({ onSubmit }) => {
   const [formData, setFormData] = useState<InterviewData>(initialFormData);
   const [availablePrograms, setAvailablePrograms] = useState<string[]>([]);
 
+  // ✅ Candidate lookup por CC
+  const [candidateMatches, setCandidateMatches] = useState<TeacherCandidateSearchItemDto[]>([]);
+  const [isSearching, setIsSearching] = useState(false);
+  const [lookupError, setLookupError] = useState<string | null>(null);
+  const [selectedCandidateId, setSelectedCandidateId] = useState<string | null>(null);
+  const [isCreatingCandidate, setIsCreatingCandidate] = useState(false);
+
+  const searchSeq = useRef(0);
+
   useEffect(() => {
     if (formData.school) {
       const selectedSchool = schools.find((s) => s.name === formData.school);
@@ -219,6 +228,42 @@ const InterviewForm: React.FC<InterviewFormProps> = ({ onSubmit }) => {
     }
   }, [formData.school, formData.program]);
 
+  // ✅ búsqueda debounced por CC
+  useEffect(() => {
+    const cc = (formData.documentNumber ?? "").trim();
+
+    // si cambia CC, invalidamos selección
+    setSelectedCandidateId(null);
+
+    // UX: no buscar hasta tener mínimo 3-4 dígitos
+    if (!cc || cc.length < 3) {
+      setCandidateMatches([]);
+      setLookupError(null);
+      setIsSearching(false);
+      return;
+    }
+
+    const mySeq = ++searchSeq.current;
+    setIsSearching(true);
+    setLookupError(null);
+
+    const t = window.setTimeout(async () => {
+      try {
+        const rows = await searchTeacherCandidates({ orgId: ORG_ID, q: cc, limit: 8 });
+        if (mySeq !== searchSeq.current) return; // evita respuestas viejas
+        setCandidateMatches(rows ?? []);
+      } catch (e: any) {
+        if (mySeq !== searchSeq.current) return;
+        setCandidateMatches([]);
+        setLookupError(e?.message ?? "No se pudo buscar candidatos.");
+      } finally {
+        if (mySeq === searchSeq.current) setIsSearching(false);
+      }
+    }, 280);
+
+    return () => window.clearTimeout(t);
+  }, [formData.documentNumber]);
+
   const handleChange = useCallback(
     (
       e:
@@ -228,7 +273,6 @@ const InterviewForm: React.FC<InterviewFormProps> = ({ onSubmit }) => {
     ) => {
       const { name, value } = e.target;
 
-      // ✅ normaliza CC: solo dígitos
       if (name === "documentNumber") {
         const onlyDigits = value.replace(/\D+/g, "");
         setFormData((prev) => ({ ...prev, documentNumber: onlyDigits }));
@@ -240,17 +284,89 @@ const InterviewForm: React.FC<InterviewFormProps> = ({ onSubmit }) => {
     []
   );
 
+  const handlePickCandidate = useCallback((c: TeacherCandidateSearchItemDto) => {
+    setSelectedCandidateId(c.id);
+
+    // rellena datos básicos (sin tocar school/program del form)
+    setFormData((prev) => ({
+      ...prev,
+      documentNumber: String(c.documentNumber ?? prev.documentNumber ?? ""),
+      candidateName: c.fullName ?? prev.candidateName,
+      age:
+        typeof c.age === "number" && !Number.isNaN(c.age) ? String(c.age) : prev.age,
+    }));
+
+    setCandidateMatches([]); // cierra lista
+    setLookupError(null);
+  }, []);
+
+  const canCreateCandidate =
+    !!formData.documentNumber?.trim() &&
+    formData.documentNumber.trim().length >= 3 &&
+    !isSearching &&
+    (candidateMatches?.length ?? 0) === 0;
+
+  const handleCreateCandidate = useCallback(async () => {
+    if (!canCreateCandidate) return;
+
+    const documentNumber = formData.documentNumber.trim();
+    const fullName = (formData.candidateName ?? "").trim();
+
+    // si no hay nombre, no bloqueamos el form entero, pero sí el create
+    if (!fullName) {
+      setLookupError("Escribe el nombre del candidato para crearlo.");
+      return;
+    }
+
+    setIsCreatingCandidate(true);
+    setLookupError(null);
+
+    try {
+      const ageNum = Number(formData.age);
+      const age = Number.isFinite(ageNum) && ageNum > 0 ? ageNum : null;
+
+      const created = await createTeacherCandidate({
+        orgId: ORG_ID,
+        documentNumber,
+        fullName,
+        age,
+      });
+
+      setSelectedCandidateId(created.id);
+      setCandidateMatches([]);
+
+      // deja el form listo (ya lo está), solo aseguramos CC “limpia”
+      setFormData((prev) => ({
+        ...prev,
+        documentNumber,
+        candidateName: fullName,
+      }));
+    } catch (e: any) {
+      setLookupError(e?.message ?? "No se pudo crear el candidato.");
+    } finally {
+      setIsCreatingCandidate(false);
+    }
+  }, [canCreateCandidate, formData]);
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    onSubmit(formData);
+
+    // ✅ enviamos candidateId de forma no-invasiva para el flujo nuevo del backend
+    onSubmit({ ...(formData as any), candidateId: selectedCandidateId } as any);
   };
 
   const loadExample = (example: InterviewData) => {
+    setSelectedCandidateId(null);
+    setCandidateMatches([]);
+    setLookupError(null);
     setFormData(example);
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
   const resetForm = () => {
+    setSelectedCandidateId(null);
+    setCandidateMatches([]);
+    setLookupError(null);
     setFormData(initialFormData);
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
@@ -319,18 +435,103 @@ const InterviewForm: React.FC<InterviewFormProps> = ({ onSubmit }) => {
 
         <form onSubmit={handleSubmit} className="space-y-10">
           <FormSection title="Identidad y Trayectoria" icon={<User className="w-6 h-6" />}>
-            {/* ✅ NUEVO: CC + Nombre + Edad */}
+            {/* ✅ CC + Nombre + Edad */}
             <div className="grid grid-cols-1 md:grid-cols-6 gap-8">
               <div className="md:col-span-2">
                 <FormField label="Cédula (CC)" name="documentNumber">
-                  <TextInput
-                    name="documentNumber"
-                    value={formData.documentNumber}
-                    onChange={handleChange}
-                    placeholder="Ej. 1030123456"
-                    inputMode="numeric"
-                    pattern="[0-9]+"
-                  />
+                  <div className="relative">
+                    <TextInput
+                      name="documentNumber"
+                      value={formData.documentNumber}
+                      onChange={handleChange}
+                      placeholder="Ej. 1030123456"
+                      inputMode="numeric"
+                      pattern="[0-9]+"
+                    />
+
+                    <div className="absolute inset-y-0 right-0 flex items-center pr-4 text-white/35">
+                      {isSearching ? (
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                      ) : (
+                        <Search className="w-4 h-4" />
+                      )}
+                    </div>
+                  </div>
+
+                  {/* ✅ RESULTADOS / CREAR */}
+                  <div className="mt-3 space-y-2">
+                    {lookupError && (
+                      <div className="rounded-xl border border-rose-500/25 bg-rose-950/30 px-4 py-3 text-xs text-rose-200">
+                        {lookupError}
+                      </div>
+                    )}
+
+                    {/* Lista de coincidencias */}
+                    {candidateMatches.length > 0 && (
+                      <div className="rounded-2xl border border-emerald-500/25 bg-[#061015] overflow-hidden">
+                        <div className="px-4 py-3 border-b border-white/10 text-[11px] font-extrabold uppercase tracking-[0.22em] text-emerald-200/80">
+                          Coincidencias por cédula
+                        </div>
+
+                        <div className="divide-y divide-white/10">
+                          {candidateMatches.map((c) => (
+                            <button
+                              key={c.id}
+                              type="button"
+                              onClick={() => handlePickCandidate(c)}
+                              className="w-full text-left px-4 py-3 hover:bg-white/[0.04] transition"
+                            >
+                              <div className="flex items-center justify-between gap-3">
+                                <div>
+                                  <div className="text-sm text-white/85 font-semibold">
+                                    {c.fullName}
+                                  </div>
+                                  <div className="text-[11px] text-white/45 font-mono">
+                                    CC: {c.documentNumber ?? "—"}
+                                    {typeof c.age === "number" ? ` · ${c.age} años` : ""}
+                                  </div>
+                                </div>
+
+                                <div className="text-[11px] font-extrabold uppercase tracking-[0.18em] text-emerald-300/80">
+                                  Seleccionar
+                                </div>
+                              </div>
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Crear candidato si no hay coincidencias */}
+                    {canCreateCandidate && (
+                      <div className="rounded-2xl border border-sky-500/35 bg-sky-950/15 px-4 py-3 flex items-center justify-between gap-3">
+                        <div>
+                          <div className="text-sky-200/90 font-semibold">
+                            {(formData.candidateName || "Nuevo candidato").toUpperCase()}
+                          </div>
+                          <div className="text-[11px] text-white/45 font-mono">
+                            CC: {formData.documentNumber}
+                          </div>
+                        </div>
+
+                        <button
+                          type="button"
+                          onClick={handleCreateCandidate}
+                          disabled={isCreatingCandidate}
+                          className="px-4 py-2 rounded-xl border border-emerald-500/35 bg-emerald-500/10 text-emerald-200 text-[11px] font-extrabold uppercase tracking-[0.22em] hover:bg-emerald-500/15 transition disabled:opacity-60 disabled:cursor-wait"
+                        >
+                          {isCreatingCandidate ? "Creando..." : "Crear candidato"}
+                        </button>
+                      </div>
+                    )}
+
+                    {/* Badge de seleccionado */}
+                    {selectedCandidateId && (
+                      <div className="rounded-xl border border-emerald-500/20 bg-emerald-500/10 px-4 py-2 text-[11px] font-bold uppercase tracking-[0.22em] text-emerald-200/80">
+                        Candidato seleccionado
+                      </div>
+                    )}
+                  </div>
                 </FormField>
               </div>
 
@@ -375,9 +576,7 @@ const InterviewForm: React.FC<InterviewFormProps> = ({ onSubmit }) => {
                   onChange={handleChange}
                   options={availablePrograms.map((p) => ({ value: p, label: p }))}
                   disabled={!formData.school}
-                  placeholder={
-                    formData.school ? "Seleccione el programa..." : "Requiere seleccionar escuela"
-                  }
+                  placeholder={formData.school ? "Seleccione el programa..." : "Requiere seleccionar escuela"}
                 />
               </FormField>
             </div>
