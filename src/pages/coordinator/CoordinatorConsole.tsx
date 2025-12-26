@@ -34,17 +34,46 @@ function normalizeDoc(raw: any): string {
   return s.replace(/\D/g, "");
 }
 
+function normalizeText(raw: any): string {
+  return (raw ?? "").toString().trim();
+}
+
+function getCandidateProgram(ev: any): string {
+  return (
+    normalizeText(ev?.candidate?.programNameSnapshot) || // si tu summary lo trae
+    normalizeText(ev?.programNameSnapshot) ||            // si viene top-level
+    normalizeText(ev?.candidate?.programName) ||         // fallback típico
+    normalizeText(ev?.program?.name) ||                  // otro fallback
+    ""
+  );
+}
+
+function getCandidateSchool(ev: any): string {
+  return (
+    normalizeText(ev?.candidate?.schoolNameSnapshot) ||
+    normalizeText(ev?.schoolNameSnapshot) ||
+    normalizeText(ev?.candidate?.schoolName) ||
+    normalizeText(ev?.school?.name) ||
+    ""
+  );
+}
+
+function getCandidateDoc(candidate: unknown): string {
+  const c = candidate as any;
+  return (
+    normalizeDoc(c?.documentNumber) || // camelCase (tipado)
+    normalizeDoc(c?.document_number) || // snake_case (backend legacy)
+    ""
+  );
+}
+
 function groupByCandidate(
   evaluations: import("../../types").TeacherEvaluationSummary[]
 ): CandidateGroup[] {
-  // key estable -> grupo
   const map = new Map<string, import("../../types").TeacherEvaluationSummary[]>();
 
   for (const ev of evaluations) {
-    // ✅ key estable (usa doc camel/snake y fallback a nombre+escuela+programa)
     const key = getCandidateKey(ev);
-
-    // ⚠️ IMPORTANTE: NO uses ev.id como key de fallback, porque eso duplica siempre
     if (!map.has(key)) map.set(key, []);
     map.get(key)!.push(ev);
   }
@@ -52,31 +81,26 @@ function groupByCandidate(
   const groups: CandidateGroup[] = [];
 
   for (const [key, interviews] of map.entries()) {
-    // ✅ ordena entrevistas (más reciente primero)
     const sorted = [...interviews].sort(
       (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
     );
 
     const latest = sorted[0];
 
-    // ✅ doc para mostrar (si viene) - normalizado
-    const docDisplay =
-      normalizeDoc(latest.candidate?.documentNumber) ||
-      normalizeDoc(latest.candidate?.document_number) ||
-      "";
-
     groups.push({
       key,
-      documentNumber: docDisplay,
+      documentNumber: getCandidateDoc(latest.candidate),
       candidateName: latest.candidate?.fullName ?? "Sin nombre",
-      school: latest.candidate?.schoolNameSnapshot ?? "",
-      program: latest.candidate?.programNameSnapshot ?? "",
+
+      // ✅ ya NO accedemos a candidate.programNameSnapshot / schoolNameSnapshot (tipado corto)
+      school: getCandidateSchool(latest as any),
+      program: getCandidateProgram(latest as any),
+
       interviews: sorted,
       latest,
     });
   }
 
-  // ✅ ordena candidatos por su última entrevista
   groups.sort(
     (a, b) =>
       new Date(b.latest.createdAt).getTime() - new Date(a.latest.createdAt).getTime()
