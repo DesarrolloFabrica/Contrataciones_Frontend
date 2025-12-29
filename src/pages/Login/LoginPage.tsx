@@ -1,8 +1,12 @@
-// src/pages/LoginPage.tsx
 import React, { useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
-import { BrainCircuit } from "lucide-react";
+
+import BGImg from "../../assets/images/Gemini_Generated_Image_wsary2wsary2wsar (1).png";
+import LogoCun from "../../assets/images/LogoCunColor.png";
+import LogoCun2 from "../../assets/images/LogoCun.png";
+import Enciendete from "../../assets/images/Enciendete.png";
+import BGVideo from "../../assets/videos/Op2_1.mp4";
 
 const LoginPage: React.FC = () => {
   const { login } = useAuth();
@@ -10,97 +14,148 @@ const LoginPage: React.FC = () => {
   const location = useLocation() as any;
 
   const [email, setEmail] = useState("");
-  const [name, setName] = useState("");
+  const [password, setPassword] = useState(""); // ✅ NUEVO
+  const [error, setError] = useState<string | null>(null);
 
   const from = location.state?.from?.pathname;
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!email.trim()) return;
+    setError(null);
 
-    const user = login(email.trim(), name.trim() || undefined);
+    if (!email.trim() || !password) return;
 
-    // Si venía de una ruta protegida, volver allí
-    if (from) {
-      navigate(from, { replace: true });
-      return;
+    try {
+      // ✅ ahora login(email, password)
+      const user = await login(email.trim(), password);
+
+      if (from) {
+        navigate(from, { replace: true });
+        return;
+      }
+
+      const role = (user.role || "").toUpperCase();
+
+      if (role === "LIDER") {
+        navigate("/leader", { replace: true });
+      } else if (role === "COORDINADOR") {
+        navigate("/coordinator", { replace: true });
+      } else {
+        navigate("/admin", { replace: true });
+      }
+    } catch (err: any) {
+      console.error("Error en login:", err);
+      const msg =
+        err?.response?.data?.message ||
+        err?.message ||
+        "No se pudo iniciar sesión. Verifica tu correo y contraseña.";
+      setError(msg);
     }
-
-    // Si no, redirigir según rol
-    if (user.role === "leader") navigate("/leader", { replace: true });
-    else if (user.role === "coordinator") navigate("/coordinator", { replace: true });
-    else navigate("/admin", { replace: true });
   };
 
   return (
-    <div className="min-h-screen bg-[#020202] text-white flex items-center justify-center px-4">
-      <div className="w-full max-w-md bg-[#050505] border border-white/10 rounded-3xl p-8 shadow-2xl relative overflow-hidden">
-        <div className="absolute -top-24 -right-24 w-64 h-64 bg-emerald-500/10 rounded-full blur-3xl" />
+    <div className="min-h-screen w-full bg-black">
+      <div className="relative grid h-screen grid-cols-1 lg:grid-cols-[30%_70%]">
+        <div className="relative z-10 bg-white text-gray-900">
+          <div className="h-full flex items-center justify-center px-6">
+            <div className="w-full max-w-sm">
+              <div className="flex flex-col items-center text-center mb-10">
+                <img
+                  src={LogoCun}
+                  alt="Logo CUN"
+                  className="w-24 h-auto mb-1"
+                />
+                <p className="text-xs text-gray-500 mt-2">
+                  Acceso a consolas por rol
+                </p>
+              </div>
 
-        <div className="relative z-10 space-y-6">
-          <div className="flex items-center gap-3">
-            <div className="p-3 rounded-2xl bg-[#0F0F0F] border border-white/10">
-              <BrainCircuit className="w-6 h-6 text-emerald-400" />
-            </div>
-            <div>
-              <h1 className="text-xl font-bold tracking-tight">OPE-CUN</h1>
-              <p className="text-xs text-gray-400">Acceso a consolas por rol</p>
+              <form onSubmit={handleSubmit} className="space-y-4">
+                <input
+                  type="email"
+                  required
+                  placeholder="ejemplo@cun.edu.co"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  className="w-full rounded-2xl bg-gray-200/80 px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/40"
+                />
+
+                {/* ✅ NUEVO: password */}
+                <input
+                  type="password"
+                  required
+                  placeholder="Contraseña"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  className="w-full rounded-2xl bg-gray-200/80 border border-transparent px-4 py-3 text-sm text-gray-900 placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/40"
+                />
+
+                <button
+                  type="submit"
+                  className="w-full rounded-2xl py-3 text-sm font-bold uppercase tracking-widest text-white bg-gradient-to-r from-[#91DC00] to-[#31AB2E]"
+                >
+                  Entrar
+                </button>
+
+                {error && (
+                  <p className="text-sm text-red-600 text-center">{error}</p>
+                )}
+              </form>
+
+              <p className="text-[11px] text-gray-400 pt-10 text-center">
+                Tip: si venías de una ruta protegida, el sistema te regresa automáticamente al destino.
+              </p>
             </div>
           </div>
+        </div>
 
-          <p className="text-sm text-gray-400">
-            Usa un correo “simulado” para elegir el rol:
-            <br />
-            <span className="text-gray-300">
-              • contiene <span className="text-emerald-400 font-semibold">admin</span> → Admin
-            </span>
-            <br />
-            <span className="text-gray-300">
-              • contiene <span className="text-emerald-400 font-semibold">coord</span> → Coordinador
-            </span>
-            <br />
-            <span className="text-gray-300">• cualquier otro → Líder</span>
-          </p>
+        <div className="relative hidden lg:block">
+        {/* Video de fondo */}
+        <video
+          src={BGVideo}
+          autoPlay
+          loop
+          muted
+          playsInline
+          className="absolute inset-0 h-full w-full object-cover"
+        />
 
-          <form className="space-y-4" onSubmit={handleSubmit}>
-            <div className="space-y-2">
-              <label className="text-xs font-semibold text-gray-400">
-                Nombre (opcional)
-              </label>
-              <input
-                type="text"
-                className="w-full bg-[#0A0A0A] border border-white/10 rounded-xl px-4 py-3 text-sm outline-none focus:border-emerald-500/60"
-                placeholder="Ej. Sofia Coordinadora"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-              />
-            </div>
+        {/* Overlay oscuro con degradado radial */}
+        <div
+          className="absolute inset-0 pointer-events-none"
+          style={{
+            background: `
+              radial-gradient(
+                ellipse at center,
+                rgba(0,0,0,0.10) 0%,
+                rgba(0,0,0,0.45) 70%,
+                rgba(0,0,0,0.75) 100%
+              )
+            `,
+          }}
+        />
 
-            <div className="space-y-2">
-              <label className="text-xs font-semibold text-gray-400">
-                Correo institucional
-              </label>
-              <input
-                type="email"
-                required
-                className="w-full bg-[#0A0A0A] border border-white/10 rounded-xl px-4 py-3 text-sm outline-none focus:border-emerald-500/60"
-                placeholder="ejemplo@cun.edu.co"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-              />
-            </div>
+        {/* Contenedor de imágenes en la parte inferior */}
+        <div className="absolute bottom-6 left-0 right-0 z-10 flex justify-center gap-6 px-6 ">
+          {/* Imagen izquierda */}
+          <img
+            src={Enciendete}
+            alt="Imagen 1"
+            className="h-[140px]  object-contain "
+          />
 
-            <button
-              type="submit"
-              className="w-full mt-4 bg-emerald-600 hover:bg-emerald-500 text-sm font-bold tracking-widest uppercase py-3 rounded-xl transition-colors"
-            >
-              Entrar
-            </button>
-          </form>
+          {/* Imagen derecha */}
+          <img
+            src={LogoCun2}
+            alt="Imagen 2"
+            className="ml-auto mt-10 h-[70px] object-contain opacity-90 "
+          />
         </div>
       </div>
-    </div>
-  );
+        
+            </div>
+          </div>
+        );
 };
 
 export default LoginPage;

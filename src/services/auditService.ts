@@ -1,74 +1,43 @@
 // src/services/auditService.ts
-import type { AuditEvent, AuditEventType, AuditActor } from "../types";
+import type { AuditActor } from "../types";
 
-const STORAGE_KEY = "ope-cun:audit-events:v1";
-const MAX_EVENTS = 2000; // límite para no reventar localStorage
-
-
-function safeRead(): AuditEvent[] {
-  try {
-    const raw = localStorage.getItem(STORAGE_KEY);
-    if (!raw) return [];
-    const parsed = JSON.parse(raw) as AuditEvent[];
-    return Array.isArray(parsed) ? parsed : [];
-  } catch {
-    return [];
-  }
+export interface AuditEvent {
+  id: string;
+  type: string; // "LOGIN" | "LOGOUT" | ...
+  actor: AuditActor;
+  timestamp: string;
+  metadata?: Record<string, any>;
 }
 
-function safeWrite(events: AuditEvent[]) {
-  try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(events));
-  } catch {
-    // si storage está lleno, intentamos guardar solo los últimos N
-    const trimmed = events.slice(-500);
-    try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(trimmed));
-    } catch {
-      // si falla igual, no rompemos la app
-    }
-  }
-}
+const STORAGE_KEY = "cun-audit-log";
 
-export function auditList(params?: {
-  evaluationId?: string;
-  limit?: number;
-}): AuditEvent[] {
-  const all = safeRead();
-
-  const filtered = params?.evaluationId
-    ? all.filter((e) => e.evaluationId === params.evaluationId)
-    : all;
-
-  const ordered = filtered.sort(
-    (a, b) => new Date(b.at).getTime() - new Date(a.at).getTime()
-  );
-
-  return ordered.slice(0, params?.limit ?? 500);
+function generateId(): string {
+  const c = (globalThis as any).crypto;
+  if (c && typeof c.randomUUID === "function") return c.randomUUID();
+  return `evt_${Date.now()}_${Math.random().toString(16).slice(2)}`;
 }
 
 export function auditAppend(input: {
-  type: AuditEventType;
+  type: string;
   actor: AuditActor;
-  evaluationId?: string | null;
-  metadata?: Record<string, string | number | boolean | null>;
-}): AuditEvent {
-  const event: AuditEvent = {
-    id: crypto.randomUUID(),
+  metadata?: Record<string, any>;
+}) {
+  if (typeof window === "undefined") return;
+
+  const evt: AuditEvent = {
+    id: generateId(),
     type: input.type,
-    at: new Date().toISOString(),
-    evaluationId: input.evaluationId ?? null,
     actor: input.actor,
     metadata: input.metadata,
+    timestamp: new Date().toISOString(),
   };
 
-  const current = safeRead();
-  const next = [...current, event].slice(-MAX_EVENTS);
-
-  safeWrite(next);
-  return event;
-}
-
-export function auditClear() {
-  localStorage.removeItem(STORAGE_KEY);
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    const list: AuditEvent[] = raw ? JSON.parse(raw) : [];
+    list.push(evt);
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(list));
+  } catch (err) {
+    console.warn("No se pudo escribir en el log de auditoría", err, evt);
+  }
 }

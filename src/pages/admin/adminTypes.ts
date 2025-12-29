@@ -11,7 +11,7 @@ export type RiskBucket =
   | "NO_RECOMENDAR"
   | "DESCONOCIDO";
 
-export type AdminTab = "RESUMEN" | "IA" | "COORDINADOR" | "TECNICO";
+export type AdminTab = "RESUMEN" | "IA" | "COORDINADOR" | "TECNICO" | "ADMIN";
 
 export interface AdminMetrics {
   total: number;

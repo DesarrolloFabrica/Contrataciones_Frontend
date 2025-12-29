@@ -1,9 +1,13 @@
 // src/types.ts
+// ✅ Ajustado: agrega documentNumber en InterviewData y en TeacherForm.candidate
+// (manteniendo el resto tal cual)
 
-// --- EXISTENTE ---
-export type AcceptsCommitteesOption = 'Sí' | 'No' | 'Depende';
+export type AcceptsCommitteesOption = "Sí" | "No" | "Depende";
 
 export interface InterviewData {
+  // ✅ NUEVO: CC / documento
+  documentNumber: string;
+
   candidateName: string;
   age: string;
   school: string;
@@ -34,7 +38,7 @@ export interface CategoryAnalysis {
 }
 
 export interface AnalysisResult {
-  overallRiskLevel: 'Bajo' | 'Medio' | 'Alto';
+  overallRiskLevel: "Bajo" | "Medio" | "Alto";
   overallScore: number;
   executiveSummary: string;
   categoryAnalyses: CategoryAnalysis[];
@@ -48,6 +52,9 @@ export interface AnalysisResult {
 
 export interface TeacherForm {
   candidate: {
+    // ✅ NUEVO: CC / documento
+    documentNumber: string;
+
     fullName: string;
     age: number;
     schoolName: string;
@@ -85,16 +92,16 @@ export interface TeacherAiResult {
   teachingSuitabilityScore?: number;
   recommendation?: string;
   overallComment?: string;
-  rawOutput?: AnalysisResult; // seguimos guardando el JSON completo si lo necesitas
+  rawOutput?: AnalysisResult;
 }
 
 
 
 
 // 🔹 NUEVO: estados de decisión del coordinador
-export type CoordinatorDecisionStatus = 'PENDIENTE' | 'APROBADO' | 'RECHAZADO';
+export type CoordinatorDecisionStatus = "PENDIENTE" | "APROBADO" | "RECHAZADO";
 
-// 🔹 NUEVO: detalle de la decisión (lo que idealmente guardará el backend)
+// 🔹 NUEVO: detalle de la decisión
 export interface CoordinatorDecision {
   status: CoordinatorDecisionStatus;
   comment?: string | null;
@@ -116,8 +123,12 @@ export interface TeacherEvaluationSummary {
 
   candidate?: {
     fullName: string;
+    document_number?: string;
     schoolNameSnapshot?: string | null;
     programNameSnapshot?: string | null;
+
+    // ✅ opcional por si lo quieres mostrar en historial
+    documentNumber?: string | null;
   };
 
   aiTeachingSuitabilityScore: number;
@@ -125,9 +136,7 @@ export interface TeacherEvaluationSummary {
   aiOverallComment: string;
   aiReportDriveFileId?: string | null;
 
-  // 🔹 NUEVO: decisión del coordinador (si existe)
   coordinatorDecision?: CoordinatorDecision;
-  // 🔹 NUEVO: campos pensados para la decisión del coordinador
   coordinatorDecisionStatus?: "PENDIENTE" | "APROBADO" | "RECHAZADO" | null;
   coordinatorDecisionBy?: string | null;
   coordinatorDecisionAt?: string | null;
@@ -141,9 +150,9 @@ export interface TeacherEvaluationSummary {
 export type AuditActorRole = "leader" | "coordinator" | "admin" | "system";
 
 export interface AuditActor {
-  id?: string | null;
-  name?: string | null;
-  email?: string | null;
+  id: string;
+  name: string;
+  email: string;
   role: AuditActorRole;
 }
 
@@ -156,16 +165,77 @@ export type AuditEventType =
   | "REPORT_PDF_UPLOADED"
   | "COORDINATOR_DECISION_SET"
   | "COORDINATOR_COMMENT_SET"
+  | "COORDINATOR_DECISION_SUBMITTED"
   | "LOGIN"
   | "LOGOUT";
 
 export interface AuditEvent {
-  id: string; // uuid
+  id: string;
   type: AuditEventType;
-  at: string; // ISO date
-  evaluationId?: string | null; // si aplica
+  at: string;
+  evaluationId?: string | null;
   actor: AuditActor;
-  // metadata libre (pero tipada como record simple)
   metadata?: Record<string, string | number | boolean | null>;
 }
 
+// user/auth/backend (sin cambios)
+export type UserRole = "ADMIN" | "COORDINADOR" | "LIDER";
+
+export type AuthUser = {
+  id: string;
+  email: string;
+  fullName: string;
+  role: "ADMIN" | "COORDINADOR" | "LIDER";
+  schoolId: string | null;
+  mustResetPassword?: boolean;
+};
+
+export type AuthResponse = {
+  accessToken: string;
+  user: AuthUser;
+};
+
+export type BackendRole = "ADMIN" | "COORDINADOR" | "LIDER";
+
+export interface BackendSchoolSummary {
+  id: string;
+  name: string;
+}
+
+export interface BackendUser {
+  id: string;
+  email: string;
+  fullName: string;
+  role: BackendRole;
+  schoolId?: string | null;
+  school?: BackendSchoolSummary | null;
+  isActive: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export type BackendUserRole = "ADMIN" | "COORDINADOR" | "LIDER";
+
+export interface BackendAuthUser {
+  id: string;
+  email: string;
+  fullName?: string;
+  role: BackendUserRole;
+  schoolId?: string | null;
+}
+
+export interface AuthApiResponse {
+  accessToken: string;
+  user: BackendAuthUser;
+}
+
+export interface StoredAuth {
+  accessToken: string;
+  user: {
+    id: string;
+    email: string;
+    name: string;
+    role: "admin" | "coordinator" | "leader";
+    schoolId?: string | null;
+  };
+}
