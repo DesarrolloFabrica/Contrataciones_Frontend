@@ -33,7 +33,7 @@ const AiSummaryTab: React.FC<Props> = ({ analysis }) => {
             <span className="text-base uppercase tracking-widest text-gray-200 mr-3">
               Nivel de riesgo
             </span>
-ñ
+
             <span
               className={`mt-2 inline-flex items-center px-2.5 py-1 rounded-full text-[11px] font-semibold ${riskBadgeClass}`}
             >

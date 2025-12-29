@@ -156,14 +156,19 @@ const LeaderConsole: React.FC = () => {
         });
 
         setEvaluationId(saved.id);
-      } catch (err) {
-        console.error("Error during analysis or save:", err);
-        setError(
-          err instanceof Error
-            ? err.message
-            : "Ocurrió un error durante el proceso."
-        );
-      } finally {
+      } catch (err: any) {
+          // ✅ Esto te muestra el motivo REAL del 400 que manda el backend
+          console.error("❌ Error during analysis or save:", {
+            message: err?.message,
+            status: err?.response?.status,
+            data: err?.response?.data, // <- aquí suele venir "field X is required"
+          });
+        
+          setError(
+            err?.response?.data?.message ??
+              (err instanceof Error ? err.message : "Ocurrió un error durante el proceso.")
+          );
+        } finally {
         setIsLoading(false);
       }
     },

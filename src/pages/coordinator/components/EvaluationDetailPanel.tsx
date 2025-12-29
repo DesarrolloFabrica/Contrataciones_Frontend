@@ -9,6 +9,8 @@ import AiSummaryTab from "./AiSummaryTab";
 import InterviewsTab from "./InterviewTab"; // ✅ NUEVO
 import AuditTab from "./AuditTab";
 import TechTab from "./TechTab";
+import NotesTab from "./NotesTab"; // ✅ NUEVO
+
 
 import type {
   CoordinatorCriteria,
@@ -35,6 +37,8 @@ type Props = {
 
   onApplyDecision: (d: LocalDecision) => void;
 
+  onOpenComparison: () => void;
+
   // ✅ “Notas” se reemplaza por entrevistas (por ahora)
   notes: string;
   setNotes: (v: string) => void;
@@ -53,6 +57,17 @@ type Props = {
   setTimelineTab?: (v: TimelineTab) => void;
   activityByEval?: any[];
   activityGlobal?: any[];
+
+  // ✅ RESUMEN IA PROMEDIO
+  avgAnalysis?: AnalysisResult | null;
+  avgLoading?: boolean;
+  avgError?: string | null;
+
+  variabilityInfo?: {
+    level: "Baja" | "Media" | "Alta";
+    label: string;
+    details?: string[];
+  } | null;
 };
 
 export default function EvaluationDetailPanel({
@@ -67,6 +82,7 @@ export default function EvaluationDetailPanel({
   setDecisionComment,
   onDecisionCommentBlur,
   onApplyDecision,
+  onOpenComparison,
   notes,
   setNotes,
   criteria,
@@ -80,8 +96,16 @@ export default function EvaluationDetailPanel({
   setTimelineTab,
   activityByEval,
   activityGlobal,
+  avgAnalysis,
+  avgLoading,
+  avgError,
+  variabilityInfo,
+  
 }: Props) {
   const hasDetail = !!selectedDetail && !loadingDetail;
+  
+  // ✅ Si existe promedio, lo usamos. Si no, caemos al análisis de la última entrevista.
+  const analysisToShow = avgAnalysis ?? selectedDetail?.analysis ?? null;
 
   const canShowAudit = useMemo(() => {
     return (
@@ -154,18 +178,62 @@ export default function EvaluationDetailPanel({
           )}
 
           {detailTab === "AI" && (
-            <AiSummaryTab analysis={selectedDetail.analysis} />
-          )}
+  <>
+        {/* ✅ Variabilidad entre entrevistas (nuevo bloque, no rompe formato del resumen) */}
+        {variabilityInfo && (
+          <div className="mb-3 text-xs text-gray-300 bg-white/[0.03] border border-white/10 rounded-2xl p-4">
+            <div className="flex items-center justify-between gap-3">
+              <span className="uppercase tracking-widest text-[11px] text-gray-400">
+                Variabilidad entre entrevistas
+              </span>
+              <span
+                className={[
+                  "px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-widest border",
+                  variabilityInfo.level === "Alta"
+                    ? "bg-rose-500/10 text-rose-300 border-rose-500/30"
+                    : variabilityInfo.level === "Media"
+                    ? "bg-amber-500/10 text-amber-300 border-amber-500/30"
+                    : "bg-emerald-500/10 text-emerald-300 border-emerald-500/30",
+                ].join(" ")}
+              >
+                {variabilityInfo.label}
+              </span>
+            </div>
+              
+            {!!variabilityInfo.details?.length && (
+              <ul className="mt-2 space-y-1 text-[12px] text-gray-300 list-disc pl-5">
+                {variabilityInfo.details.map((d, i) => (
+                  <li key={i}>{d}</li>
+                ))}
+              </ul>
+            )}
+          </div>
+        )}
+    
+        {/* ✅ Estados de promedio */}
+        {avgLoading && (
+          <div className="mb-3 text-sm text-gray-400 bg-white/[0.03] border border-white/10 rounded-2xl p-4">
+            Calculando promedio de entrevistas…
+          </div>
+        )}
+    
+        {avgError && (
+          <div className="mb-3 text-sm text-rose-300 bg-rose-500/10 border border-rose-500/20 rounded-2xl p-4">
+            {avgError}
+          </div>
+        )}
+    
+        {/* ✅ Mismo componente, mismo formato, pero con analysisToShow */}
+        {analysisToShow && <AiSummaryTab analysis={analysisToShow} />}
+      </>
+    )}
 
           {detailTab === "INTERVIEWS" && candidateGroup && (
             <InterviewsTab
               candidateGroup={candidateGroup}
               selectedEvaluationId={selectedId}
               onOpenInterview={onOpenInterview}
-              onOpenComparison={() => {
-            // ✅ delega al padre (CoordinatorConsole) mediante onOpenComparison (lo añadiremos en props)
-            // por ahora lo conectamos en el siguiente paso
-          }}
+             
             />
           )}
 
@@ -181,6 +249,15 @@ export default function EvaluationDetailPanel({
               setTimelineTab={setTimelineTab!}
               activityByEval={activityByEval!}
               activityGlobal={activityGlobal!}
+            />
+          )}
+
+          {detailTab === "NOTES" && (
+            <NotesTab
+              notes={notes}
+              setNotes={setNotes}
+              criteria={criteria}
+              setCriteria={setCriteria}
             />
           )}
 

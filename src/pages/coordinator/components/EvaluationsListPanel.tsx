@@ -1,11 +1,39 @@
-import React from "react";
+import React, { useMemo } from "react";
 import { Calendar, FileText, Filter, Search } from "lucide-react";
 import TeacherEvaluationItem from "../../../components/TeacherEvaluationItem";
-import type { DecisionFilter, LocalDecision } from "../types";
-import type { CandidateGroup } from "../types"; // ✅ usa el tipo real
+import type { DecisionFilter, LocalDecision, CandidateGroup } from "../types";
+
+/**
+ * Normaliza cualquier variante de estado (EN/ES) al enum local.
+ * Esto evita que el filtro se rompa si backend manda PENDING/REJECTED/APPROVED.
+ */
+const normalizeDecision = (value: unknown): LocalDecision => {
+  const v = String(value ?? "").trim().toUpperCase();
+
+  // Backend (EN)
+  if (v === "PENDING") return "PENDIENTE";
+  if (v === "APPROVED") return "APROBADO";
+  if (v === "REJECTED") return "RECHAZADO";
+
+  // Backend/Frontend (ES)
+  if (v.includes("PEND")) return "PENDIENTE";
+  if (v.includes("APROB")) return "APROBADO";
+  if (v.includes("RECHAZ")) return "RECHAZADO";
+
+  // si llega null/undefined/"" -> pendiente
+  return "PENDIENTE";
+};
+
+/**
+ * Toma fecha “real” para comparar recencia.
+ * Preferimos updatedAt, luego createdAt.
+ */
+const toTime = (d?: unknown) => {
+  const t = new Date(String(d ?? "")).getTime();
+  return Number.isFinite(t) ? t : 0;
+};
 
 type Props = {
-  // scope obligatorio
   schoolFilter: string;
   setSchoolFilter: (v: string) => void;
 
@@ -17,10 +45,7 @@ type Props = {
 
   mustChooseScope: boolean;
 
-  // ✅ lista agrupada por candidato (NO por evaluación)
   groupedCandidates: CandidateGroup[];
-
-  // seleccionado (sigue siendo un evaluationId, para compatibilidad con detail hook)
   selectedId: string | null;
 
   search: string;
@@ -31,12 +56,8 @@ type Props = {
 
   localDecisions: Record<string, LocalDecision>;
 
-  // click normal sobre el item (candidateKey + evaluationId)
   onSelectEvaluation: (candidateKey: string, evaluationId: string) => void;
-
-  // botones por candidato
   onOpenDetail: (candidateKey: string, evaluationId: string) => void;
-  onOpenSecond: (candidateKey: string, evaluationId: string) => void;
 };
 
 const EvaluationsListPanel: React.FC<Props> = ({
@@ -58,8 +79,64 @@ const EvaluationsListPanel: React.FC<Props> = ({
 
   onSelectEvaluation,
   onOpenDetail,
-  onOpenSecond,
 }) => {
+  /**
+   * Devuelve el estado del candidato (APROBADO/RECHAZADO/PENDIENTE)
+   * usando la entrevista MÁS RECIENTE que tenga estado,
+   * o la decisión local si existe (tiene prioridad).
+   */
+  const getCandidateDecision = (g: CandidateGroup): LocalDecision => {
+    const interviews = Array.isArray(g.interviews) ? g.interviews : [];
+
+    // 1) Si hay decisiones locales, usamos la más reciente (por timestamp)
+    const localWithTime = interviews
+      .map((ev: any) => ({
+        id: ev?.id,
+        t: Math.max(toTime(ev?.updatedAt), toTime(ev?.createdAt)),
+        local: ev?.id ? localDecisions[ev.id] : undefined,
+      }))
+      .filter((x) => !!x.local)
+      .sort((a, b) => b.t - a.t);
+
+    if (localWithTime.length > 0) return localWithTime[0].local as LocalDecision;
+
+    // 2) Si no hay local, buscamos la entrevista más reciente con coordinatorDecisionStatus
+    const backendWithTime = interviews
+      .map((ev: any) => ({
+        id: ev?.id,
+        t: Math.max(toTime(ev?.updatedAt), toTime(ev?.createdAt)),
+        raw: ev?.coordinatorDecisionStatus,
+      }))
+      .sort((a, b) => b.t - a.t);
+
+    for (const item of backendWithTime) {
+      // normalizamos incluso si viene undefined -> PENDIENTE
+      const normalized = normalizeDecision(item.raw);
+
+      // Si quieres que “sin estado” cuente como pendiente, esto ya lo hace.
+      // Pero si quieres que "undefined" NO sea un estado válido, podrías:
+      // if (!item.raw) continue;
+      // En tu caso actual conviene dejarlo como está.
+      return normalized;
+    }
+
+    // 3) fallback total
+    return "PENDIENTE";
+  };
+
+  /**
+   * Filtramos candidatos visibles según decisionFilter.
+   * Importante: este es el array que se mapea (visibleGroups).
+   */
+  const visibleGroups = useMemo(() => {
+    if (mustChooseScope) return [];
+
+    return groupedCandidates.filter((g) => {
+      if (decisionFilter === "ALL") return true;
+      return getCandidateDecision(g) === decisionFilter;
+    });
+  }, [mustChooseScope, groupedCandidates, decisionFilter, localDecisions]);
+
   return (
     <div className="bg-[#1F1F1F]/30 border border-white/10 rounded-3xl p-5 md:p-6 shadow-xl flex flex-col">
       <div className="flex items-center justify-between mb-4 gap-3">
@@ -156,23 +233,21 @@ const EvaluationsListPanel: React.FC<Props> = ({
 
         <div className="flex items-center gap-2 text-[11px]">
           <span className="uppercase tracking-widest text-gray-500">Estado:</span>
-          {(["ALL", "PENDIENTE", "APROBADO", "RECHAZADO"] as DecisionFilter[]).map(
-            (opt) => (
-              <button
-                key={opt}
-                type="button"
-                onClick={() => !mustChooseScope && setDecisionFilter(opt)}
-                disabled={mustChooseScope}
-                className={`px-3 py-1 rounded-full border text-[11px] ${
-                  decisionFilter === opt
-                    ? "border-emerald-500 bg-emerald-500/10 text-emerald-300"
-                    : "border-white/10 text-gray-400 hover:border-emerald-500/40"
-                } ${mustChooseScope ? "opacity-40 cursor-not-allowed" : ""}`}
-              >
-                {opt === "ALL" ? "Todos" : opt}
-              </button>
-            )
-          )}
+          {(["ALL", "PENDIENTE", "APROBADO", "RECHAZADO"] as DecisionFilter[]).map((opt) => (
+            <button
+              key={opt}
+              type="button"
+              onClick={() => !mustChooseScope && setDecisionFilter(opt)}
+              disabled={mustChooseScope}
+              className={`px-3 py-1 rounded-full border text-[11px] ${
+                decisionFilter === opt
+                  ? "border-emerald-500 bg-emerald-500/10 text-emerald-300"
+                  : "border-white/10 text-gray-400 hover:border-emerald-500/40"
+              } ${mustChooseScope ? "opacity-40 cursor-not-allowed" : ""}`}
+            >
+              {opt === "ALL" ? "Todos" : opt}
+            </button>
+          ))}
         </div>
       </div>
 
@@ -184,59 +259,50 @@ const EvaluationsListPanel: React.FC<Props> = ({
           </div>
         )}
 
-        {!mustChooseScope && groupedCandidates.length === 0 && (
+        {!mustChooseScope && visibleGroups.length === 0 && (
           <div className="flex items-center justify-center py-10 text-gray-500 text-sm">
             No hay evaluaciones para los filtros actuales.
           </div>
         )}
 
         {!mustChooseScope &&
-  groupedCandidates.map((g) => {
-  const ev = g.latest;
-  const candidateKey = (g as any).key ?? g.documentNumber; // soporta ambos
+          visibleGroups.map((g) => {
+            const ev = g.latest;
 
-  return (
-    <div key={g.key} className="space-y-2">
-      <TeacherEvaluationItem
-        evaluation={ev}
-        selected={selectedId === ev.id}
-        onClick={() => onSelectEvaluation(g.key, ev.id)}
-        decisionStatus={
-          localDecisions[ev.id] ??
-          (ev.coordinatorDecisionStatus as LocalDecision | undefined)
-        }
-      />
+            // ✅ IMPORTANTE: lo que se muestra en la tarjeta debe ser el mismo criterio del filtro
+            const candidateDecision = getCandidateDecision(g);
 
-      <div className="flex items-center justify-between px-2">
-        <span className="text-xs text-gray-500">
-          Entrevistas: <b className="text-gray-300">{g.interviews.length}</b>
-        </span>
+            return (
+              <div key={g.key} className="space-y-2">
+                <TeacherEvaluationItem
+                  evaluation={ev}
+                  selected={selectedId === ev.id}
+                  onClick={() => onSelectEvaluation(g.key, ev.id)}
+                  decisionStatus={candidateDecision}
+                  footer={
+                    <>
+                      <span className="text-xs text-gray-500">
+                        Entrevistas: <b className="text-gray-300">{g.interviews.length}</b>
+                      </span>
 
-        <div className="flex items-center gap-2">
-          <button
-            type="button"
-            onClick={() => onOpenDetail(g.key, ev.id)}
-            className="px-3 py-2 rounded-xl border border-emerald-500/25
-                       text-[11px] uppercase tracking-widest text-emerald-300
-                       hover:border-emerald-500/40 hover:bg-emerald-500/10 transition"
-          >
-            Ver detalle
-          </button>
-
-          <button
-            type="button"
-            onClick={() => onOpenSecond(g.key, ev.id)}
-            className="px-3 py-2 rounded-xl border border-white/10
-                       text-[11px] uppercase tracking-widest text-gray-300
-                       hover:border-white/20 hover:bg-white/5 transition"
-          >
-            Comparativa
-          </button>
-        </div>
-      </div>
-    </div>
-  );
-})}
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          onOpenDetail(g.key, ev.id);
+                        }}
+                        className="px-3 py-2 rounded-xl border border-emerald-500/25
+                                   text-[11px] uppercase tracking-widest text-emerald-300
+                                   hover:border-emerald-500/40 hover:bg-emerald-500/10 transition"
+                      >
+                        Ver detalle
+                      </button>
+                    </>
+                  }
+                />
+              </div>
+            );
+          })}
       </div>
     </div>
   );

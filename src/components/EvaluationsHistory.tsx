@@ -22,10 +22,16 @@ interface EvaluationsHistoryProps {
 }
 
 const badgeForRecommendation = (verdict: string) => {
-  const v = (verdict || "").toLowerCase();
+  const v = (verdict || "").toLowerCase().trim();
 
-  // ✅ Solo 2 estados como antes
-  if (v.includes("no")) {
+  // ✅ Detecta "no recomendada" solo si aparece como frase real (no por "no ..." suelto)
+  const isNotRecommended =
+    v.includes("no recomend") || // "no recomendada", "no recomendar", etc.
+    v.includes("rechaz") ||       // por si el texto viene como "rechazado"
+    v.includes("no apto") ||      // variantes comunes
+    v.includes("no es apto");
+
+  if (isNotRecommended) {
     return {
       text: "No recomendada",
       className: "bg-rose-500/10 text-rose-400 border border-rose-500/30",
@@ -33,13 +39,24 @@ const badgeForRecommendation = (verdict: string) => {
     };
   }
 
-  // si no es "no", asumimos recomendada
+  // ✅ (opcional) detectar "precaución" para un tercer estado
+  const isCaution = v.includes("precauc") || v.includes("condicion") || v.includes("reserv");
+
+  if (isCaution) {
+    return {
+      text: "Con precaución",
+      className: "bg-amber-500/10 text-amber-300 border border-amber-500/25",
+      icon: <AlertCircle className="w-4 h-4" />,
+    };
+  }
+
   return {
     text: "Recomendada",
     className: "bg-emerald-500/10 text-emerald-400 border border-emerald-500/30",
     icon: <CheckCircle2 className="w-4 h-4" />,
   };
 };
+
 
 
 const EvaluationsHistory: React.FC<EvaluationsHistoryProps> = ({
@@ -338,6 +355,7 @@ const EvaluationsHistory: React.FC<EvaluationsHistoryProps> = ({
                     </div>
                   </div>
                 );
+                console.log("VERDICT:", ev.aiFinalRecommendation);
 
               })}
             </div>

@@ -6,7 +6,8 @@ export type DetailTabKey =
   | "INTERVIEWS"
   | "DECISION"
   | "AUDIT"
-  | "TECH";
+  | "TECH"
+  | "NOTES";
 
 // ✅ Decisión local coordinador
 export type LocalDecision = "PENDIENTE" | "APROBADO" | "RECHAZADO";
