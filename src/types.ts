@@ -106,8 +106,16 @@ export interface TeacherEvaluationSummary {
 
   candidate?: {
     id: string;
+
+    // principal (UI)
     documentNumber: string | null;
+
     fullName: string;
+
+    // compat con payloads legacy/backends distintos
+    document_number?: string | null;
+    schoolNameSnapshot?: string | null;
+    programNameSnapshot?: string | null;
   };
 
   aiTeachingSuitabilityScore: number | null;

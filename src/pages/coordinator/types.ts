@@ -1,12 +1,14 @@
 // src/pages/coordinator/types.ts
 import type { TeacherEvaluationSummary } from "../../types";
+
 // ✅ Tabs del panel derecho
 export type DetailTabKey =
   | "AI"
   | "INTERVIEWS"
   | "DECISION"
   | "AUDIT"
-  | "TECH";
+  | "TECH"
+  | "NOTES";
 
 // ✅ Decisión local coordinador
 export type LocalDecision = "PENDIENTE" | "APROBADO" | "RECHAZADO";

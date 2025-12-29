@@ -16,11 +16,11 @@ const tabBtn = (active: boolean) =>
 
 export default function DetailTabs({ value, onChange }: Props) {
   const tabs = useMemo(
-    () => [  
-      { id: "AI" as const, label: "Resumen IA", Icon: BrainCircuit },     
+    () => [
+      { id: "AI" as const, label: "Resumen IA", Icon: BrainCircuit },
       { id: "INTERVIEWS" as const, label: "Entrevistas", Icon: NotebookPen },
+      { id: "NOTES" as const, label: "Notas", Icon: NotebookPen },
       { id: "DECISION" as const, label: "Decisión", Icon: FileText },
-         
     ],
     []
   );

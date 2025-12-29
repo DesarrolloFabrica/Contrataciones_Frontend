@@ -110,31 +110,52 @@ const LoginPage: React.FC = () => {
         </div>
 
         <div className="relative hidden lg:block">
-          <video
-            src={BGVideo}
-            autoPlay
-            loop
-            muted
-            playsInline
-            className="absolute inset-0 h-full w-full object-cover"
+        {/* Video de fondo */}
+        <video
+          src={BGVideo}
+          autoPlay
+          loop
+          muted
+          playsInline
+          className="absolute inset-0 h-full w-full object-cover"
+        />
+
+        {/* Overlay oscuro con degradado radial */}
+        <div
+          className="absolute inset-0 pointer-events-none"
+          style={{
+            background: `
+              radial-gradient(
+                ellipse at center,
+                rgba(0,0,0,0.10) 0%,
+                rgba(0,0,0,0.45) 70%,
+                rgba(0,0,0,0.75) 100%
+              )
+            `,
+          }}
+        />
+
+        {/* Contenedor de imágenes en la parte inferior */}
+        <div className="absolute bottom-6 left-0 right-0 z-10 flex justify-center gap-6 px-6 ">
+          {/* Imagen izquierda */}
+          <img
+            src={Enciendete}
+            alt="Imagen 1"
+            className="h-[140px]  object-contain "
           />
-          <div
-            className="absolute inset-0 pointer-events-none"
-            style={{
-              background: `
-                radial-gradient(
-                  ellipse at center,
-                  rgba(0,0,0,0.10) 0%,
-                  rgba(0,0,0,0.45) 70%,
-                  rgba(0,0,0,0.75) 100%
-                )
-              `,
-            }}
+
+          {/* Imagen derecha */}
+          <img
+            src={LogoCun2}
+            alt="Imagen 2"
+            className="ml-auto mt-10 h-[70px] object-contain opacity-90 "
           />
         </div>
       </div>
-    </div>
-  );
+        
+            </div>
+          </div>
+        );
 };
 
 export default LoginPage;

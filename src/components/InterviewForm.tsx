@@ -18,7 +18,7 @@ import {
   Loader2,
   Search,
 } from "lucide-react";
-import { InterviewData } from "../types";
+import type { InterviewData } from "../types";
 import { schools } from "../data/schools";
 import { approvedExample, mediumExample, rejectedExample } from "../data/exampleData";
 
@@ -56,12 +56,22 @@ const initialFormData: InterviewData = {
   scenarioFeedback: "",
 };
 
+// ---------------------------------------------------------------------
+// ✅ AJUSTE VISUAL (sin tocar lógica)
+// Objetivo: que las tarjetas NO se mezclen con el fondo #020202.
+// Aplicamos “Premium neutro”:
+// - Tarjeta: grafito (#0B0D0F) con leve transparencia + blur
+// - Borde/ring: blancos sutiles, verde solo como acento (hover/focus)
+// - Glow interno: blanco MUY suave + emerald MUY suave (sin teñir toda la card)
+// ---------------------------------------------------------------------
+
 // --- COMPONENTES VISUALES AVANZADOS ---
 
 const SectionHeader: React.FC<{ title: string; icon: React.ReactNode }> = React.memo(
   ({ title, icon }) => (
     <div className="flex items-center gap-4 mb-8">
       <div className="relative group">
+        {/* Glow más neutro (menos “verde pintado”) */}
         <div className="absolute inset-0 bg-emerald-500 blur-lg opacity-10 group-hover:opacity-18 transition-opacity duration-500" />
         <div className="relative p-3 rounded-2xl bg-[#0E1115] border border-white/10 text-emerald-400 shadow-lg">
           {icon}
@@ -235,7 +245,7 @@ const InterviewForm: React.FC<InterviewFormProps> = ({ onSubmit }) => {
     // si cambia CC, invalidamos selección
     setSelectedCandidateId(null);
 
-    // UX: no buscar hasta tener mínimo 3-4 dígitos
+    // UX: no buscar hasta tener mínimo 3 dígitos
     if (!cc || cc.length < 3) {
       setCandidateMatches([]);
       setLookupError(null);
@@ -292,8 +302,7 @@ const InterviewForm: React.FC<InterviewFormProps> = ({ onSubmit }) => {
       ...prev,
       documentNumber: String(c.documentNumber ?? prev.documentNumber ?? ""),
       candidateName: c.fullName ?? prev.candidateName,
-      age:
-        typeof c.age === "number" && !Number.isNaN(c.age) ? String(c.age) : prev.age,
+      age: typeof c.age === "number" && !Number.isNaN(c.age) ? String(c.age) : prev.age,
     }));
 
     setCandidateMatches([]); // cierra lista
@@ -312,7 +321,6 @@ const InterviewForm: React.FC<InterviewFormProps> = ({ onSubmit }) => {
     const documentNumber = formData.documentNumber.trim();
     const fullName = (formData.candidateName ?? "").trim();
 
-    // si no hay nombre, no bloqueamos el form entero, pero sí el create
     if (!fullName) {
       setLookupError("Escribe el nombre del candidato para crearlo.");
       return;
@@ -335,7 +343,6 @@ const InterviewForm: React.FC<InterviewFormProps> = ({ onSubmit }) => {
       setSelectedCandidateId(created.id);
       setCandidateMatches([]);
 
-      // deja el form listo (ya lo está), solo aseguramos CC “limpia”
       setFormData((prev) => ({
         ...prev,
         documentNumber,
@@ -351,7 +358,7 @@ const InterviewForm: React.FC<InterviewFormProps> = ({ onSubmit }) => {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
 
-    // ✅ enviamos candidateId de forma no-invasiva para el flujo nuevo del backend
+    // ✅ si tu InterviewData NO trae candidateId tipado, lo enviamos como campo extra (no rompe UI)
     onSubmit({ ...(formData as any), candidateId: selectedCandidateId } as any);
   };
 
@@ -372,7 +379,7 @@ const InterviewForm: React.FC<InterviewFormProps> = ({ onSubmit }) => {
   };
 
   return (
-    <div className="min-h-screen w-f bg-[#020202] text-gray-200 selection:bg-emerald-500/30 font-sans relative overflow-hidden">
+    <div className="min-h-screen w-full bg-[#020202] text-gray-200 selection:bg-emerald-500/30 font-sans relative overflow-hidden">
       <div className="fixed top-0 left-0 w-full h-full overflow-hidden pointer-events-none z-0">
         <div
           className="absolute top-[-10%] left-[10%] w-[500px] h-[500px] bg-emerald-500/5 rounded-full blur-[120px] mix-blend-screen animate-pulse"
@@ -450,11 +457,7 @@ const InterviewForm: React.FC<InterviewFormProps> = ({ onSubmit }) => {
                     />
 
                     <div className="absolute inset-y-0 right-0 flex items-center pr-4 text-white/35">
-                      {isSearching ? (
-                        <Loader2 className="w-4 h-4 animate-spin" />
-                      ) : (
-                        <Search className="w-4 h-4" />
-                      )}
+                      {isSearching ? <Loader2 className="w-4 h-4 animate-spin" /> : <Search className="w-4 h-4" />}
                     </div>
                   </div>
 
@@ -466,7 +469,6 @@ const InterviewForm: React.FC<InterviewFormProps> = ({ onSubmit }) => {
                       </div>
                     )}
 
-                    {/* Lista de coincidencias */}
                     {candidateMatches.length > 0 && (
                       <div className="rounded-2xl border border-emerald-500/25 bg-[#061015] overflow-hidden">
                         <div className="px-4 py-3 border-b border-white/10 text-[11px] font-extrabold uppercase tracking-[0.22em] text-emerald-200/80">
@@ -483,9 +485,7 @@ const InterviewForm: React.FC<InterviewFormProps> = ({ onSubmit }) => {
                             >
                               <div className="flex items-center justify-between gap-3">
                                 <div>
-                                  <div className="text-sm text-white/85 font-semibold">
-                                    {c.fullName}
-                                  </div>
+                                  <div className="text-sm text-white/85 font-semibold">{c.fullName}</div>
                                   <div className="text-[11px] text-white/45 font-mono">
                                     CC: {c.documentNumber ?? "—"}
                                     {typeof c.age === "number" ? ` · ${c.age} años` : ""}
@@ -502,16 +502,13 @@ const InterviewForm: React.FC<InterviewFormProps> = ({ onSubmit }) => {
                       </div>
                     )}
 
-                    {/* Crear candidato si no hay coincidencias */}
                     {canCreateCandidate && (
                       <div className="rounded-2xl border border-sky-500/35 bg-sky-950/15 px-4 py-3 flex items-center justify-between gap-3">
                         <div>
                           <div className="text-sky-200/90 font-semibold">
                             {(formData.candidateName || "Nuevo candidato").toUpperCase()}
                           </div>
-                          <div className="text-[11px] text-white/45 font-mono">
-                            CC: {formData.documentNumber}
-                          </div>
+                          <div className="text-[11px] text-white/45 font-mono">CC: {formData.documentNumber}</div>
                         </div>
 
                         <button
@@ -525,7 +522,6 @@ const InterviewForm: React.FC<InterviewFormProps> = ({ onSubmit }) => {
                       </div>
                     )}
 
-                    {/* Badge de seleccionado */}
                     {selectedCandidateId && (
                       <div className="rounded-xl border border-emerald-500/20 bg-emerald-500/10 px-4 py-2 text-[11px] font-bold uppercase tracking-[0.22em] text-emerald-200/80">
                         Candidato seleccionado
@@ -548,13 +544,7 @@ const InterviewForm: React.FC<InterviewFormProps> = ({ onSubmit }) => {
 
               <div className="md:col-span-1">
                 <FormField label="Edad" name="age">
-                  <TextInput
-                    name="age"
-                    value={formData.age}
-                    onChange={handleChange}
-                    type="number"
-                    placeholder="Ej. 35"
-                  />
+                  <TextInput name="age" value={formData.age} onChange={handleChange} type="number" placeholder="Ej. 35" />
                 </FormField>
               </div>
             </div>

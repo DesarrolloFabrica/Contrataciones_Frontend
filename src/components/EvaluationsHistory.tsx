@@ -15,7 +15,7 @@ import {
   ArrowLeft,
   AlertTriangle,
 } from "lucide-react";
-import { TeacherEvaluationSummary } from "../types";
+import type { TeacherEvaluationSummary } from "../types";
 import { listTeacherEvaluations } from "../services/teachersService";
 
 interface EvaluationsHistoryProps {
@@ -24,7 +24,7 @@ interface EvaluationsHistoryProps {
 }
 
 /**
- * ✅ Nuevo: Recomendación por overallScore (preferente: aiRawJson.overallScore)
+ * ✅ Recomendación por overallScore (preferente: aiRawJson.overallScore)
  * Reglas:
  * 0-49  => NO RECOMENDAR CONTRATACIÓN (rojo)
  * 50-79 => RECOMENDACIÓN CON PRECAUCIÓN (amarillo)
@@ -52,7 +52,9 @@ const pickScore = (ev: any) => {
   return 0;
 };
 
-const getRecommendationFromScore = (score: number): { key: HireRecommendationKey; label: string } => {
+const getRecommendationFromScore = (
+  score: number
+): { key: HireRecommendationKey; label: string } => {
   if (score >= 0 && score <= 49)
     return { key: "NO_RECOMENDAR_CONTRATACION", label: "NO RECOMENDAR CONTRATACIÓN" };
 
@@ -266,17 +268,26 @@ const EvaluationsHistory: React.FC<EvaluationsHistoryProps> = ({
                 return (
                   <div
                     key={ev.id}
-                    className="rounded-3xl bg-[#0A0A0A]/70 border border-white/10 shadow-[0_22px_70px_-55px_rgba(0,0,0,0.95)] overflow-hidden"
+                    className="
+                      rounded-3xl
+                      bg-[#0A0A0A]/70
+                      border border-white/10
+                      shadow-[0_22px_70px_-55px_rgba(0,0,0,0.95)]
+                      overflow-hidden
+                    "
                   >
+                    {/* glow suave */}
                     <div className="relative p-6">
                       <div className="pointer-events-none absolute -top-24 -right-24 h-56 w-56 rounded-full bg-emerald-500/10 blur-3xl" />
 
+                      {/* HEADER */}
                       <div className="relative flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
                         <div className="min-w-0">
                           <h3 className="text-xl font-semibold text-white leading-tight">
                             {ev.candidate?.fullName ?? "Candidato sin nombre"}
                           </h3>
 
+                          {/* subtítulo */}
                           <div className="mt-1 flex flex-wrap items-center gap-2 text-xs text-white/45">
                             {ev.candidate?.programNameSnapshot && (
                               <span className="inline-flex items-center gap-1.5">
@@ -298,13 +309,23 @@ const EvaluationsHistory: React.FC<EvaluationsHistoryProps> = ({
                         </div>
 
                         <div
-                          className={`shrink-0 inline-flex items-center gap-2 px-4 py-2 rounded-full text-[11px] font-semibold uppercase tracking-wider ${badge.className}`}
+                          className={`
+                            shrink-0
+                            inline-flex items-center gap-2
+                            px-4 py-2
+                            rounded-full
+                            text-[11px]
+                            font-semibold
+                            uppercase tracking-wider
+                            ${badge.className}
+                          `}
                         >
                           {badge.icon}
                           <span>{badge.text}</span>
                         </div>
                       </div>
 
+                      {/* KPIs */}
                       <div className="relative mt-5 grid grid-cols-1 sm:grid-cols-2 gap-4">
                         <div className="rounded-2xl bg-white/[0.03] border border-white/10 p-4">
                           <p className="text-[10px] font-semibold uppercase tracking-widest text-white/45 mb-2">
@@ -324,14 +345,14 @@ const EvaluationsHistory: React.FC<EvaluationsHistoryProps> = ({
                         </div>
                       </div>
 
+                      {/* Resumen */}
                       <p className="relative mt-5 text-sm text-white/55 leading-relaxed line-clamp-3">
                         {ev.aiOverallComment}
                       </p>
 
+                      {/* Footer */}
                       <div className="relative mt-5 pt-4 border-t border-white/10 flex items-center justify-between gap-3">
-                        <p className="text-[11px] text-white/35 font-mono">
-                          ID: {ev.id.slice(0, 8)}…
-                        </p>
+                        <p className="text-[11px] text-white/35 font-mono">ID: {ev.id.slice(0, 8)}…</p>
 
                         <div className="flex items-center gap-3">
                           {ev.aiReportDriveFileId && (
@@ -339,7 +360,18 @@ const EvaluationsHistory: React.FC<EvaluationsHistoryProps> = ({
                               href={`https://drive.google.com/file/d/${ev.aiReportDriveFileId}/view`}
                               target="_blank"
                               rel="noreferrer"
-                              className="inline-flex items-center gap-2 px-3 py-2 rounded-xl text-[11px] font-semibold uppercase tracking-widest bg-white/[0.04] border border-white/10 text-white/75 hover:bg-white/[0.07]"
+                              className="
+                                inline-flex items-center gap-2
+                                px-3 py-2
+                                rounded-xl
+                                text-[11px]
+                                font-semibold
+                                uppercase tracking-widest
+                                bg-white/[0.04]
+                                border border-white/10
+                                text-white/75
+                                hover:bg-white/[0.07]
+                              "
                             >
                               <Download className="w-3.5 h-3.5" />
                               PDF en Drive

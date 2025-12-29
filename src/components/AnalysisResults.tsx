@@ -14,7 +14,7 @@ import {
   Sparkles,
   Clock,
 } from "lucide-react";
-import { AnalysisResult, InterviewData } from "../types";
+import type { AnalysisResult, InterviewData } from "../types";
 import GaugeChart from "./GaugeChart";
 import ComparativeBars from "./ComparativeBars";
 import { generateAnalysisPdfFromData } from "../services/pdfReport";
@@ -37,10 +37,10 @@ const normalize = (s: string) =>
     .trim();
 
 /**
- * Nivel de riesgo (si lo sigues mostrando)
+ * Nivel de riesgo robusto:
  * - result.overallRiskLevel
  * - result.aiRawJson.overallRiskLevel
- * - fallback por texto
+ * - fallback por texto del veredicto
  */
 const getEffectiveRiskLevel = (result: any): RiskLevel => {
   const direct = result?.overallRiskLevel;
@@ -51,7 +51,12 @@ const getEffectiveRiskLevel = (result: any): RiskLevel => {
 
   const v = normalize(result?.finalVerdict ?? "");
 
-  if (v.includes("rechazar") || v.includes("no recomendar") || v.includes("no recomend") || v.includes("alto"))
+  if (
+    v.includes("rechazar") ||
+    v.includes("no recomendar") ||
+    v.includes("no recomend") ||
+    v.includes("alto")
+  )
     return "Alto";
 
   if (v.includes("precaucion") || v.includes("con precaucion") || v.includes("medio"))
@@ -60,21 +65,22 @@ const getEffectiveRiskLevel = (result: any): RiskLevel => {
   return "Bajo";
 };
 
-const getRiskBadgeStyles = (level: RiskLevel) => {
+// Estilos del badge de riesgo (solo apariencia)
+const getRiskBadgeStyles = (level: "Bajo" | "Medio" | "Alto") => {
   switch (level) {
     case "Bajo":
       return "bg-emerald-500/10 text-emerald-300 border-emerald-500/20";
     case "Medio":
-      return "bg-amber-500/10 text-amber-300 border border-amber-500/20";
+      return "bg-amber-500/10 text-amber-300 border-amber-500/20";
     case "Alto":
-      return "bg-rose-500/10 text-rose-300 border border-rose-500/20";
+      return "bg-rose-500/10 text-rose-300 border-rose-500/20";
     default:
       return "bg-white/5 text-white/60 border-white/10";
   }
 };
 
 // =========================================================
-// ✅ NUEVO: Recomendación por overallScore (aiRawJson.overallScore)
+// ✅ RECOMENDACIÓN OBJETIVA POR SCORE
 // =========================================================
 
 type HireRecommendationKey =
@@ -83,7 +89,9 @@ type HireRecommendationKey =
   | "RECOMENDAR_CONTRATACION"
   | "CONTRATACION_INMEDIATA";
 
-const getRecommendationFromScore = (score: number): { key: HireRecommendationKey; label: string } => {
+const getRecommendationFromScore = (
+  score: number
+): { key: HireRecommendationKey; label: string } => {
   if (score >= 0 && score <= 49)
     return { key: "NO_RECOMENDAR_CONTRATACION", label: "NO RECOMENDAR CONTRATACIÓN" };
 
@@ -151,15 +159,11 @@ const MetricCard: React.FC<{
     "
   >
     <div className="flex justify-between items-start mb-2">
-      <span className="text-[11px] font-bold uppercase tracking-[0.22em] text-white/45 group-hover:text-emerald-200/80 transition-colors">
+      <span className="text-[11px] font-bold uppercase tracking-[0.22em] text-white/45">
         {label}
       </span>
 
-      {icon && (
-        <div className="text-white/35 group-hover:text-emerald-300/80 transition-colors">
-          {icon}
-        </div>
-      )}
+      {icon && <div className="text-white/35">{icon}</div>}
     </div>
 
     <div className="text-2xl font-bold text-white tracking-tight">{value}</div>
@@ -195,15 +199,30 @@ const DetailSection: React.FC<{
   </section>
 );
 
+// =========================================================
+// ✅ PROPS
+// =========================================================
+
 interface AnalysisResultsProps {
   result: AnalysisResult;
   interviewData: InterviewData;
   onReset: () => void;
+
+  // id de evaluación (para subir PDF al backend)
   evaluationId?: string;
+
+  // texto del botón reset (solo UI)
   resetLabel?: string;
+
+  // permite ocultar reset desde el padre
+  showReset?: boolean;
 }
 
 const REPORT_ELEMENT_ID = "report-to-download";
+
+// =========================================================
+// ✅ COMPONENTE PRINCIPAL
+// =========================================================
 
 const AnalysisResults: React.FC<AnalysisResultsProps> = ({
   result,
@@ -211,57 +230,70 @@ const AnalysisResults: React.FC<AnalysisResultsProps> = ({
   onReset,
   evaluationId,
   resetLabel = "Analizar otro candidato",
+  showReset = true,
 }) => {
   const [isDownloading, setIsDownloading] = useState(false);
   const { user } = useAuth();
 
-  // ✅ Tomamos overallScore preferentemente de aiRawJson (como llega en /teachers/evaluations)
-  const overallScore = useMemo(() => {
-    const raw = (result as any)?.aiRawJson?.overallScore;
-    const direct = (result as any)?.overallScore;
-    const alt = (result as any)?.aiTeachingSuitabilityScore;
+  // ✅ rol normalizado (solo UI)
+  const roleRaw = (user as any)?.role;
+  const roleNormalized = String(roleRaw ?? "").toLowerCase();
+  const isLeader = roleNormalized === "leader" || roleNormalized === "lider";
 
-    const n = Number(raw ?? direct ?? alt ?? 0);
-    if (!Number.isFinite(n)) return 0;
-    return Math.max(0, Math.min(100, n));
+  // ✅ Base “normalizada”: soporta result directo o result.aiRawJson
+  const normalized = useMemo(() => {
+    const raw = (result as any)?.aiRawJson;
+    return raw && typeof raw === "object" ? raw : result;
   }, [result]);
 
-  // ✅ Fallbacks para el resto (para que funcione tanto con análisis “en vivo” como con evaluations)
+  const overallScore = useMemo(() => {
+    const raw = Number((normalized as any)?.overallScore ?? (result as any)?.overallScore ?? 0);
+    const n = Number.isFinite(raw) ? raw : 0;
+    return Math.max(0, Math.min(100, n));
+  }, [normalized, result]);
+
   const categoryAnalyses = useMemo(
-    () => ((result as any)?.aiRawJson?.categoryAnalyses ?? (result as any)?.categoryAnalyses ?? []),
-    [result]
+    () => (Array.isArray((normalized as any)?.categoryAnalyses) ? (normalized as any).categoryAnalyses : []),
+    [normalized]
   );
 
   const executiveSummary = useMemo(
-    () => ((result as any)?.aiRawJson?.executiveSummary ?? (result as any)?.executiveSummary ?? ""),
-    [result]
+    () => String((normalized as any)?.executiveSummary ?? ""),
+    [normalized]
   );
 
   const mitigationRecommendations = useMemo(
-    () => ((result as any)?.aiRawJson?.mitigationRecommendations ?? (result as any)?.mitigationRecommendations ?? []),
-    [result]
+    () =>
+      Array.isArray((normalized as any)?.mitigationRecommendations)
+        ? (normalized as any).mitigationRecommendations
+        : [],
+    [normalized]
   );
 
   const temporalRiskFactors = useMemo(
-    () => ((result as any)?.aiRawJson?.temporalRiskFactors ?? (result as any)?.temporalRiskFactors ?? []),
-    [result]
+    () =>
+      Array.isArray((normalized as any)?.temporalRiskFactors)
+        ? (normalized as any).temporalRiskFactors
+        : [],
+    [normalized]
   );
 
   const resignationRiskWindow = useMemo(
-    () => ((result as any)?.aiRawJson?.resignationRiskWindow ?? (result as any)?.resignationRiskWindow ?? "N/A"),
-    [result]
+    () => String((normalized as any)?.resignationRiskWindow ?? "N/A"),
+    [normalized]
   );
 
-  // ✅ Recomendación + estilo por score
   const recommendation = useMemo(() => getRecommendationFromScore(overallScore), [overallScore]);
   const verdictStyle = useMemo(
     () => getVerdictStylesFromRecommendation(recommendation.key),
     [recommendation.key]
   );
 
-  // (Opcional) mantener riesgo aparte
   const effectiveRisk: RiskLevel = useMemo(() => getEffectiveRiskLevel(result as any), [result]);
 
+  // =========================================================
+  // 🔒 LÓGICA PDF (NO TOCAR)
+  // =========================================================
   const handleDownloadPDF = async () => {
     try {
       setIsDownloading(true);
@@ -299,39 +331,25 @@ const AnalysisResults: React.FC<AnalysisResultsProps> = ({
 
   return (
     <div className="max-w-7xl mx-auto space-y-10 md:space-y-12 animate-in fade-in duration-700 pb-20 font-sans">
-      <div
-        className="
-          flex justify-end
-          sticky top-24 md:top-28
-          z-50
-          pointer-events-none
-          mt-4
-        "
-      >
-        <div
-          className="
-            pointer-events-auto
-            rounded-2xl border border-white/10
-            bg-black/40 backdrop-blur-xl
-            shadow-[0_18px_70px_-55px_rgba(0,0,0,0.95)]
-            p-2
-            flex gap-3 items-center
-          "
-        >
-          <button
-            onClick={onReset}
-            className="
-              px-4 py-2
-              rounded-xl
-              text-[11px] font-extrabold uppercase tracking-[0.22em]
-              bg-white/[0.04] text-white/70
-              border border-white/10
-              hover:bg-white/[0.07] hover:text-white
-              transition-all
-            "
-          >
-            {resetLabel}
-          </button>
+      {/* ACCIONES SUPERIORES */}
+      <div className="flex justify-end sticky top-24 md:top-28 z-50 pointer-events-none mt-4">
+        <div className="pointer-events-auto rounded-2xl border border-white/10 bg-black/40 backdrop-blur-xl shadow-[0_18px_70px_-55px_rgba(0,0,0,0.95)] p-2 flex gap-3 items-center">
+          {showReset && isLeader && (
+            <button
+              onClick={onReset}
+              className="
+                px-4 py-2
+                rounded-xl
+                text-[11px] font-extrabold uppercase tracking-[0.22em]
+                bg-white/[0.04] text-white/70
+                border border-white/10
+                hover:bg-white/[0.07] hover:text-white
+                transition-all
+              "
+            >
+              {resetLabel}
+            </button>
+          )}
 
           <button
             onClick={handleDownloadPDF}
@@ -365,7 +383,9 @@ const AnalysisResults: React.FC<AnalysisResultsProps> = ({
         </div>
       </div>
 
+      {/* CONTENIDO REPORTE */}
       <div id={REPORT_ELEMENT_ID} className="space-y-10 p-4 md:p-8 bg-[#020202]">
+        {/* HERO */}
         <div className="flex flex-col items-start gap-6 border-b border-white/10 pb-8">
           <div>
             <div
@@ -415,7 +435,7 @@ const AnalysisResults: React.FC<AnalysisResultsProps> = ({
             </div>
           </div>
 
-          {/* ✅ Veredicto por score (colores según tu regla) */}
+          {/* VEREDICTO (objetivo por score + veredicto textual como apoyo) */}
           <div
             className={`
               relative
@@ -444,7 +464,7 @@ const AnalysisResults: React.FC<AnalysisResultsProps> = ({
 
             <div className="relative z-10">
               <p className="text-[10px] font-extrabold text-white/80 uppercase tracking-[0.22em] mb-1">
-                Recomendación
+                Recomendación (por score)
               </p>
 
               <p className="text-lg md:text-xl font-normal text-white/90 leading-relaxed">
@@ -453,11 +473,18 @@ const AnalysisResults: React.FC<AnalysisResultsProps> = ({
 
               <p className="mt-2 text-[11px] text-white/70">
                 Score base: <span className="font-semibold">{Math.round(overallScore)}</span>/100
+                {result.finalVerdict ? (
+                  <>
+                    {" "}
+                    • Veredicto IA: <span className="font-semibold">{result.finalVerdict}</span>
+                  </>
+                ) : null}
               </p>
             </div>
           </div>
         </div>
 
+        {/* RESUMEN CUANTITATIVO */}
         <DetailSection title="Resumen cuantitativo">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
             <MetricCard
@@ -497,6 +524,7 @@ const AnalysisResults: React.FC<AnalysisResultsProps> = ({
           </div>
         </DetailSection>
 
+        {/* MAPA DE AJUSTE */}
         <DetailSection title="Mapa de ajuste y cohesión">
           <div className="grid lg:grid-cols-2 gap-10 items-start">
             <div className="space-y-6">
@@ -525,6 +553,7 @@ const AnalysisResults: React.FC<AnalysisResultsProps> = ({
           </div>
         </DetailSection>
 
+        {/* ANÁLISIS DIMENSIONAL */}
         <DetailSection title="Análisis dimensional profundo">
           <div className="space-y-4">
             {categoryAnalyses.map((analysis: any) => (
@@ -579,7 +608,9 @@ const AnalysisResults: React.FC<AnalysisResultsProps> = ({
                       <p className="text-[11px] font-extrabold uppercase tracking-[0.22em] text-white/40 mb-1">
                         Hallazgos clave
                       </p>
-                      <p className="text-sm text-white/75 leading-relaxed">{analysis.reporteAnalitico}</p>
+                      <p className="text-sm text-white/75 leading-relaxed">
+                        {analysis.reporteAnalitico}
+                      </p>
                     </div>
 
                     <div className="p-4 rounded-2xl bg-emerald-500/5 border border-emerald-500/10">
@@ -595,7 +626,9 @@ const AnalysisResults: React.FC<AnalysisResultsProps> = ({
                       <p className="text-[11px] font-extrabold uppercase tracking-[0.22em] text-white/40 mb-1">
                         Observación IA
                       </p>
-                      <p className="text-sm text-white/55 italic">"{analysis.observacionesCorregidas}"</p>
+                      <p className="text-sm text-white/55 italic">
+                        "{analysis.observacionesCorregidas}"
+                      </p>
                     </div>
 
                     <div className="p-4 rounded-2xl bg-amber-500/5 border border-amber-500/10">
@@ -611,6 +644,7 @@ const AnalysisResults: React.FC<AnalysisResultsProps> = ({
           </div>
         </DetailSection>
 
+        {/* RECOMENDACIONES */}
         <div className="grid md:grid-cols-2 gap-8 pt-2">
           <DetailSection title="Plan de mitigación de riesgos">
             {mitigationRecommendations.length > 0 ? (
@@ -648,12 +682,14 @@ const AnalysisResults: React.FC<AnalysisResultsProps> = ({
                 Indicadores detectados
               </p>
 
-              {temporalRiskFactors && temporalRiskFactors.length > 0 ? (
+              {temporalRiskFactors.length > 0 ? (
                 <div className="flex flex-wrap gap-2">
                   {temporalRiskFactors.map((factor: string, i: number) => (
                     <span
                       key={i}
-                      className="px-3 py-1 rounded-full text-[11px] bg-white/[0.04] border border-white/10 text-white/55"
+                      className="px-3 py-1 rounded-full text-[11px]
+                                 bg-white/[0.04] border border-white/10
+                                 text-white/55"
                     >
                       {factor}
                     </span>
