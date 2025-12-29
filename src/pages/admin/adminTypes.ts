@@ -137,7 +137,7 @@ export interface AdminAuditEvent {
 }
 
 /** Estado estándar de decisión */
-export type AdminDecisionStatus = "PENDING" | "APPROVED" | "REJECTED";
+export type AdminDecisionStatus = "PENDIENTE" | "APROBADO" | "RECHAZADO";
 
 /** Decisión de un coordinador sobre una evaluación */
 export interface CoordinatorDecision {

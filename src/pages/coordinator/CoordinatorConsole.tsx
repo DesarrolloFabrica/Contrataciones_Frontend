@@ -20,78 +20,7 @@ import { useEvaluationDetail } from "./hooks/useEvaluationDetail";
 import EvaluationsListPanel from "./components/EvaluationsListPanel";
 import EvaluationDetailPanel from "./components/EvaluationDetailPanel";
 
-import type { CandidateGroup, DetailTabKey, LocalDecision } from "./types";
-import { getCandidateKey } from "./utils/candidateKey";
-
-import { getTeacherEvaluationById } from "../../services/teachersService";
-
-import type { AnalysisResult } from "../../types";
-import {
-  buildAverageAnalysis,
-  computeVariability,
-} from "./utils/analysisAggregate";
-
-function normalizeDoc(raw: any): string {
-  // ✅ Normaliza: deja solo dígitos (evita "1.234.567" vs "1234567")
-  const s = (raw ?? "").toString().trim();
-  return s.replace(/\D/g, "");
-}
-
-/*function groupByCandidate(
-  evaluations: import("../../types").TeacherEvaluationSummary[]
-): CandidateGroup[] {
-  // key estable -> grupo
-  const map = new Map<
-    string,
-    import("../../types").TeacherEvaluationSummary[]
-  >();
-
-  for (const ev of evaluations) {
-    // ✅ key estable (usa doc camel/snake y fallback a nombre+escuela+programa)
-    const key = getCandidateKey(ev);
-
-    // ⚠️ IMPORTANTE: NO uses ev.id como key de fallback, porque eso duplica siempre
-    if (!map.has(key)) map.set(key, []);
-    map.get(key)!.push(ev);
-  }
-
-  const groups: CandidateGroup[] = [];
-
-  for (const [key, interviews] of map.entries()) {
-    // ✅ ordena entrevistas (más reciente primero)
-    const sorted = [...interviews].sort(
-      (a, b) =>
-        new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
-    );
-
-    const latest = sorted[0];
-
-    // ✅ doc para mostrar (si viene) - normalizado
-    const docDisplay =
-      normalizeDoc(latest.candidate?.documentNumber) ||
-      normalizeDoc((latest.candidate as any)?.document_number) ||
-      "";
-
-    groups.push({
-      key,
-      documentNumber: docDisplay,
-      candidateName: latest.candidate?.fullName ?? "Sin nombre",
-      school: latest.candidate?.schoolNameSnapshot ?? "",
-      program: latest.candidate?.programNameSnapshot ?? "",
-      interviews: sorted,
-      latest,
-    });
-  }
-
-  // ✅ ordena candidatos por su última entrevista
-  groups.sort(
-    (a, b) =>
-      new Date(b.latest.createdAt).getTime() -
-      new Date(a.latest.createdAt).getTime()
-  );
-
-  return groups;
-}*/
+import type { DetailTabKey, LocalDecision } from "./types";
 
 const CoordinatorConsole: React.FC = () => {
   const { user } = useAuth();
@@ -101,17 +30,7 @@ const CoordinatorConsole: React.FC = () => {
   // -----------------------------
   // 1) Hook lista
   // -----------------------------
-  const [schoolFilter, setSchoolFilter] = useState<string>("");
-  const [programFilter, setProgramFilter] = useState<string>("");
-
-  // ✅ orgId (ajústalo a como lo tengas guardado en user)
-  const orgId = (user as any)?.orgId ?? (user as any)?.organizationId ?? null;
-
-  const evals = useCoordinatorEvaluations({
-    orgId,
-    schoolId: schoolFilter || null,
-    programId: programFilter || null,
-  });
+  const evals = useCoordinatorEvaluations();
 
   // -----------------------------
   // 2) Hook detalle
@@ -125,73 +44,23 @@ const CoordinatorConsole: React.FC = () => {
   });
 
   // -----------------------------
-  // 3) Tabs panel derecho
+  // 3) Tabs panel derecho (✅ ahora: DECISION | AI | NOTES)
   // -----------------------------
-  const [selectedCandidateKey, setSelectedCandidateKey] = useState<
-    string | null
-  >(null);
-  const [detailTab, setDetailTab] = useState<DetailTabKey>("AI");
-
-  // ✅ Solo una vista: detalle (ya no existe SECOND)
-  const [showDetail, setShowDetail] = useState(false);
+  const [detailTab, setDetailTab] = useState<DetailTabKey>("DECISION");
 
   // -----------------------------
-  // 4) Resumen IA promedio (por candidato)
+  // 3.1) NUEVO: notas + criterios (para NotesTab)
   // -----------------------------
-  const [avgLoading, setAvgLoading] = useState(false);
-  const [avgError, setAvgError] = useState<string | null>(null);
-  const [avgAnalysis, setAvgAnalysis] = useState<AnalysisResult | null>(null);
-  const [variabilityInfo, setVariabilityInfo] = useState<any>(null);
-
-  const computeAvgForSelectedCandidate = async (group: CandidateGroup) => {
-    try {
-      setAvgLoading(true);
-      setAvgError(null);
-      setAvgAnalysis(null);
-      setVariabilityInfo(null);
-
-      const interviews = group?.interviews ?? [];
-      if (interviews.length < 1) {
-        setAvgError("Este candidato no tiene entrevistas.");
-        return;
-      }
-
-      // ✅ Limitamos para no explotar costo/tiempo
-      const maxToUse = 6;
-      const slice = interviews.slice(0, maxToUse);
-
-      const details = await Promise.all(
-        slice.map(async (ev) => {
-          const detail = await getTeacherEvaluationById(ev.id);
-          return (detail?.aiRawJson as AnalysisResult) ?? null;
-        })
-      );
-
-      const analyses = details.filter(Boolean) as AnalysisResult[];
-
-      if (!analyses.length) {
-        setAvgError("No hay reportes IA guardados para este candidato.");
-        return;
-      }
-
-      // ✅ Promedio + variabilidad
-      const avg = buildAverageAnalysis(analyses);
-      const variability = computeVariability(analyses);
-
-      setAvgAnalysis(avg);
-      setVariabilityInfo(variability);
-    } catch (e) {
-      console.error(e);
-      setAvgError(
-        e instanceof Error ? e.message : "No se pudo consolidar el resumen IA."
-      );
-    } finally {
-      setAvgLoading(false);
-    }
-  };
+  const [notes, setNotes] = useState("");
+  const [criteria, setCriteria] = useState<Record<string, boolean>>({
+    docs_ok: false,
+    profile_fit: false,
+    risk_ok: false,
+    communication_ok: false,
+  });
 
   // -----------------------------
-  // 5) Filtros obligatorios (Escuela + Programa)
+  // 4) Filtros obligatorios (Escuela + Programa)
   // -----------------------------
   const [schoolFilter, setSchoolFilter] = useState<string>("");
   const [programFilter, setProgramFilter] = useState<string>("");
@@ -220,7 +89,7 @@ const CoordinatorConsole: React.FC = () => {
   }, [evals.evaluations, schoolFilter]);
 
   // -----------------------------
-  // 6) Logout
+  // 5) Logout
   // -----------------------------
   const handleLogout = () => {
     localStorage.removeItem("token");
@@ -229,91 +98,92 @@ const CoordinatorConsole: React.FC = () => {
   };
 
   // -----------------------------
-  // 7) Resets al cambiar scope
+  // 6) Resets al cambiar scope
   // -----------------------------
   useEffect(() => {
     setProgramFilter("");
     evals.setSearch("");
-    setDetailTab("AI");
+    setDetailTab("DECISION");
     detail.clearSelection();
-    setShowDetail(false);
 
-    // Resumen promedio
-    setAvgLoading(false);
-    setAvgError(null);
-    setAvgAnalysis(null);
-    setVariabilityInfo(null);
+    // ✅ si cambias escuela, las notas/criterios se reinician
+    setNotes("");
+    setCriteria({
+      docs_ok: false,
+      profile_fit: false,
+      risk_ok: false,
+      communication_ok: false,
+    });
 
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [schoolFilter]);
 
   useEffect(() => {
     evals.setSearch("");
-    setDetailTab("AI");
+    setDetailTab("DECISION");
     detail.clearSelection();
-    setShowDetail(false);
 
-    // Resumen promedio
-    setAvgLoading(false);
-    setAvgError(null);
-    setAvgAnalysis(null);
-    setVariabilityInfo(null);
+    // ✅ si cambias programa, reinicia notas/criterios
+    setNotes("");
+    setCriteria({
+      docs_ok: false,
+      profile_fit: false,
+      risk_ok: false,
+      communication_ok: false,
+    });
 
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [programFilter]);
 
   // -----------------------------
-  // 8) Filtrado final
+  // 7) Filtrado final
   // -----------------------------
+  const filteredEvaluations = useMemo(() => {
+    if (!schoolFilter || !programFilter) return [];
 
-  const groupedCandidates = useMemo(() => {
-  // Si backend aún no trae grupos, no hay nada que mostrar
-  if (!evals.groups?.length) return [];
+    let base = evals.evaluations;
 
-  // Adaptador: backend groups -> CandidateGroup (lo que tu UI ya usa)
-  return evals.groups.map((g) => {
-    const latestId = g.latest?.id ?? "";
+    // scope
+    base = base.filter((ev) => {
+      const s = ev.candidate?.schoolNameSnapshot?.trim() ?? "";
+      const p = ev.candidate?.programNameSnapshot?.trim() ?? "";
+      return s === schoolFilter && p === programFilter;
+    });
 
-    return {
-      key: g.candidateId, // key estable
-      documentNumber: "", // por ahora vacío
-      candidateName: g.candidateName,
-      school: g.schoolName ?? "",
-      program: g.programName ?? "",
-      interviews: [], // si tu UI no lo usa para pintar, puede ir vacío
-      latest: {
-        id: latestId,
-        createdAt: g.latest?.createdAt ?? new Date().toISOString(),
-        aiTeachingSuitabilityScore: g.latest?.aiTeachingSuitabilityScore ?? 0,
-        aiFinalRecommendation: g.latest?.aiFinalRecommendation ?? "",
-        coordinatorDecisionStatus: g.latest?.coordinatorDecisionStatus ?? "PENDING",
-        candidate: {
-          fullName: g.candidateName,
-          schoolNameSnapshot: g.schoolName ?? null,
-          programNameSnapshot: g.programName ?? null,
-        },
-      },
-      interviewsCount: g.interviewsCount ?? 0, // si tu CandidateGroup lo tiene
-    } as any;
-  });
-}, [evals.groups]);
+    // search
+    const q = evals.search.trim().toLowerCase();
+    if (q) {
+      base = base.filter((ev) => {
+        const name = ev.candidate?.fullName?.toLowerCase() ?? "";
+        const school = ev.candidate?.schoolNameSnapshot?.toLowerCase() ?? "";
+        const program = ev.candidate?.programNameSnapshot?.toLowerCase() ?? "";
+        return name.includes(q) || school.includes(q) || program.includes(q);
+      });
+    }
 
+    // decision filter
+    if (evals.decisionFilter !== "ALL") {
+      base = base.filter((ev) => {
+        const status =
+          evals.localDecisions[ev.id] ??
+          ((ev.coordinatorDecisionStatus as LocalDecision | undefined) ??
+            "PENDIENTE");
+        return status === evals.decisionFilter;
+      });
+    }
 
-
-  const selectedCandidateGroup = useMemo(() => {
-    if (!selectedCandidateKey) return null;
-    return groupedCandidates.find((g: any) => g.key === selectedCandidateKey) ?? null;
-  }, [groupedCandidates, selectedCandidateKey]);
-
-  // ✅ Cuando cambia el candidato, recalculamos promedio + variabilidad
-  useEffect(() => {
-    if (!selectedCandidateGroup) return;
-    computeAvgForSelectedCandidate(selectedCandidateGroup);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectedCandidateGroup?.key]);
+    return base;
+  }, [
+    evals.evaluations,
+    evals.search,
+    evals.decisionFilter,
+    evals.localDecisions,
+    schoolFilter,
+    programFilter,
+  ]);
 
   // -----------------------------
-  // 9) UI states
+  // 8) UI states
   // -----------------------------
   const showLoading = evals.loading;
   const showError = !evals.loading && !!evals.error;
@@ -360,8 +230,8 @@ const CoordinatorConsole: React.FC = () => {
               </span>
             </h2>
             <p className="text-sm md:text-base text-gray-400 font-light leading-relaxed">
-              Para escalar bien, este panel obliga a seleccionar <b>Escuela</b>{" "}
-              y <b>Programa</b> antes de listar evaluaciones.
+              Para escalar bien, este panel obliga a seleccionar <b>Escuela</b> y{" "}
+              <b>Programa</b> antes de listar evaluaciones.
             </p>
           </div>
         </header>
@@ -385,19 +255,17 @@ const CoordinatorConsole: React.FC = () => {
           <>
             {/* MÉTRICAS RÁPIDAS */}
             <section className="grid grid-cols-1 md:grid-cols-3 gap-5 mb-6">
-              <div className="bg-[#1F1F1F]/30 border border-white/10 rounded-3xl px-5 py-4 flex flex-col justify-between shadow-lg">
+              <div className="bg-[#050505] border border-white/10 rounded-3xl px-5 py-4 flex flex-col justify-between shadow-lg">
                 <div className="flex items-center justify-between mb-4">
                   <span className="text-[11px] uppercase tracking-widest text-gray-500">
                     Evaluaciones Totales
                   </span>
                   <FileText className="w-4 h-4 text-emerald-400" />
                 </div>
-                <p className="text-3xl font-black text-white">
-                  {metrics.total}
-                </p>
+                <p className="text-3xl font-black text-white">{metrics.total}</p>
               </div>
 
-              <div className="bg-[#1F1F1F]/30 border border-white/10 rounded-3xl px-5 py-4 flex flex-col justify-between shadow-lg">
+              <div className="bg-[#050505] border border-white/10 rounded-3xl px-5 py-4 flex flex-col justify-between shadow-lg">
                 <div className="flex items-center justify-between mb-4">
                   <span className="text-[11px] uppercase tracking-widest text-gray-500">
                     Puntaje Global Promedio
@@ -410,7 +278,7 @@ const CoordinatorConsole: React.FC = () => {
                 </p>
               </div>
 
-              <div className="bg-[#1F1F1F]/30 border border-white/10 rounded-3xl px-5 py-4 flex flex-col justify-between shadow-lg">
+              <div className="bg-[#050505] border border-white/10 rounded-3xl px-5 py-4 flex flex-col justify-between shadow-lg">
                 <div className="flex items-center justify-between mb-4">
                   <span className="text-[11px] uppercase tracking-widest text-gray-500">
                     Próxima Fase
@@ -418,14 +286,13 @@ const CoordinatorConsole: React.FC = () => {
                   <UserCheck className="w-4 h-4 text-emerald-300" />
                 </div>
                 <p className="text-xs text-gray-400">
-                  Esto evita “listas infinitas” y prepara el terreno para
-                  filtros backend.
+                  Esto evita “listas infinitas” y prepara el terreno para filtros backend.
                 </p>
               </div>
             </section>
 
             {/* LISTA + DETALLE */}
-            <section className="flex flex-col gap-6">
+            <section className="grid grid-cols-1 lg:grid-cols-2 gap-6">
               <EvaluationsListPanel
                 schoolFilter={schoolFilter}
                 setSchoolFilter={setSchoolFilter}
@@ -434,75 +301,53 @@ const CoordinatorConsole: React.FC = () => {
                 schoolOptions={schoolOptions}
                 programOptions={programOptions}
                 mustChooseScope={mustChooseScope}
-                groupedCandidates={groupedCandidates}
+                filteredEvaluations={filteredEvaluations}
                 selectedId={detail.selectedId}
                 search={evals.search}
                 setSearch={evals.setSearch}
                 decisionFilter={evals.decisionFilter}
                 setDecisionFilter={evals.setDecisionFilter}
                 localDecisions={evals.localDecisions}
-                onSelectEvaluation={(candidateKey, evaluationId) => {
-                  setSelectedCandidateKey(candidateKey);
-                  detail.handleSelectEvaluation(evaluationId);
-                  setDetailTab("AI");
-                  // no forzamos mostrar panel; depende del botón
-                }}
-                onOpenDetail={(candidateKey, evaluationId) => {
-                  setSelectedCandidateKey(candidateKey);
-                  setShowDetail(true);
-                  detail.handleSelectEvaluation(evaluationId);
-                  setDetailTab("AI");
-                }}
-                // ✅ Antes era “SECOND”; ahora abrimos igual el detalle
-                // porque la comparativa se hace inline en InterviewsTab
-                onOpenSecond={(candidateKey, evaluationId) => {
-                  setSelectedCandidateKey(candidateKey);
-                  setShowDetail(true);
-                  detail.handleSelectEvaluation(evaluationId);
-                  setDetailTab("INTERVIEWS"); // opcional: te mando directo a entrevistas
+                onSelectEvaluation={(id) => {
+                  detail.handleSelectEvaluation(id);
+                  setDetailTab("DECISION");
+
+                  // ✅ al cambiar evaluación, limpia notas/criterios
+                  setNotes("");
+                  setCriteria({
+                    docs_ok: false,
+                    profile_fit: false,
+                    risk_ok: false,
+                    communication_ok: false,
+                  });
                 }}
               />
 
-              {showDetail && (
-                <EvaluationDetailPanel
-                  selectedId={detail.selectedId}
-                  selectedDetail={detail.selectedDetail}
-                  loadingDetail={detail.loadingDetail}
-                  onExportPdf={detail.exportPdf}
-                  detailTab={detailTab}
-                  setDetailTab={setDetailTab}
-                  decision={detail.decision}
-                  decisionComment={detail.decisionComment}
-                  setDecisionComment={detail.setDecisionComment}
-                  onDecisionCommentBlur={detail.onDecisionCommentBlur}
-                  onApplyDecision={detail.applyDecision}
-                  // ✅ ya no existe comparación “vista aparte”
-                  onOpenComparison={() => setDetailTab("INTERVIEWS")}
-                  // NOTES
-                  notes={detail.notes}
-                  setNotes={detail.setNotes}
-                  criteria={detail.criteria}
-                  setCriteria={detail.setCriteria}
-                  // VALIDACIÓN + SUBMIT
-                  canSubmitDecision={detail.canSubmitDecision}
-                  missingReasons={detail.missingReasons}
-                  onSubmitDecision={detail.submitDecisionToAdmin}
-                  // ENTREVISTAS
-                  candidateGroup={selectedCandidateGroup}
-                  onOpenInterview={(evaluationId) => {
-                    navigate(
-                      `/coordinator/evaluations/${encodeURIComponent(
-                        evaluationId
-                      )}`
-                    );
-                  }}
-                  // Resumen IA Promedio
-                  avgAnalysis={avgAnalysis}
-                  avgLoading={avgLoading}
-                  avgError={avgError}
-                  variabilityInfo={variabilityInfo}
-                />
-              )}
+              <EvaluationDetailPanel
+                selectedId={detail.selectedId}
+                selectedDetail={detail.selectedDetail}
+                loadingDetail={detail.loadingDetail}
+                onExportPdf={detail.exportPdf}
+                detailTab={detailTab}
+                setDetailTab={setDetailTab}
+                decision={detail.decision}
+                decisionComment={detail.decisionComment}
+                setDecisionComment={detail.setDecisionComment}
+                onDecisionCommentBlur={detail.onDecisionCommentBlur}
+                onApplyDecision={detail.applyDecision}
+
+                // ✅ NOTES
+                notes={detail.notes}
+                setNotes={detail.setNotes}
+                criteria={detail.criteria}
+                setCriteria={detail.setCriteria}
+
+                // ✅ VALIDACIÓN + SUBMIT
+                canSubmitDecision={detail.canSubmitDecision}
+                missingReasons={detail.missingReasons}
+                onSubmitDecision={detail.submitDecisionToAdmin}
+              />
+
             </section>
           </>
         )}

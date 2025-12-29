@@ -1,16 +1,10 @@
 // src/pages/coordinator/types.ts
-import type { TeacherEvaluationSummary } from "../../types";
+
 // ✅ Tabs del panel derecho
-export type DetailTabKey =
-  | "AI"
-  | "INTERVIEWS"
-  | "DECISION"
-  | "AUDIT"
-  | "TECH"
-  | "NOTES";
+export type DetailTabKey = "DECISION" | "AI" | "NOTES" | "AUDIT" | "TECH";
 
 // ✅ Decisión local coordinador
-export type LocalDecision = "PENDING" | "APPROVED" | "REJECTED";
+export type LocalDecision = "PENDIENTE" | "APROBADO" | "RECHAZADO";
 
 // ✅ Filtro de estado en la lista
 export type DecisionFilter = "ALL" | LocalDecision;
@@ -42,24 +36,6 @@ export const DEFAULT_CRITERIA: CoordinatorCriteria = {
 export type CoordinatorNotes = {
   notes: string;
   criteria: CoordinatorCriteria;
-};
-
-export type CandidateGroup = {
-  // ✅ key interna estable (para agrupar y seleccionar)
-  key: string;
-
-  // ✅ lo que muestras como "CC" (puede ser vacío si no llegó)
-  documentNumber: string;
-
-  candidateName: string;
-  school: string;
-  program: string;
-
-  // todas las entrevistas del candidato
-  interviews: TeacherEvaluationSummary[];
-
-  // la entrevista más reciente
-  latest: TeacherEvaluationSummary;
 };
 
 // ✅ Guardado por evaluación

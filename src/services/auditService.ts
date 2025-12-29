@@ -1,5 +1,12 @@
 // src/services/auditService.ts
-import type { AuditActor } from "../types";
+
+// Lo que ya usa tu AuthContext:
+export interface AuditActor {
+  id: string;
+  name: string;
+  email: string;
+  role: string; // "admin" | "coordinator" | "leader"
+}
 
 export interface AuditEvent {
   id: string;
@@ -11,12 +18,19 @@ export interface AuditEvent {
 
 const STORAGE_KEY = "cun-audit-log";
 
+// 👉 función segura para generar IDs en navegador
 function generateId(): string {
   const c = (globalThis as any).crypto;
-  if (c && typeof c.randomUUID === "function") return c.randomUUID();
+  if (c && typeof c.randomUUID === "function") {
+    return c.randomUUID();
+  }
+  // fallback por si acaso
   return `evt_${Date.now()}_${Math.random().toString(16).slice(2)}`;
 }
 
+/**
+ * Añade un evento de auditoría al almacenamiento local.
+ */
 export function auditAppend(input: {
   type: string;
   actor: AuditActor;
@@ -37,6 +51,7 @@ export function auditAppend(input: {
     const list: AuditEvent[] = raw ? JSON.parse(raw) : [];
     list.push(evt);
     localStorage.setItem(STORAGE_KEY, JSON.stringify(list));
+    // console.log("[audit] evento guardado", evt);
   } catch (err) {
     console.warn("No se pudo escribir en el log de auditoría", err, evt);
   }

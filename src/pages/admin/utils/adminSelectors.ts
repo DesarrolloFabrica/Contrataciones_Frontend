@@ -41,12 +41,12 @@ export const safeDateMs = (iso?: string | null) => {
  */
 export const normalizeDecisionStatus = (
   v: any,
-  fallback: AdminDecisionStatus = "PENDING"
+  fallback: AdminDecisionStatus = "PENDIENTE"
 ): AdminDecisionStatus => {
   const s = String(v ?? "").trim().toUpperCase();
-  if (s === "APPROVED") return "APPROVED";
-  if (s === "REJECTED") return "REJECTED";
-  if (s === "PENDING") return "PENDING";
+  if (s === "APROBADO") return "APROBADO";
+  if (s === "RECHAZADO") return "RECHAZADO";
+  if (s === "PENDIENTE") return "PENDIENTE";
   return fallback;
 };
 
@@ -70,7 +70,7 @@ export const getCoordinatorDecisionFromSummary = (
   if (anyEv?.coordinatorDecision?.status) {
     return normalizeDecisionStatus(anyEv.coordinatorDecision.status);
   }
-  return "PENDING";
+  return "PENDIENTE";
 };
 
 export const getAdminDecisionFromSummary = (
@@ -83,7 +83,7 @@ export const getAdminDecisionFromSummary = (
   if (anyEv?.adminDecision?.status) {
     return normalizeDecisionStatus(anyEv.adminDecision.status);
   }
-  return "PENDING";
+  return "PENDIENTE";
 };
 
 export const buildSchoolOptions = (evaluations: TeacherEvaluationSummary[]) => {
@@ -206,14 +206,14 @@ export const computeDecisionMetrics = (evaluations: TeacherEvaluationSummary[]) 
 
   evaluations.forEach((ev) => {
     const c = getCoordinatorDecisionFromSummary(ev);
-    if (c === "PENDING") coordPending += 1;
-    if (c === "APPROVED") coordApproved += 1;
-    if (c === "REJECTED") coordRejected += 1;
+    if (c === "PENDIENTE") coordPending += 1;
+    if (c === "APROBADO") coordApproved += 1;
+    if (c === "RECHAZADO") coordRejected += 1;
 
     const a = getAdminDecisionFromSummary(ev);
-    if (a === "PENDING") adminPending += 1;
-    if (a === "APPROVED") adminApproved += 1;
-    if (a === "REJECTED") adminRejected += 1;
+    if (a === "PENDIENTE") adminPending += 1;
+    if (a === "APROBADO") adminApproved += 1;
+    if (a === "RECHAZADO") adminRejected += 1;
   });
 
   return {

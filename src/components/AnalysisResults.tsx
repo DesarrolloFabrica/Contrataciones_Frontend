@@ -23,183 +23,111 @@ import { auditAppend } from "../services/auditService";
 import { actorFromUser } from "../services/auditActor";
 import { useAuth } from "../context/AuthContext";
 
-// =========================================================
-// ✅ UTILIDADES VISUALES (SOLO UI)
-// =========================================================
 
-// Estilos del badge de riesgo (solo apariencia)
+// --- UTILIDADES VISUALES ---
+
 const getRiskBadgeStyles = (level: "Bajo" | "Medio" | "Alto") => {
   switch (level) {
     case "Bajo":
-      return "bg-emerald-500/10 text-emerald-300 border-emerald-500/20";
+      return "bg-emerald-500/10 text-emerald-400 border-emerald-500/20";
     case "Medio":
-      return "bg-amber-500/10 text-amber-300 border-amber-500/20";
+      return "bg-amber-500/10 text-amber-400 border-amber-500/20";
     case "Alto":
-      return "bg-rose-500/10 text-rose-300 border-rose-500/20";
+      return "bg-rose-500/10 text-rose-400 border-rose-500/20";
     default:
-      return "bg-white/5 text-white/60 border-white/10";
+      return "bg-slate-500/10 text-slate-400 border-slate-500/20";
   }
 };
 
-// Estilos del veredicto (solo apariencia)
 const getVerdictStyles = (verdict: string) => {
   if (verdict.includes("Recomendada"))
     return {
-      bg: "from-[#91DC00]/80 to-[#31AB2E]/80",
-      ring: "ring-emerald-500/25",
-      iconWrap: "bg-black/25 border-white/15",
+      bg: "from-emerald-600 to-teal-600",
       icon: <CheckCircle className="w-6 h-6" />,
     };
-
   if (verdict.includes("Precaución"))
     return {
-      bg: "from-amber-500/70 to-orange-500/70",
-      ring: "ring-amber-500/25",
-      iconWrap: "bg-black/25 border-white/15",
+      bg: "from-amber-600 to-orange-600",
       icon: <AlertTriangle className="w-6 h-6" />,
     };
-
   if (verdict.includes("No Recomendar"))
     return {
-      bg: "from-rose-500/70 to-red-500/70",
-      ring: "ring-rose-500/25",
-      iconWrap: "bg-black/25 border-white/15",
+      bg: "from-rose-600 to-red-600",
       icon: <XCircle className="w-6 h-6" />,
     };
-
   return {
-    bg: "from-white/10 to-white/5",
-    ring: "ring-white/15",
-    iconWrap: "bg-black/25 border-white/15",
+    bg: "from-slate-600 to-gray-600",
     icon: <FileText className="w-6 h-6" />,
   };
 };
 
-// =========================================================
-// ✅ COMPONENTES UI (SOLO VISUAL)
-// =========================================================
+// --- COMPONENTES UI ---
 
-// Tarjeta de métrica (solo UI)
 const MetricCard: React.FC<{
   label: string;
   value: string | React.ReactNode;
   icon?: React.ReactNode;
   trend?: string;
 }> = ({ label, value, icon, trend }) => (
-  <div
-    className="
-      rounded-2xl border border-emerald-500/15 bg-white/[0.03] p-5
-      shadow-[0_18px_70px_-55px_rgba(0,0,0,0.95)]
-      ring-1 ring-white/10 backdrop-blur-sm
-      transition
-      hover:border-emerald-400/25 hover:bg-white/[0.04]
-      hover:shadow-[0_22px_90px_-60px_rgba(0,0,0,0.95)]
-    "
-  >
+  <div className="bg-[#0F0F0F] border border-white/5 rounded-2xl p-5 flex flex-col justify-between hover:border-white/10 transition-all group">
     <div className="flex justify-between items-start mb-2">
-      <span className="text-[11px] font-bold uppercase tracking-[0.22em] text-white/45">
+      <span className="text-xs font-bold uppercase tracking-wider text-gray-500 group-hover:text-emerald-400 transition-colors">
         {label}
       </span>
-
-      {icon && <div className="text-white/35">{icon}</div>}
+      {icon && (
+        <div className="text-gray-600 group-hover:text-emerald-500 transition-colors">
+          {icon}
+        </div>
+      )}
     </div>
-
     <div className="text-2xl font-bold text-white tracking-tight">{value}</div>
-
-    {trend && <div className="text-[11px] text-white/40 mt-2">{trend}</div>}
+    {trend && <div className="text-xs text-gray-400 mt-1">{trend}</div>}
   </div>
 );
 
-// Sección con header (solo UI)
 const DetailSection: React.FC<{
   title: string;
   children: React.ReactNode;
   className?: string;
 }> = ({ title, children, className }) => (
-  <section
-    className={`
-      rounded-3xl
-      border border-emerald-500/15
-      bg-white/[0.02]
-      overflow-hidden
-      shadow-[0_26px_95px_-70px_rgba(0,0,0,0.95)]
-      ring-1 ring-white/10
-      backdrop-blur-sm
-      ${className ?? ""}
-    `}
+  <div
+    className={`bg-[#0A0A0A] border border-white/5 rounded-3xl overflow-hidden ${className}`}
   >
-    <div className="px-6 py-4 border-b border-white/10 bg-white/[0.02]">
-      <h3 className="text-[11px] font-extrabold uppercase tracking-[0.22em] text-emerald-200/80">
+    <div className="px-6 py-4 border-b border-white/5 bg-white/[0.02]">
+      <h3 className="text-sm font-bold uppercase tracking-widest text-emerald-400">
         {title}
       </h3>
     </div>
-
     <div className="p-6 md:p-8">{children}</div>
-  </section>
+  </div>
 );
 
-// =========================================================
-// ✅ PROPS
-// =========================================================
 interface AnalysisResultsProps {
   result: AnalysisResult;
   interviewData: InterviewData;
   onReset: () => void;
-
-  // id de evaluación (para subir PDF al backend)
+  // nuevo: id de la evaluación guardada en el backend
   evaluationId?: string;
-
-  // texto del botón reset (solo UI)
-  resetLabel?: string;
-
-  // permite ocultar reset desde el padre si algún día lo necesitas
-  showReset?: boolean;
 }
 
 const REPORT_ELEMENT_ID = "report-to-download";
 
-// =========================================================
-// ✅ COMPONENTE PRINCIPAL
-// =========================================================
 const AnalysisResults: React.FC<AnalysisResultsProps> = ({
   result,
   interviewData,
   onReset,
   evaluationId,
-  resetLabel = "Analizar otro candidato",
-  showReset = true,
 }) => {
   const [isDownloading, setIsDownloading] = useState(false);
   const { user } = useAuth();
 
-  // ✅ Normalizamos el role sin pelear con los types (solo UI)
-  // BackendRole: "LIDER" | "COORDINADOR" | "ADMIN"
-  // Frontend Role: "leader" | "coordinator" | "admin"
-  const roleRaw = (user as any)?.role;
-  const roleNormalized = String(roleRaw ?? "").toLowerCase();
-  const isLeader = roleNormalized === "leader" || roleNormalized === "lider";
-
-  const normalizeRiskLevel = (value?: string) => {
-  const v = (value ?? "").toLowerCase();
-
-  if (v.includes("bajo")) return "Bajo";
-  if (v.includes("medio")) return "Medio";
-  if (v.includes("alto")) return "Alto";
-
-  return "N/A";
-};
-
-  // =========================================================
-  // 🔒 LÓGICA PDF (NO TOCAR)
-  // =========================================================
   const handleDownloadPDF = async () => {
     try {
       setIsDownloading(true);
       const actor = actorFromUser(user);
 
-      // genera el PDF y devuelve el Blob
+      // genera el PDF, lo descarga en el navegador y devuelve el Blob
       const pdfBlob = await generateAnalysisPdfFromData(result, interviewData);
-
       auditAppend({
         type: "REPORT_PDF_DOWNLOADED",
         actor,
@@ -207,7 +135,8 @@ const AnalysisResults: React.FC<AnalysisResultsProps> = ({
         metadata: { download: true },
       });
 
-      // si hay evaluationId, subimos al backend
+
+      // si ya tenemos el id de la evaluación, lo subimos al backend
       if (evaluationId) {
         await uploadTeacherReport(evaluationId, pdfBlob);
 
@@ -228,49 +157,49 @@ const AnalysisResults: React.FC<AnalysisResultsProps> = ({
   const verdictStyle = getVerdictStyles(result.finalVerdict);
 
   return (
-    <div className="max-w-7xl mx-auto space-y-10 md:space-y-12 animate-in fade-in duration-700 pb-20 font-sans">
-      {/* =========================================================
-          ✅ ACCIONES SUPERIORES (SOLO UI)
-         ========================================================= */}
-      <div className="flex justify-end sticky top-24 md:top-28 z-50 pointer-events-none mt-4">
-        <div className="pointer-events-auto rounded-2xl border border-white/10 bg-black/40 backdrop-blur-xl shadow-[0_18px_70px_-55px_rgba(0,0,0,0.95)] p-2 flex gap-3 items-center">
-          {/* ✅ Reset SOLO líder */}
-          {showReset && isLeader && (
-            <button
-              onClick={onReset}
-              className="
-                px-4 py-2
-                rounded-xl
-                text-[11px] font-extrabold uppercase tracking-[0.22em]
-                bg-white/[0.04] text-white/70
-                border border-white/10
-                hover:bg-white/[0.07] hover:text-white
-                transition-all
-              "
-            >
-              {resetLabel}
-            </button>
-          )}
+    <div className="max-w-7xl mx-auto space-y-12 animate-in fade-in duration-700 pb-20 font-sans">
+      {/* --- HEADER ACTIONS (Floating Top) --- */}
+      <div
+        className="
+          flex justify-end gap-3 
+          sticky 
+          top-24 md:top-28
+          z-50 
+          pointer-events-none 
+          mt-6
+        "
+      >
+        <div className="pointer-events-auto bg-[#0A0A0A]/90 backdrop-blur-md p-2 rounded-xl border border-white/10 shadow-xl flex gap-3 items-center">
+          {/* Botón: Analizar otro candidato */}
+          <button
+            onClick={onReset}
+            className="
+              px-4 py-2 
+              rounded-lg 
+              text-xs font-bold uppercase tracking-wider 
+              bg-white/5 text-gray-300 
+              hover:bg-white/10 hover:text-white 
+              transition-all
+            "
+          >
+            Analizar otro candidato
+          </button>
 
-          {/* ✅ Exportar PDF */}
+          {/* Botón: Exportar PDF */}
           <button
             onClick={handleDownloadPDF}
             disabled={isDownloading}
             className="
-              flex items-center gap-2
-              px-4 py-2
-              rounded-xl
-              text-[11px] font-extrabold uppercase tracking-[0.22em]
-              text-black
-              border border-emerald-500/20
-              shadow-[0_14px_50px_-35px_rgba(49,171,46,0.45)]
-              transition-all
-              disabled:opacity-60 disabled:cursor-wait
-              hover:brightness-110
+              flex items-center gap-2 
+              px-4 py-2 
+              bg-emerald-600 text-white 
+              text-xs font-bold uppercase tracking-wider 
+              rounded-lg 
+              hover:bg-emerald-500 
+              transition-colors 
+              shadow-lg shadow-emerald-900/20 
+              disabled:opacity-50 disabled:cursor-wait
             "
-            style={{
-              background: "linear-gradient(90deg, #91DC00, #31AB2E)",
-            }}
           >
             {isDownloading ? (
               <span className="animate-pulse">
@@ -285,54 +214,39 @@ const AnalysisResults: React.FC<AnalysisResultsProps> = ({
         </div>
       </div>
 
-      {/* =========================================================
-          ✅ CONTENIDO REPORTE (AQUÍ ESTABA EL PROBLEMA)
-         ========================================================= */}
-      <div id={REPORT_ELEMENT_ID} className="space-y-10 p-4 md:p-8 bg-[#020202]">
-        {/* =========================================================
-            ✅ HERO
-           ========================================================= */}
-        <div className="flex flex-col items-start gap-6 border-b border-white/10 pb-8">
+      <div
+        id={REPORT_ELEMENT_ID}
+        className="space-y-10 p-4 md:p-8 bg-[#020202]"
+      >
+        {/* --- HERO REPORT HEADER --- */}
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-6 border-b border-white/10 pb-8">
           <div>
-            <div
-              className="
-                inline-flex items-center gap-2
-                rounded-full px-3 py-1
-                text-[10px] md:text-[11px]
-                font-extrabold uppercase tracking-[0.22em]
-                text-emerald-200/80
-                border border-emerald-500/15
-                bg-emerald-500/10
-                shadow-[0_0_18px_-10px_rgba(16,185,129,0.25)]
-              "
-            >
-              <span className="h-1.5 w-1.5 rounded-full bg-emerald-400/80 animate-pulse" />
-              Reporte generado por IA
+            <div className="inline-flex items-center gap-2 mb-3">
+              <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+              <span className="text-xs font-mono text-emerald-400 uppercase tracking-widest">
+                Reporte Generado por IA
+              </span>
             </div>
-
-            <h1 className="mt-4 text-4xl md:text-5xl font-black text-white tracking-tight">
+            <h1 className="text-4xl md:text-5xl font-black text-white tracking-tight mb-2">
               {interviewData.candidateName}
             </h1>
-
-            <div className="mt-3 flex flex-wrap items-center gap-4 text-white/55 text-sm">
+            <div className="flex flex-wrap items-center gap-4 text-gray-400 text-sm">
               {interviewData.program && (
                 <span className="flex items-center gap-1.5">
                   <Briefcase className="w-4 h-4" /> {interviewData.program}
                 </span>
               )}
-
               {interviewData.school && (
                 <>
-                  <span className="w-1 h-1 rounded-full bg-white/20" />
+                  <span className="w-1 h-1 rounded-full bg-gray-700" />
                   <span className="flex items-center gap-1.5">
                     <Calendar className="w-4 h-4" /> {interviewData.school}
                   </span>
                 </>
               )}
-
               {interviewData.age && (
                 <>
-                  <span className="w-1 h-1 rounded-full bg-white/20" />
+                  <span className="w-1 h-1 rounded-full bg-gray-700" />
                   <span className="flex items-center gap-1.5">
                     <User className="w-4 h-4" /> {interviewData.age} años
                   </span>
@@ -341,79 +255,52 @@ const AnalysisResults: React.FC<AnalysisResultsProps> = ({
             </div>
           </div>
 
-          {/* =========================================================
-              ✅ VEREDICTO
-             ========================================================= */}
+          {/* VERDICT BADGE */}
           <div
-            className={`
-              relative
-              px-6 py-4
-              rounded-2xl
-              bg-gradient-to-br ${verdictStyle.bg}
-              ring-1 ${verdictStyle.ring}
-              shadow-[0_26px_85px_-65px_rgba(0,0,0,0.95)]
-              flex flex-col items-start gap-3
-              overflow-hidden
-            `}
+            className={`px-6 py-4 rounded-2xl bg-gradient-to-br ${verdictStyle.bg} shadow-2xl flex items-center gap-4 min-w-[260px]`}
           >
-            <div className="absolute inset-0 opacity-20 bg-[radial-gradient(circle_at_20%_0%,rgba(255,255,255,0.55)_0%,rgba(0,0,0,0)_55%)]" />
-
-            <div
-              className={`
-                relative z-10
-                p-2 rounded-full
-                ${verdictStyle.iconWrap}
-                border
-                backdrop-blur-sm
-              `}
-            >
+            <div className="p-2 bg-white/20 rounded-full backdrop-blur-sm">
               {verdictStyle.icon}
             </div>
-
-            <div className="relative z-10">
-              <p className="text-[10px] font-extrabold text-white/80 uppercase tracking-[0.22em] mb-1">
-                Veredicto final
+            <div>
+              <p className="text-[10px] font-bold text-white/80 uppercase tracking-widest mb-0.5">
+                Veredicto Final
               </p>
-              <p className="text-lg md:text-xl font-normal text-white/85 leading-relaxed">
+              <p className="text-xl font-bold text-white leading-none">
                 {result.finalVerdict}
               </p>
             </div>
           </div>
         </div>
 
-        {/* =========================================================
-            ✅ RESUMEN CUANTITATIVO
-           ========================================================= */}
-        <DetailSection title="Resumen cuantitativo">
+        {/* --- KPI DASHBOARD (VISIÓN GENERAL) --- */}
+        <DetailSection title="Resumen Cuantitativo">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
             <MetricCard
-              label="Score global"
+              label="Score Global"
               value={`${result.overallScore}/100`}
               icon={<PieChart className="w-5 h-5" />}
               trend="Puntaje ponderado de ajuste al rol"
             />
-
             <MetricCard
-              label="Nivel de riesgo"
+              label="Nivel de Riesgo"
               value={
                 <span
-                  className={`inline-flex px-2.5 py-1 rounded-lg text-sm border ${getRiskBadgeStyles(
-                    normalizeRiskLevel(result.overallRiskLevel) as any
+                  className={`inline-flex px-2 py-0.5 rounded text-sm border ${getRiskBadgeStyles(
+                    result.overallRiskLevel
                   )}`}
                 >
-                  {normalizeRiskLevel(result.overallRiskLevel)}
+                  {result.overallRiskLevel}
                 </span>
               }
               icon={<AlertTriangle className="w-5 h-5" />}
             />
-
             <MetricCard
-              label="Ventana de retención"
+              label="Ventana de Retención"
               value={result.resignationRiskWindow || "N/A"}
               icon={<Calendar className="w-5 h-5" />}
               trend="Estimación temporal de rotación"
             />
-
             <MetricCard
               label="Consistencia"
               value="Alta"
@@ -423,122 +310,112 @@ const AnalysisResults: React.FC<AnalysisResultsProps> = ({
           </div>
         </DetailSection>
 
-        {/* =========================================================
-            ✅ MAPA DE AJUSTE
-           ========================================================= */}
-        <DetailSection title="Mapa de ajuste y cohesión">
+        {/* --- MAPA DE AJUSTE Y RESUMEN EJECUTIVO --- */}
+        <DetailSection title="Mapa de Ajuste y Cohesión">
           <div className="grid lg:grid-cols-2 gap-10 items-start">
+            {/* Gauge + barras */}
             <div className="space-y-6">
               <div className="flex justify-center py-4">
-                <GaugeChart value={result.overallScore} label="Ajuste al perfil" size={220} />
+                <GaugeChart
+                  value={result.overallScore}
+                  label="Ajuste al Perfil"
+                  size={220}
+                />
               </div>
-
-              <div className="mt-2 p-4 rounded-2xl border border-white/10 bg-white/[0.03] backdrop-blur-md">
-                <h4 className="text-[11px] font-extrabold uppercase tracking-[0.22em] text-white/45 mb-3">
-                  Distribución por categoría
+              <div className="mt-2 p-4 bg-[#121212] rounded-xl border border-white/5">
+                <h4 className="text-xs font-bold uppercase tracking-wider text-gray-500 mb-3">
+                  Distribución por Categoría
                 </h4>
                 <ComparativeBars categoryAnalyses={result.categoryAnalyses} />
               </div>
             </div>
 
-            <div className="rounded-3xl border border-white/10 bg-white/[0.035] backdrop-blur-md p-6 shadow-[0_18px_70px_-55px_rgba(0,0,0,0.95)]">
-              <h4 className="text-sm font-extrabold text-white/85 mb-4 flex items-center gap-2">
-                <Sparkles className="w-4 h-4 text-emerald-300/90" />
-                Resumen ejecutivo IA
+            {/* Resumen ejecutivo IA */}
+            <div className="bg-gradient-to-br from-[#121212] to-[#0A0A0A] border border-white/5 p-6 rounded-3xl h-full flex flex-col">
+              <h4 className="text-sm font-bold text-gray-200 mb-4 flex items-center gap-2">
+                <Sparkles className="w-4 h-4 text-emerald-400" /> Resumen
+                Ejecutivo IA
               </h4>
-
-              <p className="text-sm text-white/60 leading-relaxed text-justify font-light">
+              <p className="text-sm text-gray-400 leading-relaxed text-justify font-light">
                 {result.executiveSummary}
               </p>
             </div>
           </div>
         </DetailSection>
 
-        {/* =========================================================
-            ✅ ANÁLISIS DIMENSIONAL
-           ========================================================= */}
-        <DetailSection title="Análisis dimensional profundo">
+        {/* --- ANÁLISIS DIMENSIONAL --- */}
+        <DetailSection title="Análisis Dimensional Profundo">
           <div className="space-y-4">
             {result.categoryAnalyses.map((analysis) => (
               <div
                 key={analysis.category}
-                className="
-                  group
-                  rounded-2xl overflow-hidden
-                  border border-white/10
-                  bg-white/[0.03] backdrop-blur-md
-                  hover:border-emerald-500/20
-                  transition-all duration-300
-                  shadow-[0_14px_55px_-45px_rgba(0,0,0,0.95)]
-                "
+                className="group bg-[#0A0A0A] border border-white/5 hover:border-emerald-500/30 rounded-2xl overflow-hidden transition-all duration-300"
               >
-                <div className="p-5 flex items-center justify-between bg-black/20 border-b border-white/10">
+                {/* Cabecera de la dimensión */}
+                <div className="p-5 flex items-center justify-between bg-white/[0.01]">
                   <div className="flex items-center gap-4">
                     <div
-                      className={`
-                        w-10 h-10 rounded-xl
-                        flex items-center justify-center
-                        font-black text-sm
-                        border border-white/10
-                        ${
-                          analysis.score >= 80
-                            ? "bg-emerald-500/10 text-emerald-300"
-                            : analysis.score >= 60
-                            ? "bg-amber-500/10 text-amber-300"
-                            : "bg-rose-500/10 text-rose-300"
-                        }
-                      `}
+                      className={`w-10 h-10 rounded-lg flex items-center justify-center font-bold text-sm ${
+                        analysis.score >= 80
+                          ? "bg-emerald-500/10 text-emerald-400"
+                          : analysis.score >= 60
+                          ? "bg-amber-500/10 text-amber-400"
+                          : "bg-rose-500/10 text-rose-400"
+                      }`}
                     >
                       {Math.round(analysis.score)}
                     </div>
-
                     <div>
-                      <h4 className="font-black text-white/90 text-lg">{analysis.category}</h4>
-                      <p className="text-[11px] text-white/45 uppercase tracking-[0.22em]">
+                      <h4 className="font-bold text-gray-200 text-lg">
+                        {analysis.category}
+                      </h4>
+                      <p className="text-[11px] text-gray-500 uppercase tracking-wider">
                         Análisis de profundidad por competencia
                       </p>
                     </div>
                   </div>
-
-                  <div className="text-[11px] text-white/35 font-mono hidden sm:block">
+                  <div className="text-xs text-gray-500 font-mono hidden sm:block">
                     ID: {analysis.category.substring(0, 3).toUpperCase()}
                   </div>
                 </div>
 
+                {/* Contenido de la dimensión */}
                 <div className="p-5 grid md:grid-cols-2 gap-6">
                   <div className="space-y-4">
                     <div>
-                      <p className="text-[11px] font-extrabold uppercase tracking-[0.22em] text-white/40 mb-1">
-                        Hallazgos clave
+                      <p className="text-xs font-bold uppercase text-gray-600 mb-1">
+                        Hallazgos Clave
                       </p>
-                      <p className="text-sm text-white/75 leading-relaxed">
+                      <p className="text-sm text-gray-300 leading-relaxed">
                         {analysis.reporteAnalitico}
                       </p>
                     </div>
-
-                    <div className="p-4 rounded-2xl bg-emerald-500/5 border border-emerald-500/10">
-                      <p className="text-[11px] font-extrabold uppercase tracking-[0.22em] text-emerald-200/80 mb-1">
-                        Fortalezas detectadas
+                    <div className="p-3 bg-emerald-950/10 border border-emerald-500/10 rounded-lg">
+                      <p className="text-xs font-bold uppercase text-emerald-600 mb-1">
+                        Fortalezas Detectadas
                       </p>
-                      <p className="text-xs text-white/55">{analysis.oportunidades}</p>
+                      <p className="text-xs text-gray-400">
+                        {analysis.oportunidades}
+                      </p>
                     </div>
                   </div>
 
-                  <div className="space-y-4 md:border-l md:border-white/10 md:pl-6">
+                  <div className="space-y-4 md:border-l md:border-white/5 md:pl-6">
                     <div>
-                      <p className="text-[11px] font-extrabold uppercase tracking-[0.22em] text-white/40 mb-1">
+                      <p className="text-xs font-bold uppercase text-gray-600 mb-1">
                         Observación IA
                       </p>
-                      <p className="text-sm text-white/55 italic">
+                      <p className="text-sm text-gray-400 italic">
                         "{analysis.observacionesCorregidas}"
                       </p>
                     </div>
-
-                    <div className="p-4 rounded-2xl bg-amber-500/5 border border-amber-500/10">
-                      <p className="text-[11px] font-extrabold uppercase tracking-[0.22em] text-amber-200/80 mb-1">
-                        Acción recomendada
+                    <div className="p-3 bg-amber-950/10 border border-amber-500/10 rounded-lg">
+                      <p className="text-xs font-bold uppercase text-amber-600 mb-1">
+                        Acción Recomendada
                       </p>
-                      <p className="text-xs text-white/55">{analysis.recomendaciones}</p>
+                      <p className="text-xs text-gray-400">
+                        {analysis.recomendaciones}
+                      </p>
                     </div>
                   </div>
                 </div>
@@ -547,16 +424,17 @@ const AnalysisResults: React.FC<AnalysisResultsProps> = ({
           </div>
         </DetailSection>
 
-        {/* =========================================================
-            ✅ RECOMENDACIONES
-           ========================================================= */}
+        {/* --- STRATEGIC RECOMMENDATIONS --- */}
         <div className="grid md:grid-cols-2 gap-8 pt-2">
-          <DetailSection title="Plan de mitigación de riesgos">
+          <DetailSection title="Plan de Mitigación de Riesgos">
             {result.mitigationRecommendations.length > 0 ? (
               <ul className="space-y-3">
                 {result.mitigationRecommendations.map((rec, i) => (
-                  <li key={i} className="flex gap-3 text-sm text-white/70 leading-relaxed">
-                    <span className="w-6 h-6 rounded-full bg-rose-500/10 text-rose-200/80 border border-rose-500/15 flex items-center justify-center text-xs font-black shrink-0">
+                  <li
+                    key={i}
+                    className="flex gap-3 text-sm text-gray-300 leading-relaxed"
+                  >
+                    <span className="w-5 h-5 rounded-full bg-rose-500/10 text-rose-400 flex items-center justify-center text-xs font-bold shrink-0">
                       {i + 1}
                     </span>
                     {rec}
@@ -564,44 +442,47 @@ const AnalysisResults: React.FC<AnalysisResultsProps> = ({
                 ))}
               </ul>
             ) : (
-              <div className="flex flex-col items-center justify-center h-full text-white/45 py-6">
-                <CheckCircle className="w-8 h-8 mb-2 opacity-60" />
-                <p className="text-sm">Perfil de bajo riesgo. No se requieren acciones urgentes.</p>
+              <div className="flex flex-col items-center justify-center h-full text-gray-500 py-6">
+                <CheckCircle className="w-8 h-8 mb-2 opacity-50" />
+                <p className="text-sm">
+                  Perfil de bajo riesgo. No se requieren acciones urgentes.
+                </p>
               </div>
             )}
           </DetailSection>
 
-          <DetailSection title="Factores de retención (riesgo temporal)">
-            <div className="flex items-start gap-4 mb-4 p-4 rounded-2xl bg-amber-500/5 border border-amber-500/10">
-              <Clock className="w-5 h-5 text-amber-200/80 shrink-0 mt-0.5" />
+          <DetailSection title="Factores de Retención (Riesgo Temporal)">
+            <div className="flex items-start gap-4 mb-4 p-3 rounded-lg bg-amber-500/5 border border-amber-500/10">
+              <Clock className="w-5 h-5 text-amber-400 shrink-0 mt-0.5" />
               <div>
-                <p className="text-[11px] font-extrabold uppercase tracking-[0.22em] text-amber-200/80">
-                  Ventana crítica
+                <p className="text-xs font-bold text-amber-400 uppercase">
+                  Ventana Crítica
                 </p>
-                <p className="text-sm text-white/80">{result.resignationRiskWindow}</p>
+                <p className="text-sm text-gray-200">
+                  {result.resignationRiskWindow}
+                </p>
               </div>
             </div>
-
             <div className="space-y-2">
-              <p className="text-[11px] font-extrabold uppercase tracking-[0.22em] text-white/40 mb-2">
-                Indicadores detectados
+              <p className="text-xs font-bold uppercase text-gray-600 mb-2">
+                Indicadores Detectados
               </p>
-
-              {result.temporalRiskFactors && result.temporalRiskFactors.length > 0 ? (
+              {result.temporalRiskFactors &&
+              result.temporalRiskFactors.length > 0 ? (
                 <div className="flex flex-wrap gap-2">
                   {result.temporalRiskFactors.map((factor, i) => (
                     <span
                       key={i}
-                      className="px-3 py-1 rounded-full text-[11px]
-                                 bg-white/[0.04] border border-white/10
-                                 text-white/55"
+                      className="px-3 py-1 bg-[#1A1A1A] border border-white/10 rounded-full text-xs text-gray-400"
                     >
                       {factor}
                     </span>
                   ))}
                 </div>
               ) : (
-                <p className="text-sm text-white/45 italic">No se detectaron factores de corto plazo.</p>
+                <p className="text-sm text-gray-500 italic">
+                  No se detectaron factores de corto plazo.
+                </p>
               )}
             </div>
           </DetailSection>

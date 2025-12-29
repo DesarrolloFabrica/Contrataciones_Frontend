@@ -22,42 +22,34 @@ interface EvaluationsHistoryProps {
 }
 
 const badgeForRecommendation = (verdict: string) => {
-  const v = (verdict || "").toLowerCase().trim();
-
-  // ✅ Detecta "no recomendada" solo si aparece como frase real (no por "no ..." suelto)
-  const isNotRecommended =
-    v.includes("no recomend") || // "no recomendada", "no recomendar", etc.
-    v.includes("rechaz") ||       // por si el texto viene como "rechazado"
-    v.includes("no apto") ||      // variantes comunes
-    v.includes("no es apto");
-
-  if (isNotRecommended) {
+  if (verdict.includes("Recomendada")) {
     return {
-      text: "No recomendada",
+      text: "Recomendada",
+      className:
+        "bg-emerald-500/10 text-emerald-400 border border-emerald-500/30",
+      icon: <CheckCircle2 className="w-4 h-4" />,
+    };
+  }
+  if (verdict.includes("Precaución")) {
+    return {
+      text: "Con Precaución",
+      className: "bg-amber-500/10 text-amber-400 border border-amber-500/30",
+      icon: <AlertCircle className="w-4 h-4" />,
+    };
+  }
+  if (verdict.includes("No Recomendar")) {
+    return {
+      text: "No Recomendada",
       className: "bg-rose-500/10 text-rose-400 border border-rose-500/30",
       icon: <XCircle className="w-4 h-4" />,
     };
   }
-
-  // ✅ (opcional) detectar "precaución" para un tercer estado
-  const isCaution = v.includes("precauc") || v.includes("condicion") || v.includes("reserv");
-
-  if (isCaution) {
-    return {
-      text: "Con precaución",
-      className: "bg-amber-500/10 text-amber-300 border border-amber-500/25",
-      icon: <AlertCircle className="w-4 h-4" />,
-    };
-  }
-
   return {
-    text: "Recomendada",
-    className: "bg-emerald-500/10 text-emerald-400 border border-emerald-500/30",
-    icon: <CheckCircle2 className="w-4 h-4" />,
+    text: verdict,
+    className: "bg-slate-500/10 text-slate-300 border border-slate-500/30",
+    icon: <FileText className="w-4 h-4" />,
   };
 };
-
-
 
 const EvaluationsHistory: React.FC<EvaluationsHistoryProps> = ({
   onOpenEvaluation,
@@ -231,122 +223,89 @@ const EvaluationsHistory: React.FC<EvaluationsHistoryProps> = ({
                 return (
                   <div
                     key={ev.id}
-                    className="
-                      rounded-3xl
-                      bg-[#0A0A0A]/70
-                      border border-white/10
-                      shadow-[0_22px_70px_-55px_rgba(0,0,0,0.95)]
-                      overflow-hidden
-                    "
+                    className="group rounded-3xl p-[1px] bg-gradient-to-b from-white/[0.08] to-transparent hover:from-emerald-500/30 transition-all duration-500"
                   >
-                    {/* glow suave como el “antes” */}
-                    <div className="relative p-6">
-                      <div className="pointer-events-none absolute -top-24 -right-24 h-56 w-56 rounded-full bg-emerald-500/10 blur-3xl" />
-                                
-                      {/* HEADER: nombre a la izquierda, badge a la derecha */}
-                      <div className="relative flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
-                        <div className="min-w-0">
-                          <h3 className="text-xl font-semibold text-white leading-tight">
+                    <div className="relative bg-[#050505] p-5 md:p-6 rounded-3xl overflow-hidden h-full">
+                      <div className="absolute -top-24 -right-24 w-48 h-48 bg-emerald-500/5 rounded-full blur-3xl group-hover:bg-emerald-500/10 transition-colors duration-700" />
+
+                      <div className="flex items-start justify-between gap-4 mb-4">
+                        <div>
+                          <h3 className="text-lg font-bold text-white tracking-tight">
                             {ev.candidate?.fullName ?? "Candidato sin nombre"}
                           </h3>
-                                
-                          {/* subtítulo (programa • escuela) */}
-                          <div className="mt-1 flex flex-wrap items-center gap-2 text-xs text-white/45">
+                          <div className="flex flex-wrap items-center gap-3 mt-1 text-xs text-gray-500">
                             {ev.candidate?.programNameSnapshot && (
-                              <span className="inline-flex items-center gap-1.5">
-                                <Briefcase className="w-3.5 h-3.5" />
+                              <span className="inline-flex items-center gap-1">
+                                <Briefcase className="w-3 h-3" />
                                 {ev.candidate.programNameSnapshot}
                               </span>
                             )}
-                
                             {ev.candidate?.schoolNameSnapshot && (
                               <>
-                                <span className="mx-1 text-white/25">•</span>
-                                <span className="inline-flex items-center gap-1.5">
-                                  <Calendar className="w-3.5 h-3.5" />
+                                <span className="w-1 h-1 rounded-full bg-gray-700" />
+                                <span className="inline-flex items-center gap-1">
+                                  <Calendar className="w-3 h-3" />
                                   {ev.candidate.schoolNameSnapshot}
                                 </span>
                               </>
                             )}
                           </div>
                         </div>
-                          
+
                         <div
-                          className={`
-                            shrink-0
-                            inline-flex items-center gap-2
-                            px-4 py-2
-                            rounded-full
-                            text-[11px]
-                            font-semibold
-                            uppercase tracking-wider
-                            ${badge.className}
-                          `}
+                          className={`inline-flex items-center gap-1 px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-widest ${badge.className}`}
                         >
                           {badge.icon}
                           <span>{badge.text}</span>
                         </div>
                       </div>
-                          
-                      {/* KPIs: dos tarjetas como “antes” */}
-                      <div className="relative mt-5 grid grid-cols-1 sm:grid-cols-2 gap-4">
-                        <div className="rounded-2xl bg-white/[0.03] border border-white/10 p-4">
-                          <p className="text-[10px] font-semibold uppercase tracking-widest text-white/45 mb-2">
-                            Score global
+
+                      <div className="grid grid-cols-2 gap-4 mb-4">
+                        <div className="bg-[#0A0A0A] rounded-2xl px-4 py-3 border border-white/5">
+                          <p className="text-[10px] font-bold uppercase tracking-widest text-gray-500 mb-1">
+                            Score Global
                           </p>
-                          <p className="text-3xl font-semibold text-emerald-400">
+                          <p className="text-2xl font-black text-emerald-400">
                             {Math.round(ev.aiTeachingSuitabilityScore) || 0}
-                            <span className="text-sm text-white/35 ml-1">/100</span>
+                            <span className="text-xs text-gray-500 ml-1">
+                              /100
+                            </span>
                           </p>
                         </div>
-                          
-                        <div className="rounded-2xl bg-white/[0.03] border border-white/10 p-4">
-                          <p className="text-[10px] font-semibold uppercase tracking-widest text-white/45 mb-2">
-                            Fecha evaluación
+                        <div className="bg-[#0A0A0A] rounded-2xl px-4 py-3 border border-white/5">
+                          <p className="text-[10px] font-bold uppercase tracking-widest text-gray-500 mb-1">
+                            Fecha Evaluación
                           </p>
-                          <p className="text-sm text-white/70">{dateLabel}</p>
+                          <p className="text-xs text-gray-300">{dateLabel}</p>
                         </div>
                       </div>
-                          
-                      {/* Resumen */}
-                      <p className="relative mt-5 text-sm text-white/55 leading-relaxed line-clamp-3">
+
+                      <p className="text-sm text-gray-400 leading-relaxed line-clamp-3 mb-4">
                         {ev.aiOverallComment}
                       </p>
-                          
-                      {/* Footer */}
-                      <div className="relative mt-5 pt-4 border-t border-white/10 flex items-center justify-between gap-3">
-                        <p className="text-[11px] text-white/35 font-mono">
+
+                      <div className="flex items-center justify-between gap-3 pt-3 border-t border-white/5">
+                        <p className="text-[11px] text-gray-500 font-mono">
                           ID: {ev.id.slice(0, 8)}…
                         </p>
-                          
-                        <div className="flex items-center gap-3">
+
+                        <div className="flex items-center gap-2">
                           {ev.aiReportDriveFileId && (
                             <a
                               href={`https://drive.google.com/file/d/${ev.aiReportDriveFileId}/view`}
                               target="_blank"
                               rel="noreferrer"
-                              className="
-                                inline-flex items-center gap-2
-                                px-3 py-2
-                                rounded-xl
-                                text-[11px]
-                                font-semibold
-                                uppercase tracking-widest
-                                bg-white/[0.04]
-                                border border-white/10
-                                text-white/75
-                                hover:bg-white/[0.07]
-                              "
+                              className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg text-[11px] font-bold uppercase tracking-widest bg-white/5 text-gray-200 hover:bg-white/10 transition-colors"
                             >
-                              <Download className="w-3.5 h-3.5" />
+                              <Download className="w-3 h-3" />
                               PDF en Drive
                             </a>
                           )}
-                
+
                           <button
                             type="button"
                             onClick={() => onOpenEvaluation(ev.id)}
-                            className="text-[11px] font-semibold uppercase tracking-widest text-emerald-400 hover:text-emerald-300"
+                            className="text-[11px] font-bold uppercase tracking-widest text-emerald-400 hover:text-emerald-300"
                           >
                             Ver detalle
                           </button>
@@ -355,8 +314,6 @@ const EvaluationsHistory: React.FC<EvaluationsHistoryProps> = ({
                     </div>
                   </div>
                 );
-                console.log("VERDICT:", ev.aiFinalRecommendation);
-
               })}
             </div>
           )}

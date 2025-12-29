@@ -6,18 +6,15 @@ import type { AnalysisResult, InterviewData } from "../../../types";
 import DetailTabs from "./DetailTabs";
 import DecisionTab from "./DecisionTab";
 import AiSummaryTab from "./AiSummaryTab";
-import InterviewsTab from "./InterviewTab"; // ✅ NUEVO
+import NotesTab from "./NotesTab";
 import AuditTab from "./AuditTab";
 import TechTab from "./TechTab";
-import NotesTab from "./NotesTab"; // ✅ NUEVO
-
 
 import type {
   CoordinatorCriteria,
   DetailTabKey,
   LocalDecision,
   TimelineTab,
-  CandidateGroup, // ✅ NUEVO
 } from "../types";
 
 type Props = {
@@ -35,39 +32,25 @@ type Props = {
   setDecisionComment: (v: string) => void;
   onDecisionCommentBlur: () => void;
 
+  // ✅ Decisión (local)
   onApplyDecision: (d: LocalDecision) => void;
 
-  onOpenComparison: () => void;
-
-  // ✅ “Notas” se reemplaza por entrevistas (por ahora)
+  // ✅ Notas
   notes: string;
   setNotes: (v: string) => void;
   criteria: CoordinatorCriteria;
   setCriteria: (next: CoordinatorCriteria) => void;
 
+  // ✅ Validación + envío
   canSubmitDecision: boolean;
   missingReasons: string[];
   onSubmitDecision: () => void;
 
-  // ✅ NUEVO: grupo del candidato + handler para abrir entrevista
-  candidateGroup: CandidateGroup | null;
-  onOpenInterview: (evaluationId: string) => void;
-
+  // ✅ Auditoría / Tech (opcionales para no romper si aún no los pasas)
   timelineTab?: TimelineTab;
   setTimelineTab?: (v: TimelineTab) => void;
   activityByEval?: any[];
   activityGlobal?: any[];
-
-  // ✅ RESUMEN IA PROMEDIO
-  avgAnalysis?: AnalysisResult | null;
-  avgLoading?: boolean;
-  avgError?: string | null;
-
-  variabilityInfo?: {
-    level: "Baja" | "Media" | "Alta";
-    label: string;
-    details?: string[];
-  } | null;
 };
 
 export default function EvaluationDetailPanel({
@@ -82,7 +65,6 @@ export default function EvaluationDetailPanel({
   setDecisionComment,
   onDecisionCommentBlur,
   onApplyDecision,
-  onOpenComparison,
   notes,
   setNotes,
   criteria,
@@ -90,22 +72,12 @@ export default function EvaluationDetailPanel({
   canSubmitDecision,
   missingReasons,
   onSubmitDecision,
-  candidateGroup,
-  onOpenInterview,
   timelineTab,
   setTimelineTab,
   activityByEval,
   activityGlobal,
-  avgAnalysis,
-  avgLoading,
-  avgError,
-  variabilityInfo,
-  
 }: Props) {
   const hasDetail = !!selectedDetail && !loadingDetail;
-  
-  // ✅ Si existe promedio, lo usamos. Si no, caemos al análisis de la última entrevista.
-  const analysisToShow = avgAnalysis ?? selectedDetail?.analysis ?? null;
 
   const canShowAudit = useMemo(() => {
     return (
@@ -118,7 +90,7 @@ export default function EvaluationDetailPanel({
   }, [detailTab, timelineTab, setTimelineTab, activityByEval, activityGlobal]);
 
   return (
-    <div className="bg-[#1F1F1F]/30 border border-white/10 rounded-3xl p-5 md:p-6 shadow-xl flex flex-col">
+    <div className="bg-[#050505]/90 border border-white/10 rounded-3xl p-5 md:p-6 shadow-xl flex flex-col">
       <div className="flex items-center justify-between mb-4">
         <div>
           <h3 className="text-sm font-bold uppercase tracking-widest text-gray-400">
@@ -133,7 +105,7 @@ export default function EvaluationDetailPanel({
           <button
             type="button"
             onClick={onExportPdf}
-            className="px-3 py-2 rounded-xl text-[px] font-bold uppercase tracking-widest bg-emerald-600 hover:bg-emerald-500 text-white flex items-center gap-2"
+            className="px-3 py-2 rounded-xl text-[11px] font-bold uppercase tracking-widest bg-emerald-600 hover:bg-emerald-500 text-white flex items-center gap-2"
           >
             <FileText className="w-4 h-4" />
             Exportar PDF
@@ -141,7 +113,6 @@ export default function EvaluationDetailPanel({
         )}
       </div>
 
-      {/* ✅ Los tabs SIEMPRE se muestran */}
       <DetailTabs value={detailTab} onChange={setDetailTab} />
 
       {loadingDetail && (
@@ -178,78 +149,7 @@ export default function EvaluationDetailPanel({
           )}
 
           {detailTab === "AI" && (
-  <>
-        {/* ✅ Variabilidad entre entrevistas (nuevo bloque, no rompe formato del resumen) */}
-        {variabilityInfo && (
-          <div className="mb-3 text-xs text-gray-300 bg-white/[0.03] border border-white/10 rounded-2xl p-4">
-            <div className="flex items-center justify-between gap-3">
-              <span className="uppercase tracking-widest text-[11px] text-gray-400">
-                Variabilidad entre entrevistas
-              </span>
-              <span
-                className={[
-                  "px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-widest border",
-                  variabilityInfo.level === "Alta"
-                    ? "bg-rose-500/10 text-rose-300 border-rose-500/30"
-                    : variabilityInfo.level === "Media"
-                    ? "bg-amber-500/10 text-amber-300 border-amber-500/30"
-                    : "bg-emerald-500/10 text-emerald-300 border-emerald-500/30",
-                ].join(" ")}
-              >
-                {variabilityInfo.label}
-              </span>
-            </div>
-              
-            {!!variabilityInfo.details?.length && (
-              <ul className="mt-2 space-y-1 text-[12px] text-gray-300 list-disc pl-5">
-                {variabilityInfo.details.map((d, i) => (
-                  <li key={i}>{d}</li>
-                ))}
-              </ul>
-            )}
-          </div>
-        )}
-    
-        {/* ✅ Estados de promedio */}
-        {avgLoading && (
-          <div className="mb-3 text-sm text-gray-400 bg-white/[0.03] border border-white/10 rounded-2xl p-4">
-            Calculando promedio de entrevistas…
-          </div>
-        )}
-    
-        {avgError && (
-          <div className="mb-3 text-sm text-rose-300 bg-rose-500/10 border border-rose-500/20 rounded-2xl p-4">
-            {avgError}
-          </div>
-        )}
-    
-        {/* ✅ Mismo componente, mismo formato, pero con analysisToShow */}
-        {analysisToShow && <AiSummaryTab analysis={analysisToShow} />}
-      </>
-    )}
-
-          {detailTab === "INTERVIEWS" && candidateGroup && (
-            <InterviewsTab
-              candidateGroup={candidateGroup}
-              selectedEvaluationId={selectedId}
-              onOpenInterview={onOpenInterview}
-             
-            />
-          )}
-
-          {detailTab === "INTERVIEWS" && !candidateGroup && (
-            <div className="text-sm text-gray-400 bg-black/20 border border-white/10 rounded-2xl p-4">
-              No se encontró el grupo del candidato para listar entrevistas.
-            </div>
-          )}
-
-          {canShowAudit && (
-            <AuditTab
-              timelineTab={timelineTab!}
-              setTimelineTab={setTimelineTab!}
-              activityByEval={activityByEval!}
-              activityGlobal={activityGlobal!}
-            />
+            <AiSummaryTab analysis={selectedDetail.analysis} />
           )}
 
           {detailTab === "NOTES" && (
@@ -258,6 +158,15 @@ export default function EvaluationDetailPanel({
               setNotes={setNotes}
               criteria={criteria}
               setCriteria={setCriteria}
+            />
+          )}
+
+          {canShowAudit && (
+            <AuditTab
+              timelineTab={timelineTab!}
+              setTimelineTab={setTimelineTab!}
+              activityByEval={activityByEval!}
+              activityGlobal={activityGlobal!}
             />
           )}
 
