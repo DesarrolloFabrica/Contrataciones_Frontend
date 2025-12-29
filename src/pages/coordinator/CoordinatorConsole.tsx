@@ -26,10 +26,18 @@ import { getCandidateKey } from "./utils/candidateKey";
 
 import { getTeacherEvaluationById } from "../../services/teachersService";
 import type { AnalysisResult } from "../../types";
-import {
-  buildAverageAnalysis,
-  computeVariability,
-} from "./utils/analysisAggregate";
+import { buildAverageAnalysis, computeVariability } from "./utils/analysisAggregate";
+
+const API_BASE =
+  (import.meta.env.VITE_API_URL as string | undefined) ??
+  (import.meta.env.VITE_BACKEND_URL as string | undefined) ??
+  "";
+
+const apiUrl = (path: string) => {
+  if (!API_BASE) return path;
+  const base = API_BASE.replace(/\/+$/, "");
+  return `${base}${path}`;
+};
 
 function normalizeDoc(raw: any): string {
   const s = (raw ?? "").toString().trim();
@@ -65,6 +73,26 @@ function getCandidateDoc(candidate: unknown): string {
   return normalizeDoc(c?.documentNumber) || normalizeDoc(c?.document_number) || "";
 }
 
+function getCandidateProgramId(ev: any): string {
+  return String(
+    ev?.candidate?.programId ??
+      ev?.candidate?.program_id ??
+      ev?.programId ??
+      ev?.program_id ??
+      ""
+  ).trim();
+}
+
+function getCandidateSchoolId(ev: any): string {
+  return String(
+    ev?.candidate?.schoolId ??
+      ev?.candidate?.school_id ??
+      ev?.schoolId ??
+      ev?.school_id ??
+      ""
+  ).trim();
+}
+
 function groupByCandidate(
   evaluations: import("../../types").TeacherEvaluationSummary[]
 ): CandidateGroup[] {
@@ -82,7 +110,6 @@ function groupByCandidate(
     const sorted = [...interviews].sort(
       (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
     );
-
     const latest = sorted[0];
 
     groups.push({
@@ -97,12 +124,26 @@ function groupByCandidate(
   }
 
   groups.sort(
-    (a, b) =>
-      new Date(b.latest.createdAt).getTime() - new Date(a.latest.createdAt).getTime()
+    (a, b) => new Date(b.latest.createdAt).getTime() - new Date(a.latest.createdAt).getTime()
   );
 
   return groups;
 }
+
+// ---------- SCOPE TYPES ----------
+type RemoteSchool = {
+  id: string;
+  name: string;
+  programs?: Array<{ id: string; name: string }>;
+};
+
+type ScopedSchool = {
+  id: string;
+  name: string;
+  programs: Array<{ id: string; name: string }>;
+};
+
+type ProgramOption = { id: string; name: string };
 
 const CoordinatorConsole: React.FC = () => {
   const { user } = useAuth();
@@ -128,9 +169,7 @@ const CoordinatorConsole: React.FC = () => {
   // -----------------------------
   // 3) Tabs / estado panel derecho
   // -----------------------------
-  const [selectedCandidateKey, setSelectedCandidateKey] = useState<string | null>(
-    null
-  );
+  const [selectedCandidateKey, setSelectedCandidateKey] = useState<string | null>(null);
   const [detailTab, setDetailTab] = useState<DetailTabKey>("AI");
   const [showDetail, setShowDetail] = useState(false);
 
@@ -193,33 +232,160 @@ const CoordinatorConsole: React.FC = () => {
   };
 
   // -----------------------------
+  // ✅ Scope por schoolId del usuario
+  // -----------------------------
+  const userSchoolId: string | null =
+    (user as any)?.schoolId ?? (user as any)?.school_id ?? null;
+
+  const [scopedSchool, setScopedSchool] = useState<ScopedSchool | null>(null);
+  const [scopeLoading, setScopeLoading] = useState(false);
+
+  // -----------------------------
   // 5) Filtros obligatorios (Escuela + Programa)
   // -----------------------------
   const [schoolFilter, setSchoolFilter] = useState<string>("");
+  // ✅ programFilter ahora es programId
   const [programFilter, setProgramFilter] = useState<string>("");
 
   const mustChooseScope = !schoolFilter || !programFilter;
 
+  // ✅ cargar escuela+programas por schoolId (para poblar selects)
+  useEffect(() => {
+    let alive = true;
+
+    const loadScope = async () => {
+      if (!userSchoolId) {
+        if (!alive) return;
+        setScopedSchool(null);
+        return;
+      }
+
+      setScopeLoading(true);
+      try {
+        const token =
+          (user as any)?.accessToken ??
+          (user as any)?.token ??
+          (user as any)?.jwt ??
+          null;
+
+        const res = await fetch(apiUrl("/schools?includePrograms=true"), {
+          method: "GET",
+          headers: {
+            "Content-Type": "application/json",
+            ...(token ? { Authorization: `Bearer ${token}` } : {}),
+          },
+        });
+
+        if (!res.ok) throw new Error(`GET /schools failed: ${res.status}`);
+
+        const data = (await res.json()) as RemoteSchool[];
+        const list = Array.isArray(data) ? data : [];
+        const found = list.find((s) => String(s?.id) === String(userSchoolId));
+
+        if (!found) {
+          if (!alive) return;
+          setScopedSchool(null);
+          return;
+        }
+
+        const scope: ScopedSchool = {
+          id: found.id,
+          name: found.name,
+          programs: (found.programs ?? []).filter(Boolean),
+        };
+
+        if (!alive) return;
+
+        setScopedSchool(scope);
+
+        // ✅ fija escuela por usuario
+        setSchoolFilter(scope.name);
+
+        // ✅ si el programa seleccionado ya no existe, resetea
+        setProgramFilter((prev) =>
+          prev && scope.programs.some((p) => p.id === prev) ? prev : ""
+        );
+      } catch (e) {
+        console.error(e);
+        if (!alive) return;
+        setScopedSchool(null);
+      } finally {
+        if (!alive) return;
+        setScopeLoading(false);
+      }
+    };
+
+    loadScope();
+    return () => {
+      alive = false;
+    };
+  }, [user, userSchoolId]);
+
+  // ✅ schoolOptions:
+  // - si hay scopedSchool: solo esa escuela
+  // - si no: fallback al modo viejo (de evaluaciones)
   const schoolOptions = useMemo(() => {
+    if (scopedSchool?.name) return [scopedSchool.name];
+
     const set = new Set<string>();
     for (const ev of evals.evaluations) {
       const s = getCandidateSchool(ev);
       if (s) set.add(s);
     }
     return Array.from(set).sort((a, b) => a.localeCompare(b, "es"));
-  }, [evals.evaluations]);
+  }, [scopedSchool, evals.evaluations]);
 
-  const programOptions = useMemo(() => {
+  // ✅ programOptions:
+  // - si hay scopedSchool: salen del backend (id+name)
+  // - si no: fallback al modo viejo (names desde evaluaciones)
+  const programOptions: ProgramOption[] = useMemo(() => {
+    if (scopedSchool?.programs?.length) {
+      return [...scopedSchool.programs].sort((a, b) => a.name.localeCompare(b.name, "es"));
+    }
+
+    // fallback: construye listado por nombre (sin ids)
     const set = new Set<string>();
     for (const ev of evals.evaluations) {
       const s = getCandidateSchool(ev);
-      const p = getCandidateProgram(ev);
-      if (!p) continue;
+      const pName = getCandidateProgram(ev);
+      if (!pName) continue;
       if (schoolFilter && s !== schoolFilter) continue;
-      set.add(p);
+      set.add(pName);
     }
-    return Array.from(set).sort((a, b) => a.localeCompare(b, "es"));
-  }, [evals.evaluations, schoolFilter]);
+    return Array.from(set)
+      .sort((a, b) => a.localeCompare(b, "es"))
+      .map((name) => ({ id: name, name }));
+  }, [scopedSchool, evals.evaluations, schoolFilter]);
+
+  // -----------------------------
+  // ✅ Auto-pick programa (sin romper Rules of Hooks)
+  // -----------------------------
+  const programAutoPickedRef = useRef(false);
+  const programStorageKey = (schoolName: string) => `coord:lastProgram:${schoolName}`;
+
+  useEffect(() => {
+    if (!schoolFilter) return;
+    if (programFilter) return;
+    if (!programOptions || programOptions.length === 0) return;
+
+    const saved = localStorage.getItem(programStorageKey(schoolFilter));
+    if (saved && programOptions.some((p) => p.id === saved)) {
+      programAutoPickedRef.current = true;
+      setProgramFilter(saved);
+      return;
+    }
+
+    if (programOptions.length === 1) {
+      programAutoPickedRef.current = true;
+      setProgramFilter(programOptions[0].id);
+      return;
+    }
+  }, [schoolFilter, programFilter, programOptions]);
+
+  useEffect(() => {
+    if (!schoolFilter || !programFilter) return;
+    localStorage.setItem(programStorageKey(schoolFilter), programFilter);
+  }, [schoolFilter, programFilter]);
 
   // -----------------------------
   // 6) Logout
@@ -235,13 +401,13 @@ const CoordinatorConsole: React.FC = () => {
   // 7) Resets al cambiar scope
   // -----------------------------
   useEffect(() => {
+    // ojo: si cambias escuela, reseteas programa y luego el auto-pick lo vuelve a setear
     setProgramFilter("");
     evals.setSearch("");
     setDetailTab("AI");
     detail.clearSelection();
     setShowDetail(false);
 
-    // notas/criterios (hook)
     detail.setNotes("");
     detail.setCriteria({
       docs_ok: false,
@@ -250,7 +416,6 @@ const CoordinatorConsole: React.FC = () => {
       communication_ok: false,
     });
 
-    // resumen promedio
     setAvgLoading(false);
     setAvgError(null);
     setAvgAnalysis(null);
@@ -265,7 +430,6 @@ const CoordinatorConsole: React.FC = () => {
     detail.clearSelection();
     setShowDetail(false);
 
-    // notas/criterios (hook)
     detail.setNotes("");
     detail.setCriteria({
       docs_ok: false,
@@ -274,7 +438,6 @@ const CoordinatorConsole: React.FC = () => {
       communication_ok: false,
     });
 
-    // resumen promedio
     setAvgLoading(false);
     setAvgError(null);
     setAvgAnalysis(null);
@@ -284,31 +447,54 @@ const CoordinatorConsole: React.FC = () => {
   }, [programFilter]);
 
   // -----------------------------
-  // 8) Filtrado final
+  // 8) Filtrado final (schoolId + programId)
   // -----------------------------
   const filteredEvaluations = useMemo(() => {
     if (!schoolFilter || !programFilter) return [];
 
     let base = evals.evaluations;
 
-    // scope
-    base = base.filter((ev) => {
-      const s = getCandidateSchool(ev);
-      const p = getCandidateProgram(ev);
-      return s === schoolFilter && p === programFilter;
-    });
+    // ✅ scope por schoolId del usuario (si existe)
+    if (userSchoolId) {
+      base = base.filter((ev: any) => {
+        const sid = getCandidateSchoolId(ev);
+        if (sid) return sid === String(userSchoolId);
+        // fallback por nombre si no viene id
+        return getCandidateSchool(ev) === schoolFilter;
+      });
+    } else {
+      // modo viejo multi-escuela: exige nombre de escuela
+      base = base.filter((ev) => getCandidateSchool(ev) === schoolFilter);
+    }
+
+    // ✅ programa:
+    // - si hay scopedSchool, programFilter es ID real
+    // - si no, programFilter es "id=name" del fallback
+    if (scopedSchool) {
+      base = base.filter((ev: any) => getCandidateProgramId(ev) === String(programFilter));
+    } else {
+      base = base.filter((ev) => getCandidateProgram(ev) === String(programFilter));
+    }
 
     // search
     const q = evals.search.trim().toLowerCase();
     if (q) {
-      base = base.filter((ev) => {
+      const programNameById = new Map(scopedSchool?.programs?.map((p) => [p.id, p.name]) ?? []);
+
+      base = base.filter((ev: any) => {
         const name = ev.candidate?.fullName?.toLowerCase() ?? "";
         const school = getCandidateSchool(ev).toLowerCase();
-        const program = getCandidateProgram(ev).toLowerCase();
+
+        const pid = getCandidateProgramId(ev);
+        const programName =
+          pid && programNameById.get(pid) ? programNameById.get(pid)! : getCandidateProgram(ev);
+        const program = String(programName ?? "").toLowerCase();
+
         const doc =
           normalizeDoc(ev.candidate?.documentNumber) ||
           normalizeDoc((ev.candidate as any)?.document_number) ||
           "";
+
         return (
           name.includes(q) ||
           school.includes(q) ||
@@ -336,11 +522,11 @@ const CoordinatorConsole: React.FC = () => {
     evals.localDecisions,
     schoolFilter,
     programFilter,
+    userSchoolId,
+    scopedSchool,
   ]);
 
-  const groupedCandidates = useMemo(() => {
-    return groupByCandidate(filteredEvaluations);
-  }, [filteredEvaluations]);
+  const groupedCandidates = useMemo(() => groupByCandidate(filteredEvaluations), [filteredEvaluations]);
 
   const selectedCandidateGroup = useMemo(() => {
     if (!selectedCandidateKey) return null;
@@ -402,8 +588,8 @@ const CoordinatorConsole: React.FC = () => {
               </span>
             </h2>
             <p className="text-sm md:text-base text-gray-400 font-light leading-relaxed">
-              Para escalar bien, este panel obliga a seleccionar <b>Escuela</b> y{" "}
-              <b>Programa</b> antes de listar evaluaciones.
+              Para escalar bien, este panel obliga a seleccionar <b>Escuela</b> y <b>Programa</b>{" "}
+              antes de listar evaluaciones.
             </p>
           </div>
         </header>
@@ -480,6 +666,14 @@ const CoordinatorConsole: React.FC = () => {
                 decisionFilter={evals.decisionFilter}
                 setDecisionFilter={evals.setDecisionFilter}
                 localDecisions={evals.localDecisions}
+                lockedSchool={!!userSchoolId}
+                schoolHint={
+                  scopeLoading
+                    ? "Cargando programas de tu escuela…"
+                    : userSchoolId
+                    ? "Escuela asignada por tu usuario."
+                    : undefined
+                }
                 onSelectEvaluation={(candidateKey, evaluationId) => {
                   setSelectedCandidateKey(candidateKey);
                   detail.handleSelectEvaluation(evaluationId);
@@ -492,7 +686,6 @@ const CoordinatorConsole: React.FC = () => {
                   setDetailTab("AI");
                   scrollToDetailSection();
                 }}
-                // Antes era "SECOND": ahora abre el detalle y te manda a entrevistas
                 onOpenSecond={(candidateKey, evaluationId) => {
                   setSelectedCandidateKey(candidateKey);
                   setShowDetail(true);
@@ -518,23 +711,17 @@ const CoordinatorConsole: React.FC = () => {
                   onDecisionCommentBlur={detail.onDecisionCommentBlur}
                   onApplyDecision={detail.applyDecision}
                   onOpenComparison={() => setDetailTab("INTERVIEWS")}
-                  // NOTES
                   notes={detail.notes}
                   setNotes={detail.setNotes}
                   criteria={detail.criteria}
                   setCriteria={detail.setCriteria}
-                  // VALIDACIÓN + SUBMIT
                   canSubmitDecision={detail.canSubmitDecision}
                   missingReasons={detail.missingReasons}
                   onSubmitDecision={detail.submitDecisionToAdmin}
-                  // ENTREVISTAS
                   candidateGroup={selectedCandidateGroup}
                   onOpenInterview={(evaluationId) => {
-                    navigate(
-                      `/coordinator/evaluations/${encodeURIComponent(evaluationId)}`
-                    );
+                    navigate(`/coordinator/evaluations/${encodeURIComponent(evaluationId)}`);
                   }}
-                  // Resumen IA Promedio
                   avgAnalysis={avgAnalysis}
                   avgLoading={avgLoading}
                   avgError={avgError}
