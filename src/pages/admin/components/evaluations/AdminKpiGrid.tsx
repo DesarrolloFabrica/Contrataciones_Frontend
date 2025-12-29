@@ -8,6 +8,7 @@ type Props = {
   metrics: AdminMetrics;
   recommendedPct: number;
   highRiskPct: number;
+  scopeLabel: string;
 };
 
 const CardShell = ({
@@ -120,7 +121,12 @@ const Progress = ({
   );
 };
 
-export default function AdminKpiGrid({ metrics, recommendedPct, highRiskPct }: Props) {
+export default function AdminKpiGrid({
+  metrics,
+  recommendedPct,
+  highRiskPct,
+  scopeLabel,
+}: Props) {
   const safeMetrics: AdminMetrics = metrics ?? {
     total: 0,
     avgScore: 0,
@@ -135,9 +141,12 @@ export default function AdminKpiGrid({ metrics, recommendedPct, highRiskPct }: P
       <div className="flex items-end justify-between gap-4">
         <div>
           <p className="text-[11px] uppercase tracking-[0.22em] text-neutral-500">
-            Métricas globales
+            Métricas del scope
           </p>
           <h3 className="text-white font-black text-lg">Resumen ejecutivo</h3>
+          <p className="text-xs text-neutral-500 mt-1">
+            {scopeLabel}
+          </p>
         </div>
 
         <div className="text-[11px] text-neutral-500">

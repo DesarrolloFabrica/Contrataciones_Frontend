@@ -1,22 +1,16 @@
-// src/pages/admin/components/AdminDetailPanel.tsx
+// src/pages/admin/components/evaluations/AdminDetailPanel.tsx
 import React from "react";
-import { Download, LayoutDashboard } from "lucide-react";
-import type { AdminTab } from "../../adminTypes";
-import AdminDetailTabs from "./AdminDetailTabs";
+import { Download, LayoutDashboard, AlertCircle } from "lucide-react";
 import AdminDetailContent from "./AdminDetailContent";
 import type { TeacherEvaluationSummary } from "../../../../types";
 
 type Props = {
   selectedId: string | null;
   selectedSummary: TeacherEvaluationSummary | null;
-
   loadingDetail: boolean;
   selectedDetail: { analysis: any; interview: any; raw: any } | null;
-
-  tab: AdminTab;
-  setTab: (t: AdminTab) => void;
-
   onExportPdf: () => void;
+  errorDetail?: string | null;
 };
 
 export default function AdminDetailPanel({
@@ -24,30 +18,22 @@ export default function AdminDetailPanel({
   selectedSummary,
   loadingDetail,
   selectedDetail,
-  tab,
-  setTab,
   onExportPdf,
+  errorDetail,
 }: Props) {
   const canExport = !!selectedDetail;
 
   return (
-    <section
-      className="
-        bg-[#0f1110]
-        rounded-3xl
-        border border-white/10
-        overflow-hidden
-      "
-    >
+    <section className="bg-[#0f1110] rounded-3xl border border-white/10 overflow-hidden">
       {/* Header */}
       <div className="p-6 border-b border-white/5 bg-[#141414]/50 backdrop-blur-sm flex items-center justify-between gap-3">
         <div className="min-w-0">
           <h3 className="text-white font-bold text-sm flex items-center gap-2 uppercase tracking-wide">
             <LayoutDashboard size={16} className="text-emerald-400" />
-            Detalle de evaluación
+            Ficha de evaluación
           </h3>
           <p className="text-[11px] text-neutral-500 mt-1">
-            Recomendación IA, señales clave y seguimiento de decisiones.
+            Vista ejecutiva: IA + decisión coordinador + trazabilidad.
           </p>
         </div>
 
@@ -68,22 +54,25 @@ export default function AdminDetailPanel({
         </button>
       </div>
 
-      {/* Tabs */}
-      <div className="px-6 pt-4">
-        <AdminDetailTabs tab={tab} setTab={setTab} />
-      </div>
+      {/* Error banner */}
+      {errorDetail && (
+        <div className="mx-6 mt-4 rounded-2xl border border-rose-500/20 bg-rose-500/10 p-3 flex items-start gap-2">
+          <AlertCircle className="w-4 h-4 text-rose-300 mt-0.5" />
+          <p className="text-xs text-rose-200">{errorDetail}</p>
+        </div>
+      )}
 
       {/* Content */}
-      {/* ✅ SIN overflow-y-auto: ahora el único scroll es el de la página */}
       <div className="px-6 pb-6 pt-4">
-        <AdminDetailContent
-          selectedId={selectedId}
-          loadingDetail={loadingDetail}
-          hasDetail={!!selectedDetail}
-          selectedSummary={selectedSummary}
-          selectedDetail={selectedDetail}
-          tab={tab}
-        />
+        <div className="max-h-[680px] overflow-auto pr-1 scrollbar-pro">
+          <AdminDetailContent
+            selectedId={selectedId}
+            loadingDetail={loadingDetail}
+            hasDetail={!!selectedDetail}
+            selectedSummary={selectedSummary}
+            selectedDetail={selectedDetail}
+          />
+        </div>
       </div>
     </section>
   );

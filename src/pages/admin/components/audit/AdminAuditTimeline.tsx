@@ -1,5 +1,4 @@
-// src/pages/admin/components/audit/AdminAuditTimeline.tsx
-import React, { useMemo, useState } from "react";
+import React, { useMemo } from "react";
 import type { AdminAuditEvent } from "../../adminTypes";
 import {
   buildHumanLine,
@@ -31,8 +30,6 @@ export default function AdminAuditTimeline({
   limit,
   hideAdminEvents = false,
 }: Props) {
-  const [showMeta, setShowMeta] = useState(false);
-
   const filtered = useMemo(() => {
     const base = (events ?? []).filter((ev) =>
       shouldShowEvent(ev, { hideAdmin: hideAdminEvents })
@@ -71,16 +68,6 @@ export default function AdminAuditTimeline({
             Eventos resumidos en lenguaje humano (sin ruido técnico).
           </p>
         </div>
-
-        {!compact && (
-          <button
-            type="button"
-            onClick={() => setShowMeta((s) => !s)}
-            className="text-xs px-3 py-2 rounded-xl border border-white/10 bg-white/5 hover:bg-white/10"
-          >
-            {showMeta ? "Ocultar detalles" : "Ver detalles"}
-          </button>
-        )}
       </div>
 
       <div className="space-y-4">
@@ -140,12 +127,6 @@ export default function AdminAuditTimeline({
                               </span>
                             ))}
                           </div>
-                        )}
-
-                        {showMeta && !compact && ev.meta && (
-                          <pre className="mt-2 text-[11px] text-neutral-400 bg-black/30 border border-white/10 rounded-xl p-3 overflow-auto max-h-40">
-                            {JSON.stringify(ev.meta, null, 2)}
-                          </pre>
                         )}
                       </div>
                     </div>
