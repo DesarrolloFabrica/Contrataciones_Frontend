@@ -1,6 +1,7 @@
 // src/pages/leader/LeaderConsole.tsx
-import React, { useState, useCallback } from "react";
-import {
+import React, { useState, useCallback, useEffect } from "react";
+
+import type {
   InterviewData,
   AnalysisResult,
   TeacherForm,
@@ -13,6 +14,8 @@ import {
   getTeacherEvaluationById,
 } from "../../services/teachersService";
 
+import { useLocation } from "react-router-dom";
+
 import Header from "../../components/Header";
 import InterviewForm from "../../components/InterviewForm";
 import AnalysisResults from "../../components/AnalysisResults";
@@ -22,49 +25,31 @@ import { useAuth } from "../../context/AuthContext";
 import { auditAppend } from "../../services/auditService";
 import { actorFromUser } from "../../services/auditActor";
 
+// ✅ mapper centralizado (frontend: documentNumber)
+import { mapInterviewToTeacherForm } from "../../services/mappers/mapInterviewToTeacherForm";
+
 const ORG_ID = import.meta.env.VITE_ORG_ID ?? "ORG_DEFAULT";
 
 type ViewMode = "analyze" | "history";
 
-const mapToTeacherForm = (data: InterviewData): TeacherForm => ({
-  candidate: {
-    documentNumber: (data as any).documentNumber ?? "",
-    fullName: data.candidateName,
-    age: Number(data.age) || 0,
-    schoolName: data.school,
-    programName: data.program,
-    careerSummary: data.careerSummary,
-    teachingExperience: data.previousExperience,
-  },
-  availability: {
-    scheduleDetails: data.availabilityDetails,
-    acceptsCommittees: data.acceptsCommittees,
-    otherJobsImpact: data.otherJobs,
-  },
-  classroomManagement: {
-    evaluationMethodology: data.evaluationMethodology,
-    planIfHalfFail: data.failureRatePlan,
-    handleApatheticStudent: data.apatheticStudentPlan,
-  },
-  aiAttitude: {
-    usesAiHow: data.aiToolsUsage,
-    ethicalUseMeasures: data.ethicalAiMeasures,
-    handleAiPlagiarism: data.aiPlagiarismPrevention,
-  },
-  coherenceCommitment: {
-    caseStudent2_9: data.scenario29,
-    emergencyProtocol: data.scenarioCoverage,
-    handleNegativeFeedback: data.scenarioFeedback,
-  },
-});
+/**
+ * ✅ Adaptador FINAL (solo para el request al backend)
+ * Mantiene tu frontend en camelCase (documentNumber),
+ * pero envía snake_case (document_number) si el backend lo espera.
+ */
+const toBackendTeacherForm = (form: TeacherForm) => {
+  return {
+    ...form,
+    candidate: {
+      ...form.candidate,
+      document_number: form.candidate.documentNumber?.trim() || "",
+    },
+  };
+};
 
 // inverso: TeacherForm -> InterviewData (para reconstruir el reporte)
 const mapFormToInterviewData = (form: TeacherForm): InterviewData => ({
-  // ✅ NUEVO
-  ...(form.candidate.documentNumber !== undefined
-    ? ({ documentNumber: form.candidate.documentNumber ?? "" } as any)
-    : {}),
-
+  documentNumber: form.candidate.documentNumber ?? "",
   candidateName: form.candidate.fullName,
   age: form.candidate.age ? String(form.candidate.age) : "",
   school: form.candidate.schoolName,
@@ -94,18 +79,21 @@ const LeaderConsole: React.FC = () => {
 
   const { user } = useAuth();
   const [interviewData, setInterviewData] = useState<InterviewData | null>(null);
-  const [analysisResult, setAnalysisResult] = useState<AnalysisResult | null>(
-    null
-  );
+  const [analysisResult, setAnalysisResult] = useState<AnalysisResult | null>(null);
   const [evaluationId, setEvaluationId] = useState<string | null>(null);
 
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
 
-  // 1) flujo normal: analizar desde el formulario
+  /**
+   * ✅ 1) flujo normal: analizar desde el formulario
+   * - InterviewForm adjunta candidateId (seleccionado o creado)
+   * - backend exige candidateId UUID
+   */
   const handleFormSubmit = useCallback(
     async (data: InterviewData) => {
       const actor = actorFromUser(user);
+
       setIsLoading(true);
       setError(null);
       setAnalysisResult(null);
@@ -119,6 +107,18 @@ const LeaderConsole: React.FC = () => {
       });
 
       try {
+        // ✅ candidateId viene “inyectado” desde InterviewForm (no está en InterviewData tipado)
+        const candidateId = (data as any)?.candidateId as string | null;
+
+        if (!candidateId) {
+          // importante: tu backend lo exige
+          setError(
+            "Debes seleccionar o crear el candidato (por cédula) antes de ejecutar el análisis."
+          );
+          return;
+        }
+
+        // 1) IA
         const aiResult: TeacherAiResult = await analyzeTeacherInterview(data);
 
         if (aiResult.rawOutput) {
@@ -136,27 +136,42 @@ const LeaderConsole: React.FC = () => {
           });
         }
 
-        const form = mapToTeacherForm(data);
-        const saved = await createTeacherEvaluation(ORG_ID, form, aiResult);
+        // 2) mapper central (frontend: documentNumber)
+        const formFrontend: TeacherForm = mapInterviewToTeacherForm(data);
 
-        // ✅ FIX: evaluationId va en metadata, no top-level
+        // 3) adaptar SOLO para backend (snake_case)
+        const formBackend = toBackendTeacherForm(formFrontend);
+
+        // 4) guardar evaluación (backend exige 4 args: orgId, candidateId, form, aiResult)
+        const saved = await createTeacherEvaluation(
+          ORG_ID,
+          candidateId,
+          formBackend as any,
+          aiResult
+        );
+
         auditAppend({
           type: "EVALUATION_CREATED",
           actor,
           metadata: {
             orgId: ORG_ID,
-            candidateId: saved.candidateId,
+            candidateId: saved.candidateId ?? candidateId,
             evaluationId: saved.id,
+            documentNumber: data.documentNumber ?? null,
           },
         });
 
         setEvaluationId(saved.id);
-      } catch (err) {
-        console.error("Error during analysis or save:", err);
+      } catch (err: any) {
+        console.error("❌ Error during analysis or save:", {
+          message: err?.message,
+          status: err?.response?.status,
+          data: err?.response?.data,
+        });
+
         setError(
-          err instanceof Error
-            ? err.message
-            : "Ocurrió un error durante el proceso."
+          err?.response?.data?.message ??
+            (err instanceof Error ? err.message : "Ocurrió un error durante el proceso.")
         );
       } finally {
         setIsLoading(false);
@@ -165,10 +180,24 @@ const LeaderConsole: React.FC = () => {
     [user]
   );
 
-  // 2) abrir detalle desde el historial
+  const location = useLocation();
+
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    const evaluationIdFromUrl = params.get("evaluationId");
+    if (!evaluationIdFromUrl) return;
+
+    handleOpenEvaluationFromHistory(evaluationIdFromUrl);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [location.search]);
+
+  /**
+   * ✅ 2) abrir detalle desde el historial
+   */
   const handleOpenEvaluationFromHistory = useCallback(
     async (id: string) => {
       const actor = actorFromUser(user);
+
       setIsLoading(true);
       setError(null);
       setAnalysisResult(null);
@@ -178,7 +207,6 @@ const LeaderConsole: React.FC = () => {
       try {
         const detail = await getTeacherEvaluationById(id);
 
-        // ✅ FIX: evaluationId en metadata
         auditAppend({
           type: "EVALUATION_OPENED",
           actor,
@@ -189,6 +217,10 @@ const LeaderConsole: React.FC = () => {
         const analysis: AnalysisResult = detail.aiRawJson;
 
         const interview = mapFormToInterviewData(form);
+
+        // ✅ para consistencia del flujo (por si luego lo necesitas)
+        // InterviewForm solo lo usa al submit, pero acá lo dejamos disponible
+        (interview as any).candidateId = detail.candidateId ?? null;
 
         setInterviewData(interview);
         setAnalysisResult(analysis);
@@ -217,9 +249,6 @@ const LeaderConsole: React.FC = () => {
     setError(null);
   }, []);
 
-  // ==============================
-  // VARIABLES VISUALES (SOLO UI)
-  // ==============================
   const brandFrom = "#91DC00";
   const brandTo = "#31AB2E";
 
@@ -345,8 +374,7 @@ const LeaderConsole: React.FC = () => {
             </section>
 
             <p className="text-[11px] text-white/45 text-center mt-5">
-              Consejo: revisa el historial para comparar reportes y decisiones de
-              contratación.
+              Consejo: revisa el historial para comparar reportes y decisiones de contratación.
             </p>
           </div>
         )}
