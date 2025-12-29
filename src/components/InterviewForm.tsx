@@ -1,7 +1,10 @@
 // src/components/InterviewForm.tsx
-// ✅ Ajustado: escuelas/programas desde backend (con fallback a mock)
-// ✅ Mantiene formData.school y formData.program como NOMBRES (no IDs) para no romper el resto del flujo.
-// ✅ FIX UI: no mostrar "Crear candidato" cuando ya hay candidato seleccionado/creado
+// ✅ Escuelas/programas desde backend (fallback a mock)
+// ✅ Mantiene formData.school y formData.program como NOMBRES (no IDs)
+// ✅ LÍDER: limita escuelas/programas a user.schoolId y auto-selecciona escuela
+// ✅ Crear candidato: envía schoolId + programId (para que no queden NULL)
+// ✅ UI: mover bloque “Crear candidato” debajo de Escuela/Programa
+// ✅ FIX UI: no mostrar "Crear candidato" si ya hay candidato seleccionado/creado
 // ✅ FIX race: invalida búsquedas en vuelo al seleccionar/crear
 
 import React, { useState, useEffect, useCallback, useRef, useMemo } from "react";
@@ -20,6 +23,7 @@ import {
   BrainCircuit,
   Loader2,
   Search,
+  Info,
 } from "lucide-react";
 import { InterviewData } from "../types";
 import { schools as mockSchools } from "../data/schools";
@@ -39,7 +43,6 @@ interface InterviewFormProps {
 
 const ORG_ID = import.meta.env.VITE_ORG_ID ?? "ORG_DEFAULT";
 
-// ✅ backend base (si no existe, usa rutas relativas y tu proxy de Vite)
 const API_BASE =
   (import.meta.env.VITE_API_URL as string | undefined) ??
   (import.meta.env.VITE_BACKEND_URL as string | undefined) ??
@@ -74,7 +77,7 @@ const initialFormData: InterviewData = {
 };
 
 // ---------------------------------------------------------------------
-// ✅ UI (sin tocar lógica)
+// UI
 // ---------------------------------------------------------------------
 
 const SectionHeader: React.FC<{ title: string; icon: React.ReactNode }> = React.memo(
@@ -220,7 +223,9 @@ const SelectInput: React.FC<{
   </div>
 );
 
-// --- Componente Principal ---
+// ---------------------------------------------------------------------
+// Types
+// ---------------------------------------------------------------------
 
 type RemoteSchool = {
   id?: string;
@@ -231,16 +236,38 @@ type RemoteSchool = {
 type NormalizedSchool = {
   id?: string;
   name: string;
-  programs: string[];
+  programs: Array<{ id?: string; name: string }>;
 };
+
+// ---------------------------------------------------------------------
+// Component
+// ---------------------------------------------------------------------
 
 const InterviewForm: React.FC<InterviewFormProps> = ({ onSubmit }) => {
   const { user } = useAuth();
 
+  // role + schoolId (robusto)
+  const roleRaw =
+    (user as any)?.role ??
+    (user as any)?.user?.role ??
+    (user as any)?.profile?.role ??
+    (user as any)?.payload?.role ??
+    "";
+  const role = String(roleRaw ?? "").trim().toUpperCase();
+
+  const leaderSchoolIdRaw =
+    (user as any)?.schoolId ??
+    (user as any)?.user?.schoolId ??
+    (user as any)?.profile?.schoolId ??
+    (user as any)?.payload?.schoolId ??
+    null;
+
+  const leaderSchoolId = leaderSchoolIdRaw ? String(leaderSchoolIdRaw) : null;
+  const isLeader = role === "LIDER" || role === "LEADER";
+
   const [formData, setFormData] = useState<InterviewData>(initialFormData);
   const [availablePrograms, setAvailablePrograms] = useState<string[]>([]);
 
-  // ✅ Escuelas desde backend
   const [remoteSchools, setRemoteSchools] = useState<RemoteSchool[]>([]);
   const [schoolsLoading, setSchoolsLoading] = useState(false);
 
@@ -252,21 +279,45 @@ const InterviewForm: React.FC<InterviewFormProps> = ({ onSubmit }) => {
           id: s.id,
           name: s.name,
           programs: (s.programs ?? [])
-            .map((p) => p?.name)
-            .filter(Boolean) as string[],
+            .filter((p) => !!p?.name)
+            .map((p) => ({ id: p.id, name: p.name })),
         })) ?? [];
 
     if (fromRemote.length > 0) return fromRemote;
 
-    // fallback a mock
+    // fallback a mock (sin ids)
     return (mockSchools ?? []).map((s: any) => ({
       id: s.id,
       name: s.name,
-      programs: Array.isArray(s.programs) ? s.programs : [],
+      programs: Array.isArray(s.programs)
+        ? s.programs.map((p: any) =>
+            typeof p === "string" ? { id: undefined, name: p } : { id: p?.id, name: p?.name }
+          )
+        : [],
     }));
   }, [remoteSchools]);
 
-  // ✅ Candidate lookup por CC
+  const selectedSchool = useMemo(
+    () => normalizedSchools.find((s) => s.name === formData.school) ?? null,
+    [normalizedSchools, formData.school]
+  );
+
+  const selectedProgramObj = useMemo(() => {
+    if (!selectedSchool || !formData.program) return null;
+    return selectedSchool.programs.find((p) => p.name === formData.program) ?? null;
+  }, [selectedSchool, formData.program]);
+
+  // IDs usados para crear candidato
+  const resolvedSchoolId = useMemo(() => {
+    if (isLeader && leaderSchoolId) return leaderSchoolId;
+    return selectedSchool?.id ?? null;
+  }, [isLeader, leaderSchoolId, selectedSchool?.id]);
+
+  const resolvedProgramId = useMemo(() => {
+    return selectedProgramObj?.id ?? null;
+  }, [selectedProgramObj?.id]);
+
+  // Candidate lookup
   const [candidateMatches, setCandidateMatches] = useState<TeacherCandidateSearchItemDto[]>([]);
   const [isSearching, setIsSearching] = useState(false);
   const [lookupError, setLookupError] = useState<string | null>(null);
@@ -275,7 +326,7 @@ const InterviewForm: React.FC<InterviewFormProps> = ({ onSubmit }) => {
 
   const searchSeq = useRef(0);
 
-  // ✅ cargar escuelas + programas desde backend
+  // cargar escuelas + programas
   useEffect(() => {
     let alive = true;
 
@@ -296,17 +347,22 @@ const InterviewForm: React.FC<InterviewFormProps> = ({ onSubmit }) => {
           },
         });
 
-        if (!res.ok) {
-          // fallback a mock silencioso
-          throw new Error(`GET /schools failed: ${res.status}`);
-        }
+        if (!res.ok) throw new Error(`GET /schools failed: ${res.status}`);
 
         const data = (await res.json()) as RemoteSchool[];
         if (!alive) return;
-        setRemoteSchools(Array.isArray(data) ? data : []);
+
+        let rows = Array.isArray(data) ? data : [];
+
+        // ✅ LÍDER: restringe a su escuela
+        if (isLeader && leaderSchoolId) {
+          rows = rows.filter((s) => String(s.id ?? "") === leaderSchoolId);
+        }
+
+        setRemoteSchools(rows);
       } catch {
         if (!alive) return;
-        setRemoteSchools([]); // fuerza fallback a mock
+        setRemoteSchools([]); // fallback a mock
       } finally {
         if (!alive) return;
         setSchoolsLoading(false);
@@ -317,13 +373,28 @@ const InterviewForm: React.FC<InterviewFormProps> = ({ onSubmit }) => {
     return () => {
       alive = false;
     };
-  }, [user]);
+  }, [user, isLeader, leaderSchoolId]);
 
-  // ✅ programas dependientes de escuela (con data normalizada)
+  // ✅ LÍDER: auto-selecciona escuela por schoolId (y la deja fija)
+  useEffect(() => {
+    if (!isLeader || !leaderSchoolId) return;
+    if (schoolsLoading) return;
+
+    const s = normalizedSchools.find((x) => String(x.id ?? "") === leaderSchoolId);
+    if (!s) return;
+
+    setFormData((prev) => {
+      if (prev.school === s.name) return prev;
+      return { ...prev, school: s.name, program: "" };
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isLeader, leaderSchoolId, schoolsLoading, normalizedSchools]);
+
+  // programas dependientes de escuela
   useEffect(() => {
     if (formData.school) {
-      const selectedSchool = normalizedSchools.find((s) => s.name === formData.school);
-      const progs = selectedSchool?.programs ?? [];
+      const s = normalizedSchools.find((x) => x.name === formData.school);
+      const progs = (s?.programs ?? []).map((p) => p.name);
       setAvailablePrograms(progs);
 
       if (formData.program && !progs.includes(formData.program)) {
@@ -336,11 +407,10 @@ const InterviewForm: React.FC<InterviewFormProps> = ({ onSubmit }) => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [formData.school, normalizedSchools]);
 
-  // ✅ búsqueda debounced por CC
+  // búsqueda debounced por CC
   useEffect(() => {
     const cc = (formData.documentNumber ?? "").trim();
 
-    // si cambia CC, invalidamos selección
     setSelectedCandidateId(null);
 
     if (!cc || cc.length < 3) {
@@ -386,45 +456,67 @@ const InterviewForm: React.FC<InterviewFormProps> = ({ onSubmit }) => {
         return;
       }
 
+      // ✅ si cambia escuela, resetea programa
+      if (name === "school") {
+        setFormData((prev) => ({ ...prev, school: value, program: "" } as InterviewData));
+        return;
+      }
+
       setFormData((prev) => ({ ...prev, [name]: value } as InterviewData));
     },
     []
   );
 
-  const handlePickCandidate = useCallback((c: TeacherCandidateSearchItemDto) => {
-    // ✅ invalida cualquier respuesta vieja en vuelo
-    searchSeq.current += 1;
-    setIsSearching(false);
+const handlePickCandidate = useCallback((c: TeacherCandidateSearchItemDto) => {
+  searchSeq.current += 1;
+  setIsSearching(false);
 
-    setSelectedCandidateId(c.id);
+  setSelectedCandidateId(c.id);
 
-    setFormData((prev) => ({
-      ...prev,
-      documentNumber: String(c.documentNumber ?? prev.documentNumber ?? ""),
-      candidateName: c.fullName ?? prev.candidateName,
-      age: typeof c.age === "number" && !Number.isNaN(c.age) ? String(c.age) : prev.age,
-    }));
+  setFormData((prev) => ({
+    ...prev,
+    documentNumber: String(c.documentNumber ?? prev.documentNumber ?? ""),
+    candidateName: c.fullName ?? prev.candidateName,
+    age: typeof c.age === "number" && !Number.isNaN(c.age) ? String(c.age) : prev.age,
 
-    setCandidateMatches([]);
-    setLookupError(null);
-  }, []);
+    // ✅ si quieres autocompletar al seleccionar:
+    ...(c.schoolName ? { school: c.schoolName } : {}),
+    ...(c.programName ? { program: c.programName } : {}),
+  }));
 
-  // ✅ FIX: NO mostrar crear si ya hay candidato seleccionado
+  setCandidateMatches([]);
+  setLookupError(null);
+}, []);
+
+
+  // ✅ crear candidato solo si:
+  // - no hay candidato seleccionado
+  // - CC ok y sin matches
+  // - escuelaId y programId resueltos (para no guardar NULL)
   const canCreateCandidate =
     !selectedCandidateId &&
     !!formData.documentNumber?.trim() &&
     formData.documentNumber.trim().length >= 3 &&
     !isSearching &&
-    (candidateMatches?.length ?? 0) === 0;
+    (candidateMatches?.length ?? 0) === 0 &&
+    !!resolvedSchoolId &&
+    !!resolvedProgramId;
+
+  const missingScopeForCreate = !resolvedSchoolId || !resolvedProgramId;
 
   const handleCreateCandidate = useCallback(async () => {
-    if (!canCreateCandidate) return;
-
     const documentNumber = formData.documentNumber.trim();
     const fullName = (formData.candidateName ?? "").trim();
 
+    if (!documentNumber || documentNumber.length < 3) return;
+
     if (!fullName) {
       setLookupError("Escribe el nombre del candidato para crearlo.");
+      return;
+    }
+
+    if (!resolvedSchoolId || !resolvedProgramId) {
+      setLookupError("Selecciona escuela y programa antes de crear el candidato.");
       return;
     }
 
@@ -440,9 +532,10 @@ const InterviewForm: React.FC<InterviewFormProps> = ({ onSubmit }) => {
         documentNumber,
         fullName,
         age,
+        schoolId: resolvedSchoolId,     // ✅ NEW
+        programId: resolvedProgramId,   // ✅ NEW
       });
 
-      // ✅ invalida cualquier respuesta vieja en vuelo
       searchSeq.current += 1;
       setIsSearching(false);
 
@@ -459,7 +552,7 @@ const InterviewForm: React.FC<InterviewFormProps> = ({ onSubmit }) => {
     } finally {
       setIsCreatingCandidate(false);
     }
-  }, [canCreateCandidate, formData, selectedCandidateId]);
+  }, [formData, resolvedSchoolId, resolvedProgramId]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -467,26 +560,43 @@ const InterviewForm: React.FC<InterviewFormProps> = ({ onSubmit }) => {
   };
 
   const loadExample = (example: InterviewData) => {
-    // ✅ invalida búsquedas y limpia selección
     searchSeq.current += 1;
     setIsSearching(false);
 
     setSelectedCandidateId(null);
     setCandidateMatches([]);
     setLookupError(null);
-    setFormData(example);
+
+    // si es líder, respetamos su escuela fija
+    setFormData((prev) => {
+      const next = { ...example };
+      if (isLeader && leaderSchoolId) {
+        const s = normalizedSchools.find((x) => String(x.id ?? "") === leaderSchoolId);
+        if (s) next.school = s.name;
+      }
+      return next;
+    });
+
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
   const resetForm = () => {
-    // ✅ invalida búsquedas y limpia selección
     searchSeq.current += 1;
     setIsSearching(false);
 
     setSelectedCandidateId(null);
     setCandidateMatches([]);
     setLookupError(null);
-    setFormData(initialFormData);
+
+    setFormData((prev) => {
+      const next = { ...initialFormData };
+      if (isLeader && leaderSchoolId) {
+        const s = normalizedSchools.find((x) => String(x.id ?? "") === leaderSchoolId);
+        if (s) next.school = s.name;
+      }
+      return next;
+    });
+
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
@@ -554,7 +664,7 @@ const InterviewForm: React.FC<InterviewFormProps> = ({ onSubmit }) => {
 
         <form onSubmit={handleSubmit} className="space-y-10">
           <FormSection title="Identidad y Trayectoria" icon={<User className="w-6 h-6" />}>
-            {/* ✅ CC + Nombre + Edad */}
+            {/* CC + Nombre + Edad */}
             <div className="grid grid-cols-1 md:grid-cols-6 gap-8">
               <div className="md:col-span-2">
                 <FormField label="Cédula (CC)" name="documentNumber">
@@ -577,7 +687,7 @@ const InterviewForm: React.FC<InterviewFormProps> = ({ onSubmit }) => {
                     </div>
                   </div>
 
-                  {/* ✅ RESULTADOS / CREAR */}
+                  {/* RESULTADOS */}
                   <div className="mt-3 space-y-2">
                     {lookupError && (
                       <div className="rounded-xl border border-rose-500/25 bg-rose-950/30 px-4 py-3 text-xs text-rose-200">
@@ -620,29 +730,6 @@ const InterviewForm: React.FC<InterviewFormProps> = ({ onSubmit }) => {
                       </div>
                     )}
 
-                    {/* ✅ FIX: solo muestra crear si NO hay candidato seleccionado */}
-                    {canCreateCandidate && !selectedCandidateId && (
-                      <div className="rounded-2xl border border-sky-500/35 bg-sky-950/15 px-4 py-3 flex items-center justify-between gap-3">
-                        <div>
-                          <div className="text-sky-200/90 font-semibold">
-                            {(formData.candidateName || "Nuevo candidato").toUpperCase()}
-                          </div>
-                          <div className="text-[11px] text-white/45 font-mono">
-                            CC: {formData.documentNumber}
-                          </div>
-                        </div>
-
-                        <button
-                          type="button"
-                          onClick={handleCreateCandidate}
-                          disabled={isCreatingCandidate}
-                          className="px-4 py-2 rounded-xl border border-emerald-500/35 bg-emerald-500/10 text-emerald-200 text-[11px] font-extrabold uppercase tracking-[0.22em] hover:bg-emerald-500/15 transition disabled:opacity-60 disabled:cursor-wait"
-                        >
-                          {isCreatingCandidate ? "Creando..." : "Crear candidato"}
-                        </button>
-                      </div>
-                    )}
-
                     {selectedCandidateId && (
                       <div className="rounded-xl border border-emerald-500/20 bg-emerald-500/10 px-4 py-2 text-[11px] font-bold uppercase tracking-[0.22em] text-emerald-200/80">
                         Candidato seleccionado
@@ -676,6 +763,7 @@ const InterviewForm: React.FC<InterviewFormProps> = ({ onSubmit }) => {
               </div>
             </div>
 
+            {/* Escuela + Programa */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
               <FormField label="Escuela o Coordinación" name="school">
                 <SelectInput
@@ -684,7 +772,7 @@ const InterviewForm: React.FC<InterviewFormProps> = ({ onSubmit }) => {
                   onChange={handleChange}
                   options={normalizedSchools.map((s) => ({ value: s.name, label: s.name }))}
                   placeholder={schoolsLoading ? "Cargando escuelas..." : "Seleccione una opción..."}
-                  disabled={schoolsLoading}
+                  disabled={schoolsLoading || (isLeader && !!leaderSchoolId)} // ✅ líder no cambia
                 />
               </FormField>
 
@@ -705,6 +793,43 @@ const InterviewForm: React.FC<InterviewFormProps> = ({ onSubmit }) => {
                 />
               </FormField>
             </div>
+
+            {/* ✅ CREAR CANDIDATO (MOVIDO ABAJO DE ESCUELA/PROGRAMA) */}
+            {!selectedCandidateId && (
+              <div className="space-y-2">
+                {missingScopeForCreate && (formData.documentNumber?.trim()?.length ?? 0) >= 3 && (
+                  <div className="rounded-2xl border border-white/10 bg-white/[0.03] px-4 py-3 flex items-center gap-2 text-xs text-white/60">
+                    <Info className="w-4 h-4 text-white/40" />
+                    <span>Selecciona escuela y programa para poder crear el candidato con IDs.</span>
+                  </div>
+                )}
+
+                {canCreateCandidate && (
+                  <div className="rounded-2xl border border-sky-500/35 bg-sky-950/15 px-4 py-3 flex items-center justify-between gap-3">
+                    <div>
+                      <div className="text-sky-200/90 font-semibold">
+                        {(formData.candidateName || "Nuevo candidato").toUpperCase()}
+                      </div>
+                      <div className="text-[11px] text-white/45 font-mono">
+                        CC: {formData.documentNumber}
+                      </div>
+                      <div className="text-[11px] text-white/45 mt-1">
+                        {formData.school} · {formData.program}
+                      </div>
+                    </div>
+
+                    <button
+                      type="button"
+                      onClick={handleCreateCandidate}
+                      disabled={isCreatingCandidate}
+                      className="px-4 py-2 rounded-xl border border-emerald-500/35 bg-emerald-500/10 text-emerald-200 text-[11px] font-extrabold uppercase tracking-[0.22em] hover:bg-emerald-500/15 transition disabled:opacity-60 disabled:cursor-wait"
+                    >
+                      {isCreatingCandidate ? "Creando..." : "Crear candidato"}
+                    </button>
+                  </div>
+                )}
+              </div>
+            )}
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
               <FormField label="Resumen Profesional" name="careerSummary">
@@ -729,7 +854,7 @@ const InterviewForm: React.FC<InterviewFormProps> = ({ onSubmit }) => {
             </div>
           </FormSection>
 
-          {/* Resto del formulario (sin cambios) */}
+          {/* Resto igual */}
           <FormSection title="Disponibilidad y Compromiso" icon={<Clock className="w-6 h-6" />}>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
               <div className="md:col-span-2">
