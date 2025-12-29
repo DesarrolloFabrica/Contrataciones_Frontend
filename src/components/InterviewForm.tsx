@@ -1,7 +1,10 @@
 // src/components/InterviewForm.tsx
-// ✅ Ajustado: búsqueda por CC (autocomplete) + botón "Crear candidato" si no hay coincidencias.
+// ✅ Ajustado: escuelas/programas desde backend (con fallback a mock)
+// ✅ Mantiene formData.school y formData.program como NOMBRES (no IDs) para no romper el resto del flujo.
+// ✅ FIX UI: no mostrar "Crear candidato" cuando ya hay candidato seleccionado/creado
+// ✅ FIX race: invalida búsquedas en vuelo al seleccionar/crear
 
-import React, { useState, useEffect, useCallback, useRef } from "react";
+import React, { useState, useEffect, useCallback, useRef, useMemo } from "react";
 import {
   User,
   Clock,
@@ -18,8 +21,8 @@ import {
   Loader2,
   Search,
 } from "lucide-react";
-import type { InterviewData } from "../types";
-import { schools } from "../data/schools";
+import { InterviewData } from "../types";
+import { schools as mockSchools } from "../data/schools";
 import { approvedExample, mediumExample, rejectedExample } from "../data/exampleData";
 
 import {
@@ -28,11 +31,25 @@ import {
   type TeacherCandidateSearchItemDto,
 } from "../services/teachersService";
 
+import { useAuth } from "../context/AuthContext";
+
 interface InterviewFormProps {
   onSubmit: (data: InterviewData) => void;
 }
 
 const ORG_ID = import.meta.env.VITE_ORG_ID ?? "ORG_DEFAULT";
+
+// ✅ backend base (si no existe, usa rutas relativas y tu proxy de Vite)
+const API_BASE =
+  (import.meta.env.VITE_API_URL as string | undefined) ??
+  (import.meta.env.VITE_BACKEND_URL as string | undefined) ??
+  "";
+
+const apiUrl = (path: string) => {
+  if (!API_BASE) return path;
+  const base = API_BASE.replace(/\/+$/, "");
+  return `${base}${path}`;
+};
 
 const initialFormData: InterviewData = {
   documentNumber: "",
@@ -57,21 +74,13 @@ const initialFormData: InterviewData = {
 };
 
 // ---------------------------------------------------------------------
-// ✅ AJUSTE VISUAL (sin tocar lógica)
-// Objetivo: que las tarjetas NO se mezclen con el fondo #020202.
-// Aplicamos “Premium neutro”:
-// - Tarjeta: grafito (#0B0D0F) con leve transparencia + blur
-// - Borde/ring: blancos sutiles, verde solo como acento (hover/focus)
-// - Glow interno: blanco MUY suave + emerald MUY suave (sin teñir toda la card)
+// ✅ UI (sin tocar lógica)
 // ---------------------------------------------------------------------
-
-// --- COMPONENTES VISUALES AVANZADOS ---
 
 const SectionHeader: React.FC<{ title: string; icon: React.ReactNode }> = React.memo(
   ({ title, icon }) => (
     <div className="flex items-center gap-4 mb-8">
       <div className="relative group">
-        {/* Glow más neutro (menos “verde pintado”) */}
         <div className="absolute inset-0 bg-emerald-500 blur-lg opacity-10 group-hover:opacity-18 transition-opacity duration-500" />
         <div className="relative p-3 rounded-2xl bg-[#0E1115] border border-white/10 text-emerald-400 shadow-lg">
           {icon}
@@ -213,9 +222,49 @@ const SelectInput: React.FC<{
 
 // --- Componente Principal ---
 
+type RemoteSchool = {
+  id?: string;
+  name: string;
+  programs?: Array<{ id?: string; name: string }>;
+};
+
+type NormalizedSchool = {
+  id?: string;
+  name: string;
+  programs: string[];
+};
+
 const InterviewForm: React.FC<InterviewFormProps> = ({ onSubmit }) => {
+  const { user } = useAuth();
+
   const [formData, setFormData] = useState<InterviewData>(initialFormData);
   const [availablePrograms, setAvailablePrograms] = useState<string[]>([]);
+
+  // ✅ Escuelas desde backend
+  const [remoteSchools, setRemoteSchools] = useState<RemoteSchool[]>([]);
+  const [schoolsLoading, setSchoolsLoading] = useState(false);
+
+  const normalizedSchools: NormalizedSchool[] = useMemo(() => {
+    const fromRemote: NormalizedSchool[] =
+      (remoteSchools ?? [])
+        .filter((s) => !!s?.name)
+        .map((s) => ({
+          id: s.id,
+          name: s.name,
+          programs: (s.programs ?? [])
+            .map((p) => p?.name)
+            .filter(Boolean) as string[],
+        })) ?? [];
+
+    if (fromRemote.length > 0) return fromRemote;
+
+    // fallback a mock
+    return (mockSchools ?? []).map((s: any) => ({
+      id: s.id,
+      name: s.name,
+      programs: Array.isArray(s.programs) ? s.programs : [],
+    }));
+  }, [remoteSchools]);
 
   // ✅ Candidate lookup por CC
   const [candidateMatches, setCandidateMatches] = useState<TeacherCandidateSearchItemDto[]>([]);
@@ -226,17 +275,66 @@ const InterviewForm: React.FC<InterviewFormProps> = ({ onSubmit }) => {
 
   const searchSeq = useRef(0);
 
+  // ✅ cargar escuelas + programas desde backend
+  useEffect(() => {
+    let alive = true;
+
+    const loadSchools = async () => {
+      setSchoolsLoading(true);
+      try {
+        const token =
+          (user as any)?.accessToken ??
+          (user as any)?.token ??
+          (user as any)?.jwt ??
+          null;
+
+        const res = await fetch(apiUrl("/schools?includePrograms=true"), {
+          method: "GET",
+          headers: {
+            "Content-Type": "application/json",
+            ...(token ? { Authorization: `Bearer ${token}` } : {}),
+          },
+        });
+
+        if (!res.ok) {
+          // fallback a mock silencioso
+          throw new Error(`GET /schools failed: ${res.status}`);
+        }
+
+        const data = (await res.json()) as RemoteSchool[];
+        if (!alive) return;
+        setRemoteSchools(Array.isArray(data) ? data : []);
+      } catch {
+        if (!alive) return;
+        setRemoteSchools([]); // fuerza fallback a mock
+      } finally {
+        if (!alive) return;
+        setSchoolsLoading(false);
+      }
+    };
+
+    loadSchools();
+    return () => {
+      alive = false;
+    };
+  }, [user]);
+
+  // ✅ programas dependientes de escuela (con data normalizada)
   useEffect(() => {
     if (formData.school) {
-      const selectedSchool = schools.find((s) => s.name === formData.school);
-      setAvailablePrograms(selectedSchool ? selectedSchool.programs : []);
-      if (selectedSchool && !selectedSchool.programs.includes(formData.program)) {
+      const selectedSchool = normalizedSchools.find((s) => s.name === formData.school);
+      const progs = selectedSchool?.programs ?? [];
+      setAvailablePrograms(progs);
+
+      if (formData.program && !progs.includes(formData.program)) {
         setFormData((prev) => ({ ...prev, program: "" }));
       }
     } else {
       setAvailablePrograms([]);
+      if (formData.program) setFormData((prev) => ({ ...prev, program: "" }));
     }
-  }, [formData.school, formData.program]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [formData.school, normalizedSchools]);
 
   // ✅ búsqueda debounced por CC
   useEffect(() => {
@@ -245,7 +343,6 @@ const InterviewForm: React.FC<InterviewFormProps> = ({ onSubmit }) => {
     // si cambia CC, invalidamos selección
     setSelectedCandidateId(null);
 
-    // UX: no buscar hasta tener mínimo 3 dígitos
     if (!cc || cc.length < 3) {
       setCandidateMatches([]);
       setLookupError(null);
@@ -260,7 +357,7 @@ const InterviewForm: React.FC<InterviewFormProps> = ({ onSubmit }) => {
     const t = window.setTimeout(async () => {
       try {
         const rows = await searchTeacherCandidates({ orgId: ORG_ID, q: cc, limit: 8 });
-        if (mySeq !== searchSeq.current) return; // evita respuestas viejas
+        if (mySeq !== searchSeq.current) return;
         setCandidateMatches(rows ?? []);
       } catch (e: any) {
         if (mySeq !== searchSeq.current) return;
@@ -295,9 +392,12 @@ const InterviewForm: React.FC<InterviewFormProps> = ({ onSubmit }) => {
   );
 
   const handlePickCandidate = useCallback((c: TeacherCandidateSearchItemDto) => {
+    // ✅ invalida cualquier respuesta vieja en vuelo
+    searchSeq.current += 1;
+    setIsSearching(false);
+
     setSelectedCandidateId(c.id);
 
-    // rellena datos básicos (sin tocar school/program del form)
     setFormData((prev) => ({
       ...prev,
       documentNumber: String(c.documentNumber ?? prev.documentNumber ?? ""),
@@ -305,11 +405,13 @@ const InterviewForm: React.FC<InterviewFormProps> = ({ onSubmit }) => {
       age: typeof c.age === "number" && !Number.isNaN(c.age) ? String(c.age) : prev.age,
     }));
 
-    setCandidateMatches([]); // cierra lista
+    setCandidateMatches([]);
     setLookupError(null);
   }, []);
 
+  // ✅ FIX: NO mostrar crear si ya hay candidato seleccionado
   const canCreateCandidate =
+    !selectedCandidateId &&
     !!formData.documentNumber?.trim() &&
     formData.documentNumber.trim().length >= 3 &&
     !isSearching &&
@@ -340,6 +442,10 @@ const InterviewForm: React.FC<InterviewFormProps> = ({ onSubmit }) => {
         age,
       });
 
+      // ✅ invalida cualquier respuesta vieja en vuelo
+      searchSeq.current += 1;
+      setIsSearching(false);
+
       setSelectedCandidateId(created.id);
       setCandidateMatches([]);
 
@@ -353,16 +459,18 @@ const InterviewForm: React.FC<InterviewFormProps> = ({ onSubmit }) => {
     } finally {
       setIsCreatingCandidate(false);
     }
-  }, [canCreateCandidate, formData]);
+  }, [canCreateCandidate, formData, selectedCandidateId]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-
-    // ✅ si tu InterviewData NO trae candidateId tipado, lo enviamos como campo extra (no rompe UI)
     onSubmit({ ...(formData as any), candidateId: selectedCandidateId } as any);
   };
 
   const loadExample = (example: InterviewData) => {
+    // ✅ invalida búsquedas y limpia selección
+    searchSeq.current += 1;
+    setIsSearching(false);
+
     setSelectedCandidateId(null);
     setCandidateMatches([]);
     setLookupError(null);
@@ -371,6 +479,10 @@ const InterviewForm: React.FC<InterviewFormProps> = ({ onSubmit }) => {
   };
 
   const resetForm = () => {
+    // ✅ invalida búsquedas y limpia selección
+    searchSeq.current += 1;
+    setIsSearching(false);
+
     setSelectedCandidateId(null);
     setCandidateMatches([]);
     setLookupError(null);
@@ -379,7 +491,7 @@ const InterviewForm: React.FC<InterviewFormProps> = ({ onSubmit }) => {
   };
 
   return (
-    <div className="min-h-screen w-full bg-[#020202] text-gray-200 selection:bg-emerald-500/30 font-sans relative overflow-hidden">
+    <div className="min-h-screen w-f bg-[#020202] text-gray-200 selection:bg-emerald-500/30 font-sans relative overflow-hidden">
       <div className="fixed top-0 left-0 w-full h-full overflow-hidden pointer-events-none z-0">
         <div
           className="absolute top-[-10%] left-[10%] w-[500px] h-[500px] bg-emerald-500/5 rounded-full blur-[120px] mix-blend-screen animate-pulse"
@@ -457,7 +569,11 @@ const InterviewForm: React.FC<InterviewFormProps> = ({ onSubmit }) => {
                     />
 
                     <div className="absolute inset-y-0 right-0 flex items-center pr-4 text-white/35">
-                      {isSearching ? <Loader2 className="w-4 h-4 animate-spin" /> : <Search className="w-4 h-4" />}
+                      {isSearching ? (
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                      ) : (
+                        <Search className="w-4 h-4" />
+                      )}
                     </div>
                   </div>
 
@@ -485,7 +601,9 @@ const InterviewForm: React.FC<InterviewFormProps> = ({ onSubmit }) => {
                             >
                               <div className="flex items-center justify-between gap-3">
                                 <div>
-                                  <div className="text-sm text-white/85 font-semibold">{c.fullName}</div>
+                                  <div className="text-sm text-white/85 font-semibold">
+                                    {c.fullName}
+                                  </div>
                                   <div className="text-[11px] text-white/45 font-mono">
                                     CC: {c.documentNumber ?? "—"}
                                     {typeof c.age === "number" ? ` · ${c.age} años` : ""}
@@ -502,13 +620,16 @@ const InterviewForm: React.FC<InterviewFormProps> = ({ onSubmit }) => {
                       </div>
                     )}
 
-                    {canCreateCandidate && (
+                    {/* ✅ FIX: solo muestra crear si NO hay candidato seleccionado */}
+                    {canCreateCandidate && !selectedCandidateId && (
                       <div className="rounded-2xl border border-sky-500/35 bg-sky-950/15 px-4 py-3 flex items-center justify-between gap-3">
                         <div>
                           <div className="text-sky-200/90 font-semibold">
                             {(formData.candidateName || "Nuevo candidato").toUpperCase()}
                           </div>
-                          <div className="text-[11px] text-white/45 font-mono">CC: {formData.documentNumber}</div>
+                          <div className="text-[11px] text-white/45 font-mono">
+                            CC: {formData.documentNumber}
+                          </div>
                         </div>
 
                         <button
@@ -544,7 +665,13 @@ const InterviewForm: React.FC<InterviewFormProps> = ({ onSubmit }) => {
 
               <div className="md:col-span-1">
                 <FormField label="Edad" name="age">
-                  <TextInput name="age" value={formData.age} onChange={handleChange} type="number" placeholder="Ej. 35" />
+                  <TextInput
+                    name="age"
+                    value={formData.age}
+                    onChange={handleChange}
+                    type="number"
+                    placeholder="Ej. 35"
+                  />
                 </FormField>
               </div>
             </div>
@@ -555,18 +682,26 @@ const InterviewForm: React.FC<InterviewFormProps> = ({ onSubmit }) => {
                   name="school"
                   value={formData.school}
                   onChange={handleChange}
-                  options={schools.map((s) => ({ value: s.name, label: s.name }))}
-                  placeholder="Seleccione una opción..."
+                  options={normalizedSchools.map((s) => ({ value: s.name, label: s.name }))}
+                  placeholder={schoolsLoading ? "Cargando escuelas..." : "Seleccione una opción..."}
+                  disabled={schoolsLoading}
                 />
               </FormField>
+
               <FormField label="Programa Académico" name="program">
                 <SelectInput
                   name="program"
                   value={formData.program}
                   onChange={handleChange}
                   options={availablePrograms.map((p) => ({ value: p, label: p }))}
-                  disabled={!formData.school}
-                  placeholder={formData.school ? "Seleccione el programa..." : "Requiere seleccionar escuela"}
+                  disabled={!formData.school || availablePrograms.length === 0}
+                  placeholder={
+                    !formData.school
+                      ? "Requiere seleccionar escuela"
+                      : availablePrograms.length === 0
+                      ? "No hay programas para esta escuela"
+                      : "Seleccione el programa..."
+                  }
                 />
               </FormField>
             </div>
@@ -581,6 +716,7 @@ const InterviewForm: React.FC<InterviewFormProps> = ({ onSubmit }) => {
                   placeholder="Describa la trayectoria y aspiraciones del candidato..."
                 />
               </FormField>
+
               <FormField label="Experiencia Docente" name="previousExperience">
                 <TextArea
                   name="previousExperience"
