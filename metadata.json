@@ -1,0 +1,5 @@
+{
+  "name": "Ópera Inteligencia Artificial para Facilitadores",
+  "description": "Una herramienta analítica de IA que evalúa el riesgo de deserción de docentes a partir de la información cualitativa obtenida durante una entrevista. Procesa las observaciones del entrevistador para identificar patrones históricamente relacionados con renuncias tempranas.",
+  "requestFramePermissions": []
+}
