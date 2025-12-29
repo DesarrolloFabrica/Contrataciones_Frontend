@@ -1,3 +1,4 @@
+// src/services/auditService.ts
 import type { AuditEvent, AuditEventType, AuditActor } from "../types";
 
 const STORAGE_KEY = "ope-cun:audit-events:v1";
