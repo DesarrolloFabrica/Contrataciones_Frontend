@@ -8,12 +8,22 @@ type ProgramOption = { id: string; name: string };
 
 const normalizeDecision = (value: unknown): LocalDecision => {
   const v = String(value ?? "").trim().toUpperCase();
+
+  // Backend EN
   if (v === "PENDING") return "PENDIENTE";
   if (v === "APPROVED") return "APROBADO";
   if (v === "REJECTED") return "RECHAZADO";
+
+  // ES
+  if (v === "PENDIENTE") return "PENDIENTE";
+  if (v === "APROBADO") return "APROBADO";
+  if (v === "RECHAZADO") return "RECHAZADO";
+
+  // Fallback por contains
   if (v.includes("PEND")) return "PENDIENTE";
   if (v.includes("APROB")) return "APROBADO";
   if (v.includes("RECHAZ")) return "RECHAZADO";
+
   return "PENDIENTE";
 };
 
@@ -26,12 +36,11 @@ type Props = {
   schoolFilter: string;
   setSchoolFilter: (v: string) => void;
 
-  // ✅ programFilter ahora es programId
+  // programFilter ahora es programId
   programFilter: string;
   setProgramFilter: (v: string) => void;
 
   schoolOptions: string[];
-  // ✅ ahora es {id,name}[]
   programOptions: ProgramOption[];
 
   mustChooseScope: boolean;
@@ -80,25 +89,40 @@ const EvaluationsListPanel: React.FC<Props> = ({
   lockedSchool,
   schoolHint,
 }) => {
+  /**
+   * Estado del candidato:
+   * 1) si existe decisión local para alguna entrevista, toma la más reciente
+   * 2) si no, toma la más reciente del backend (coordinatorDecisionStatus / coordinatorDecision.verdict)
+   */
   const getCandidateDecision = (g: CandidateGroup): LocalDecision => {
     const interviews = Array.isArray(g.interviews) ? g.interviews : [];
 
+    // 1) Local (tiene prioridad)
     const localWithTime = interviews
       .map((ev: any) => ({
         id: ev?.id,
         t: Math.max(toTime(ev?.updatedAt), toTime(ev?.createdAt)),
-        local: ev?.id ? localDecisions[ev.id] : undefined,
+        local: ev?.id ? localDecisions?.[ev.id] : undefined,
       }))
       .filter((x) => !!x.local)
       .sort((a, b) => b.t - a.t);
 
     if (localWithTime.length > 0) return localWithTime[0].local as LocalDecision;
 
+    // 2) Backend (más reciente)
     const backendWithTime = interviews
-      .map((ev: any) => ({
-        t: Math.max(toTime(ev?.updatedAt), toTime(ev?.createdAt)),
-        raw: ev?.coordinatorDecisionStatus,
-      }))
+      .map((ev: any) => {
+        const raw =
+          ev?.coordinatorDecisionStatus ??
+          ev?.coordinatorDecision?.verdict ?? // por si en algún punto lo envías anidado
+          ev?.coordinatorDecision ?? // fallback
+          null;
+
+        return {
+          t: Math.max(toTime(ev?.updatedAt), toTime(ev?.createdAt)),
+          raw,
+        };
+      })
       .sort((a, b) => b.t - a.t);
 
     if (backendWithTime.length > 0) return normalizeDecision(backendWithTime[0].raw);

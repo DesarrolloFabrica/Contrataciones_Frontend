@@ -459,17 +459,15 @@ const CoordinatorConsole: React.FC = () => {
       base = base.filter((ev: any) => {
         const sid = getCandidateSchoolId(ev);
         if (sid) return sid === String(userSchoolId);
-        // fallback por nombre si no viene id
-        return getCandidateSchool(ev) === schoolFilter;
+        return getCandidateSchool(ev) === schoolFilter; // fallback por nombre
       });
     } else {
-      // modo viejo multi-escuela: exige nombre de escuela
       base = base.filter((ev) => getCandidateSchool(ev) === schoolFilter);
     }
 
     // ✅ programa:
-    // - si hay scopedSchool, programFilter es ID real
-    // - si no, programFilter es "id=name" del fallback
+    // - si hay scopedSchool => programFilter es ID real
+    // - si no => programFilter es "id=name" del fallback
     if (scopedSchool) {
       base = base.filter((ev: any) => getCandidateProgramId(ev) === String(programFilter));
     } else {
@@ -479,15 +477,20 @@ const CoordinatorConsole: React.FC = () => {
     // search
     const q = evals.search.trim().toLowerCase();
     if (q) {
-      const programNameById = new Map(scopedSchool?.programs?.map((p) => [p.id, p.name]) ?? []);
+      const programNameById = new Map(
+        (scopedSchool?.programs ?? []).map((p) => [String(p.id), String(p.name)])
+      );
 
       base = base.filter((ev: any) => {
-        const name = ev.candidate?.fullName?.toLowerCase() ?? "";
-        const school = getCandidateSchool(ev).toLowerCase();
+        const name = String(ev.candidate?.fullName ?? "").toLowerCase();
+        const school = String(getCandidateSchool(ev) ?? "").toLowerCase();
 
         const pid = getCandidateProgramId(ev);
         const programName =
-          pid && programNameById.get(pid) ? programNameById.get(pid)! : getCandidateProgram(ev);
+          pid && programNameById.get(String(pid))
+            ? programNameById.get(String(pid))
+            : getCandidateProgram(ev);
+
         const program = String(programName ?? "").toLowerCase();
 
         const doc =
@@ -504,27 +507,8 @@ const CoordinatorConsole: React.FC = () => {
       });
     }
 
-    // decision filter
-    if (evals.decisionFilter !== "ALL") {
-      base = base.filter((ev) => {
-        const status =
-          evals.localDecisions[ev.id] ??
-          ((ev.coordinatorDecisionStatus as LocalDecision | undefined) ?? "PENDIENTE");
-        return status === evals.decisionFilter;
-      });
-    }
-
     return base;
-  }, [
-    evals.evaluations,
-    evals.search,
-    evals.decisionFilter,
-    evals.localDecisions,
-    schoolFilter,
-    programFilter,
-    userSchoolId,
-    scopedSchool,
-  ]);
+  }, [evals.evaluations, evals.search, schoolFilter, programFilter, userSchoolId, scopedSchool]);
 
   const groupedCandidates = useMemo(() => groupByCandidate(filteredEvaluations), [filteredEvaluations]);
 
