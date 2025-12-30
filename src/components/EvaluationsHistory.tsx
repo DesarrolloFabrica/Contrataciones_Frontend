@@ -17,6 +17,7 @@ import {
 } from "lucide-react";
 import type { TeacherEvaluationSummary } from "../types";
 import { listTeacherEvaluations } from "../services/teachersService";
+import { useAuth } from "../context/AuthContext"; // ✅ NEW
 
 interface EvaluationsHistoryProps {
   onBackToAnalyze: () => void;
@@ -99,10 +100,48 @@ const badgeForScore = (score: number) => {
   }
 };
 
+// ✅ robust schoolId extractor (eval/candidate pueden variar)
+const getSchoolIdFromSummary = (ev: any): string | null => {
+  const c = ev?.candidate ?? null;
+
+  const v =
+    c?.schoolId ??
+    c?.school_id ??
+    ev?.schoolId ??
+    ev?.school_id ??
+    ev?.schoolIdSnapshot ??
+    ev?.school_id_snapshot ??
+    null;
+
+  if (!v) return null;
+  return String(v);
+};
+
 const EvaluationsHistory: React.FC<EvaluationsHistoryProps> = ({
   onBackToAnalyze,
   onOpenEvaluation,
 }) => {
+  const { user } = useAuth(); // ✅ NEW
+
+  // ✅ Detect role/schoolId del user (igual que en InterviewForm)
+  const roleRaw =
+    (user as any)?.role ??
+    (user as any)?.user?.role ??
+    (user as any)?.profile?.role ??
+    (user as any)?.payload?.role ??
+    "";
+  const role = String(roleRaw ?? "").trim().toUpperCase();
+
+  const leaderSchoolIdRaw =
+    (user as any)?.schoolId ??
+    (user as any)?.user?.schoolId ??
+    (user as any)?.profile?.schoolId ??
+    (user as any)?.payload?.schoolId ??
+    null;
+
+  const leaderSchoolId = leaderSchoolIdRaw ? String(leaderSchoolIdRaw) : null;
+  const isLeader = role === "LIDER" || role === "LEADER";
+
   const [evaluations, setEvaluations] = useState<TeacherEvaluationSummary[]>([]);
   const [search, setSearch] = useState("");
   const [loading, setLoading] = useState(true);
@@ -125,14 +164,25 @@ const EvaluationsHistory: React.FC<EvaluationsHistoryProps> = ({
     load();
   }, []);
 
+  // ✅ 1) scope por schoolId si es LÍDER
+  const scopedEvaluations = useMemo(() => {
+    if (!isLeader || !leaderSchoolId) return evaluations;
+
+    return evaluations.filter((ev: any) => {
+      const sid = getSchoolIdFromSummary(ev);
+      return sid ? sid === leaderSchoolId : false;
+    });
+  }, [evaluations, isLeader, leaderSchoolId]);
+
+  // ✅ 2) búsqueda sobre el subset ya scoping
   const filtered = useMemo(() => {
     const s = search.trim().toLowerCase();
-    if (!s) return evaluations;
+    if (!s) return scopedEvaluations;
 
-    return evaluations.filter((e) => {
-      const name = e.candidate?.fullName?.toLowerCase() ?? "";
-      const program = e.candidate?.programNameSnapshot?.toLowerCase() ?? "";
-      const school = e.candidate?.schoolNameSnapshot?.toLowerCase() ?? "";
+    return scopedEvaluations.filter((e: any) => {
+      const name = e.candidate?.fullName?.toLowerCase?.() ?? "";
+      const program = e.candidate?.programNameSnapshot?.toLowerCase?.() ?? "";
+      const school = e.candidate?.schoolNameSnapshot?.toLowerCase?.() ?? "";
       const doc =
         (e.candidate as any)?.documentNumber?.toLowerCase?.() ??
         (e.candidate as any)?.document_number?.toLowerCase?.() ??
@@ -140,7 +190,7 @@ const EvaluationsHistory: React.FC<EvaluationsHistoryProps> = ({
 
       return name.includes(s) || program.includes(s) || school.includes(s) || doc.includes(s);
     });
-  }, [search, evaluations]);
+  }, [search, scopedEvaluations]);
 
   const handleClearSearch = () => setSearch("");
 
@@ -250,8 +300,8 @@ const EvaluationsHistory: React.FC<EvaluationsHistoryProps> = ({
 
           {!loading && !error && filtered.length > 0 && (
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              {filtered.map((ev) => {
-                const score = pickScore(ev as any);
+              {filtered.map((ev: any) => {
+                const score = pickScore(ev);
                 const badge = badgeForScore(score);
 
                 const createdAt = ev.createdAt ? new Date(ev.createdAt) : null;
@@ -276,18 +326,15 @@ const EvaluationsHistory: React.FC<EvaluationsHistoryProps> = ({
                       overflow-hidden
                     "
                   >
-                    {/* glow suave */}
                     <div className="relative p-6">
                       <div className="pointer-events-none absolute -top-24 -right-24 h-56 w-56 rounded-full bg-emerald-500/10 blur-3xl" />
 
-                      {/* HEADER */}
                       <div className="relative flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
                         <div className="min-w-0">
                           <h3 className="text-xl font-semibold text-white leading-tight">
                             {ev.candidate?.fullName ?? "Candidato sin nombre"}
                           </h3>
 
-                          {/* subtítulo */}
                           <div className="mt-1 flex flex-wrap items-center gap-2 text-xs text-white/45">
                             {ev.candidate?.programNameSnapshot && (
                               <span className="inline-flex items-center gap-1.5">
@@ -325,7 +372,6 @@ const EvaluationsHistory: React.FC<EvaluationsHistoryProps> = ({
                         </div>
                       </div>
 
-                      {/* KPIs */}
                       <div className="relative mt-5 grid grid-cols-1 sm:grid-cols-2 gap-4">
                         <div className="rounded-2xl bg-white/[0.03] border border-white/10 p-4">
                           <p className="text-[10px] font-semibold uppercase tracking-widest text-white/45 mb-2">
@@ -345,14 +391,14 @@ const EvaluationsHistory: React.FC<EvaluationsHistoryProps> = ({
                         </div>
                       </div>
 
-                      {/* Resumen */}
                       <p className="relative mt-5 text-sm text-white/55 leading-relaxed line-clamp-3">
                         {ev.aiOverallComment}
                       </p>
 
-                      {/* Footer */}
                       <div className="relative mt-5 pt-4 border-t border-white/10 flex items-center justify-between gap-3">
-                        <p className="text-[11px] text-white/35 font-mono">ID: {ev.id.slice(0, 8)}…</p>
+                        <p className="text-[11px] text-white/35 font-mono">
+                          ID: {String(ev.id).slice(0, 8)}…
+                        </p>
 
                         <div className="flex items-center gap-3">
                           {ev.aiReportDriveFileId && (

@@ -1,7 +1,7 @@
 // src/components/Header.tsx
 import React from "react";
-import LogoCUN from "../assets/images/LogoCUN.png";
 
+import LogoCUN from "../assets/images/LogoCUN.png";
 type ViewMode = "analyze" | "history";
 
 interface HeaderProps {

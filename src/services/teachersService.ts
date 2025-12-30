@@ -56,6 +56,8 @@ export interface TeacherCandidateSearchItemDto {
   age: number | null;
   schoolId: string | null;
   programId: string | null;
+  schoolName?: string | null;
+  programName?: string | null
 }
 
 export interface TeacherCandidateCreateResponse {
