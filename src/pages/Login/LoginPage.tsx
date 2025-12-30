@@ -4,7 +4,7 @@ import { useAuth } from "../../context/AuthContext";
 
 import BGImg from "../../assets/images/Gemini_Generated_Image_wsary2wsary2wsar (1).png";
 import LogoCun from "../../assets/images/LogoCunColor.png";
-import LogoCun2 from "../../assets/images/LogoCun.png";
+import LogoCun2 from "../../assets/images/LogoCUN.png";
 import Enciendete from "../../assets/images/Enciendete.png";
 import BGVideo from "../../assets/videos/Op2_1.mp4";
 
