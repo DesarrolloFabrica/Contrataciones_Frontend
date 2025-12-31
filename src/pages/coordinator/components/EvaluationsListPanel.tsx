@@ -1,22 +1,25 @@
 // src/pages/coordinator/components/EvaluationsListPanel.tsx
 import React, { useMemo } from "react";
-import { Calendar, FileText, Filter, Search } from "lucide-react";
+import { Calendar, FileText, Filter, Search, Lock } from "lucide-react";
 import TeacherEvaluationItem from "../../../components/TeacherEvaluationItem";
 import type { DecisionFilter, LocalDecision, CandidateGroup } from "../types";
 
-/**
- * Normaliza cualquier variante de estado (EN/ES) al enum local.
- * Evita que el filtro se rompa si backend manda PENDING/REJECTED/APPROVED.
- */
+type ProgramOption = { id: string; name: string };
+
 const normalizeDecision = (value: unknown): LocalDecision => {
   const v = String(value ?? "").trim().toUpperCase();
 
-  // Backend (EN)
+  // Backend EN
   if (v === "PENDING") return "PENDIENTE";
   if (v === "APPROVED") return "APROBADO";
   if (v === "REJECTED") return "RECHAZADO";
 
-  // Backend/Frontend (ES)
+  // ES
+  if (v === "PENDIENTE") return "PENDIENTE";
+  if (v === "APROBADO") return "APROBADO";
+  if (v === "RECHAZADO") return "RECHAZADO";
+
+  // Fallback por contains
   if (v.includes("PEND")) return "PENDIENTE";
   if (v.includes("APROB")) return "APROBADO";
   if (v.includes("RECHAZ")) return "RECHAZADO";
@@ -24,7 +27,6 @@ const normalizeDecision = (value: unknown): LocalDecision => {
   return "PENDIENTE";
 };
 
-/** Fecha “real” para comparar recencia: preferimos updatedAt, luego createdAt */
 const toTime = (d?: unknown) => {
   const t = new Date(String(d ?? "")).getTime();
   return Number.isFinite(t) ? t : 0;
@@ -34,11 +36,12 @@ type Props = {
   schoolFilter: string;
   setSchoolFilter: (v: string) => void;
 
+  // programFilter ahora es programId
   programFilter: string;
   setProgramFilter: (v: string) => void;
 
   schoolOptions: string[];
-  programOptions: string[];
+  programOptions: ProgramOption[];
 
   mustChooseScope: boolean;
 
@@ -55,9 +58,11 @@ type Props = {
 
   onSelectEvaluation: (candidateKey: string, evaluationId: string) => void;
 
-  // botones por candidato
   onOpenDetail: (candidateKey: string, evaluationId: string) => void;
   onOpenSecond: (candidateKey: string, evaluationId: string) => void;
+
+  lockedSchool?: boolean;
+  schoolHint?: string;
 };
 
 const EvaluationsListPanel: React.FC<Props> = ({
@@ -80,33 +85,44 @@ const EvaluationsListPanel: React.FC<Props> = ({
   onSelectEvaluation,
   onOpenDetail,
   onOpenSecond,
+
+  lockedSchool,
+  schoolHint,
 }) => {
   /**
-   * Devuelve el estado del candidato (APROBADO/RECHAZADO/PENDIENTE)
-   * usando la entrevista MÁS RECIENTE que tenga estado,
-   * o la decisión local si existe (tiene prioridad).
+   * Estado del candidato:
+   * 1) si existe decisión local para alguna entrevista, toma la más reciente
+   * 2) si no, toma la más reciente del backend (coordinatorDecisionStatus / coordinatorDecision.verdict)
    */
   const getCandidateDecision = (g: CandidateGroup): LocalDecision => {
     const interviews = Array.isArray(g.interviews) ? g.interviews : [];
 
-    // 1) Local: usamos la más reciente (por timestamp)
+    // 1) Local (tiene prioridad)
     const localWithTime = interviews
       .map((ev: any) => ({
         id: ev?.id,
         t: Math.max(toTime(ev?.updatedAt), toTime(ev?.createdAt)),
-        local: ev?.id ? localDecisions[ev.id] : undefined,
+        local: ev?.id ? localDecisions?.[ev.id] : undefined,
       }))
       .filter((x) => !!x.local)
       .sort((a, b) => b.t - a.t);
 
     if (localWithTime.length > 0) return localWithTime[0].local as LocalDecision;
 
-    // 2) Backend: entrevista más reciente con status
+    // 2) Backend (más reciente)
     const backendWithTime = interviews
-      .map((ev: any) => ({
-        t: Math.max(toTime(ev?.updatedAt), toTime(ev?.createdAt)),
-        raw: ev?.coordinatorDecisionStatus,
-      }))
+      .map((ev: any) => {
+        const raw =
+          ev?.coordinatorDecisionStatus ??
+          ev?.coordinatorDecision?.verdict ?? // por si en algún punto lo envías anidado
+          ev?.coordinatorDecision ?? // fallback
+          null;
+
+        return {
+          t: Math.max(toTime(ev?.updatedAt), toTime(ev?.createdAt)),
+          raw,
+        };
+      })
       .sort((a, b) => b.t - a.t);
 
     if (backendWithTime.length > 0) return normalizeDecision(backendWithTime[0].raw);
@@ -114,7 +130,6 @@ const EvaluationsListPanel: React.FC<Props> = ({
     return "PENDIENTE";
   };
 
-  /** Grupos visibles según decisionFilter */
   const visibleGroups = useMemo(() => {
     if (mustChooseScope) return [];
     return groupedCandidates.filter((g) => {
@@ -145,13 +160,18 @@ const EvaluationsListPanel: React.FC<Props> = ({
       {/* SCOPE (obligatorio) */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-4">
         <div className="space-y-1">
-          <label className="text-[11px] uppercase tracking-widest text-gray-500">
+          <label className="text-[11px] uppercase tracking-widest text-gray-500 flex items-center gap-2">
             Escuela / Coordinación
+            {lockedSchool ? <Lock className="w-3.5 h-3.5 text-emerald-400/80" /> : null}
           </label>
+
           <select
             value={schoolFilter}
             onChange={(e) => setSchoolFilter(e.target.value)}
-            className="w-full bg-[#0A0A0A] border border-white/10 rounded-xl px-3 py-2 text-sm text-gray-200 outline-none focus:border-emerald-500/50"
+            disabled={!!lockedSchool}
+            className={`w-full bg-[#0A0A0A] border border-white/10 rounded-xl px-3 py-2 text-sm outline-none focus:border-emerald-500/50 ${
+              lockedSchool ? "text-gray-400 cursor-not-allowed" : "text-gray-200"
+            }`}
           >
             <option value="">Selecciona una escuela…</option>
             {schoolOptions.map((s) => (
@@ -160,6 +180,8 @@ const EvaluationsListPanel: React.FC<Props> = ({
               </option>
             ))}
           </select>
+
+          {schoolHint && <div className="text-[11px] text-emerald-400/70 mt-1">{schoolHint}</div>}
         </div>
 
         <div className="space-y-1">
@@ -177,9 +199,10 @@ const EvaluationsListPanel: React.FC<Props> = ({
             <option value="">
               {schoolFilter ? "Selecciona un programa…" : "Primero elige escuela…"}
             </option>
+
             {programOptions.map((p) => (
-              <option key={p} value={p}>
-                {p}
+              <option key={p.id} value={p.id}>
+                {p.name}
               </option>
             ))}
           </select>
@@ -220,23 +243,21 @@ const EvaluationsListPanel: React.FC<Props> = ({
 
         <div className="flex items-center gap-2 text-[11px]">
           <span className="uppercase tracking-widest text-gray-500">Estado:</span>
-          {(["ALL", "PENDIENTE", "APROBADO", "RECHAZADO"] as DecisionFilter[]).map(
-            (opt) => (
-              <button
-                key={opt}
-                type="button"
-                onClick={() => !mustChooseScope && setDecisionFilter(opt)}
-                disabled={mustChooseScope}
-                className={`px-3 py-1 rounded-full border text-[11px] ${
-                  decisionFilter === opt
-                    ? "border-emerald-500 bg-emerald-500/10 text-emerald-300"
-                    : "border-white/10 text-gray-400 hover:border-emerald-500/40"
-                } ${mustChooseScope ? "opacity-40 cursor-not-allowed" : ""}`}
-              >
-                {opt === "ALL" ? "Todos" : opt}
-              </button>
-            )
-          )}
+          {(["ALL", "PENDIENTE", "APROBADO", "RECHAZADO"] as DecisionFilter[]).map((opt) => (
+            <button
+              key={opt}
+              type="button"
+              onClick={() => !mustChooseScope && setDecisionFilter(opt)}
+              disabled={mustChooseScope}
+              className={`px-3 py-1 rounded-full border text-[11px] ${
+                decisionFilter === opt
+                  ? "border-emerald-500 bg-emerald-500/10 text-emerald-300"
+                  : "border-white/10 text-gray-400 hover:border-emerald-500/40"
+              } ${mustChooseScope ? "opacity-40 cursor-not-allowed" : ""}`}
+            >
+              {opt === "ALL" ? "Todos" : opt}
+            </button>
+          ))}
         </div>
       </div>
 
