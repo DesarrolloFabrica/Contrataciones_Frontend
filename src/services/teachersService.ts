@@ -47,18 +47,6 @@ export interface TeacherCandidateCreateDto {
   programId?: string | null;
 }
 
-export interface TeacherCandidateSearchItemDto {
-  id: string;
-  documentNumber: string | null;
-  fullName: string;
-  email: string | null;
-  phone: string | null;
-  age: number | null;
-  schoolId: string | null;
-  programId: string | null;
-  schoolName?: string | null;
-  programName?: string | null
-}
 
 export interface TeacherCandidateCreateResponse {
   id: string;
@@ -103,23 +91,7 @@ export type SearchTeacherCandidatesParams = {
   limit?: number;
 };
 
-export async function searchTeacherCandidates(
-  params: SearchTeacherCandidatesParams
-): Promise<TeacherCandidateSearchItemDto[]> {
-  const { orgId, q, limit = 8 } = params;
 
-  // Nota: ajusta el endpoint si tu backend usa otro path.
-  // Este es el más común: GET /teachers/candidates/search?orgId=...&q=...&limit=...
-  const { data } = await apiClient.get<
-    TeacherCandidateSearchItemDto[] | { items: TeacherCandidateSearchItemDto[] } | any
-  >("/teachers/candidates/search", {
-    params: { orgId, q, limit },
-  });
-
-  if (Array.isArray(data)) return data;
-  if (data && Array.isArray((data as any).items)) return (data as any).items;
-  return [];
-}
 
 export type CreateTeacherCandidatePayload = {
   orgId: string;
@@ -140,18 +112,6 @@ export type CreateTeacherCandidateResponse = {
   schoolName?: string | null;
   programName?: string | null;
 };
-
-export async function createTeacherCandidate(
-  payload: CreateTeacherCandidatePayload
-): Promise<CreateTeacherCandidateResponse> {
-  // Nota: ajusta el endpoint si tu backend usa otro path.
-  // Común: POST /teachers/candidates
-  const { data } = await apiClient.post<CreateTeacherCandidateResponse>(
-    "/teachers/candidates",
-    payload
-  );
-  return data;
-}
 
 
 /* ------------------------------------------------------------------ */
