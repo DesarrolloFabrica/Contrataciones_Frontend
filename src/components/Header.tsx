@@ -1,13 +1,7 @@
 // src/components/Header.tsx
-import React, { useCallback } from "react";
-import { useNavigate } from "react-router-dom";
+import React from "react";
 
 import LogoCUN from "../assets/images/LogoCUN.png";
-import { History, LayoutGrid, LogOut } from "lucide-react";
-
-// Context
-import { useAuth } from "../context/AuthContext";
-
 type ViewMode = "analyze" | "history";
 
 interface HeaderProps {
