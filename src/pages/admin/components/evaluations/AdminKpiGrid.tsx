@@ -111,7 +111,10 @@ const Progress = ({
   return (
     <div className="mt-3">
       <div className="w-full h-2 rounded-full bg-white/10 overflow-hidden">
-        <div className={["h-full rounded-full", barCls].join(" ")} style={{ width: `${pct}%` }} />
+        <div
+          className={["h-full rounded-full", barCls].join(" ")}
+          style={{ width: `${pct}%` }}
+        />
       </div>
       <div className="mt-2 flex justify-between text-[11px] text-neutral-500">
         <span>0%</span>
@@ -144,9 +147,7 @@ export default function AdminKpiGrid({
             Métricas del scope
           </p>
           <h3 className="text-white font-black text-lg">Resumen ejecutivo</h3>
-          <p className="text-xs text-neutral-500 mt-1">
-            {scopeLabel}
-          </p>
+          <p className="text-xs text-neutral-500 mt-1">{scopeLabel}</p>
         </div>
 
         <div className="text-[11px] text-neutral-500">
@@ -182,8 +183,12 @@ export default function AdminKpiGrid({
           />
           <div className="flex items-end justify-between gap-3">
             <div className="text-4xl font-black text-white tracking-tight">
-              {Number.isFinite(safeMetrics.avgScore) ? safeMetrics.avgScore.toFixed(1) : "0.0"}
-              <span className="text-lg text-neutral-600 font-semibold">/100</span>
+              {Number.isFinite(safeMetrics.avgScore)
+                ? safeMetrics.avgScore.toFixed(1)
+                : "0.0"}
+              <span className="text-lg text-neutral-600 font-semibold">
+                /100
+              </span>
             </div>
           </div>
           <p className="mt-2 text-xs text-neutral-400">
@@ -200,7 +205,10 @@ export default function AdminKpiGrid({
           />
           <div className="flex items-end justify-between gap-3">
             <div className="text-4xl font-black text-white tracking-tight">
-              {Number.isFinite(recommendedPct) ? recommendedPct.toFixed(0) : "0"}%
+              {Number.isFinite(recommendedPct)
+                ? recommendedPct.toFixed(0)
+                : "0"}
+              %
             </div>
             <div className="text-xs text-neutral-500">
               {safeMetrics.recommended} candidatos
