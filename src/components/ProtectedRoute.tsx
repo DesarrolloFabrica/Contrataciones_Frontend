@@ -17,17 +17,27 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ allowedRoles }) => {
   const { user } = useAuth();
   const location = useLocation();
 
-  // 1) No logueado → login
+  const isOnChangePassword = location.pathname === "/change-password";
+
+  // 1) No logueado → login (guardamos a dónde iba)
   if (!user) {
     return <Navigate to="/login" state={{ from: location }} replace />;
   }
 
   // 2) Forzar cambio de contraseña si aplica
   const needsReset = user.mustResetPassword === true;
-  const isOnChangePassword = location.pathname === "/change-password";
 
   if (needsReset && !isOnChangePassword) {
-    return <Navigate to="/change-password" state={{ from: location }} replace />;
+    return (
+      <Navigate
+        to="/change-password"
+        replace
+        state={{
+          from: location, // para volver luego si quieres
+          email: user.email, // útil para mostrarlo en ChangePasswordPage
+        }}
+      />
+    );
   }
 
   // 3) Validación de rol
