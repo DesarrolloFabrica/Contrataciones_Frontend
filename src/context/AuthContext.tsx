@@ -19,11 +19,12 @@ export interface AuthUser {
   // rol real de BD
   backendRole: BackendRole;
   schoolId: string | null;
+  mustResetPassword?: boolean;
 }
 
 interface AuthContextValue {
   user: AuthUser | null;
-  login: (email: string, name?: string) => Promise<AuthUser>;
+  login: (email: string, password: string) => Promise<AuthUser>;
   logout: () => void;
 }
 
@@ -36,7 +37,7 @@ function mapBackendRoleToUiRole(backendRole: BackendRole): Role {
   return "leader";
 }
 
-// 🔹 helper para poner el header en axios
+// helper para poner el header en axios
 function setAxiosAuthHeader(token?: string) {
   if (token) {
     api.defaults.headers.common["Authorization"] = `Bearer ${token}`;
@@ -50,7 +51,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
 }) => {
   const [user, setUser] = useState<AuthUser | null>(null);
 
-  // 🔹 Cargar auth desde localStorage cuando monta el app
+  // Cargar auth desde localStorage cuando monta el app
   useEffect(() => {
     if (typeof window === "undefined") return;
 
@@ -63,13 +64,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
         user?: AuthUser;
       };
 
-      if (parsed.accessToken) {
-        setAxiosAuthHeader(parsed.accessToken);
-      }
-
-      if (parsed.user) {
-        setUser(parsed.user);
-      }
+      if (parsed.accessToken) setAxiosAuthHeader(parsed.accessToken);
+      if (parsed.user) setUser(parsed.user);
     } catch (err) {
       console.warn("No se pudo leer auth desde localStorage", err);
       localStorage.removeItem(AUTH_STORAGE_KEY);
@@ -77,50 +73,65 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
     }
   }, []);
 
-  // 🔹 login: llama al backend y guarda token + usuario
-  const login = async (email: string, name?: string): Promise<AuthUser> => {
+  // ✅ login: email + password
+  const login = async (email: string, password: string): Promise<AuthUser> => {
     const cleanEmail = email.toLowerCase().trim();
 
-    const resp = await api.post<{
-      accessToken: string;
-      user: {
+    let data: {
+      accessToken?: string;
+      user?: {
         id: string;
         email: string;
         role: BackendRole;
         schoolId: string | null;
         fullName?: string;
+        mustResetPassword?: boolean;
       };
-    }>("/auth/login-by-email", { email: cleanEmail });
+    };
 
-    const { accessToken, user: backendUser } = resp.data;
+    try {
+      const resp = await api.post<typeof data>("/auth/login", {
+        email: cleanEmail,
+        password,
+      });
+      data = resp.data;
+    } catch (error: any) {
+      console.error("[AuthContext] Error en /auth/login:", error?.response?.data || error);
+      throw error;
+    }
+
+    console.log("[AuthContext] login resp.data =", data);
+
+    const { accessToken, user: backendUser } = data;
+
+    if (!accessToken || !backendUser) {
+      console.error(
+        "[AuthContext] Respuesta inesperada de login, falta accessToken o user:",
+        data
+      );
+      throw new Error("Respuesta de login inválida");
+    }
 
     const uiRole = mapBackendRoleToUiRole(backendUser.role);
 
     const authUser: AuthUser = {
       id: backendUser.id,
       email: backendUser.email,
-      name:
-        name?.trim() ||
-        backendUser.fullName ||
-        backendUser.email.split("@")[0],
+      name: backendUser.fullName || backendUser.email.split("@")[0],
       role: uiRole,
       backendRole: backendUser.role,
       schoolId: backendUser.schoolId,
+      mustResetPassword: backendUser.mustResetPassword,
     };
 
-    // 👉 Muy importante: inyectar el header de una vez
+    // Inyectar header y persistir
     setAxiosAuthHeader(accessToken);
-
-    // Y guardar todo en localStorage
     localStorage.setItem(
       AUTH_STORAGE_KEY,
-      JSON.stringify({
-        accessToken,
-        user: authUser,
-      })
+      JSON.stringify({ accessToken, user: authUser })
     );
 
-    // Log de auditoría
+    // Auditoría
     const actor: AuditActor = {
       id: authUser.id,
       name: authUser.name,
@@ -166,8 +177,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
 
 export function useAuth(): AuthContextValue {
   const ctx = useContext(AuthContext);
-  if (!ctx) {
-    throw new Error("useAuth debe usarse dentro de AuthProvider");
-  }
+  if (!ctx) throw new Error("useAuth debe usarse dentro de AuthProvider");
   return ctx;
 }

@@ -1,5 +1,5 @@
 // src/pages/coordinator/CoordinatorConsole.tsx
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import {
   Activity,
   AlertCircle,
@@ -13,6 +13,7 @@ import { useNavigate } from "react-router-dom";
 
 import { useAuth } from "../../context/AuthContext";
 import { actorFromUser } from "../../services/auditActor";
+import { AUTH_STORAGE_KEY } from "../../services/apiClient";
 
 import { useCoordinatorEvaluations } from "./hooks/useCoordinatorEvaluations";
 import { useEvaluationDetail } from "./hooks/useEvaluationDetail";
@@ -20,7 +21,88 @@ import { useEvaluationDetail } from "./hooks/useEvaluationDetail";
 import EvaluationsListPanel from "./components/EvaluationsListPanel";
 import EvaluationDetailPanel from "./components/EvaluationDetailPanel";
 
-import type { DetailTabKey, LocalDecision } from "./types";
+import type { CandidateGroup, DetailTabKey, LocalDecision } from "./types";
+import { getCandidateKey } from "./utils/candidateKey";
+
+import { getTeacherEvaluationById } from "../../services/teachersService";
+import type { AnalysisResult } from "../../types";
+import {
+  buildAverageAnalysis,
+  computeVariability,
+} from "./utils/analysisAggregate";
+
+function normalizeDoc(raw: any): string {
+  const s = (raw ?? "").toString().trim();
+  return s.replace(/\D/g, "");
+}
+
+function normalizeText(raw: any): string {
+  return (raw ?? "").toString().trim();
+}
+
+function getCandidateProgram(ev: any): string {
+  return (
+    normalizeText(ev?.candidate?.programNameSnapshot) ||
+    normalizeText(ev?.programNameSnapshot) ||
+    normalizeText(ev?.candidate?.programName) ||
+    normalizeText(ev?.program?.name) ||
+    ""
+  );
+}
+
+function getCandidateSchool(ev: any): string {
+  return (
+    normalizeText(ev?.candidate?.schoolNameSnapshot) ||
+    normalizeText(ev?.schoolNameSnapshot) ||
+    normalizeText(ev?.candidate?.schoolName) ||
+    normalizeText(ev?.school?.name) ||
+    ""
+  );
+}
+
+function getCandidateDoc(candidate: unknown): string {
+  const c = candidate as any;
+  return normalizeDoc(c?.documentNumber) || normalizeDoc(c?.document_number) || "";
+}
+
+function groupByCandidate(
+  evaluations: import("../../types").TeacherEvaluationSummary[]
+): CandidateGroup[] {
+  const map = new Map<string, import("../../types").TeacherEvaluationSummary[]>();
+
+  for (const ev of evaluations) {
+    const key = getCandidateKey(ev);
+    if (!map.has(key)) map.set(key, []);
+    map.get(key)!.push(ev);
+  }
+
+  const groups: CandidateGroup[] = [];
+
+  for (const [key, interviews] of map.entries()) {
+    const sorted = [...interviews].sort(
+      (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+    );
+
+    const latest = sorted[0];
+
+    groups.push({
+      key,
+      documentNumber: getCandidateDoc(latest.candidate),
+      candidateName: latest.candidate?.fullName ?? "Sin nombre",
+      school: getCandidateSchool(latest as any),
+      program: getCandidateProgram(latest as any),
+      interviews: sorted,
+      latest,
+    });
+  }
+
+  groups.sort(
+    (a, b) =>
+      new Date(b.latest.createdAt).getTime() - new Date(a.latest.createdAt).getTime()
+  );
+
+  return groups;
+}
 
 const CoordinatorConsole: React.FC = () => {
   const { user } = useAuth();
@@ -44,23 +126,74 @@ const CoordinatorConsole: React.FC = () => {
   });
 
   // -----------------------------
-  // 3) Tabs panel derecho (✅ ahora: DECISION | AI | NOTES)
+  // 3) Tabs / estado panel derecho
   // -----------------------------
-  const [detailTab, setDetailTab] = useState<DetailTabKey>("DECISION");
+  const [selectedCandidateKey, setSelectedCandidateKey] = useState<string | null>(
+    null
+  );
+  const [detailTab, setDetailTab] = useState<DetailTabKey>("AI");
+  const [showDetail, setShowDetail] = useState(false);
 
   // -----------------------------
-  // 3.1) NUEVO: notas + criterios (para NotesTab)
+  // 4) Resumen IA promedio (por candidato)
   // -----------------------------
-  const [notes, setNotes] = useState("");
-  const [criteria, setCriteria] = useState<Record<string, boolean>>({
-    docs_ok: false,
-    profile_fit: false,
-    risk_ok: false,
-    communication_ok: false,
-  });
+  const [avgLoading, setAvgLoading] = useState(false);
+  const [avgError, setAvgError] = useState<string | null>(null);
+  const [avgAnalysis, setAvgAnalysis] = useState<AnalysisResult | null>(null);
+  const [variabilityInfo, setVariabilityInfo] = useState<any>(null);
+
+  const computeAvgForSelectedCandidate = async (group: CandidateGroup) => {
+    try {
+      setAvgLoading(true);
+      setAvgError(null);
+      setAvgAnalysis(null);
+      setVariabilityInfo(null);
+
+      const interviews = group?.interviews ?? [];
+      if (interviews.length < 1) {
+        setAvgError("Este candidato no tiene entrevistas.");
+        return;
+      }
+
+      const maxToUse = 6;
+      const slice = interviews.slice(0, maxToUse);
+
+      const details = await Promise.all(
+        slice.map(async (ev) => {
+          const d = await getTeacherEvaluationById(ev.id);
+          return (d?.aiRawJson as AnalysisResult) ?? null;
+        })
+      );
+
+      const analyses = details.filter(Boolean) as AnalysisResult[];
+
+      if (!analyses.length) {
+        setAvgError("No hay reportes IA guardados para este candidato.");
+        return;
+      }
+
+      const avg = buildAverageAnalysis(analyses);
+      const variability = computeVariability(analyses);
+
+      setAvgAnalysis(avg);
+      setVariabilityInfo(variability);
+    } catch (e) {
+      console.error(e);
+      setAvgError(e instanceof Error ? e.message : "No se pudo consolidar el resumen IA.");
+    } finally {
+      setAvgLoading(false);
+    }
+  };
+
+  const detailSectionRef = useRef<HTMLDivElement | null>(null);
+  const scrollToDetailSection = () => {
+    requestAnimationFrame(() => {
+      detailSectionRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+    });
+  };
 
   // -----------------------------
-  // 4) Filtros obligatorios (Escuela + Programa)
+  // 5) Filtros obligatorios (Escuela + Programa)
   // -----------------------------
   const [schoolFilter, setSchoolFilter] = useState<string>("");
   const [programFilter, setProgramFilter] = useState<string>("");
@@ -70,7 +203,7 @@ const CoordinatorConsole: React.FC = () => {
   const schoolOptions = useMemo(() => {
     const set = new Set<string>();
     for (const ev of evals.evaluations) {
-      const s = ev.candidate?.schoolNameSnapshot?.trim();
+      const s = getCandidateSchool(ev);
       if (s) set.add(s);
     }
     return Array.from(set).sort((a, b) => a.localeCompare(b, "es"));
@@ -79,8 +212,8 @@ const CoordinatorConsole: React.FC = () => {
   const programOptions = useMemo(() => {
     const set = new Set<string>();
     for (const ev of evals.evaluations) {
-      const s = ev.candidate?.schoolNameSnapshot?.trim();
-      const p = ev.candidate?.programNameSnapshot?.trim();
+      const s = getCandidateSchool(ev);
+      const p = getCandidateProgram(ev);
       if (!p) continue;
       if (schoolFilter && s !== schoolFilter) continue;
       set.add(p);
@@ -89,54 +222,69 @@ const CoordinatorConsole: React.FC = () => {
   }, [evals.evaluations, schoolFilter]);
 
   // -----------------------------
-  // 5) Logout
+  // 6) Logout
   // -----------------------------
   const handleLogout = () => {
+    localStorage.removeItem(AUTH_STORAGE_KEY);
     localStorage.removeItem("token");
     localStorage.removeItem("user");
     navigate("/login", { replace: true });
   };
 
   // -----------------------------
-  // 6) Resets al cambiar scope
+  // 7) Resets al cambiar scope
   // -----------------------------
   useEffect(() => {
     setProgramFilter("");
     evals.setSearch("");
-    setDetailTab("DECISION");
+    setDetailTab("AI");
     detail.clearSelection();
+    setShowDetail(false);
 
-    // ✅ si cambias escuela, las notas/criterios se reinician
-    setNotes("");
-    setCriteria({
+    // notas/criterios (hook)
+    detail.setNotes("");
+    detail.setCriteria({
       docs_ok: false,
       profile_fit: false,
       risk_ok: false,
       communication_ok: false,
     });
+
+    // resumen promedio
+    setAvgLoading(false);
+    setAvgError(null);
+    setAvgAnalysis(null);
+    setVariabilityInfo(null);
 
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [schoolFilter]);
 
   useEffect(() => {
     evals.setSearch("");
-    setDetailTab("DECISION");
+    setDetailTab("AI");
     detail.clearSelection();
+    setShowDetail(false);
 
-    // ✅ si cambias programa, reinicia notas/criterios
-    setNotes("");
-    setCriteria({
+    // notas/criterios (hook)
+    detail.setNotes("");
+    detail.setCriteria({
       docs_ok: false,
       profile_fit: false,
       risk_ok: false,
       communication_ok: false,
     });
 
+    // resumen promedio
+    setAvgLoading(false);
+    setAvgError(null);
+    setAvgAnalysis(null);
+    setVariabilityInfo(null);
+
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [programFilter]);
 
   // -----------------------------
-  // 7) Filtrado final
+  // 8) Filtrado final
   // -----------------------------
   const filteredEvaluations = useMemo(() => {
     if (!schoolFilter || !programFilter) return [];
@@ -145,8 +293,8 @@ const CoordinatorConsole: React.FC = () => {
 
     // scope
     base = base.filter((ev) => {
-      const s = ev.candidate?.schoolNameSnapshot?.trim() ?? "";
-      const p = ev.candidate?.programNameSnapshot?.trim() ?? "";
+      const s = getCandidateSchool(ev);
+      const p = getCandidateProgram(ev);
       return s === schoolFilter && p === programFilter;
     });
 
@@ -155,9 +303,18 @@ const CoordinatorConsole: React.FC = () => {
     if (q) {
       base = base.filter((ev) => {
         const name = ev.candidate?.fullName?.toLowerCase() ?? "";
-        const school = ev.candidate?.schoolNameSnapshot?.toLowerCase() ?? "";
-        const program = ev.candidate?.programNameSnapshot?.toLowerCase() ?? "";
-        return name.includes(q) || school.includes(q) || program.includes(q);
+        const school = getCandidateSchool(ev).toLowerCase();
+        const program = getCandidateProgram(ev).toLowerCase();
+        const doc =
+          normalizeDoc(ev.candidate?.documentNumber) ||
+          normalizeDoc((ev.candidate as any)?.document_number) ||
+          "";
+        return (
+          name.includes(q) ||
+          school.includes(q) ||
+          program.includes(q) ||
+          (doc && doc.includes(normalizeDoc(q)))
+        );
       });
     }
 
@@ -166,8 +323,7 @@ const CoordinatorConsole: React.FC = () => {
       base = base.filter((ev) => {
         const status =
           evals.localDecisions[ev.id] ??
-          ((ev.coordinatorDecisionStatus as LocalDecision | undefined) ??
-            "PENDIENTE");
+          ((ev.coordinatorDecisionStatus as LocalDecision | undefined) ?? "PENDIENTE");
         return status === evals.decisionFilter;
       });
     }
@@ -182,8 +338,24 @@ const CoordinatorConsole: React.FC = () => {
     programFilter,
   ]);
 
+  const groupedCandidates = useMemo(() => {
+    return groupByCandidate(filteredEvaluations);
+  }, [filteredEvaluations]);
+
+  const selectedCandidateGroup = useMemo(() => {
+    if (!selectedCandidateKey) return null;
+    return groupedCandidates.find((g) => g.key === selectedCandidateKey) ?? null;
+  }, [groupedCandidates, selectedCandidateKey]);
+
+  // ✅ Cuando cambia el candidato, recalculamos promedio + variabilidad
+  useEffect(() => {
+    if (!selectedCandidateGroup) return;
+    computeAvgForSelectedCandidate(selectedCandidateGroup);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedCandidateGroup?.key]);
+
   // -----------------------------
-  // 8) UI states
+  // 9) UI states
   // -----------------------------
   const showLoading = evals.loading;
   const showError = !evals.loading && !!evals.error;
@@ -255,7 +427,7 @@ const CoordinatorConsole: React.FC = () => {
           <>
             {/* MÉTRICAS RÁPIDAS */}
             <section className="grid grid-cols-1 md:grid-cols-3 gap-5 mb-6">
-              <div className="bg-[#050505] border border-white/10 rounded-3xl px-5 py-4 flex flex-col justify-between shadow-lg">
+              <div className="bg-[#1F1F1F]/30 border border-white/10 rounded-3xl px-5 py-4 flex flex-col justify-between shadow-lg">
                 <div className="flex items-center justify-between mb-4">
                   <span className="text-[11px] uppercase tracking-widest text-gray-500">
                     Evaluaciones Totales
@@ -265,7 +437,7 @@ const CoordinatorConsole: React.FC = () => {
                 <p className="text-3xl font-black text-white">{metrics.total}</p>
               </div>
 
-              <div className="bg-[#050505] border border-white/10 rounded-3xl px-5 py-4 flex flex-col justify-between shadow-lg">
+              <div className="bg-[#1F1F1F]/30 border border-white/10 rounded-3xl px-5 py-4 flex flex-col justify-between shadow-lg">
                 <div className="flex items-center justify-between mb-4">
                   <span className="text-[11px] uppercase tracking-widest text-gray-500">
                     Puntaje Global Promedio
@@ -278,7 +450,7 @@ const CoordinatorConsole: React.FC = () => {
                 </p>
               </div>
 
-              <div className="bg-[#050505] border border-white/10 rounded-3xl px-5 py-4 flex flex-col justify-between shadow-lg">
+              <div className="bg-[#1F1F1F]/30 border border-white/10 rounded-3xl px-5 py-4 flex flex-col justify-between shadow-lg">
                 <div className="flex items-center justify-between mb-4">
                   <span className="text-[11px] uppercase tracking-widest text-gray-500">
                     Próxima Fase
@@ -292,7 +464,7 @@ const CoordinatorConsole: React.FC = () => {
             </section>
 
             {/* LISTA + DETALLE */}
-            <section className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <section className="flex flex-col gap-6">
               <EvaluationsListPanel
                 schoolFilter={schoolFilter}
                 setSchoolFilter={setSchoolFilter}
@@ -301,53 +473,74 @@ const CoordinatorConsole: React.FC = () => {
                 schoolOptions={schoolOptions}
                 programOptions={programOptions}
                 mustChooseScope={mustChooseScope}
-                filteredEvaluations={filteredEvaluations}
+                groupedCandidates={groupedCandidates}
                 selectedId={detail.selectedId}
                 search={evals.search}
                 setSearch={evals.setSearch}
                 decisionFilter={evals.decisionFilter}
                 setDecisionFilter={evals.setDecisionFilter}
                 localDecisions={evals.localDecisions}
-                onSelectEvaluation={(id) => {
-                  detail.handleSelectEvaluation(id);
-                  setDetailTab("DECISION");
-
-                  // ✅ al cambiar evaluación, limpia notas/criterios
-                  setNotes("");
-                  setCriteria({
-                    docs_ok: false,
-                    profile_fit: false,
-                    risk_ok: false,
-                    communication_ok: false,
-                  });
+                onSelectEvaluation={(candidateKey, evaluationId) => {
+                  setSelectedCandidateKey(candidateKey);
+                  detail.handleSelectEvaluation(evaluationId);
+                  setDetailTab("AI");
+                }}
+                onOpenDetail={(candidateKey, evaluationId) => {
+                  setSelectedCandidateKey(candidateKey);
+                  setShowDetail(true);
+                  detail.handleSelectEvaluation(evaluationId);
+                  setDetailTab("AI");
+                  scrollToDetailSection();
+                }}
+                // Antes era "SECOND": ahora abre el detalle y te manda a entrevistas
+                onOpenSecond={(candidateKey, evaluationId) => {
+                  setSelectedCandidateKey(candidateKey);
+                  setShowDetail(true);
+                  detail.handleSelectEvaluation(evaluationId);
+                  setDetailTab("INTERVIEWS");
+                  scrollToDetailSection();
                 }}
               />
 
-              <EvaluationDetailPanel
-                selectedId={detail.selectedId}
-                selectedDetail={detail.selectedDetail}
-                loadingDetail={detail.loadingDetail}
-                onExportPdf={detail.exportPdf}
-                detailTab={detailTab}
-                setDetailTab={setDetailTab}
-                decision={detail.decision}
-                decisionComment={detail.decisionComment}
-                setDecisionComment={detail.setDecisionComment}
-                onDecisionCommentBlur={detail.onDecisionCommentBlur}
-                onApplyDecision={detail.applyDecision}
+              <div ref={detailSectionRef} />
 
-                // ✅ NOTES
-                notes={detail.notes}
-                setNotes={detail.setNotes}
-                criteria={detail.criteria}
-                setCriteria={detail.setCriteria}
-
-                // ✅ VALIDACIÓN + SUBMIT
-                canSubmitDecision={detail.canSubmitDecision}
-                missingReasons={detail.missingReasons}
-                onSubmitDecision={detail.submitDecisionToAdmin}
-              />
-
+              {showDetail && (
+                <EvaluationDetailPanel
+                  selectedId={detail.selectedId}
+                  selectedDetail={detail.selectedDetail}
+                  loadingDetail={detail.loadingDetail}
+                  onExportPdf={detail.exportPdf}
+                  detailTab={detailTab}
+                  setDetailTab={setDetailTab}
+                  decision={detail.decision}
+                  decisionComment={detail.decisionComment}
+                  setDecisionComment={detail.setDecisionComment}
+                  onDecisionCommentBlur={detail.onDecisionCommentBlur}
+                  onApplyDecision={detail.applyDecision}
+                  onOpenComparison={() => setDetailTab("INTERVIEWS")}
+                  // NOTES
+                  notes={detail.notes}
+                  setNotes={detail.setNotes}
+                  criteria={detail.criteria}
+                  setCriteria={detail.setCriteria}
+                  // VALIDACIÓN + SUBMIT
+                  canSubmitDecision={detail.canSubmitDecision}
+                  missingReasons={detail.missingReasons}
+                  onSubmitDecision={detail.submitDecisionToAdmin}
+                  // ENTREVISTAS
+                  candidateGroup={selectedCandidateGroup}
+                  onOpenInterview={(evaluationId) => {
+                    navigate(
+                      `/coordinator/evaluations/${encodeURIComponent(evaluationId)}`
+                    );
+                  }}
+                  // Resumen IA Promedio
+                  avgAnalysis={avgAnalysis}
+                  avgLoading={avgLoading}
+                  avgError={avgError}
+                  variabilityInfo={variabilityInfo}
+                />
+              )}
             </section>
           </>
         )}

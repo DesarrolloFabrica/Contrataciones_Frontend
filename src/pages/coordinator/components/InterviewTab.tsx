@@ -1,7 +1,7 @@
 // src/pages/coordinator/components/InterviewsTab.tsx
-import React, { useState } from "react"; // ✅ ahora usamos useState
+import React, { useState } from "react";
 import type { CandidateGroup } from "../types";
-import ComparisonInlinePanel from "./ComparisonInlinePanel"; // ✅ nuevo componente inline
+import ComparisonInlinePanel from "./ComparisonInlinePanel";
 
 type Props = {
   /** Grupo del candidato seleccionado (trae interviews[]) */
@@ -13,22 +13,18 @@ type Props = {
   /** Abrir una evaluación específica (una entrevista) */
   onOpenInterview: (evaluationId: string) => void;
 
-  /**
-   * ⚠️ Ya NO lo usamos si queremos inline.
-   * Si lo estás usando en otros lados, lo puedes dejar,
-   * pero aquí no es necesario.
-   */
-  // onOpenComparison: () => void;
+  /** fallback (si quieres abrir otra vista o tab) */
+  onOpenComparison: () => void;
 };
 
 export default function InterviewsTab({
   candidateGroup,
   selectedEvaluationId,
   onOpenInterview,
+  onOpenComparison,
 }: Props) {
   const interviews = candidateGroup.interviews ?? [];
 
-  // ✅ NUEVO: controlar si se ve el panel inline
   const [showComparison, setShowComparison] = useState(false);
 
   if (interviews.length === 0) {
@@ -39,7 +35,7 @@ export default function InterviewsTab({
     );
   }
 
-  const canCompare = interviews.length >= 2; // ✅ regla pedida
+  const canCompare = interviews.length >= 2;
 
   return (
     <div className="space-y-3">
@@ -90,12 +86,11 @@ export default function InterviewsTab({
         })}
       </div>
 
-      {/* ✅ CTA inferior: comparar entrevistas (solo si hay 2+) */}
       {canCompare && (
         <div className="pt-3 border-t border-white/10 space-y-3">
           <button
             type="button"
-            onClick={() => setShowComparison((v) => !v)} // ✅ toggle inline
+            onClick={() => setShowComparison((v) => !v)}
             className="
               w-full
               rounded-2xl
@@ -114,10 +109,18 @@ export default function InterviewsTab({
             La IA detectará similitudes, diferencias y evolución entre reportes.
           </p>
 
-          {/* ✅ AQUÍ aparece el panel justo debajo (sin cambiar de vista) */}
-          {showComparison && (
+          {showComparison ? (
             <ComparisonInlinePanel candidateGroup={candidateGroup} />
+          ) : (
+            // fallback opcional: si prefieres abrir otra vista/tab cuando no está desplegado
+            null
           )}
+
+          {/* Si algún día quieres forzar navegación/tab, puedes usar esto:
+          <button type="button" onClick={onOpenComparison} className="text-xs text-emerald-300 underline">
+            Abrir comparación en vista dedicada
+          </button>
+          */}
         </div>
       )}
     </div>

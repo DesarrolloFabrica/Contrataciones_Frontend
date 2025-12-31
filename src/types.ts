@@ -1,9 +1,8 @@
 // src/types.ts
-
-// --- EXISTENTE ---
-export type AcceptsCommitteesOption = 'Sí' | 'No' | 'Depende';
+export type AcceptsCommitteesOption = "Sí" | "No" | "Depende";
 
 export interface InterviewData {
+  documentNumber: string;
   candidateName: string;
   age: string;
   school: string;
@@ -34,7 +33,7 @@ export interface CategoryAnalysis {
 }
 
 export interface AnalysisResult {
-  overallRiskLevel: 'Bajo' | 'Medio' | 'Alto';
+  overallRiskLevel: "Bajo" | "Medio" | "Alto";
   overallScore: number;
   executiveSummary: string;
   categoryAnalyses: CategoryAnalysis[];
@@ -44,10 +43,15 @@ export interface AnalysisResult {
   finalVerdict: string;
 }
 
-// ===== TIPOS PARA BACKEND TEACHERS =====
+/* =========================
+   BACKEND TEACHERS
+   ========================= */
+
+export type DecisionStatusApi = "PENDING" | "APPROVED" | "REJECTED";
 
 export interface TeacherForm {
   candidate: {
+    documentNumber: string;
     fullName: string;
     age: number;
     schoolName: string;
@@ -77,7 +81,6 @@ export interface TeacherForm {
   };
 }
 
-// Resultado “compacto” que mandaremos al backend
 export interface TeacherAiResult {
   strengths?: string;
   weaknesses?: string;
@@ -85,60 +88,62 @@ export interface TeacherAiResult {
   teachingSuitabilityScore?: number;
   recommendation?: string;
   overallComment?: string;
-  rawOutput?: AnalysisResult; // seguimos guardando el JSON completo si lo necesitas
+  rawOutput?: AnalysisResult;
 }
 
-// 🔹 NUEVO: estados de decisión del coordinador
-export type CoordinatorDecisionStatus = 'PENDIENTE' | 'APROBADO' | 'RECHAZADO';
-
-// 🔹 NUEVO: detalle de la decisión (lo que idealmente guardará el backend)
 export interface CoordinatorDecision {
-  status: CoordinatorDecisionStatus;
+  status: DecisionStatusApi;
   comment?: string | null;
   decidedAt?: string | null;
   decidedById?: string | null;
   decidedByName?: string | null;
 }
 
-// 🔹 NUEVO: payload que enviará el frontend al backend
-export interface CoordinatorDecisionPayload {
-  status: CoordinatorDecisionStatus;
-  comment?: string;
-}
-
-// Resumen que devuelve el backend al listar
+// Resumen/listado (alineado a entity TeacherEvaluation + relation candidate)
 export interface TeacherEvaluationSummary {
   id: string;
   createdAt: string;
 
   candidate?: {
+    id: string;
+
+    // principal (UI)
+    documentNumber: string | null;
+
     fullName: string;
+
+    // compat con payloads legacy/backends distintos
+    document_number?: string | null;
     schoolNameSnapshot?: string | null;
     programNameSnapshot?: string | null;
   };
 
-  aiTeachingSuitabilityScore: number;
-  aiFinalRecommendation: string;
-  aiOverallComment: string;
+  aiTeachingSuitabilityScore: number | null;
+  aiFinalRecommendation: string | null;
+  aiOverallComment: string | null;
   aiReportDriveFileId?: string | null;
 
-  // 🔹 NUEVO: decisión del coordinador (si existe)
-  coordinatorDecision?: CoordinatorDecision;
-  // 🔹 NUEVO: campos pensados para la decisión del coordinador
-  coordinatorDecisionStatus?: "PENDIENTE" | "APROBADO" | "RECHAZADO" | null;
-  coordinatorDecisionBy?: string | null;
-  coordinatorDecisionAt?: string | null;
+  coordinatorDecisionStatus?: DecisionStatusApi | null;
   coordinatorDecisionComment?: string | null;
+  coordinatorDecisionAt?: string | null;
+
+  adminDecisionStatus?: DecisionStatusApi | null;
+  adminDecisionComment?: string | null;
+  adminDecisionAt?: string | null;
+
+  interviewerUserId?: string | null;
 }
 
-// ===== AUDIT TRAIL (FRONTEND-ONLY POR AHORA) =====
+/* =========================
+   AUDIT TRAIL (front)
+   ========================= */
 
 export type AuditActorRole = "leader" | "coordinator" | "admin" | "system";
 
 export interface AuditActor {
-  id?: string | null;
-  name?: string | null;
-  email?: string | null;
+  id: string;
+  name: string;
+  email: string;
   role: AuditActorRole;
 }
 
@@ -155,30 +160,35 @@ export type AuditEventType =
   | "LOGIN"
   | "LOGOUT";
 
-
 export interface AuditEvent {
-  id: string; // uuid
+  id: string;
   type: AuditEventType;
-  at: string; // ISO date
-  evaluationId?: string | null; // si aplica
+  at: string;
+  evaluationId?: string | null;
   actor: AuditActor;
-  // metadata libre (pero tipada como record simple)
   metadata?: Record<string, string | number | boolean | null>;
 }
-//user
+
+/* =========================
+   AUTH / USERS (sin cambios)
+   ========================= */
+
 export type UserRole = "ADMIN" | "COORDINADOR" | "LIDER";
 
-export interface AuthUser {
+export type AuthUser = {
   id: string;
   email: string;
-  role: UserRole;
+  fullName: string;
+  role: "ADMIN" | "COORDINADOR" | "LIDER";
   schoolId: string | null;
-}
+  mustResetPassword?: boolean;
+};
 
-export interface AuthResponse {
+export type AuthResponse = {
   accessToken: string;
   user: AuthUser;
-}
+};
+
 export type BackendRole = "ADMIN" | "COORDINADOR" | "LIDER";
 
 export interface BackendSchoolSummary {
@@ -197,6 +207,7 @@ export interface BackendUser {
   createdAt: string;
   updatedAt: string;
 }
+
 export type BackendUserRole = "ADMIN" | "COORDINADOR" | "LIDER";
 
 export interface BackendAuthUser {
@@ -207,13 +218,11 @@ export interface BackendAuthUser {
   schoolId?: string | null;
 }
 
-// Respuesta del endpoint POST /auth/login-by-email
 export interface AuthApiResponse {
   accessToken: string;
   user: BackendAuthUser;
 }
 
-// Lo que guardamos en localStorage para que el interceptor ponga el token
 export interface StoredAuth {
   accessToken: string;
   user: {

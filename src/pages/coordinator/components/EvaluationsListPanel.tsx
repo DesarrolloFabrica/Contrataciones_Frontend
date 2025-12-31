@@ -1,12 +1,36 @@
 // src/pages/coordinator/components/EvaluationsListPanel.tsx
-import React from "react";
+import React, { useMemo } from "react";
 import { Calendar, FileText, Filter, Search } from "lucide-react";
 import TeacherEvaluationItem from "../../../components/TeacherEvaluationItem";
-import { TeacherEvaluationSummary } from "../../../types";
-import { DecisionFilter, LocalDecision } from "../types";
+import type { DecisionFilter, LocalDecision, CandidateGroup } from "../types";
+
+/**
+ * Normaliza cualquier variante de estado (EN/ES) al enum local.
+ * Evita que el filtro se rompa si backend manda PENDING/REJECTED/APPROVED.
+ */
+const normalizeDecision = (value: unknown): LocalDecision => {
+  const v = String(value ?? "").trim().toUpperCase();
+
+  // Backend (EN)
+  if (v === "PENDING") return "PENDIENTE";
+  if (v === "APPROVED") return "APROBADO";
+  if (v === "REJECTED") return "RECHAZADO";
+
+  // Backend/Frontend (ES)
+  if (v.includes("PEND")) return "PENDIENTE";
+  if (v.includes("APROB")) return "APROBADO";
+  if (v.includes("RECHAZ")) return "RECHAZADO";
+
+  return "PENDIENTE";
+};
+
+/** Fecha “real” para comparar recencia: preferimos updatedAt, luego createdAt */
+const toTime = (d?: unknown) => {
+  const t = new Date(String(d ?? "")).getTime();
+  return Number.isFinite(t) ? t : 0;
+};
 
 type Props = {
-  // scope obligatorio
   schoolFilter: string;
   setSchoolFilter: (v: string) => void;
 
@@ -18,8 +42,7 @@ type Props = {
 
   mustChooseScope: boolean;
 
-  // lista + filtros
-  filteredEvaluations: TeacherEvaluationSummary[];
+  groupedCandidates: CandidateGroup[];
   selectedId: string | null;
 
   search: string;
@@ -30,7 +53,11 @@ type Props = {
 
   localDecisions: Record<string, LocalDecision>;
 
-  onSelectEvaluation: (id: string) => void;
+  onSelectEvaluation: (candidateKey: string, evaluationId: string) => void;
+
+  // botones por candidato
+  onOpenDetail: (candidateKey: string, evaluationId: string) => void;
+  onOpenSecond: (candidateKey: string, evaluationId: string) => void;
 };
 
 const EvaluationsListPanel: React.FC<Props> = ({
@@ -42,17 +69,63 @@ const EvaluationsListPanel: React.FC<Props> = ({
   programOptions,
   mustChooseScope,
 
-  filteredEvaluations,
+  groupedCandidates,
   selectedId,
   search,
   setSearch,
   decisionFilter,
   setDecisionFilter,
   localDecisions,
+
   onSelectEvaluation,
+  onOpenDetail,
+  onOpenSecond,
 }) => {
+  /**
+   * Devuelve el estado del candidato (APROBADO/RECHAZADO/PENDIENTE)
+   * usando la entrevista MÁS RECIENTE que tenga estado,
+   * o la decisión local si existe (tiene prioridad).
+   */
+  const getCandidateDecision = (g: CandidateGroup): LocalDecision => {
+    const interviews = Array.isArray(g.interviews) ? g.interviews : [];
+
+    // 1) Local: usamos la más reciente (por timestamp)
+    const localWithTime = interviews
+      .map((ev: any) => ({
+        id: ev?.id,
+        t: Math.max(toTime(ev?.updatedAt), toTime(ev?.createdAt)),
+        local: ev?.id ? localDecisions[ev.id] : undefined,
+      }))
+      .filter((x) => !!x.local)
+      .sort((a, b) => b.t - a.t);
+
+    if (localWithTime.length > 0) return localWithTime[0].local as LocalDecision;
+
+    // 2) Backend: entrevista más reciente con status
+    const backendWithTime = interviews
+      .map((ev: any) => ({
+        t: Math.max(toTime(ev?.updatedAt), toTime(ev?.createdAt)),
+        raw: ev?.coordinatorDecisionStatus,
+      }))
+      .sort((a, b) => b.t - a.t);
+
+    if (backendWithTime.length > 0) return normalizeDecision(backendWithTime[0].raw);
+
+    return "PENDIENTE";
+  };
+
+  /** Grupos visibles según decisionFilter */
+  const visibleGroups = useMemo(() => {
+    if (mustChooseScope) return [];
+    return groupedCandidates.filter((g) => {
+      if (decisionFilter === "ALL") return true;
+      return getCandidateDecision(g) === decisionFilter;
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [mustChooseScope, groupedCandidates, decisionFilter, localDecisions]);
+
   return (
-    <div className="bg-[#050505]/90 border border-white/10 rounded-3xl p-5 md:p-6 shadow-xl flex flex-col">
+    <div className="bg-[#1F1F1F]/30 border border-white/10 rounded-3xl p-5 md:p-6 shadow-xl flex flex-col">
       <div className="flex items-center justify-between mb-4 gap-3">
         <div>
           <h3 className="text-sm font-bold uppercase tracking-widest text-gray-400 flex items-center gap-2">
@@ -168,34 +241,61 @@ const EvaluationsListPanel: React.FC<Props> = ({
       </div>
 
       {/* lista */}
-      <div className="space-y-2 overflow-y-auto pr-1 max-h-[480px]">
+      <div className="space-y-3 overflow-y-auto pr-1 max-h-[480px]">
         {mustChooseScope && (
           <div className="flex items-center justify-center py-10 text-gray-500 text-sm">
             Elige escuela y programa para ver evaluaciones.
           </div>
         )}
 
-        {!mustChooseScope && filteredEvaluations.length === 0 && (
+        {!mustChooseScope && visibleGroups.length === 0 && (
           <div className="flex items-center justify-center py-10 text-gray-500 text-sm">
             No hay evaluaciones para los filtros actuales.
           </div>
         )}
 
         {!mustChooseScope &&
-          filteredEvaluations.map((ev) => {
-            const isSelected = selectedId === ev.id;
-            const statusForUi =
-              localDecisions[ev.id] ??
-              (ev.coordinatorDecisionStatus as LocalDecision | undefined);
+          visibleGroups.map((g) => {
+            const ev = g.latest;
+            const candidateDecision = getCandidateDecision(g);
 
             return (
-              <TeacherEvaluationItem
-                key={ev.id}
-                evaluation={ev}
-                selected={isSelected}
-                onClick={() => onSelectEvaluation(ev.id)}
-                decisionStatus={statusForUi}
-              />
+              <div key={g.key} className="space-y-2">
+                <TeacherEvaluationItem
+                  evaluation={ev}
+                  selected={selectedId === ev.id}
+                  onClick={() => onSelectEvaluation(g.key, ev.id)}
+                  decisionStatus={candidateDecision}
+                />
+
+                <div className="flex items-center justify-between px-2">
+                  <span className="text-xs text-gray-500">
+                    Entrevistas: <b className="text-gray-300">{g.interviews.length}</b>
+                  </span>
+
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() => onOpenDetail(g.key, ev.id)}
+                      className="px-3 py-2 rounded-xl border border-emerald-500/25
+                                 text-[11px] uppercase tracking-widest text-emerald-300
+                                 hover:border-emerald-500/40 hover:bg-emerald-500/10 transition"
+                    >
+                      Ver detalle
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => onOpenSecond(g.key, ev.id)}
+                      className="px-3 py-2 rounded-xl border border-white/10
+                                 text-[11px] uppercase tracking-widest text-gray-300
+                                 hover:border-white/20 hover:bg-white/5 transition"
+                    >
+                      Comparativa
+                    </button>
+                  </div>
+                </div>
+              </div>
             );
           })}
       </div>

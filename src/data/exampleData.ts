@@ -1,102 +1,115 @@
+// src/data/exampleData.ts
 import { InterviewData } from "../types";
 
+/**
+ * ✅ Coherente con DB:
+ * - school: NOMBRE exacto de school.name (no IDs)
+ * - program: NOMBRE exacto de program.name (no IDs)
+ * - Evita: Escuela de Salud (sin programas) y especializaciones como programa
+ * - Incluye documentNumber (nuevo en el form)
+ */
+
 export const approvedExample: InterviewData = {
+  documentNumber: "1030123456",
   candidateName: "Dra. Elena Vélez",
   age: "42",
-  school: "Ingeniería",
-  program: "Ingeniería de Sistemas",
+  school: "Escuela de Ingeniería",
+  program: "Ingeniería de Sistemas (Presencial)",
   careerSummary:
-    "Doctora en Ciencias de la Computación con más de 15 años de experiencia en docencia universitaria e investigación en inteligencia artificial. He liderado proyectos de desarrollo de software y publicado en conferencias internacionales. Mi pasión es formar a la próxima generación de ingenieros con un enfoque práctico y ético.",
+    "Doctora en Ciencias de la Computación con 15+ años de experiencia en docencia universitaria e investigación aplicada. He liderado proyectos de desarrollo de software y publicado en conferencias internacionales. Mi enfoque es formar ingenieros con base sólida, práctica y ética.",
   previousExperience:
-    "He sido docente de cátedra en la Universidad Nacional por 10 años en materias como Algoritmos, Estructuras de Datos e IA. También trabajé como Ingeniera de Software Senior en Globant durante 5 años, lo que me da una perspectiva aplicada de la industria.",
+    "Docente universitaria por 10 años en asignaturas como Algoritmos, Estructuras de Datos, Arquitectura de Software e IA. Experiencia en industria como Ingeniera de Software Senior liderando equipos y revisiones técnicas, aportando una visión aplicada al aula.",
   availabilityDetails:
-    "Tengo disponibilidad completa para las tardes y noches, de lunes a viernes. Puedo ajustarme a las necesidades de la universidad para reuniones o tutorías.",
+    "Disponibilidad estable lunes a viernes en franjas tarde-noche. Flexibilidad para tutorías y reuniones programadas con coordinación.",
   acceptsCommittees: "Sí",
   otherJobs:
-    "Actualmente, solo realizo consultorías de forma esporádica y freelance, lo cual no interfiere con mis compromisos académicos. Mi prioridad sería la docencia en esta institución.",
+    "Consultoría puntual de forma esporádica. No interfiere con docencia; la prioridad es el compromiso con la institución.",
   evaluationMethodology:
-    "Mi metodología se basa en la evaluación continua. Utilizo una combinación de quizzes semanales, proyectos prácticos, un parcial y un proyecto final integrador. El objetivo es medir tanto el conocimiento teórico como la habilidad para resolver problemas reales.",
+    "Evaluación continua con rúbricas claras: quizzes cortos, talleres guiados, laboratorios de programación, parcial aplicado y proyecto final integrador. Priorizo evidencias de razonamiento y calidad del proceso, no solo el resultado.",
   failureRatePlan:
-    "Si detecto una alta tasa de reprobación, mi primer paso es analizar los datos para identificar los temas o conceptos más problemáticos. Luego, implementaría sesiones de refuerzo, ofrecería tutorías adicionales y ajustaría mi enfoque pedagógico en esas áreas. Fomentaría el trabajo en grupo para que los estudiantes se apoyen mutuamente.",
+    "Si hay alta reprobación, reviso evidencia (quizzes, tareas) para detectar conceptos críticos. Ajusto secuencias, agrego refuerzos, tutorías y ejercicios escalonados. Implemento retroalimentación temprana y seguimiento individual a quienes se rezagan.",
   apatheticStudentPlan:
-    "Para un estudiante apático, buscaría primero entender la raíz de su desinterés a través de una conversación uno a uno. Intentaría conectar el contenido de la materia con sus intereses personales o metas profesionales. También utilizaría metodologías más activas y participativas, como el aprendizaje basado en proyectos, para aumentar su engagement.",
+    "Identifico causa (motivación, hábitos, contexto) en conversación individual. Conecto los contenidos con objetivos profesionales y uso aprendizaje basado en proyectos con entregas pequeñas para reactivar participación. Defino expectativas, acompañamiento y métricas de avance.",
   aiToolsUsage:
-    "Sí, utilizo activamente herramientas como GitHub Copilot para la enseñanza de código, y plataformas como Perplexity o Elicit para la investigación. Enseño a mis estudiantes a usar estas herramientas como asistentes para potenciar su aprendizaje, no como un reemplazo de su razonamiento.",
+    "Uso herramientas como GitHub Copilot y asistentes de búsqueda/lectura para apoyar aprendizaje y productividad. Enseño a usarlas como apoyo: planteamiento de hipótesis, verificación y refactor, manteniendo trazabilidad de decisiones.",
   ethicalAiMeasures:
-    "Fomento la discusión sobre los sesgos en los modelos de IA, la privacidad de los datos y el impacto social de la automatización. En los proyectos, exijo que los estudiantes incluyan una sección de análisis ético sobre la solución que proponen.",
+    "Trabajo sesgos, privacidad y trazabilidad. Exijo declaración de uso de IA y reflexión sobre límites. Promuevo buenas prácticas: no exponer datos sensibles, evaluar outputs y justificar decisiones técnicas.",
   aiPlagiarismPrevention:
-    "Más que prohibir, enseño a citar correctamente el uso de la IA. Mis evaluaciones se centran en la aplicación y el razonamiento crítico, pidiendo a los estudiantes que expliquen, justifiquen y defiendan su código o sus ideas, algo que la IA por sí sola no puede hacer de manera profunda. También utilizo preguntas que requieran análisis de casos muy específicos o experiencias personales.",
+    "Evalúo por proceso: sustentaciones, preguntas de verificación, commits/iteraciones, y ejercicios contextualizados. Pido que expliquen decisiones, complejidad y trade-offs. La IA se permite con citación y defensa técnica.",
   scenario29:
-    "Bajo ninguna circunstancia modificaría la nota. El 2.9 es el reflejo de su desempeño. Mi rol es ser justa y mantener los estándares académicos. Le explicaría al estudiante con calma los criterios de evaluación, le mostraría dónde falló y le ofrecería un plan de mejora para futuras asignaturas, pero la nota no es negociable.",
+    "No modifico la nota. Explico criterios con evidencia, muestro oportunidades de mejora y propongo plan de recuperación dentro de reglas (refuerzo/talleres) si la normativa lo permite, sin negociar el estándar.",
   scenarioCoverage:
-    "Inmediatamente notificaría a mi coordinador académico sobre la situación y le pediría que asigne un colega para cubrir la clase. Prepararía y enviaría el material de la clase (presentación, actividades, etc.) al profesor suplente para asegurar la continuidad. Jamás enviaría a un familiar o amigo, es una falta de profesionalismo y va contra cualquier política institucional.",
+    "Aviso a coordinación de inmediato y solicito plan de contingencia. Dejo material listo (guía, actividades, repositorio) para continuidad. Nunca delego en personas no autorizadas.",
   scenarioFeedback:
-    "Agradecería el feedback, lo tomaría como una oportunidad de crecimiento. Solicitaría una reunión con mi coordinador para entender en detalle las áreas de mejora. Analizaría las encuestas, reflexionaría sobre mi práctica docente y diseñaría un plan de acción concreto. Podría incluir observar la clase de otros colegas o tomar cursos de desarrollo pedagógico.",
+    "Recibo el feedback, pido evidencias y acordamos plan de mejora con métricas. Ajusto metodología y comunicación, y hago seguimiento en próximas sesiones para validar impacto.",
 };
 
 export const mediumExample: InterviewData = {
+  documentNumber: "1010123456",
   candidateName: "Lic. Carlos Rojas",
   age: "35",
-  school: "Transformación de Negocios",
+  school: "Escuela de Transformación Empresarial",
   program: "Publicidad y Mercadeo",
   careerSummary:
-    "Publicista con 10 años de experiencia en agencias. He manejado cuentas importantes y tengo un buen conocimiento del mercado. Quiero pasar a la docencia para compartir mi experiencia práctica, creo que es lo que más falta en la academia.",
+    "Profesional en publicidad con 10 años en agencias manejando cuentas y campañas. Quiero pasar a docencia para aportar experiencia real y conectar los contenidos con el contexto laboral.",
   previousExperience:
-    "Di un par de cursos cortos en la Cámara de Comercio hace unos años. No tengo experiencia formal en una universidad, pero aprendo rápido.",
+    "He dictado talleres cortos y capacitaciones internas. No tengo trayectoria larga en universidad, pero tengo experiencia práctica y metodología basada en casos.",
   availabilityDetails:
-    "Puedo dar clases los lunes y miércoles por la noche, y tal vez los sábados en la mañana. El resto del tiempo estoy en la agencia.",
+    "Lunes y miércoles en la noche, y sábados en la mañana. Entre semana estoy vinculado laboralmente en horario de oficina.",
   acceptsCommittees: "Depende",
   otherJobs:
-    "Sí, tengo un trabajo de tiempo completo en una agencia de publicidad. Es mi principal fuente de ingresos, así que debo darle prioridad. Las reuniones o comités tendrían que ser en los horarios que ya mencioné, fuera de mi horario de oficina.",
+    "Trabajo de tiempo completo en agencia. Puedo asistir a comités si se programan en franjas nocturnas o sábados. Requiero calendarización anticipada.",
   evaluationMethodology:
-    "Creo que lo más importante es que los estudiantes hagan una buena campaña al final. Haría un gran proyecto final que valga el 70% de la nota. El resto, un parcial.",
+    "Enfoque por entregables: proyecto de campaña con fases (brief, investigación, propuesta creativa, pauta y medición). Evaluaciones cortas de conceptos y rúbricas para cada entrega.",
   failureRatePlan:
-    "Hablaría con ellos para ver qué pasa. Quizás el proyecto final fue muy difícil. Podríamos hacer un trabajo extra para que recuperen la nota. Lo importante es que no se desmotiven.",
+    "Si hay baja comprensión, haría sesiones de nivelación por temas (brief, segmentación, métricas) y reentrenaría el alcance del proyecto. Mantendría estándares, pero con acompañamiento y reentregas controladas.",
   apatheticStudentPlan:
-    "Le preguntaría qué le interesa y trataría de enfocar los ejemplos de la clase en eso. Si no funciona, supongo que es su decisión. No se puede obligar a nadie a aprender.",
+    "Trato de enganchar con casos reales y roles del equipo (planner, creativo, medios). Si persiste desinterés, documento seguimiento y coordino estrategias de acompañamiento académico.",
   aiToolsUsage:
-    "En la agencia usamos Midjourney para algunas ideas visuales y ChatGPT para borradores de copys. Les enseñaría a los estudiantes a usar esas herramientas para que sean más rápidos.",
+    "Uso Midjourney y ChatGPT para ideación y borradores, y enseño a validar y ajustar resultados. Los estudiantes deben justificar decisiones y evidenciar iteraciones.",
   ethicalAiMeasures:
-    "Les diría que no copien y peguen directamente de ChatGPT. Tienen que ponerle su propio estilo.",
+    "Enfatizo derechos de autor, uso responsable, sesgos en imágenes, y transparencia: declarar cuándo se usó IA y cómo se transformó el material.",
   aiPlagiarismPrevention:
-    "Es difícil de controlar. Confiaría en que ellos son honestos. Si algo se ve muy sospechoso, se lo comentaría.",
+    "Uso entregas por etapas, bitácora de decisiones y sustentación. Verifico coherencia entre brief, ejecución y análisis; si hay señales de copia, pido defensa y evidencia del proceso.",
   scenario29:
-    "Uhm, es una situación difícil. Si ha sido un buen estudiante y se ha esforzado, probablemente le daría una oportunidad con un trabajo extra para que alcance el 3.0. La idea es ayudar.",
+    "Reviso evidencias y normativa. Si existe opción reglamentaria (actividad de recuperación), la aplico con criterios claros. Si no, mantengo la nota y dejo plan de mejora para el siguiente ciclo.",
   scenarioCoverage:
-    "Llamaría a un colega de confianza de la agencia que sepa del tema para que me cubra. Es una emergencia, al final lo importante es que los estudiantes tengan a alguien al frente.",
+    "Aviso a coordinación y dejo material asincrónico (guía + actividad). Si se permite, pido apoyo institucional (docente suplente) con brief claro de lo que deben cubrir.",
   scenarioFeedback:
-    "Escucharía lo que dicen. A veces los estudiantes no entienden el enfoque práctico y están acostumbrados a lo teórico. Les explicaría mi punto de vista y por qué mi método es mejor para su futuro profesional.",
+    "Escucho y pido ejemplos concretos. Ajusto la forma de explicar y los criterios de evaluación si algo no fue claro, manteniendo el enfoque práctico pero con estructura académica.",
 };
 
 export const rejectedExample: InterviewData = {
+  documentNumber: "990012345",
   candidateName: "Sr. Ricardo Montes",
   age: "51",
-  school: "Transversales",
-  program: "Sociohumanística",
+  school: "Escuela de Ciencias Sociales Jurídicas y Gobierno",
+  program: "Administración Pública",
   careerSummary:
-    "Tengo mucha experiencia de vida y he leído mucho de filosofía y sociología por mi cuenta. Siento que tengo mucho que aportar a los jóvenes, que hoy en día están muy perdidos. No tengo títulos formales en el área pero el conocimiento real no viene de un cartón.",
+    "Me interesa compartir reflexiones sobre liderazgo y sociedad desde mi experiencia personal. Considero que la formación formal no siempre es necesaria y que lo importante es la visión de vida.",
   previousExperience:
-    "He dado charlas motivacionales en mi comunidad. La gente dice que soy muy inspirador. La docencia es igual, pero con un sueldo.",
+    "Charlas informales y motivacionales. No tengo experiencia docente universitaria estructurada ni evidencias de planeación, evaluación o seguimiento académico.",
   availabilityDetails:
-    "Mi disponibilidad es flexible, pero no me comprometo a horarios fijos. Depende de mi inspiración y de otros proyectos personales que tengo.",
+    "Disponibilidad variable y sin compromisos fijos. Prefiero decidir semana a semana según mis actividades personales.",
   acceptsCommittees: "No",
   otherJobs:
-    "No tengo otro empleo, pero mi tiempo es mío. No me gustan las reuniones que quitan tiempo, prefiero usarlo para preparar mis clases magistrales.",
+    "No tengo empleo formal, pero no me interesan reuniones ni procesos administrativos; priorizo mi autonomía y no me adapto a lineamientos institucionales.",
   evaluationMethodology:
-    "La evaluación es muy subjetiva. Haría un ensayo final donde ellos expresen su sentir sobre los temas vistos. La nota sería según mi percepción de su evolución como personas.",
+    "Evaluación principalmente subjetiva con un ensayo final sin rúbricas claras. No considero necesarios instrumentos, criterios ni evidencias medibles.",
   failureRatePlan:
-    "Eso no pasaría en mi clase. Mis temas son para reflexionar, no para 'aprobar' o 'reprobar'. La calificación es un formalismo sin importancia.",
+    "No aplicaría reprobación ni seguimiento. Considero que las notas no son importantes y que el sistema de evaluación es un formalismo.",
   apatheticStudentPlan:
-    "Es un reflejo de la sociedad actual. Lo usaría como ejemplo en clase sobre la decadencia de la juventud. No es mi rol ser psicólogo de nadie.",
+    "No implementaría estrategias de acompañamiento. Asumo que la motivación es responsabilidad exclusiva del estudiante.",
   aiToolsUsage:
-    "Detesto esas cosas. La IA es un peligro, le quita el alma al conocimiento y hace a los estudiantes perezosos y tramposos. Prohibiría su uso completamente.",
-  ethicalAiMeasures: "La única medida ética es no usarla. Punto.",
+    "Prohibiría la IA sin políticas claras y sin criterios académicos de uso responsable. No contemplaría integración guiada ni alfabetización digital.",
+  ethicalAiMeasures:
+    "No tengo un marco de ética aplicado; mi propuesta es prohibición total sin alternativas pedagógicas.",
   aiPlagiarismPrevention:
-    "Si alguien usa IA, es plagio y tiene un cero. Es muy fácil de detectar, las máquinas no tienen espíritu.",
+    "No tengo un método verificable. Mi enfoque sería punitivo sin proceso de validación ni criterios consistentes.",
   scenario29:
-    "Le diría que la nota es lo de menos, que lo importante es el viaje del conocimiento. Probablemente le pondría 3.0 a todos para no tener problemas con ese sistema de notas tan rígido.",
+    "Cambiaría la nota para evitar conflictos y simplificar. No priorizo estándares ni consistencia evaluativa.",
   scenarioCoverage:
-    "Cancelo la clase. Es imposible que alguien más pueda transmitir mi mensaje. Los estudiantes tendrían que esperar a que yo pueda volver.",
+    "Cancelar clases sin plan de contingencia ni coordinación. No prepararía material alterno ni pediría apoyo institucional.",
   scenarioFeedback:
-    "Es la opinión de ellos. Claramente no entendieron la profundidad de mis enseñanzas. El problema no es mi metodología, es la falta de madurez de la audiencia. No cambiaría nada.",
+    "No tomaría acciones de mejora. Considero que el problema es el estudiante y no ajustaría metodología ni comunicación.",
 };

@@ -1,14 +1,27 @@
 // src/services/authService.ts
 import api from "./apiClient";
-import type { AuthResponse } from "../types";
 
-/**
- * Hace login contra el backend usando solo el correo institucional.
- * POST /auth/login-by-email
- */
-export async function loginByEmail(email: string): Promise<AuthResponse> {
-  const { data } = await api.post<AuthResponse>("/auth/login-by-email", {
-    email: email.toLowerCase().trim(),
+export type BackendUser = {
+  id: string;
+  email: string;
+  fullName: string;
+  role: string; // o "ADMIN" | "COORDINATOR" | "LEADER", etc.
+  schoolId?: string | null;
+  mustResetPassword?: boolean;
+};
+
+export type LoginResponse = {
+  accessToken: string;
+  user: BackendUser;
+};
+
+export async function login(
+  email: string,
+  password: string
+): Promise<LoginResponse> {
+  const { data } = await api.post<LoginResponse>("/auth/login", {
+    email,
+    password,
   });
 
   return data;

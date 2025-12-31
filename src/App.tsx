@@ -10,6 +10,8 @@ import AdminConsole from "./pages/admin/AdminConsole";
 
 import LoginPage from "./pages/Login/LoginPage";
 import ProtectedRoute from "./components/ProtectedRoute";
+
+import CoordinatorEvaluationReport from "./pages/coordinator/CoordinatorEvaluationReport";
   
 
 const App: React.FC = () => {
@@ -36,7 +38,13 @@ const App: React.FC = () => {
       </Route>
 
       <Route element={<ProtectedRoute allowedRoles={["coordinator"]} />}>
-        <Route path="/coordinator" element={<CoordinatorConsole />} />
+      <Route path="/coordinator" element={<CoordinatorConsole />} />
+
+      {/* ✅ NUEVA RUTA: reporte completo IA */}
+      <Route
+        path="/coordinator/evaluations/:evaluationId"
+        element={<CoordinatorEvaluationReport />}
+      />
       </Route>
 
       <Route element={<ProtectedRoute allowedRoles={["admin"]} />}>

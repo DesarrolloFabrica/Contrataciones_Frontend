@@ -1,6 +1,8 @@
 // src/pages/leader/LeaderConsole.tsx
-import React, { useState, useCallback } from "react";
-import {
+import React, { useState, useCallback, useEffect } from "react";
+import { useLocation } from "react-router-dom";
+
+import type {
   InterviewData,
   AnalysisResult,
   TeacherForm,
@@ -18,47 +20,39 @@ import InterviewForm from "../../components/InterviewForm";
 import AnalysisResults from "../../components/AnalysisResults";
 import LoadingState from "../../components/LoadingState";
 import EvaluationsHistory from "../../components/EvaluationsHistory";
+
 import { useAuth } from "../../context/AuthContext";
 import { auditAppend } from "../../services/auditService";
 import { actorFromUser } from "../../services/auditActor";
+
+// ✅ mapper centralizado (frontend: documentNumber)
+import { mapInterviewToTeacherForm } from "../../services/mappers/mapInterviewToTeacherForm";
 
 const ORG_ID = import.meta.env.VITE_ORG_ID ?? "ORG_DEFAULT";
 
 type ViewMode = "analyze" | "history";
 
-const mapToTeacherForm = (data: InterviewData): TeacherForm => ({
-  candidate: {
-    fullName: data.candidateName,
-    age: Number(data.age) || 0,
-    schoolName: data.school,
-    programName: data.program,
-    careerSummary: data.careerSummary,
-    teachingExperience: data.previousExperience,
-  },
-  availability: {
-    scheduleDetails: data.availabilityDetails,
-    acceptsCommittees: data.acceptsCommittees,
-    otherJobsImpact: data.otherJobs,
-  },
-  classroomManagement: {
-    evaluationMethodology: data.evaluationMethodology,
-    planIfHalfFail: data.failureRatePlan,
-    handleApatheticStudent: data.apatheticStudentPlan,
-  },
-  aiAttitude: {
-    usesAiHow: data.aiToolsUsage,
-    ethicalUseMeasures: data.ethicalAiMeasures,
-    handleAiPlagiarism: data.aiPlagiarismPrevention,
-  },
-  coherenceCommitment: {
-    caseStudent2_9: data.scenario29,
-    emergencyProtocol: data.scenarioCoverage,
-    handleNegativeFeedback: data.scenarioFeedback,
-  },
-});
+/**
+ * ✅ Adaptador FINAL (solo para el request al backend)
+ * Mantiene frontend en camelCase (documentNumber),
+ * pero envía snake_case (document_number) si el backend lo espera.
+ */
+const toBackendTeacherForm = (form: TeacherForm) => {
+  return {
+    ...form,
+    candidate: {
+      ...form.candidate,
+      document_number: form.candidate.documentNumber?.trim() || "",
+    },
+  };
+};
 
-// inverso: TeacherForm -> InterviewData (para reconstruir el reporte)
+/**
+ * ✅ inverso: TeacherForm -> InterviewData (para reconstruir el reporte)
+ * Esto se usa al abrir una evaluación desde historial.
+ */
 const mapFormToInterviewData = (form: TeacherForm): InterviewData => ({
+  documentNumber: form.candidate.documentNumber ?? "",
   candidateName: form.candidate.fullName,
   age: form.candidate.age ? String(form.candidate.age) : "",
   school: form.candidate.schoolName,
@@ -84,29 +78,97 @@ const mapFormToInterviewData = (form: TeacherForm): InterviewData => ({
 });
 
 const LeaderConsole: React.FC = () => {
+  // =========================
+  // ✅ ESTADOS PRINCIPALES
+  // =========================
   const [mode, setMode] = useState<ViewMode>("analyze");
-
   const { user } = useAuth();
-  const [interviewData, setInterviewData] = useState<InterviewData | null>(
-    null
-  );
-  const [analysisResult, setAnalysisResult] = useState<AnalysisResult | null>(
-    null
-  );
+
+  const [interviewData, setInterviewData] = useState<InterviewData | null>(null);
+  const [analysisResult, setAnalysisResult] = useState<AnalysisResult | null>(null);
   const [evaluationId, setEvaluationId] = useState<string | null>(null);
 
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
 
-  // 1) flujo normal: analizar desde el formulario
+  // =========================
+  // ✅ ABRIR EVALUACIÓN DESDE HISTORIAL (DETALLE)
+  // =========================
+  const handleOpenEvaluationFromHistory = useCallback(
+    async (id: string) => {
+      const actor = actorFromUser(user);
+
+      setIsLoading(true);
+      setError(null);
+      setAnalysisResult(null);
+      setInterviewData(null);
+      setEvaluationId(null);
+
+      try {
+        const detail = await getTeacherEvaluationById(id);
+
+        auditAppend({
+          type: "EVALUATION_OPENED",
+          actor,
+          metadata: { source: "leader-history", evaluationId: detail.id },
+        });
+
+        const form: TeacherForm = detail.formRawData;
+        const analysis: AnalysisResult = detail.aiRawJson;
+
+        // ✅ reconstruye InterviewData para que el reporte sea consistente
+        const interview = mapFormToInterviewData(form);
+
+        // ✅ dejamos candidateId disponible por si luego lo necesitas
+        (interview as any).candidateId = detail.candidateId ?? null;
+
+        setInterviewData(interview);
+        setAnalysisResult(analysis);
+        setEvaluationId(detail.id);
+
+        // ✅ volvemos a analyze para ver el reporte
+        setMode("analyze");
+      } catch (err) {
+        console.error("Error al cargar detalle de evaluación:", err);
+        setError(
+          err instanceof Error
+            ? err.message
+            : "No se pudo cargar el detalle de la evaluación."
+        );
+      } finally {
+        setIsLoading(false);
+      }
+    },
+    [user]
+  );
+
+  // =========================
+  // ✅ DETECTAR evaluationId EN URL (deep link)
+  // =========================
+  const location = useLocation();
+
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    const evaluationIdFromUrl = params.get("evaluationId");
+    if (!evaluationIdFromUrl) return;
+
+    // ✅ abre el detalle automáticamente
+    handleOpenEvaluationFromHistory(evaluationIdFromUrl);
+  }, [location.search, handleOpenEvaluationFromHistory]);
+
+  // =========================
+  // ✅ SUBMIT NORMAL (ANALIZAR DESDE FORM)
+  // =========================
   const handleFormSubmit = useCallback(
     async (data: InterviewData) => {
       const actor = actorFromUser(user);
+
       setIsLoading(true);
       setError(null);
       setAnalysisResult(null);
       setInterviewData(data);
       setEvaluationId(null);
+
       auditAppend({
         type: "AI_ANALYSIS_STARTED",
         actor,
@@ -114,6 +176,17 @@ const LeaderConsole: React.FC = () => {
       });
 
       try {
+        // ✅ candidateId viene “inyectado” desde InterviewForm (no está tipado en InterviewData)
+        const candidateId = (data as any)?.candidateId as string | null;
+
+        if (!candidateId) {
+          setError(
+            "Debes seleccionar o crear el candidato (por cédula) antes de ejecutar el análisis."
+          );
+          return;
+        }
+
+        // 1) IA
         const aiResult: TeacherAiResult = await analyzeTeacherInterview(data);
 
         if (aiResult.rawOutput) {
@@ -131,66 +204,42 @@ const LeaderConsole: React.FC = () => {
           });
         }
 
-        const form = mapToTeacherForm(data);
-        const saved = await createTeacherEvaluation(ORG_ID, form, aiResult);
+        // 2) map InterviewData -> TeacherForm (frontend)
+        const formFrontend: TeacherForm = mapInterviewToTeacherForm(data);
+
+        // 3) adaptar SOLO para backend (snake_case)
+        const formBackend = toBackendTeacherForm(formFrontend);
+
+        // 4) guardar evaluación (backend exige: orgId, candidateId, form, aiResult)
+        const saved = await createTeacherEvaluation(
+          ORG_ID,
+          candidateId,
+          formBackend as any,
+          aiResult
+        );
+
         auditAppend({
           type: "EVALUATION_CREATED",
           actor,
-          evaluationId: saved.id,
-          metadata: { orgId: ORG_ID, candidateId: saved.candidateId },
+          metadata: {
+            orgId: ORG_ID,
+            candidateId: saved.candidateId ?? candidateId,
+            evaluationId: saved.id,
+            documentNumber: data.documentNumber ?? null,
+          },
         });
-        // el backend devuelve { id, candidateId }, donde id = id de la evaluación
+
         setEvaluationId(saved.id);
-      } catch (err) {
-        console.error("Error during analysis or save:", err);
-        setError(
-          err instanceof Error
-            ? err.message
-            : "Ocurrió un error durante el proceso."
-        );
-      } finally {
-        setIsLoading(false);
-      }
-    },
-    [user]
-  );
-
-  // 2) abrir detalle desde el historial
-  const handleOpenEvaluationFromHistory = useCallback(
-    async (id: string) => {
-      const actor = actorFromUser(user);
-      setIsLoading(true);
-      setError(null);
-      setAnalysisResult(null);
-      setInterviewData(null);
-      setEvaluationId(null);
-
-      try {
-        const detail = await getTeacherEvaluationById(id);
-        auditAppend({
-          type: "EVALUATION_OPENED",
-          actor,
-          evaluationId: detail.id,
-          metadata: { source: "leader-history" },
+      } catch (err: any) {
+        console.error("❌ Error during analysis or save:", {
+          message: err?.message,
+          status: err?.response?.status,
+          data: err?.response?.data,
         });
-        // detail.formRawData y detail.aiRawJson salen tal cual del backend
-        const form: TeacherForm = detail.formRawData;
-        const analysis: AnalysisResult = detail.aiRawJson;
 
-        const interview = mapFormToInterviewData(form);
-
-        setInterviewData(interview);
-        setAnalysisResult(analysis);
-        setEvaluationId(detail.id);
-
-        // volvemos a la vista de reporte (misma que tras un análisis nuevo)
-        setMode("analyze");
-      } catch (err) {
-        console.error("Error al cargar detalle de evaluación:", err);
         setError(
-          err instanceof Error
-            ? err.message
-            : "No se pudo cargar el detalle de la evaluación."
+          err?.response?.data?.message ??
+            (err instanceof Error ? err.message : "Ocurrió un error durante el proceso.")
         );
       } finally {
         setIsLoading(false);
@@ -199,6 +248,9 @@ const LeaderConsole: React.FC = () => {
     [user]
   );
 
+  // =========================
+  // ✅ RESET (solo UI/estado)
+  // =========================
   const handleReset = useCallback(() => {
     setInterviewData(null);
     setAnalysisResult(null);
@@ -207,32 +259,26 @@ const LeaderConsole: React.FC = () => {
     setError(null);
   }, []);
 
-  // ==============================
-  // VARIABLES VISUALES (SOLO UI)
-  // ==============================
-  const brandFrom = "#91DC00"; // verde claro (como login)
-  const brandTo = "#31AB2E"; // verde marca (como login)
+  // =========================
+  // ✅ UI TOKENS (marca)
+  // =========================
+  const brandFrom = "#91DC00";
+  const brandTo = "#31AB2E";
+
+  // ✅ Estado UI (para chips / panel)
+  const status = (() => {
+    if (error) return "error";
+    if (isLoading) return "loading";
+    if (analysisResult) return "ready";
+    return "idle";
+  })();
 
   return (
     <div className="min-h-screen w-full bg-[#020202] text-white font-sans overflow-x-hidden relative">
-      {/* =========================================
-          DECORACIÓN DE FONDO (SOLO VISUAL)
-          - blobs suaves para look premium
-          - no afecta interacción (pointer-events-none)
-         ========================================= */}
+      {/* ✅ Fondo decorativo */}
       <div className="pointer-events-none absolute inset-0 overflow-hidden">
-        <div
-          className="absolute -top-24 -left-24 h-[420px] w-[420px] rounded-full blur-3xl opacity-25"
-          style={{
-            background: `radial-gradient(circle, ${brandTo} 0%, rgba(0,0,0,0) 65%)`,
-          }}
-        />
-        <div
-          className="absolute -bottom-28 -right-28 h-[520px] w-[520px] rounded-full blur-3xl opacity-20"
-          style={{
-            background: `radial-gradient(circle, ${brandFrom} 0%, rgba(0,0,0,0) 65%)`,
-          }}
-        />
+
+
         <div
           className="absolute inset-0 opacity-[0.06]"
           style={{
@@ -242,133 +288,139 @@ const LeaderConsole: React.FC = () => {
         />
       </div>
 
-      {/* Header existente (no se toca lógica) */}
+      {/* ✅ Header global existente (no se modifica lógica) */}
       <Header mode={mode} onChangeMode={setMode} />
 
       <main className="w-full relative z-10">
-        {/* =========================
-            MODO: ANALYZE
-           ========================= */}
+        {/* ===================== */}
+        {/* ✅ MODO: ANALYZE */}
+        {/* ===================== */}
         {mode === "analyze" && (
           <div className="max-w-7xl mx-auto px-4 md:px-8 py-6">
-            {/* =========================================
-                PANEL “DOCK” (SOLO UI)
-                - unifica form/loading/error/results
-                - estética tipo login: glass + borde sutil
-               ========================================= */}
-            <section className="rounded-[28px] border border-white/10 bg-white/[0.03] backdrop-blur-xl shadow-[0_20px_60px_-30px_rgba(0,0,0,0.85)] overflow-hidden">
-              {/* Barra superior sutil (acento de marca) */}
-              <div
-                className="h-1 w-full"
-                style={{
-                  background: `linear-gradient(90deg, ${brandFrom}, ${brandTo})`,
-                }}
-              />
+            {/* ✅ Layout tipo consola: 2 columnas en desktop */}
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+              {/* ✅ Columna principal */}
+              <div className="lg:col-span-12 w-full">
 
-              {/* Cabecera interna (solo UI) */}
-              <div className="px-6 md:px-10 pt-8 pb-6 border-b border-white/10">
-                <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-4">
-                  <div>
-                    <h1 className="text-xl md:text-2xl font-extrabold tracking-tight">
-                      Consola de Líder
-                    </h1>
-                    <p className="text-sm text-white/60 mt-1">
-                      Analiza entrevistas y revisa el historial de evaluaciones.
-                    </p>
-                  </div>
 
-                  {/* Chip de estado (solo visual) */}
-                  <div className="flex items-center gap-2">
-                    <span className="text-[11px] text-white/60">Estado:</span>
-                    {!isLoading && !error && !analysisResult && (
-                      <span className="text-[11px] px-3 py-1 rounded-full border border-white/10 bg-white/[0.03] text-white/80">
-                        Listo para analizar
-                      </span>
-                    )}
-                    {isLoading && (
-                      <span className="text-[11px] px-3 py-1 rounded-full border border-white/10 bg-white/[0.03] text-white/80">
-                        Analizando...
-                      </span>
-                    )}
-                    {error && (
-                      <span className="text-[11px] px-3 py-1 rounded-full border border-red-500/30 bg-red-900/30 text-red-200">
-                        Error
-                      </span>
-                    )}
-                    {analysisResult && (
-                      <span className="text-[11px] px-3 py-1 rounded-full border border-emerald-500/25 bg-emerald-500/10 text-emerald-200">
-                        Reporte listo
-                      </span>
-                    )}
+
+                {/* ✅ Encabezado interno */}
+                <div className="px-6 md:px-10 pt-8 pb-6 border-b border-white/10">
+                  <div className="flex flex-col gap-4">
+                    {/* Título + switch modo */}
+                    <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-4">
+                      <div>
+                        <h1 className="text-xl md:text-2xl font-extrabold tracking-tight">
+                          Consola de Líder
+                        </h1>
+                        <p className="text-sm text-white/60 mt-1">
+                          Entrevista, ejecuta IA y revisa el reporte con trazabilidad.
+                        </p>
+                      </div>
+
+                      {/* ✅ Switch visual dentro de la página (sin depender solo del Header) */}
+
+                    </div>
+
+                    {/* ✅ Chips de estado */}
+                    <div className="flex flex-wrap items-center gap-2">
+                      <span className="text-[11px] text-white/55">Estado:</span>
+
+                      {status === "idle" && (
+                        <span className="text-[11px] px-3 py-1 rounded-full border border-white/10 bg-[#1F1F1F]/30 text-white/80">
+                          Listo para analizar
+                        </span>
+                      )}
+
+                      {status === "loading" && (
+                        <span className="text-[11px] px-3 py-1 rounded-full border border-white/10 bg-white/[0.03] text-white/80">
+                          Analizando…
+                        </span>
+                      )}
+
+                      {status === "error" && (
+                        <span className="text-[11px] px-3 py-1 rounded-full border border-red-500/30 bg-red-900/30 text-red-200">
+                          Error
+                        </span>
+                      )}
+
+                      {status === "ready" && (
+                        <span className="text-[11px] px-3 py-1 rounded-full border border-emerald-500/25 bg-emerald-500/10 text-emerald-200">
+                          Reporte listo
+                        </span>
+                      )}
+
+                      {/* ✅ ID corto (solo visual) */}
+                      {evaluationId && (
+                        <span className="text-[11px] px-3 py-1 rounded-full border border-white/10 bg-white/[0.03] text-white/70">
+                          ID: <span className="text-white/90">{evaluationId.slice(0, 8)}…</span>
+                        </span>
+                      )}
+                    </div>
                   </div>
+                </div>
+
+                {/* ✅ Contenido principal */}
+                <div className="px-4 md:px-10 py-8">
+                  {!analysisResult && !isLoading && !error && (
+                    <div className="animate-[fadeInUp_320ms_ease-out]">
+                      <InterviewForm onSubmit={handleFormSubmit} />
+                    </div>
+                  )}
+
+                  {isLoading && (
+                    <div className="animate-[fadeInUp_220ms_ease-out]">
+                      <LoadingState />
+                    </div>
+                  )}
+
+                  {error && (
+                    <div className="text-center p-6 md:p-10 animate-[fadeInUp_220ms_ease-out]">
+                      <div className="mx-auto max-w-2xl rounded-2xl border border-red-500/30 bg-red-950/40 px-5 py-4">
+                        <p className="text-sm text-red-200">
+                          <strong className="font-bold">Error:</strong>
+                          <span className="ml-2">{error}</span>
+                        </p>
+                      </div>
+
+                      <button
+                        onClick={handleReset}
+                        className="mt-6 rounded-2xl py-3 px-7 text-sm font-bold tracking-widest uppercase text-white transition hover:opacity-95"
+                        style={{
+                          background: `linear-gradient(90deg, ${brandFrom}, ${brandTo})`,
+                        }}
+                      >
+                        Comenzar de Nuevo
+                      </button>
+                    </div>
+                  )}
+
+                  {analysisResult && interviewData && !error && (
+                    <div className="animate-[fadeInUp_320ms_ease-out]">
+                      <AnalysisResults
+                        result={analysisResult}
+                        interviewData={interviewData}
+                        onReset={handleReset}
+                        evaluationId={evaluationId ?? undefined}
+                      />
+                    </div>
+                  )}
                 </div>
               </div>
 
-              {/* Contenido (lo que ya existía, solo envuelto y con padding) */}
-              <div className="px-4 md:px-10 py-8">
-                {/* FORM */}
-                {!analysisResult && !isLoading && !error && (
-                  <div className="animate-[fadeInUp_320ms_ease-out]">
-                    {/* El componente interno conserva su lógica;
-                        aquí solo le damos un “marco” visual */}
-                    <InterviewForm onSubmit={handleFormSubmit} />
-                  </div>
-                )}
 
-                {/* LOADING */}
-                {isLoading && (
-                  <div className="animate-[fadeInUp_220ms_ease-out]">
-                    <LoadingState />
-                  </div>
-                )}
+            </div>
 
-                {/* ERROR */}
-                {error && (
-                  <div className="text-center p-6 md:p-10 animate-[fadeInUp_220ms_ease-out]">
-                    <div className="mx-auto max-w-2xl rounded-2xl border border-red-500/30 bg-red-950/40 px-5 py-4">
-                      <p className="text-sm text-red-200">
-                        <strong className="font-bold">Error:</strong>
-                        <span className="ml-2">{error}</span>
-                      </p>
-                    </div>
-
-                    <button
-                      onClick={handleReset}
-                      className="mt-6 rounded-2xl py-3 px-7 text-sm font-bold tracking-widest uppercase text-white transition hover:opacity-95"
-                      style={{
-                        background: `linear-gradient(90deg, ${brandFrom}, ${brandTo})`,
-                      }}
-                    >
-                      Comenzar de Nuevo
-                    </button>
-                  </div>
-                )}
-
-                {/* RESULTS */}
-                {analysisResult && interviewData && !error && (
-                  <div className="animate-[fadeInUp_320ms_ease-out]">
-                    <AnalysisResults
-                      result={analysisResult}
-                      interviewData={interviewData}
-                      onReset={handleReset}
-                      evaluationId={evaluationId ?? undefined}
-                    />
-                  </div>
-                )}
-              </div>
-            </section>
-
-            {/* Nota inferior (solo UI) */}
+            {/* Pie suave */}
             <p className="text-[11px] text-white/45 text-center mt-5">
               Consejo: revisa el historial para comparar reportes y decisiones de contratación.
             </p>
           </div>
         )}
 
-        {/* =========================
-            MODO: HISTORY
-            - No tocamos lógica, solo envolvemos con el mismo “dock”
-           ========================= */}
+        {/* ===================== */}
+        {/* ✅ MODO: HISTORY */}
+        {/* ===================== */}
         {mode === "history" && (
           <div className="max-w-7xl mx-auto px-4 md:px-8 py-6">
             <section className="rounded-[28px] border border-white/10 bg-white/[0.03] backdrop-blur-xl shadow-[0_20px_60px_-30px_rgba(0,0,0,0.85)] overflow-hidden">
@@ -380,12 +432,32 @@ const LeaderConsole: React.FC = () => {
               />
 
               <div className="px-6 md:px-10 pt-8 pb-6 border-b border-white/10">
-                <h1 className="text-xl md:text-2xl font-extrabold tracking-tight">
-                  Historial de evaluaciones
-                </h1>
-                <p className="text-sm text-white/60 mt-1">
-                  Abre una evaluación para ver el reporte completo.
-                </p>
+                <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-4">
+                  <div>
+                    <h1 className="text-xl md:text-2xl font-extrabold tracking-tight">
+                      Historial de evaluaciones
+                    </h1>
+                    <p className="text-sm text-white/60 mt-1">
+                      Abre una evaluación para ver el reporte completo.
+                    </p>
+                  </div>
+
+                  {/* Switch visual */}
+                  <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-1 flex">
+                    <button
+                      onClick={() => setMode("analyze")}
+                      className="px-4 py-2 text-xs font-semibold rounded-xl text-white/60 hover:text-white transition"
+                    >
+                      Analizar
+                    </button>
+                    <button
+                      onClick={() => setMode("history")}
+                      className="px-4 py-2 text-xs font-semibold rounded-xl bg-white/10 text-white transition"
+                    >
+                      Historial
+                    </button>
+                  </div>
+                </div>
               </div>
 
               <div className="px-4 md:px-10 py-8 animate-[fadeInUp_280ms_ease-out]">
@@ -399,7 +471,7 @@ const LeaderConsole: React.FC = () => {
         )}
       </main>
 
-      {/* Animación simple (solo CSS inline) */}
+      {/* ✅ Animación simple */}
       <style>
         {`
           @keyframes fadeInUp {
