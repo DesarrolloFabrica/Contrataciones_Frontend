@@ -45,6 +45,81 @@ type ListEvalResponse =
   | { items: TeacherEvaluationSummary[] }
   | any;
 
+
+/* ------------------------------------------------------------------ */
+/*  Candidates (search + create)                                      */
+/* ------------------------------------------------------------------ */
+
+export type TeacherCandidateSearchItemDto = {
+  id: string;
+  documentNumber?: string | number | null;
+  fullName?: string | null;
+  age?: number | null;
+
+  // opcionales (si backend los manda)
+  schoolId?: string | null;
+  schoolName?: string | null;
+  programId?: string | null;
+  programName?: string | null;
+};
+
+export type SearchTeacherCandidatesParams = {
+  orgId: string;
+  q: string; // cédula (o texto de búsqueda)
+  limit?: number;
+};
+
+export async function searchTeacherCandidates(
+  params: SearchTeacherCandidatesParams
+): Promise<TeacherCandidateSearchItemDto[]> {
+  const { orgId, q, limit = 8 } = params;
+
+  // Nota: ajusta el endpoint si tu backend usa otro path.
+  // Este es el más común: GET /teachers/candidates/search?orgId=...&q=...&limit=...
+  const { data } = await apiClient.get<
+    TeacherCandidateSearchItemDto[] | { items: TeacherCandidateSearchItemDto[] } | any
+  >("/teachers/candidates/search", {
+    params: { orgId, q, limit },
+  });
+
+  if (Array.isArray(data)) return data;
+  if (data && Array.isArray((data as any).items)) return (data as any).items;
+  return [];
+}
+
+export type CreateTeacherCandidatePayload = {
+  orgId: string;
+  documentNumber: string;
+  fullName: string;
+  age?: number | null;
+  schoolId: string;
+  programId: string;
+};
+
+export type CreateTeacherCandidateResponse = {
+  id: string;
+  documentNumber?: string | number | null;
+  fullName?: string | null;
+  age?: number | null;
+  schoolId?: string | null;
+  programId?: string | null;
+  schoolName?: string | null;
+  programName?: string | null;
+};
+
+export async function createTeacherCandidate(
+  payload: CreateTeacherCandidatePayload
+): Promise<CreateTeacherCandidateResponse> {
+  // Nota: ajusta el endpoint si tu backend usa otro path.
+  // Común: POST /teachers/candidates
+  const { data } = await apiClient.post<CreateTeacherCandidateResponse>(
+    "/teachers/candidates",
+    payload
+  );
+  return data;
+}
+
+
 /* ------------------------------------------------------------------ */
 /*  Crear evaluación + PDF                                            */
 /* ------------------------------------------------------------------ */
