@@ -1,33 +1,31 @@
-// src/pages/admin/AdminConsole.tsx
 import React, { useCallback, useMemo, useState } from "react";
-import { AlertCircle, Loader2, Users, FileText, ScrollText } from "lucide-react";
+import { AlertCircle, Loader2, Users, FileText, ScrollText, X } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 
 import AdminHeader from "./components/AdminHeader";
 import AdminKpiGrid from "./components/evaluations/AdminKpiGrid";
 import AdminFiltersBar from "./components/evaluations/AdminFiltersBar";
-import AdminSchoolsPanel from "./components/evaluations/AdminSchoolsPanel";
 import AdminEvaluationsPanel from "./components/evaluations/AdminEvaluationsPanel";
 import AdminDetailPanel from "./components/evaluations/AdminDetailPanel";
 import AdminUsersPanel from "./components/users/AdminUsersPanel";
 
-//temporal
+// temporal
 import AdminAuditTimelinePreview from "./components/audit/AdminAuditTimelinePreview";
-
-
-// ✅ AUDIT
 import AdminAuditGlobalPanel from "./components/audit/AdminAuditGlobalPanel";
-import AdminAuditTimeline from "./components/audit/AdminAuditTimeline";
-import { useAdminAudit } from "./hooks/useAdminAudit";
 
+import { useAdminAudit } from "./hooks/useAdminAudit";
 import { useAdminEvaluations } from "./hooks/useAdminEvaluations";
 import { useAdminEvaluationDetail } from "./hooks/useAdminEvaluationDetail";
+
+import AdminScopeWizard from "./components/scope/AdminScopeWizard";
 
 type AdminView = "EVALUATIONS" | "USERS" | "AUDIT";
 
 const AdminConsole: React.FC = () => {
   const navigate = useNavigate();
+
   const [view, setView] = useState<AdminView>("EVALUATIONS");
+  const [showScopePicker, setShowScopePicker] = useState(false);
 
   const admin = useAdminEvaluations();
   const detail = useAdminEvaluationDetail({ evaluations: admin.evaluations });
@@ -36,6 +34,14 @@ const AdminConsole: React.FC = () => {
     () => view === "EVALUATIONS" && !!detail.selectedId,
     [view, detail.selectedId]
   );
+
+  const scopeLabel = useMemo(() => {
+    const s = admin.selectedSchool;
+    const p = admin.selectedProgram;
+    if (!s && !p) return "Global (todas las escuelas · todos los programas)";
+    if (s && !p) return `Escuela: ${s} · Todos los programas`;
+    return `Escuela: ${s} · Programa: ${p}`;
+  }, [admin.selectedSchool, admin.selectedProgram]);
 
   const tabBtn = (active: boolean) =>
     `px-4 py-2 rounded-xl text-xs font-bold uppercase tracking-widest border transition-colors flex items-center gap-2 ${
@@ -67,14 +73,27 @@ const AdminConsole: React.FC = () => {
     }
   }, [detail, navigate]);
 
-  // ✅ Auditoría por evaluación seleccionada (solo para mini-resumen en Evaluaciones)
-  const auditByEval = useAdminAudit(
-    detail.selectedId ? { entityType: "EVALUATION", entityId: detail.selectedId } : undefined
+  // Auditoría por evaluación seleccionada
+  useAdminAudit(
+    detail.selectedId
+      ? { entityType: "EVALUATION", entityId: detail.selectedId }
+      : undefined
   );
+
+  // Close modal with Escape
+  const onCloseScope = useCallback(() => setShowScopePicker(false), []);
+  React.useEffect(() => {
+    if (!showScopePicker) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setShowScopePicker(false);
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [showScopePicker]);
 
   return (
     <div className="min-h-screen w-full bg-[#020202] text-white font-sans relative overflow-x-hidden selection:bg-emerald-500/30">
-      {/* Background Ambient Effects */}
+      {/* Ambient bg */}
       <div className="fixed inset-0 pointer-events-none">
         <div className="absolute top-[-10%] left-[-5%] w-[600px] h-[600px] bg-emerald-500/5 rounded-full blur-[150px]" />
         <div className="absolute bottom-[-10%] right-[-5%] w-[600px] h-[600px] bg-cyan-600/5 rounded-full blur-[150px]" />
@@ -86,9 +105,18 @@ const AdminConsole: React.FC = () => {
           hasSelection={hasSelection}
           onClearSelection={detail.clearSelection}
           onLogout={handleLogout}
+          selectedSchool={admin.selectedSchool}
+          selectedProgram={admin.selectedProgram}
+          onChangeScope={() => setShowScopePicker(true)}
+          onResetScope={() => {
+            admin.setSelectedSchool(null);
+            admin.setSelectedProgram(null);
+            admin.setSearch("");
+            detail.clearSelection();
+          }}
         />
 
-        {/* Tabs Admin */}
+        {/* ✅ Tabs siempre visibles */}
         <div className="flex flex-wrap items-center gap-2">
           <button
             type="button"
@@ -98,7 +126,6 @@ const AdminConsole: React.FC = () => {
             <FileText className="w-4 h-4" />
             Evaluaciones
           </button>
-
           <button
             type="button"
             className={tabBtn(view === "USERS")}
@@ -107,7 +134,6 @@ const AdminConsole: React.FC = () => {
             <Users className="w-4 h-4" />
             Usuarios
           </button>
-
           <button
             type="button"
             className={tabBtn(view === "AUDIT")}
@@ -118,7 +144,7 @@ const AdminConsole: React.FC = () => {
           </button>
         </div>
 
-        {/* VISTA: EVALUACIONES */}
+        {/* VIEW: EVALUATIONS */}
         {view === "EVALUATIONS" && (
           <>
             {admin.loading && (
@@ -143,41 +169,50 @@ const AdminConsole: React.FC = () => {
                   metrics={admin.metrics}
                   recommendedPct={admin.recommendedPct}
                   highRiskPct={admin.highRiskPct}
+                  scopeLabel={scopeLabel}
                 />
 
                 <AdminFiltersBar
                   search={admin.search}
                   setSearch={admin.setSearch}
                   selectedSchool={admin.selectedSchool}
-                  setSelectedSchool={admin.setSelectedSchool}
+                  setSelectedSchool={(s) => {
+                    admin.setSelectedSchool(s);
+                    admin.setSelectedProgram(null); // ✅ school cambia => programa null
+                    admin.setSearch("");
+                    detail.clearSelection();
+                  }}
                   schoolOptions={admin.schoolOptions}
+                  selectedProgram={admin.selectedProgram}
+                  setSelectedProgram={(p) => {
+                    admin.setSelectedProgram(p);
+                    admin.setSearch("");
+                    detail.clearSelection();
+                  }}
+                  programOptions={admin.programOptions}
+                  resultsCount={admin.filteredEvaluations.length}
                 />
 
                 <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
-                  {/* IZQUIERDA */}
-                  <div className="lg:col-span-4 space-y-6">
-                    <AdminSchoolsPanel schoolsSummary={admin.schoolsSummary} />
-
+                  <div className="lg:col-span-5 space-y-6">
                     <AdminEvaluationsPanel
                       filteredEvaluations={admin.filteredEvaluations}
                       selectedId={detail.selectedId}
                       onSelect={detail.handleSelectEvaluation}
+                      selectedSchool={admin.selectedSchool ?? ""}
+                      selectedProgram={admin.selectedProgram ?? ""}
                     />
                   </div>
 
-                  {/* DERECHA */}
-                  <div className="lg:col-span-8 space-y-6">
+                  <div className="lg:col-span-7 space-y-6">
                     <AdminDetailPanel
-                      selectedId={detail.selectedId}
-                      selectedSummary={detail.selectedSummary}
-                      loadingDetail={detail.loadingDetail}
-                      selectedDetail={detail.selectedDetail}
-                      tab={detail.tab}
-                      setTab={detail.setTab}
-                      onExportPdf={detail.exportPdf}
-                    />
-
-                    
+                    selectedId={detail.selectedId}
+                    selectedSummary={detail.selectedSummary}
+                    loadingDetail={detail.loadingDetail}
+                    selectedDetail={detail.selectedDetail}
+                    onExportPdf={detail.exportPdf}
+                    errorDetail={detail.errorDetail}
+                  />
                   </div>
                 </div>
               </>
@@ -185,19 +220,112 @@ const AdminConsole: React.FC = () => {
           </>
         )}
 
-        {/* VISTA: USUARIOS */}
-        {view === "USERS" && <AdminUsersPanel />}
+              {view === "USERS" && (
+                <AdminUsersPanel
+                  scope={{ selectedSchool: admin.selectedSchool, selectedProgram: admin.selectedProgram }}
+                />
+              )}
 
-        {/* VISTA: AUDITORÍA (único lugar para global) */}
-        {view === "AUDIT" && (
-          <div className="space-y-6">
-            <AdminAuditGlobalPanel />
 
-            {/* ✅ SOLO PARA PRUEBAS */}
-          <AdminAuditTimelinePreview />
+          {view === "AUDIT" && (
+            <div className="space-y-6">
+              <AdminAuditGlobalPanel
+                selectedSchool={admin.selectedSchool}
+                selectedProgram={admin.selectedProgram}
+              />
+              <AdminAuditTimelinePreview />
+            </div>
+          )}
+            </div>
+
+      {/* ✅ Scope Wizard Modal Overlay */}
+      {showScopePicker && (
+        <div className="fixed inset-0 z-[80]">
+          {/* backdrop */}
+          <div
+            className="absolute inset-0 bg-black/60 backdrop-blur-[2px]"
+            onClick={onCloseScope}
+          />
+
+          {/* modal */}
+          <div className="relative z-[81] max-w-5xl mx-auto px-4 py-10">
+            <div className="rounded-3xl border border-white/10 bg-[#0b0d0c]/95 shadow-[0_30px_120px_rgba(0,0,0,0.8)] overflow-hidden">
+              <div className="p-5 md:p-6 border-b border-white/10 flex items-center justify-between">
+                <div>
+                  <p className="text-[11px] uppercase tracking-[0.22em] text-neutral-500 font-bold">
+                    Cambiar scope
+                  </p>
+                  <p className="text-sm text-neutral-300 mt-1">
+                    El scope aplica a Evaluaciones, Usuarios y Auditoría.
+                  </p>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={onCloseScope}
+                  className="p-2 rounded-xl border border-white/10 bg-white/5 hover:bg-white/10 transition"
+                  title="Cerrar"
+                >
+                  <X className="w-5 h-5 text-neutral-200" />
+                </button>
+              </div>
+
+              <div className="p-5 md:p-6">
+                <AdminScopeWizard
+                  evaluations={admin.evaluations}
+                  schoolOptions={admin.schoolOptions}
+                  programOptions={admin.programOptions}
+                  selectedSchool={admin.selectedSchool}
+                  selectedProgram={admin.selectedProgram}
+                  onSelectSchool={(s) => {
+                    admin.setSelectedSchool(s);
+                    admin.setSelectedProgram(null);
+                    admin.setSearch("");
+                    detail.clearSelection();
+                  }}
+                  onSelectProgram={(p) => {
+                    admin.setSelectedProgram(p);
+                    admin.setSearch("");
+                    detail.clearSelection();
+                    setShowScopePicker(false); // ✅ cerrar al elegir programa
+                  }}
+                  onBackToSchools={() => {
+                    admin.setSelectedProgram(null);
+                    admin.setSelectedSchool(null);
+                    admin.setSearch("");
+                    detail.clearSelection();
+                  }}
+                />
+
+                <div className="mt-6 flex flex-wrap items-center justify-end gap-2">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      admin.setSelectedSchool(null);
+                      admin.setSelectedProgram(null);
+                      admin.setSearch("");
+                      detail.clearSelection();
+                      setShowScopePicker(false);
+                    }}
+                    className="px-4 py-2 rounded-xl border border-emerald-500/15 bg-emerald-500/5 text-xs font-bold uppercase tracking-widest text-emerald-200 hover:bg-emerald-500/10 transition"
+                    title="Volver a vista global"
+                  >
+                    Volver a Global
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={onCloseScope}
+                    className="px-4 py-2 rounded-xl border border-white/10 bg-white/5 text-xs font-bold uppercase tracking-widest text-neutral-200 hover:bg-white/10 transition"
+                  >
+                    Cerrar
+                  </button>
+                </div>
+              </div>
+            </div>
           </div>
-        )}
-      </div>
+        </div>
+      )}
     </div>
   );
 };

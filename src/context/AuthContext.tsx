@@ -26,6 +26,9 @@ interface AuthContextValue {
   user: AuthUser | null;
   login: (email: string, password: string) => Promise<AuthUser>;
   logout: () => void;
+
+  // ✅ NUEVO: actualizar parcialmente el user y persistirlo
+  updateUser: (patch: Partial<AuthUser>) => void;
 }
 
 const AuthContext = createContext<AuthContextValue | undefined>(undefined);
@@ -73,6 +76,39 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
     }
   }, []);
 
+  // ✅ NUEVO: actualiza user en memoria + localStorage (mantiene accessToken)
+  const updateUser = (patch: Partial<AuthUser>) => {
+    setUser((prev) => {
+      if (!prev) return prev;
+
+      const next = { ...prev, ...patch };
+
+      if (typeof window !== "undefined") {
+        try {
+          const raw = localStorage.getItem(AUTH_STORAGE_KEY);
+          if (raw) {
+            const parsed = JSON.parse(raw) as {
+              accessToken?: string;
+              user?: AuthUser;
+            };
+
+            localStorage.setItem(
+              AUTH_STORAGE_KEY,
+              JSON.stringify({ accessToken: parsed.accessToken, user: next })
+            );
+          } else {
+            // raro, pero por si no existía
+            localStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify({ user: next }));
+          }
+        } catch (err) {
+          console.warn("[AuthContext] No se pudo persistir updateUser", err);
+        }
+      }
+
+      return next;
+    });
+  };
+
   // ✅ login: email + password
   const login = async (email: string, password: string): Promise<AuthUser> => {
     const cleanEmail = email.toLowerCase().trim();
@@ -96,7 +132,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
       });
       data = resp.data;
     } catch (error: any) {
-      console.error("[AuthContext] Error en /auth/login:", error?.response?.data || error);
+      console.error(
+        "[AuthContext] Error en /auth/login:",
+        error?.response?.data || error
+      );
       throw error;
     }
 
@@ -169,7 +208,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
   };
 
   return (
-    <AuthContext.Provider value={{ user, login, logout }}>
+    <AuthContext.Provider value={{ user, login, logout, updateUser }}>
       {children}
     </AuthContext.Provider>
   );

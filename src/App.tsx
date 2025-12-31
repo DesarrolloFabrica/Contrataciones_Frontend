@@ -12,17 +12,22 @@ import LoginPage from "./pages/Login/LoginPage";
 import ProtectedRoute from "./components/ProtectedRoute";
 
 import CoordinatorEvaluationReport from "./pages/coordinator/CoordinatorEvaluationReport";
-  
+import ChangePasswordPage from "./pages/auth/ChangePasswordPage";
 
 const App: React.FC = () => {
   const { user } = useAuth();
 
-  // Ruta raíz: decide a dónde mandar según si hay usuario
   const HomeRedirect = () => {
     if (!user) return <Navigate to="/login" replace />;
 
-    if (user.role === "leader") return <Navigate to="/leader" replace />;
-    if (user.role === "coordinator") return <Navigate to="/coordinator" replace />;
+    // ✅ CLAVE: si debe resetear, lo mandamos a change-password
+    if (user.mustResetPassword) return <Navigate to="/change-password" replace />;
+
+    // ✅ CLAVE: normaliza role por si viene "ADMIN" o "admin"
+    const role = (user.role || "").toLowerCase();
+
+    if (role === "leader" || role === "lider") return <Navigate to="/leader" replace />;
+    if (role === "coordinator" || role === "coordinador") return <Navigate to="/coordinator" replace />;
 
     return <Navigate to="/admin" replace />;
   };
@@ -32,26 +37,29 @@ const App: React.FC = () => {
       <Route path="/" element={<HomeRedirect />} />
       <Route path="/login" element={<LoginPage />} />
 
+      {/* ✅ Change password debe ser accesible estando logueado */}
+      <Route element={<ProtectedRoute allowedRoles={["admin", "coordinator", "leader"]} />}>
+        <Route path="/change-password" element={<ChangePasswordPage />} />
+      </Route>
+
       {/* Rutas protegidas por rol */}
       <Route element={<ProtectedRoute allowedRoles={["leader"]} />}>
         <Route path="/leader" element={<LeaderConsole />} />
       </Route>
 
       <Route element={<ProtectedRoute allowedRoles={["coordinator"]} />}>
-      <Route path="/coordinator" element={<CoordinatorConsole />} />
+        <Route path="/coordinator" element={<CoordinatorConsole />} />
 
-      {/* ✅ NUEVA RUTA: reporte completo IA */}
-      <Route
-        path="/coordinator/evaluations/:evaluationId"
-        element={<CoordinatorEvaluationReport />}
-      />
+        <Route
+          path="/coordinator/evaluations/:evaluationId"
+          element={<CoordinatorEvaluationReport />}
+        />
       </Route>
 
       <Route element={<ProtectedRoute allowedRoles={["admin"]} />}>
         <Route path="/admin" element={<AdminConsole />} />
       </Route>
 
-      {/* Fallback */}
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
   );

@@ -14,10 +14,11 @@ const LoginPage: React.FC = () => {
   const location = useLocation() as any;
 
   const [email, setEmail] = useState("");
-  const [password, setPassword] = useState(""); // ✅ NUEVO
+  const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
 
-  const from = location.state?.from?.pathname;
+  // ✅ Guardamos el objeto completo (pathname, state, etc.)
+  const from = location.state?.from;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -26,19 +27,29 @@ const LoginPage: React.FC = () => {
     if (!email.trim() || !password) return;
 
     try {
-      // ✅ ahora login(email, password)
       const user = await login(email.trim(), password);
 
-      if (from) {
-        navigate(from, { replace: true });
+      // ✅ 1) Forzar reset si aplica
+      if (user?.mustResetPassword) {
+        navigate("/change-password", {
+          replace: true,
+          state: { email: user.email, from },
+        });
         return;
       }
 
-      const role = (user.role || "").toUpperCase();
+      // ✅ 2) Si venía de una ruta protegida, devolvemos ahí
+      if (from?.pathname) {
+        navigate(from.pathname, { replace: true });
+        return;
+      }
 
-      if (role === "LIDER") {
+      // ✅ 3) Navegación por rol UI (minúscula)
+      const role = (user.role || "").toLowerCase();
+
+      if (role === "leader") {
         navigate("/leader", { replace: true });
-      } else if (role === "COORDINADOR") {
+      } else if (role === "coordinator") {
         navigate("/coordinator", { replace: true });
       } else {
         navigate("/admin", { replace: true });
@@ -80,7 +91,6 @@ const LoginPage: React.FC = () => {
                   className="w-full rounded-2xl bg-gray-200/80 px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/40"
                 />
 
-                {/* ✅ NUEVO: password */}
                 <input
                   type="password"
                   required
@@ -103,59 +113,54 @@ const LoginPage: React.FC = () => {
               </form>
 
               <p className="text-[11px] text-gray-400 pt-10 text-center">
-                Tip: si venías de una ruta protegida, el sistema te regresa automáticamente al destino.
+                Tip: si venías de una ruta protegida, el sistema te regresa
+                automáticamente al destino.
               </p>
             </div>
           </div>
         </div>
 
         <div className="relative hidden lg:block">
-        {/* Video de fondo */}
-        <video
-          src={BGVideo}
-          autoPlay
-          loop
-          muted
-          playsInline
-          className="absolute inset-0 h-full w-full object-cover"
-        />
-
-        {/* Overlay oscuro con degradado radial */}
-        <div
-          className="absolute inset-0 pointer-events-none"
-          style={{
-            background: `
-              radial-gradient(
-                ellipse at center,
-                rgba(0,0,0,0.10) 0%,
-                rgba(0,0,0,0.45) 70%,
-                rgba(0,0,0,0.75) 100%
-              )
-            `,
-          }}
-        />
-
-        {/* Contenedor de imágenes en la parte inferior */}
-        <div className="absolute bottom-6 left-0 right-0 z-10 flex justify-center gap-6 px-6 ">
-          {/* Imagen izquierda */}
-          <img
-            src={Enciendete}
-            alt="Imagen 1"
-            className="h-[140px]  object-contain "
+          <video
+            src={BGVideo}
+            autoPlay
+            loop
+            muted
+            playsInline
+            className="absolute inset-0 h-full w-full object-cover"
           />
 
-          {/* Imagen derecha */}
-          <img
-            src={LogoCun2}
-            alt="Imagen 2"
-            className="ml-auto mt-10 h-[70px] object-contain opacity-90 "
+          <div
+            className="absolute inset-0 pointer-events-none"
+            style={{
+              background: `
+                radial-gradient(
+                  ellipse at center,
+                  rgba(0,0,0,0.10) 0%,
+                  rgba(0,0,0,0.45) 70%,
+                  rgba(0,0,0,0.75) 100%
+                )
+              `,
+            }}
           />
+
+          <div className="absolute bottom-6 left-0 right-0 z-10 flex justify-center gap-6 px-6 ">
+            <img
+              src={Enciendete}
+              alt="Imagen 1"
+              className="h-[140px] object-contain"
+            />
+
+            <img
+              src={LogoCun2}
+              alt="Imagen 2"
+              className="ml-auto mt-10 h-[70px] object-contain opacity-90"
+            />
+          </div>
         </div>
       </div>
-        
-            </div>
-          </div>
-        );
+    </div>
+  );
 };
 
 export default LoginPage;
