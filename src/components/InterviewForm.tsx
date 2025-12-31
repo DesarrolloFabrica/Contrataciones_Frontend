@@ -86,6 +86,39 @@ const initialFormData: InterviewData = {
   scenarioFeedback: "",
 };
 
+
+// ----------------------------
+// Draft persistence (localStorage)
+// ----------------------------
+const DRAFT_VERSION = 1;
+
+type InterviewDraft = {
+  v: number;
+  savedAt: number;
+  formData: InterviewData;
+ _extract?: never; // solo para evitar “any”
+  selectedCandidateId: string | null;
+};
+
+// key por usuario + org para que no se mezclen drafts
+const draftKey = (orgId: string, userId?: string) =>
+  `leader:interviewDraft:v${DRAFT_VERSION}:${orgId}:${userId ?? "anon"}`;
+
+function safeParseDraft(raw: string | null): InterviewDraft | null {
+  if (!raw) return null;
+  try {
+    const d = JSON.parse(raw);
+    if (!d || typeof d !== "object") return null;
+    if (d.v !== DRAFT_VERSION) return null;
+    if (!d.formData) return null;
+    return d as InterviewDraft;
+  } catch {
+    return null;
+  }
+}
+
+
+
 // ---------------------------------------------------------------------
 // UI
 // ---------------------------------------------------------------------
@@ -285,8 +318,28 @@ const InterviewForm: React.FC<InterviewFormProps> = ({ onSubmit }) => {
   const leaderSchoolId = leaderSchoolIdRaw ? String(leaderSchoolIdRaw) : null;
   const isLeader = role === "LIDER" || role === "LEADER";
 
-  const [formData, setFormData] = useState<InterviewData>(initialFormData);
+
   const [availablePrograms, setAvailablePrograms] = useState<string[]>([]);
+
+
+  const userIdForDraft =
+  (user as any)?.id ??
+  (user as any)?.user?.id ??
+  (user as any)?.profile?.id ??
+  undefined;
+
+const [formData, setFormData] = useState<InterviewData>(() => {
+  if (typeof window === "undefined") return initialFormData;
+  const d = safeParseDraft(localStorage.getItem(draftKey(ORG_ID, userIdForDraft)));
+  return d?.formData ?? initialFormData;
+});
+
+const [selectedCandidateId, setSelectedCandidateId] = useState<string | null>(() => {
+  if (typeof window === "undefined") return null;
+  const d = safeParseDraft(localStorage.getItem(draftKey(ORG_ID, userIdForDraft)));
+  return d?.selectedCandidateId ?? null;
+});
+
 
   const [remoteSchools, setRemoteSchools] = useState<RemoteSchool[]>([]);
   const [schoolsLoading, setSchoolsLoading] = useState(false);
@@ -347,10 +400,37 @@ const InterviewForm: React.FC<InterviewFormProps> = ({ onSubmit }) => {
   >([]);
   const [isSearching, setIsSearching] = useState(false);
   const [lookupError, setLookupError] = useState<string | null>(null);
-  const [selectedCandidateId, setSelectedCandidateId] = useState<string | null>(
-    null
-  );
   const [isCreatingCandidate, setIsCreatingCandidate] = useState(false);
+
+
+
+  const saveTimer = useRef<number | null>(null);
+
+useEffect(() => {
+  if (typeof window === "undefined") return;
+
+  // debounce
+  if (saveTimer.current) window.clearTimeout(saveTimer.current);
+
+  saveTimer.current = window.setTimeout(() => {
+    const payload: InterviewDraft = {
+      v: DRAFT_VERSION,
+      savedAt: Date.now(),
+      formData,
+      selectedCandidateId,
+    };
+    localStorage.setItem(
+      draftKey(ORG_ID, userIdForDraft),
+      JSON.stringify(payload)
+    );
+  }, 250);
+
+  return () => {
+    if (saveTimer.current) window.clearTimeout(saveTimer.current);
+  };
+}, [formData, selectedCandidateId, userIdForDraft]);
+
+
 
   const searchSeq = useRef(0);
 
@@ -360,7 +440,7 @@ const InterviewForm: React.FC<InterviewFormProps> = ({ onSubmit }) => {
 
   // Longitud típica en Colombia (ajústalo si tu negocio pide EXACTO)
   const MIN_CC_LENGTH = 6;
-  const MAX_CC_LENGTH = 10;
+  const MAX_CC_LENGTH = 11;
 
   // ✅ Valida cédula: obligatoria, rango de longitud y solo números
   const isCedulaValid = useMemo(() => {
@@ -440,7 +520,9 @@ const InterviewForm: React.FC<InterviewFormProps> = ({ onSubmit }) => {
     if (!s) return;
 
     setFormData((prev) => {
-      if (prev.school === s.name) return prev;
+      // si ya venía del draft (o ya lo eligió), no lo pises
+      if (prev.school?.trim()) return prev;
+
       return { ...prev, school: s.name, program: "" };
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -624,14 +706,15 @@ const InterviewForm: React.FC<InterviewFormProps> = ({ onSubmit }) => {
   }, [formData, resolvedSchoolId, resolvedProgramId]);
 
   const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    // ✅ Blindaje: si la cédula no es válida, no deja enviar
-    if (!isCedulaValid) return;
-    
-    // ✅ sigue el flujo normal
-    onSubmit({ ...(formData as any), candidateId: selectedCandidateId } as any);
-  };
+  e.preventDefault();
+
+  if (!isCedulaValid) return;
+
+  localStorage.removeItem(draftKey(ORG_ID, userIdForDraft));
+
+  onSubmit({ ...(formData as any), candidateId: selectedCandidateId } as any);
+};
+
 
   const loadExample = (example: InterviewData) => {
     searchSeq.current += 1;
@@ -657,26 +740,27 @@ const InterviewForm: React.FC<InterviewFormProps> = ({ onSubmit }) => {
   };
 
   const resetForm = () => {
-    searchSeq.current += 1;
-    setIsSearching(false);
+  searchSeq.current += 1;
+  setIsSearching(false);
 
-    setSelectedCandidateId(null);
-    setCandidateMatches([]);
-    setLookupError(null);
+  setSelectedCandidateId(null);
+  setCandidateMatches([]);
+  setLookupError(null);
 
-    setFormData((prev) => {
-      const next = { ...initialFormData };
-      if (isLeader && leaderSchoolId) {
-        const s = normalizedSchools.find(
-          (x) => String(x.id ?? "") === leaderSchoolId
-        );
-        if (s) next.school = s.name;
-      }
-      return next;
-    });
+  localStorage.removeItem(draftKey(ORG_ID, userIdForDraft));
 
-    window.scrollTo({ top: 0, behavior: "smooth" });
-  };
+  setFormData((prev) => {
+    const next = { ...initialFormData };
+    if (isLeader && leaderSchoolId) {
+      const s = normalizedSchools.find((x) => String(x.id ?? "") === leaderSchoolId);
+      if (s) next.school = s.name;
+    }
+    return next;
+  });
+
+  window.scrollTo({ top: 0, behavior: "smooth" });
+};
+
 
   return (
     <div className="w-full">
