@@ -1,261 +1,204 @@
 // src/pages/admin/hooks/useAdminUsers.ts
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import type {
   AdminUser,
-  AdminUserStatus,
   AdminUserRole,
+  AdminUserStatus,
   CreateAdminUserDto,
   UpdateAdminUserDto,
-  ResetPasswordResult,
-  AdminAuditAction,
 } from "../adminTypes";
 import { adminMockDb } from "../utils/adminMockDb";
 
-type StatusFilter = "ALL" | AdminUserStatus;
+type RoleFilter = AdminUserRole | "ALL";
+type StatusFilter = AdminUserStatus | "ALL";
 
-const normalizeEmail = (email: string) => email.trim().toLowerCase();
-const safeTrim = (s?: string | null) => (s ?? "").trim();
+type ScopeArgs = {
+  selectedSchool: string | null;
+  selectedProgram: string | null;
+};
 
-const isValidEmail = (email: string) =>
-  /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email);
+const norm = (v: any) => String(v ?? "").trim().toLowerCase();
 
-/**
- * ✅ ÚNICO punto para auditoría del sistema
- * Soporta ambas firmas (logSystemEvent / addSystemAudit)
- */
-async function auditSystem(action: AdminAuditAction, meta: Record<string, any>) {
-  try {
-    if ((adminMockDb as any).logSystemEvent) {
-      (adminMockDb as any).logSystemEvent(action, meta);
-      return;
-    }
-    if ((adminMockDb as any).addSystemAudit) {
-      await (adminMockDb as any).addSystemAudit({ action, meta });
-      return;
-    }
-  } catch (e) {
-    // No bloquea UI si falla auditoría (mock)
-    console.warn("Audit system failed:", e);
-  }
-}
+// ⚠️ AdminUser probablemente no tiene school/program aún.
+// Igual lo dejamos future-proof por si luego lo agregas desde backend.
+const pickUserSchool = (u: any) =>
+  u?.schoolName ?? u?.school ?? u?.schoolNameSnapshot ?? "";
 
-export function useAdminUsers() {
+const pickUserProgram = (u: any) =>
+  u?.programName ?? u?.program ?? u?.programNameSnapshot ?? "";
+
+export function useAdminUsers(scope: ScopeArgs) {
+  const [users, setUsers] = useState<AdminUser[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  const [users, setUsers] = useState<AdminUser[]>([]);
   const [search, setSearch] = useState("");
+  const [roleFilter, setRoleFilter] = useState<RoleFilter>("ALL");
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("ALL");
-  const [roleFilter, setRoleFilter] = useState<AdminUserRole | "ALL">("ALL");
 
+  const [editUser, setEditUser] = useState<AdminUser | null>(null);
   const [lastCreatedCredentials, setLastCreatedCredentials] = useState<{
     email: string;
-    password: string;
+    tempPassword: string;
   } | null>(null);
 
-  const load = useCallback(async () => {
-    setLoading(true);
-    setError(null);
+  const clearCredentials = () => setLastCreatedCredentials(null);
 
-    try {
-      const list = await adminMockDb.listUsers();
-      const sorted = [...list].sort((a, b) => {
-        const da = a.createdAt ? new Date(a.createdAt).getTime() : 0;
-        const db = b.createdAt ? new Date(b.createdAt).getTime() : 0;
-        return db - da;
-      });
-      setUsers(sorted);
-    } catch (e) {
-      console.error(e);
-      setError("No se pudo cargar el módulo de usuarios.");
-      setUsers([]);
-    } finally {
-      setLoading(false);
-    }
+  // ✅ Load users (mockdb)
+  useEffect(() => {
+    let alive = true;
+
+    const loadUsers = async () => {
+      setLoading(true);
+      setError(null);
+      try {
+        const data = await adminMockDb.listUsers();
+        if (!alive) return;
+        setUsers(data ?? []);
+      } catch (e) {
+        console.error(e);
+        if (!alive) return;
+        setError("No se pudo cargar la lista de usuarios.");
+        setUsers([]);
+      } finally {
+        if (!alive) return;
+        setLoading(false);
+      }
+    };
+
+    loadUsers();
+    return () => {
+      alive = false;
+    };
   }, []);
 
-  useEffect(() => {
-    load();
-  }, [load]);
+  // ✅ Scope filter
+  const scopedUsers = useMemo(() => {
+    let base = [...(users ?? [])];
 
-  const filteredUsers = useMemo(() => {
-    let base = [...users];
+    if (scope.selectedSchool) {
+      const s = norm(scope.selectedSchool);
+      base = base.filter((u: any) => {
+        const us = norm(pickUserSchool(u));
+        return !us || us === s;
+      });
+    }
 
-    if (roleFilter !== "ALL") base = base.filter((u) => u.role === roleFilter);
-    if (statusFilter !== "ALL")
-      base = base.filter((u) => u.status === statusFilter);
-
-    const q = search.trim().toLowerCase();
-    if (q) {
-      base = base.filter((u) => {
-        const name = `${u.name} ${u.lastName}`.toLowerCase();
-        const email = u.email.toLowerCase();
-        const ced = (u.cedula ?? "").toLowerCase();
-        return name.includes(q) || email.includes(q) || ced.includes(q);
+    if (scope.selectedSchool && scope.selectedProgram) {
+      const p = norm(scope.selectedProgram);
+      base = base.filter((u: any) => {
+        const up = norm(pickUserProgram(u));
+        return !up || up === p;
       });
     }
 
     return base;
-  }, [users, search, statusFilter, roleFilter]);
+  }, [users, scope.selectedSchool, scope.selectedProgram]);
 
+  // ✅ Filters + search
+  const filteredUsers = useMemo(() => {
+    let base = [...scopedUsers];
+
+    if (roleFilter !== "ALL") base = base.filter((u: any) => u.role === roleFilter);
+    if (statusFilter !== "ALL") base = base.filter((u: any) => u.status === statusFilter);
+
+    const q = norm(search);
+    if (q) {
+      base = base.filter((u: any) => {
+        const blob = [
+          u?.name,
+          u?.lastName,
+          u?.email,
+          u?.cedula,
+          u?.role,
+          u?.status,
+          pickUserSchool(u),
+          pickUserProgram(u),
+          u?.id,
+        ]
+          .filter(Boolean)
+          .map(norm)
+          .join(" ");
+        return blob.includes(q);
+      });
+    }
+
+    return base;
+  }, [scopedUsers, roleFilter, statusFilter, search]);
+
+  // ✅ Metrics
   const metrics = useMemo(() => {
-    const total = users.length;
-    const active = users.filter((u) => u.status === "ACTIVE").length;
-    const inactive = total - active;
-    const coordinators = users.filter((u) => u.role === "COORDINATOR").length;
-    return { total, active, inactive, coordinators };
-  }, [users]);
+    const total = filteredUsers.length;
+    const active = filteredUsers.filter((u: any) => u.status === "ACTIVE").length;
+    const inactive = filteredUsers.filter((u: any) => u.status === "INACTIVE").length;
 
-  const createUser = useCallback(
-    async (dto: CreateAdminUserDto) => {
-      setError(null);
+    const leaders = filteredUsers.filter((u: any) => u.role === "LEADER").length;
+    const coordinators = filteredUsers.filter((u: any) => u.role === "COORDINATOR").length;
+    const admins = filteredUsers.filter((u: any) => u.role === "ADMIN").length;
 
-      const email = normalizeEmail(dto.email);
+    return { total, active, inactive, leaders, coordinators, admins };
+  }, [filteredUsers]);
 
-      // ✅ validaciones claras
-      if (!safeTrim(dto.name) || !safeTrim(dto.lastName)) {
-        setError("Nombre y apellido son obligatorios.");
-        return { ok: false as const };
+  // ✅ Actions (mockdb)
+  const createUser = async (dto: CreateAdminUserDto) => {
+    const res = await adminMockDb.createUser(dto);
+    const next = await adminMockDb.listUsers();
+    setUsers(next ?? []);
+
+    if (res?.password?.temporaryPassword && res?.user?.email) {
+      setLastCreatedCredentials({
+        email: res.user.email,
+        tempPassword: res.password.temporaryPassword,
+      });
+    }
+  };
+
+  const updateUser = async (userId: string, dto: UpdateAdminUserDto) => {
+    await adminMockDb.updateUser(userId, dto);
+    const next = await adminMockDb.listUsers();
+    setUsers(next ?? []);
+  };
+
+  const toggleActive = async (userId: string) => {
+    await adminMockDb.toggleUserActive(userId);
+    const next = await adminMockDb.listUsers();
+    setUsers(next ?? []);
+  };
+
+  const resetPassword = async (userId: string) => {
+    const res = await adminMockDb.resetPassword(userId);
+    const next = await adminMockDb.listUsers();
+    setUsers(next ?? []);
+
+    if (res?.temporaryPassword) {
+      const u = (next ?? []).find((x) => x.id === userId);
+      if (u?.email) {
+        setLastCreatedCredentials({ email: u.email, tempPassword: res.temporaryPassword });
       }
-      if (!isValidEmail(email)) {
-        setError("El correo no es válido.");
-        return { ok: false as const };
-      }
-      if (users.some((u) => normalizeEmail(u.email) === email)) {
-        setError("Ya existe un usuario con ese correo.");
-        return { ok: false as const };
-      }
+    }
+  };
 
-      if (!dto.generatePassword) {
-        const p = dto.password ?? "";
-        if (p.trim().length < 8) {
-          setError("La contraseña debe tener al menos 8 caracteres.");
-          return { ok: false as const };
-        }
-      }
-
-      try {
-        const res = await adminMockDb.createUser({
-          ...dto,
-          email,
-          name: safeTrim(dto.name),
-          lastName: safeTrim(dto.lastName),
-          cedula: dto.cedula ? safeTrim(dto.cedula) : null,
-          password: dto.generatePassword ? undefined : dto.password,
-        });
-
-        await load();
-
-        // ✅ la contraseña que mostramos una sola vez
-        const passwordToShow = dto.generatePassword
-          ? res.password?.temporaryPassword || ""
-          : dto.password ?? "";
-
-        setLastCreatedCredentials({ email, password: passwordToShow });
-
-        await auditSystem("USER_CREATED", {
-          email,
-          role: dto.role,
-          generated: dto.generatePassword,
-        });
-
-        return {
-          ok: true as const,
-          user: res.user,
-          password: passwordToShow,
-        };
-      } catch (e) {
-        console.error(e);
-        setError("No se pudo crear el usuario.");
-        return { ok: false as const };
-      }
-    },
-    [users, load]
-  );
-
-  const updateUser = useCallback(
-    async (id: string, patch: UpdateAdminUserDto) => {
-      setError(null);
-      try {
-        await adminMockDb.updateUser(id, {
-          ...patch,
-          cedula:
-            patch.cedula === undefined
-              ? undefined
-              : patch.cedula?.trim() || null,
-        });
-
-        await load();
-
-        await auditSystem("USER_UPDATED", { userId: id, patch });
-
-        return { ok: true as const };
-      } catch (e) {
-        console.error(e);
-        setError("No se pudo actualizar el usuario.");
-        return { ok: false as const };
-      }
-    },
-    [load]
-  );
-
-  const toggleActive = useCallback(
-    async (id: string) => {
-      setError(null);
-      try {
-        const updated = await adminMockDb.toggleUserActive(id);
-        await load();
-
-        await auditSystem("USER_TOGGLED", { userId: id, status: updated.status });
-
-        return { ok: true as const };
-      } catch (e) {
-        console.error(e);
-        setError("No se pudo cambiar el estado del usuario.");
-        return { ok: false as const };
-      }
-    },
-    [load]
-  );
-
-  const resetPassword = useCallback(
-    async (id: string): Promise<ResetPasswordResult | null> => {
-      setError(null);
-      try {
-        const res = await adminMockDb.resetPassword(id);
-        await load();
-
-        await auditSystem("PASSWORD_RESET", { userId: id });
-
-        return res;
-      } catch (e) {
-        console.error(e);
-        setError("No se pudo resetear la contraseña.");
-        return null;
-      }
-    },
-    [load]
-  );
-
-  const clearCredentials = useCallback(() => {
-    setLastCreatedCredentials(null);
-  }, []);
+  const openEdit = (u: AdminUser) => setEditUser(u);
 
   return {
-    loading,
-    error,
     users,
     filteredUsers,
-    metrics,
+    loading,
+    error,
 
     search,
     setSearch,
-    statusFilter,
-    setStatusFilter,
     roleFilter,
     setRoleFilter,
+    statusFilter,
+    setStatusFilter,
 
-    reload: load,
+    metrics,
+
+    editUser,
+    openEdit,
+    setEditUser,
+
     createUser,
     updateUser,
     toggleActive,

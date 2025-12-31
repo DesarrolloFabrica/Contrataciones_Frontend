@@ -1,6 +1,6 @@
-// src/pages/admin/components/AdminDetailTabs.tsx
+// src/pages/admin/components/evaluations/AdminDetailTabs.tsx
 import React from "react";
-import { Activity, Crown, ShieldCheck, Users, Wrench } from "lucide-react";
+import { FileText, ShieldCheck, ScrollText, LifeBuoy } from "lucide-react";
 import type { AdminTab } from "../../adminTypes";
 
 const pillBase =
@@ -23,47 +23,34 @@ export default function AdminDetailTabs(props: {
             : "border-white/10 bg-white/5 text-neutral-300 hover:border-white/20"
         }`}
       >
-        <Users className="w-4 h-4" />
+        <FileText className="w-4 h-4" />
         Resumen
-      </button>
-      
-      <button
-        type="button"
-        onClick={() => setTab("ADMIN")}
-        className={`${pillBase} ${
-          tab === "ADMIN"
-            ? "border-cyan-500/40 bg-cyan-500/10 text-cyan-300"
-            : "border-white/10 bg-white/5 text-neutral-300 hover:border-white/20"
-        }`}
-      >
-        <Crown className="w-4 h-4" />
-        Admin
-      </button>
-        
-      <button
-        type="button"
-        onClick={() => setTab("COORDINADOR")}
-        className={`${pillBase} ${
-          tab === "COORDINADOR"
-            ? "border-emerald-500/40 bg-emerald-500/10 text-emerald-300"
-            : "border-white/10 bg-white/5 text-neutral-300 hover:border-white/20"
-        }`}
-      >
-        <ShieldCheck className="w-4 h-4" />
-        Coordinador
       </button>
 
       <button
         type="button"
-        onClick={() => setTab("IA")}
+        onClick={() => setTab("DECISIONES")}
         className={`${pillBase} ${
-          tab === "IA"
+          tab === "DECISIONES"
             ? "border-cyan-500/40 bg-cyan-500/10 text-cyan-300"
             : "border-white/10 bg-white/5 text-neutral-300 hover:border-white/20"
         }`}
       >
-        <Activity className="w-4 h-4" />
-        IA
+        <ShieldCheck className="w-4 h-4" />
+        Decisiones
+      </button>
+
+      <button
+        type="button"
+        onClick={() => setTab("AUDITORIA")}
+        className={`${pillBase} ${
+          tab === "AUDITORIA"
+            ? "border-purple-500/40 bg-purple-500/10 text-purple-300"
+            : "border-white/10 bg-white/5 text-neutral-300 hover:border-white/20"
+        }`}
+      >
+        <ScrollText className="w-4 h-4" />
+        Auditoría
       </button>
 
       <button
@@ -71,11 +58,11 @@ export default function AdminDetailTabs(props: {
         onClick={() => setTab("TECNICO")}
         className={`${pillBase} ${
           tab === "TECNICO"
-            ? "border-purple-500/40 bg-purple-500/10 text-purple-300"
+            ? "border-white/30 bg-white/10 text-white"
             : "border-white/10 bg-white/5 text-neutral-300 hover:border-white/20"
         }`}
       >
-        <Wrench className="w-4 h-4" />
+        <LifeBuoy className="w-4 h-4" />
         Soporte
       </button>
     </div>

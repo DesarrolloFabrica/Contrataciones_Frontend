@@ -8,8 +8,12 @@ import AdminUsersHeader from "./AdminUsersHeader";
 import AdminUsersTable from "./AdminUsersTable";
 import AdminUserFormModal from "./AdminUserFormModal";
 
-const AdminUsersPanel: React.FC = () => {
-  const users = useAdminUsers();
+type Props = {
+  scope: { selectedSchool: string | null; selectedProgram: string | null };
+};
+
+const AdminUsersPanel: React.FC<Props> = ({ scope }) => {
+  const users = useAdminUsers(scope);
 
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [editUser, setEditUser] = useState<AdminUser | null>(null);
@@ -98,7 +102,7 @@ const AdminUsersPanel: React.FC = () => {
       {!users.loading && !users.error && !showEmpty && (
         <AdminUsersTable
           users={users.filteredUsers}
-          onEdit={openEdit}
+          onEdit={users.openEdit}
           onToggleActive={users.toggleActive}
           onResetPassword={users.resetPassword}
         />
@@ -147,7 +151,7 @@ const AdminUsersPanel: React.FC = () => {
         onClose={closeModal}
         onCreate={users.createUser}
         onUpdate={users.updateUser}
-        editingUser={editUser}
+        editingUser={users.editUser}
         lastCreatedCredentials={users.lastCreatedCredentials}
         clearCredentials={users.clearCredentials}
       />

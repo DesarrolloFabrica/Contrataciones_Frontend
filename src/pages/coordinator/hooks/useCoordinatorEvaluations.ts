@@ -1,7 +1,8 @@
+// src/pages/coordinator/hooks/useCoordinatorEvaluations.ts
 import { useEffect, useMemo, useState } from "react";
-import { TeacherEvaluationSummary } from "../../../types";
+import type { TeacherEvaluationSummary } from "../../../types";
 import { listTeacherEvaluations } from "../../../services/teachersService";
-import { DecisionFilter, LocalDecision } from "../types";
+import type { LocalDecision, DecisionFilter } from "../types";
 
 export function useCoordinatorEvaluations() {
   const [evaluations, setEvaluations] = useState<TeacherEvaluationSummary[]>([]);
@@ -12,7 +13,9 @@ export function useCoordinatorEvaluations() {
   const [decisionFilter, setDecisionFilter] = useState<DecisionFilter>("ALL");
 
   // mapa local id -> decisión (para que la lista y los filtros funcionen visualmente)
-  const [localDecisions, setLocalDecisions] = useState<Record<string, LocalDecision>>({});
+  const [localDecisions, setLocalDecisions] = useState<
+    Record<string, LocalDecision>
+  >({});
 
   useEffect(() => {
     const load = async () => {
@@ -32,7 +35,7 @@ export function useCoordinatorEvaluations() {
   }, []);
 
   const filteredEvaluations = useMemo(() => {
-    let base = evaluations;
+    let base = [...evaluations];
 
     if (search.trim()) {
       const q = search.toLowerCase();
@@ -48,8 +51,8 @@ export function useCoordinatorEvaluations() {
       base = base.filter((ev) => {
         const status =
           localDecisions[ev.id] ??
-          (ev.coordinatorDecisionStatus as LocalDecision | undefined) ??
-          "PENDIENTE";
+          ((ev.coordinatorDecisionStatus as LocalDecision | undefined) ??
+            "PENDIENTE");
         return status === decisionFilter;
       });
     }
@@ -60,7 +63,10 @@ export function useCoordinatorEvaluations() {
   const metrics = useMemo(() => {
     if (evaluations.length === 0) return { total: 0, avgScore: 0 };
     const total = evaluations.length;
-    const sumScore = evaluations.reduce((acc, ev) => acc + (ev.aiTeachingSuitabilityScore || 0), 0);
+    const sumScore = evaluations.reduce(
+      (acc, ev) => acc + (ev.aiTeachingSuitabilityScore || 0),
+      0
+    );
     return { total, avgScore: sumScore / total };
   }, [evaluations]);
 
