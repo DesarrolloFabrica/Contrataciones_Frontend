@@ -1,32 +1,49 @@
 // src/pages/coordinator/components/users/CoordinatorUsersPanel.tsx
-import React, { useMemo, useState } from "react";
+import React, { useMemo, useState, useCallback } from "react";
 import { AlertCircle, Loader2, Users } from "lucide-react";
+import { useAuth } from "../../../../context/AuthContext"; // ajusta ruta si cambia
 
-// ✅ Hook nuevo (lo haremos después): listado + createUser ya restringido a líderes de su escuela
 import { useCoordinatorUsers } from "../../hooks/useCoordinatorUsers";
 
-import type { AdminUser, AdminUserRole } from "../../../admin/adminTypes"; 
-// ^ reutilizamos tipos si ya existen. Si tienes tipos separados para coordinador, ajusta ruta.
-
-import AdminUsersHeader from "../../../admin/components/users/AdminUsersHeader";
+// Reutilizamos componentes de admin (tabla + modal)
 import AdminUsersTable from "../../../admin/components/users/AdminUsersTable";
 import AdminUserFormModal from "../../../admin/components/users/AdminUserFormModal";
 
+import type { AdminUser } from "../../../admin/adminTypes";
+
 const CoordinatorUsersPanel: React.FC = () => {
-  // ✅ trae usuarios restringidos (solo líderes de la escuela del coordinador)
   const users = useCoordinatorUsers();
+  const { user } = useAuth();
+
+  // 1️⃣ primero se obtiene el schoolId del coordinador
+    const coordinatorSchoolId = useMemo(() => {
+    const raw =
+      (user as any)?.schoolId ??
+      (user as any)?.user?.schoolId ??
+      (user as any)?.profile?.schoolId ??
+      (user as any)?.payload?.schoolId ??
+      null;
+
+    return raw ? String(raw) : null;
+  }, [user]);
+
+  // 2️⃣ luego se deriva la validación
+  const hasSchool = !!coordinatorSchoolId;
 
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [editUser, setEditUser] = useState<AdminUser | null>(null);
 
+  // 3️⃣ ahora sí puedes usarlo en funciones
   const openCreate = () => {
-    // ✅ Coordinador solo crea LÍDER: modal abrirá en modo crear (sin edición)
+    if (!hasSchool) {
+      console.warn("El coordinador no tiene schoolId asignado.");
+      return;
+    }
     setEditUser(null);
     setIsCreateOpen(true);
   };
 
   const openEdit = (u: AdminUser) => {
-    // ✅ Si permites editar líderes, ok. Si NO, luego lo bloqueamos en tabla/actions.
     setEditUser(u);
     setIsCreateOpen(true);
   };
@@ -36,19 +53,19 @@ const CoordinatorUsersPanel: React.FC = () => {
     setEditUser(null);
   };
 
-  // ✅ Roles visibles para Coordinador (solo Líder)
-  const roles: { value: AdminUserRole | "ALL"; label: string }[] = useMemo(
-    () => [
-      { value: "ALL", label: "Todos los roles" }, // opcional
-      { value: "LEADER", label: "Líderes" },
-    ],
-    []
-  );
-
   const showEmpty =
     !users.loading &&
     !users.error &&
-    (users.filteredUsers?.length ?? 0) === 0;
+    (users.users?.length ?? 0) === 0;
+
+  // ✅ Credenciales “solo una vez” (si quieres mostrarlas como en admin)
+  const [lastCreatedCredentials, setLastCreatedCredentials] = useState<{
+    email: string;
+    tempPassword: string;
+  } | null>(null);
+
+  const clearCredentials = () => setLastCreatedCredentials(null);
+  
 
   return (
     <section className="bg-[#050505]/70 border border-white/10 rounded-3xl p-5 md:p-6 shadow-xl">
@@ -62,36 +79,39 @@ const CoordinatorUsersPanel: React.FC = () => {
               Líderes de mi escuela
             </h2>
             <p className="text-xs text-gray-500">
-              Crea y gestiona usuarios Líder asociados a tu escuela.
+              Crea y administra líderes (heredan tu escuela automáticamente).
             </p>
           </div>
         </div>
 
+        
         <button
           type="button"
           onClick={openCreate}
-          className="px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs uppercase tracking-widest shadow-md transition-colors"
+          disabled={!hasSchool}
+          title={!hasSchool ? "Tu usuario no tiene escuela asignada. Pide al administrador que la configure." : ""}
+          className={[
+            "px-4 py-2 rounded-xl font-bold text-xs uppercase tracking-widest shadow-md transition-colors",
+            hasSchool
+              ? "bg-emerald-600 hover:bg-emerald-500 text-white"
+              : "bg-white/5 text-white/30 border border-white/10 cursor-not-allowed",
+          ].join(" ")}
         >
           + Crear líder
         </button>
       </div>
-
-      {/* ✅ Header reutilizado. Si quieres, podemos ocultar el filtro de roles en esta vista */}
-      <AdminUsersHeader
-        search={users.search}
-        setSearch={users.setSearch}
-        statusFilter={users.statusFilter}
-        setStatusFilter={users.setStatusFilter}
-        roleFilter={users.roleFilter}
-        setRoleFilter={users.setRoleFilter}
-        roles={roles}
-        metrics={users.metrics}
-      />
+      {!hasSchool && (
+    <div className="mb-4 rounded-2xl border border-amber-500/20 bg-amber-500/10 px-4 py-3 text-xs text-amber-200">
+        Tu usuario coordinador no tiene una <b>escuela asignada</b>.
+        <br />
+        No podrás crear líderes hasta que un administrador configure tu escuela.
+    </div>
+    )}
 
       {users.loading && (
         <div className="flex flex-col items-center justify-center py-16 text-neutral-500 gap-3">
           <Loader2 className="w-8 h-8 animate-spin text-emerald-500" />
-          <p className="text-sm">Cargando usuarios…</p>
+          <p className="text-sm">Cargando líderes…</p>
         </div>
       )}
 
@@ -104,27 +124,24 @@ const CoordinatorUsersPanel: React.FC = () => {
 
       {!users.loading && !users.error && !showEmpty && (
         <AdminUsersTable
-          users={users.filteredUsers}
+          users={users.users}
           onEdit={openEdit}
           onToggleActive={users.toggleActive}
-          onResetPassword={users.resetPassword}
+          onResetPassword={async (id) => {
+            const r = await users.resetPassword(id);
+            // Si quieres mostrar el password temporal como en admin:
+            // aquí necesitarías también el email del usuario, o que resetPassword retorne email.
+          }}
         />
       )}
 
       {showEmpty && (
         <div className="mt-4 rounded-2xl border border-white/10 bg-black/20 p-6">
-          <p className="text-sm text-white font-semibold">Sin resultados</p>
+          <p className="text-sm text-white font-semibold">Sin líderes</p>
           <p className="text-xs text-neutral-400 mt-1">
-            No encontramos líderes con los filtros actuales.
+            Aún no hay líderes creados para tu escuela.
           </p>
-          <div className="mt-4 flex flex-wrap gap-2">
-            <button
-              type="button"
-              onClick={() => users.setSearch("")}
-              className="px-3 py-2 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-xs font-bold uppercase tracking-widest"
-            >
-              Limpiar búsqueda
-            </button>
+          <div className="mt-4">
             <button
               type="button"
               onClick={openCreate}
@@ -136,17 +153,45 @@ const CoordinatorUsersPanel: React.FC = () => {
         </div>
       )}
 
-      {/* ✅ Reutilizamos el mismo modal, pero el hook/users.createUser será el que fuerza:
-          role=LEADER y schoolId = coordinator.schoolId */}
       <AdminUserFormModal
         open={isCreateOpen}
         onClose={closeModal}
-        onCreate={users.createUser}
-        onUpdate={users.updateUser}
+        forcedRole="LEADER"
+        hideRoleSelect
+        forcedSchoolId={coordinatorSchoolId}
+
+        onCreate={async (dto) => {
+          // ✅ el hook ya fuerza role=LEADER + schoolId=coordinatorSchoolId
+          const res = await users.createLeader({
+            name: dto.name,
+            lastName: dto.lastName,
+            email: dto.email,
+            cedula: dto.cedula,
+            mustChangePassword: dto.mustChangePassword,
+            generatePassword: dto.generatePassword,
+            password: dto.password,
+          });
+        
+          if (!res.ok || !res.user?.email || !res.password) {
+            // ✅ si falla, lanzamos error para que el modal lo capture
+            throw new Error("No se pudo crear el líder.");
+          }
+        
+          // ✅ para que el modal muestre credenciales “solo una vez”
+          setLastCreatedCredentials({
+            email: res.user.email,
+            tempPassword: res.password,
+          });
+        }}
+      
+        // opcional: si no quieres edición, déjalo así
+        onUpdate={async () => {}}
+      
         editingUser={editUser}
-        lastCreatedCredentials={users.lastCreatedCredentials}
-        clearCredentials={users.clearCredentials}
+        lastCreatedCredentials={lastCreatedCredentials}
+        clearCredentials={clearCredentials}
       />
+
     </section>
   );
 };

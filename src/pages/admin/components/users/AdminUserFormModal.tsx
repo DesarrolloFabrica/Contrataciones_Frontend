@@ -64,14 +64,15 @@ const AdminUserFormModal: React.FC<Props> = ({
   const [cedula, setCedula] = useState("");
 
   const [role, setRole] = useState<AdminUserRole>(forcedRole ?? "COORDINATOR");
+  // ✅ NUEVO: schoolId
+  const [schoolId, setSchoolId] = useState<string>("");
 
   const [generatePassword, setGeneratePassword] = useState(true);
   const [password, setPassword] = useState("");
 
   const [mustChangePassword, setMustChangePassword] = useState(true);
 
-  // ✅ NUEVO: schoolId
-  const [schoolId, setSchoolId] = useState<string>("");
+  
 
   // ✅ lista escuelas desde backend
   const [schools, setSchools] = useState<SchoolOption[]>([]);
@@ -94,12 +95,29 @@ const AdminUserFormModal: React.FC<Props> = ({
     }
 
     // ✅ regla backend: coordinador/líder deben tener escuela
-    if (roleNeedsSchool(role) && !schoolId.trim()) {
+    const effectiveRole = forcedRole ?? role;
+    const effectiveSchoolId = String(forcedSchoolId ?? schoolId ?? "").trim();
+
+    if (roleNeedsSchool(effectiveRole) && !effectiveSchoolId) {
       return "Para Coordinador/Líder debes asignar una escuela.";
     }
 
     return null;
-  }, [name, lastName, email, isEdit, generatePassword, password, role, schoolId]);
+  }, [name, lastName, email, isEdit, generatePassword, password, role, schoolId, forcedRole, forcedSchoolId]);
+   useEffect(() => {
+    if (!open) return;
+    if (!forcedSchoolId) return;
+  
+    setSchoolId(String(forcedSchoolId));
+  }, [open, forcedSchoolId]);
+
+// ✅ Paso clave: fijar escuela cuando viene forzada (Coordinator)
+useEffect(() => {
+  if (!open) return;
+  if (!forcedSchoolId) return;
+
+  setSchoolId(String(forcedSchoolId));
+}, [open, forcedSchoolId]);
 
   // Cargar escuelas cuando abre el modal (solo una vez por apertura)
   useEffect(() => {
@@ -166,12 +184,15 @@ const AdminUserFormModal: React.FC<Props> = ({
     }
   }, [open, editingUser, clearCredentials]);
 
+  // ✅ Si viene una escuela forzada (ej: coordinador), la fijamos en el select
+
+
   // Si cambian a ADMIN, no obligamos schoolId
   useEffect(() => {
-    if (role === "ADMIN") {
-      setSchoolId(""); // opcional: limpiar
-    }
-  }, [role]);
+  if (role === "ADMIN" && !forcedSchoolId) {
+    setSchoolId("");
+  }
+  }, [role, forcedSchoolId]);
 
   if (!open) return null;
 
@@ -192,7 +213,11 @@ const AdminUserFormModal: React.FC<Props> = ({
       document.body.removeChild(el);
     }
   };
-
+  const effectiveRole: AdminUserRole = forcedRole ?? role;
+  // ✅ escuela real (si viene forzada, manda)
+  // - en coordinador forcedSchoolId existe
+  // - en admin se usa el schoolId del select
+  const effectiveSchoolId = String(forcedSchoolId ?? schoolId ?? "").trim();
   const handleSubmit = async () => {
     setLocalError(null);
 
@@ -210,13 +235,13 @@ const AdminUserFormModal: React.FC<Props> = ({
           lastName: lastName.trim(),
           email: email.trim(),
           cedula: cedula.trim() ? cedula.trim() : null,
-          role,
+          role: effectiveRole,
           mustChangePassword,
           generatePassword,
           password: generatePassword ? undefined : password.trim(),
 
           // ✅ lo que necesitabas para evitar el 403
-          schoolId: roleNeedsSchool(role) ? schoolId.trim() : null,
+          schoolId: roleNeedsSchool(effectiveRole) ? effectiveSchoolId : null,
         });
 
         // ✅ dejamos abierto para que el usuario copie credenciales (si el hook las setea)
@@ -228,11 +253,11 @@ const AdminUserFormModal: React.FC<Props> = ({
         name: name.trim(),
         lastName: lastName.trim(),
         cedula: cedula.trim() ? cedula.trim() : null,
-        role,
+        role: effectiveRole,
         mustChangePassword,
 
         // ✅ permitir actualizar escuela
-        schoolId: roleNeedsSchool(role) ? schoolId.trim() : null,
+        schoolId: roleNeedsSchool(effectiveRole) ? effectiveSchoolId : null,
       });
 
       setSaving(false);
@@ -378,71 +403,82 @@ const AdminUserFormModal: React.FC<Props> = ({
               </div>
 
               <div>
-                <label className="text-[11px] uppercase tracking-widest text-gray-500">Rol</label>
-                <select
-                  value={role}
-                  onChange={(e) => setRole(e.target.value as AdminUserRole)}
-                  className="mt-1 w-full bg-[#0A0A0A] border border-white/10 rounded-xl px-3 py-2 text-sm text-gray-200 outline-none focus:border-emerald-500/50"
-                >
-                  <option value="COORDINATOR">{roleLabel("COORDINATOR")}</option>
-                  <option value="LEADER">{roleLabel("LEADER")}</option>
-                  <option value="ADMIN">{roleLabel("ADMIN")}</option>
-                </select>
-              </div>
-
-              {/* ✅ NUEVO: Escuela (obligatorio para COORDINATOR/LEADER) */}
-              <div>
                 <label className="text-[11px] uppercase tracking-widest text-gray-500">
-                  Escuela {roleNeedsSchool(role) ? "(obligatoria)" : "(opcional)"}
+                  Rol
                 </label>
 
-                <div className="mt-1 flex items-center gap-2">
-                  <select
-                    value={schoolId}
-                    onChange={(e) => setSchoolId(e.target.value)}
-                    disabled={role === "ADMIN" || schoolsLoading}
-                    className={`w-full bg-[#0A0A0A] border border-white/10 rounded-xl px-3 py-2 text-sm text-gray-200 outline-none focus:border-emerald-500/50 ${
-                      role === "ADMIN" ? "opacity-60 cursor-not-allowed" : ""
-                    }`}
-                  >
-                    <option value="">
-                      {role === "ADMIN"
-                        ? "No aplica para Admin"
-                        : schoolsLoading
-                        ? "Cargando escuelas..."
-                        : "Selecciona una escuela"}
-                    </option>
-
-                    {schools.map((s) => (
-                      <option key={s.id} value={s.id}>
-                        {s.name}
-                      </option>
-                    ))}
-                  </select>
-
-                  {schoolsLoading && <Loader2 className="w-4 h-4 animate-spin text-emerald-400" />}
-                </div>
-
-                {schoolsError && role !== "ADMIN" && (
-                  <p className="mt-2 text-[11px] text-amber-300">
-                    {schoolsError}
-                    <br />
-                    Si tu backend no expone <b>/schools</b>, dime cuál endpoint tienes y lo ajustamos.
-                  </p>
-                )}
-
-                {/* Fallback manual por si no hay endpoint */}
-                {role !== "ADMIN" && schools.length === 0 && !schoolsLoading && (
-                  <div className="mt-2">
-                    <input
-                      value={schoolId}
-                      onChange={(e) => setSchoolId(e.target.value)}
-                      className="w-full bg-[#0A0A0A] border border-white/10 rounded-xl px-3 py-2 text-sm text-gray-200 outline-none focus:border-emerald-500/50"
-                      placeholder="(Opcional) Pega el schoolId (UUID) aquí"
-                    />
+                {/* ✅ Si el rol viene forzado (coordinador) o se pidió ocultar el select,
+                    mostramos una “vista fija” y NO dejamos cambiarlo */}
+                {(hideRoleSelect || !!forcedRole) ? (
+                  <div className="mt-1 w-full bg-white/5 border border-white/10 rounded-xl px-3 py-2 text-sm text-gray-300">
+                    {roleLabel(forcedRole ?? role)}
                   </div>
+                ) : (
+                  /* ✅ Select normal (Admin) */
+                  <select
+                    value={role}
+                    onChange={(e) => setRole(e.target.value as AdminUserRole)}
+                    className="mt-1 w-full bg-[#0A0A0A] border border-white/10 rounded-xl px-3 py-2 text-sm text-gray-200 outline-none focus:border-emerald-500/50"
+                  >
+                    <option value="COORDINATOR">{roleLabel("COORDINATOR")}</option>
+                    <option value="LEADER">{roleLabel("LEADER")}</option>
+                    <option value="ADMIN">{roleLabel("ADMIN")}</option>
+                  </select>
                 )}
               </div>
+
+              {/* ✅ Escuela */}
+              {roleNeedsSchool(effectiveRole) && (
+                <div>
+                  <label className="text-[11px] uppercase tracking-widest text-gray-500">
+                    Escuela (obligatoria)
+                  </label>
+                            
+                  {/* ✅ Si la escuela viene forzada (coordinador), la mostramos fija */}
+                  {forcedSchoolId ? (
+                    <div className="mt-1 w-full bg-white/5 border border-white/10 rounded-xl px-3 py-2 text-sm text-gray-300">
+                      {
+                        // Mostramos el nombre si existe en el listado; si no, mostramos el ID
+                        schools.find((s) => s.id === String(forcedSchoolId))?.name ??
+                        `ID: ${String(forcedSchoolId)}`
+                      }
+                    </div>
+                  ) : (
+                    <>
+                      {/* ✅ Admin: selector normal */}
+                      <div className="mt-1 flex items-center gap-2">
+                        <select
+                          value={schoolId}
+                          onChange={(e) => setSchoolId(e.target.value)}
+                          disabled={schoolsLoading}
+                          className={`w-full bg-[#0A0A0A] border border-white/10 rounded-xl px-3 py-2 text-sm text-gray-200 outline-none focus:border-emerald-500/50 ${
+                            schoolsLoading ? "opacity-60 cursor-not-allowed" : ""
+                          }`}
+                        >
+                          <option value="">
+                            {schoolsLoading ? "Cargando escuelas..." : "Selecciona una escuela"}
+                          </option>
+                        
+                          {schools.map((s) => (
+                            <option key={s.id} value={s.id}>
+                              {s.name}
+                            </option>
+                          ))}
+                        </select>
+                        
+                        {schoolsLoading && (
+                          <Loader2 className="w-4 h-4 animate-spin text-emerald-400" />
+                        )}
+                      </div>
+                      
+                      {schoolsError && (
+                        <p className="mt-2 text-[11px] text-amber-300">{schoolsError}</p>
+                      )}
+                    </>
+                  )}
+                </div>
+              )}
+
 
               <div className="flex items-center gap-3 mt-6">
                 <input

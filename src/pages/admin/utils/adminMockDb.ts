@@ -46,6 +46,8 @@ const seed: MockDb = {
       email: "admin@cun.edu.co",
       cedula: null,
       role: "ADMIN",
+      // ✅ opcional (admin puede ser global, pero no estorba)
+      schoolId: null,
       status: "ACTIVE",
       mustChangePassword: false,
       createdAt: nowIso(),
@@ -58,6 +60,8 @@ const seed: MockDb = {
       email: "camilo.rojas@cun.edu.co",
       cedula: "1010101010",
       role: "COORDINATOR",
+      // ✅ CLAVE: esta es la escuela que heredará el líder creado por este coordinador
+      schoolId: "school-ingenieria",
       status: "ACTIVE",
       mustChangePassword: true,
       createdAt: nowIso(),
@@ -211,6 +215,9 @@ export const adminMockDb = {
       email: dto.email.trim().toLowerCase(),
       cedula: dto.cedula?.trim() || null,
       role: dto.role,
+      // ✅ NUEVO: guarda la escuela si viene en el DTO (coordinador -> líder)
+      // Si no viene, queda null y no rompe el flujo del admin.
+      schoolId: dto.schoolId ?? null,
       status: "ACTIVE",
       mustChangePassword: dto.mustChangePassword ?? true,
       createdAt: nowIso(),
@@ -226,7 +233,7 @@ export const adminMockDb = {
       actorUserId,
       actorRole: "ADMIN",
       at: nowIso(),
-      meta: { email: user.email, role: user.role },
+      meta: { email: user.email, role: user.role, schoolId: user.schoolId ?? null  },
     });
 
     const password: ResetPasswordResult | undefined = dto.generatePassword

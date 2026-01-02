@@ -149,11 +149,12 @@ const AdminUsersPanel: React.FC<Props> = ({ scope }) => {
       <AdminUserFormModal
         open={isCreateOpen}
         onClose={closeModal}
-        onCreate={users.createUser}
-        onUpdate={users.updateUser}
-        editingUser={users.editUser}
+        onCreate={users.createUser}           // debe ser async y devolver Promise<void>
+        onUpdate={users.updateUser}           // debe ser async y devolver Promise<void>
+        editingUser={editUser}               // 👈 OJO: usa el state local del panel
         lastCreatedCredentials={users.lastCreatedCredentials}
         clearCredentials={users.clearCredentials}
+        // ❌ NO forcedRole / forcedSchoolId aquí, porque Admin decide
       />
     </section>
   );
