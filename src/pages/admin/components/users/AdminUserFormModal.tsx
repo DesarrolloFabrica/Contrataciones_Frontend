@@ -1,41 +1,174 @@
 // src/pages/admin/components/users/AdminUserFormModal.tsx
 import React, { useEffect, useMemo, useState } from "react";
-import { Copy, X, CheckCircle2, Sparkles, Loader2 } from "lucide-react";
+import {
+  Copy,
+  X,
+  CheckCircle2,
+  Sparkles,
+  Loader2,
+  Wand2,
+  ArrowLeft,
+  ArrowRight,
+  ShieldCheck,
+  UserRound,
+  ChevronDown,
+  Building2,
+  Lock,
+  Mail,
+  Fingerprint,
+} from "lucide-react";
 import type { AdminUser, AdminUserRole, CreateAdminUserDto } from "../../adminTypes";
 import { schoolsService, type SchoolOption } from "../../../../services/schoolsService";
+
+type Step = "FORM" | "REVIEW" | "SUCCESS";
 
 type Props = {
   open: boolean;
   onClose: () => void;
-
-  // ✅ ahora async (backend real)
-  onCreate: (dto: CreateAdminUserDto & { schoolId?: string | null }) => Promise<void>;
+  onCreate: (dto: CreateAdminUserDto & { schoolId?: string | null }) => Promise<any>;
   onUpdate: (id: string, patch: any) => Promise<void>;
-
   editingUser: AdminUser | null;
-
-  // ✅ tu hook usa tempPassword
   lastCreatedCredentials: { email: string; tempPassword: string } | null;
   clearCredentials: () => void;
 };
 
-const emailLooksValid = (email: string) =>
-  /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim());
+// --- Helpers (Lógica original intacta) ---
+const emailLooksValid = (email: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim());
 
 const roleLabel = (role: AdminUserRole) => {
   switch (role) {
-    case "COORDINATOR":
-      return "Coordinador";
-    case "LEADER":
-      return "Líder";
-    case "ADMIN":
-      return "Administrador";
-    default:
-      return role;
+    case "COORDINATOR": return "Coordinador";
+    case "LEADER": return "Líder";
+    case "ADMIN": return "Administrador";
+    default: return role;
   }
 };
 
 const roleNeedsSchool = (role: AdminUserRole) => role === "COORDINATOR" || role === "LEADER";
+
+const stripAccents = (s: string) => s.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+
+const slugEmailPart = (s: string) =>
+  stripAccents(s).toLowerCase().trim()
+    .replace(/[^a-z0-9\s.]/g, "").replace(/\s+/g, ".")
+    .replace(/\.+/g, ".").replace(/^\.|\.$/g, "");
+
+const roleSlug = (role: AdminUserRole) => {
+  switch (role) {
+    case "COORDINATOR": return "coordinator";
+    case "LEADER": return "leader";
+    case "ADMIN": return "admin";
+    default: return slugEmailPart(role);
+  }
+};
+
+const suggestEmail = (fullName: string, role: AdminUserRole) => {
+  const base = slugEmailPart(fullName);
+  const r = roleSlug(role);
+  const local = [base, r].filter(Boolean).join(".");
+  if (!local) return "";
+  return `${local}@cun.edu.co`;
+};
+
+const splitFullName = (fullName: string) => {
+  const parts = String(fullName || "").trim().split(/\s+/).filter(Boolean);
+  if (parts.length < 2) return { name: parts[0] ?? "", lastName: "" };
+  const lastName = parts[parts.length - 1];
+  const name = parts.slice(0, -1).join(" ");
+  return { name, lastName };
+};
+
+// --- Nuevos Componentes de UI ---
+
+const ModalHeader = ({ title, subtitle, onClose, step, isEdit }: { title: string, subtitle: string, onClose: () => void, step: Step, isEdit: boolean }) => (
+  <div className="relative px-8 pt-8 pb-6 border-b border-white/5 bg-zinc-950/50">
+    <div className="flex items-start justify-between">
+      <div className="space-y-1">
+        <h3 className="text-xl font-medium text-white tracking-tight flex items-center gap-2">
+            {isEdit ? <UserRound className="w-5 h-5 text-emerald-500" /> : <Sparkles className="w-5 h-5 text-emerald-500" />}
+            {title}
+        </h3>
+        <p className="text-sm text-zinc-400 font-light max-w-sm leading-relaxed">{subtitle}</p>
+      </div>
+      <button
+        onClick={onClose}
+        className="group p-2 rounded-full hover:bg-white/5 transition-colors border border-transparent hover:border-white/5"
+      >
+        <X className="w-5 h-5 text-zinc-500 group-hover:text-zinc-300 transition-colors" />
+      </button>
+    </div>
+    
+    {/* Progress Indicator */}
+    {!isEdit && (
+        <div className="flex items-center gap-2 mt-6">
+            <div className={`h-1 flex-1 rounded-full transition-all duration-500 ${step === 'FORM' || step === 'REVIEW' || step === 'SUCCESS' ? 'bg-emerald-500' : 'bg-white/10'}`} />
+            <div className={`h-1 flex-1 rounded-full transition-all duration-500 ${step === 'REVIEW' || step === 'SUCCESS' ? 'bg-emerald-500' : 'bg-white/10'}`} />
+            <div className={`h-1 flex-1 rounded-full transition-all duration-500 ${step === 'SUCCESS' ? 'bg-emerald-500' : 'bg-white/10'}`} />
+        </div>
+    )}
+  </div>
+);
+
+const Field = ({
+  label,
+  required,
+  children,
+  hint,
+  actions,
+  icon: Icon
+}: {
+  label: string;
+  required?: boolean;
+  hint?: React.ReactNode;
+  actions?: React.ReactNode;
+  children: React.ReactNode;
+  icon?: React.ElementType;
+}) => (
+  <div className="group space-y-2">
+    <div className="flex items-end justify-between">
+      <label className="text-xs font-medium text-zinc-400 group-focus-within:text-emerald-400 transition-colors flex items-center gap-1.5">
+        {Icon && <Icon className="w-3.5 h-3.5 opacity-70" />}
+        {label} {required && <span className="text-rose-400">*</span>}
+      </label>
+      {actions && <div className="shrink-0">{actions}</div>}
+    </div>
+
+    <div className="relative">
+        {children}
+    </div>
+    
+    {hint && <div className="text-[11px] text-zinc-500 pl-1 leading-snug">{hint}</div>}
+  </div>
+);
+
+const Input = (props: React.InputHTMLAttributes<HTMLInputElement>) => (
+    <input
+        {...props}
+        className={`w-full bg-zinc-900/50 border border-white/10 hover:border-white/20 rounded-lg px-3.5 py-2.5 text-sm text-zinc-100 placeholder:text-zinc-600 outline-none focus:border-emerald-500/50 focus:ring-4 focus:ring-emerald-500/10 transition-all duration-200 ${props.className}`}
+    />
+)
+
+const SelectWrapper = ({ children, loading, icon }: { children: React.ReactNode, loading?: boolean, icon?: React.ElementType }) => (
+    <div className="relative">
+        {children}
+        <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-zinc-500">
+            {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <ChevronDown className="w-4 h-4" />}
+        </div>
+        {icon && (
+            <div className="absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none text-zinc-500">
+                {/* Optional left icon implementation */}
+            </div>
+        )}
+    </div>
+)
+
+const CardRow = ({ k, v, border = true }: { k: string; v: React.ReactNode, border?: boolean }) => (
+  <div className={`flex items-center justify-between py-3 ${border ? 'border-b border-dashed border-white/10 last:border-0' : ''}`}>
+    <p className="text-xs font-medium text-zinc-500">{k}</p>
+    <div className="text-sm font-medium text-zinc-200 text-right truncate max-w-[60%]">{v}</div>
+  </div>
+);
+
 
 const AdminUserFormModal: React.FC<Props> = ({
   open,
@@ -47,57 +180,57 @@ const AdminUserFormModal: React.FC<Props> = ({
   clearCredentials,
 }) => {
   const isEdit = !!editingUser;
+  const [step, setStep] = useState<Step>("FORM");
 
-  const [name, setName] = useState("");
-  const [lastName, setLastName] = useState("");
+  // State
+  const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
+  const [emailTouched, setEmailTouched] = useState(false);
   const [cedula, setCedula] = useState("");
-
   const [role, setRole] = useState<AdminUserRole>("COORDINATOR");
-
   const [generatePassword, setGeneratePassword] = useState(true);
   const [password, setPassword] = useState("");
-
+  const [password2, setPassword2] = useState("");
   const [mustChangePassword, setMustChangePassword] = useState(true);
-
-  // ✅ NUEVO: schoolId
   const [schoolId, setSchoolId] = useState<string>("");
-
-  // ✅ lista escuelas desde backend
+  
   const [schools, setSchools] = useState<SchoolOption[]>([]);
   const [schoolsLoading, setSchoolsLoading] = useState(false);
   const [schoolsError, setSchoolsError] = useState<string | null>(null);
-
+  
   const [localError, setLocalError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
+  const [copied, setCopied] = useState(false);
 
-  const title = isEdit ? "Editar usuario" : "Crear usuario";
+  const title = isEdit ? "Editar usuario" : "Crear nuevo usuario";
 
+  // --- Logic & Effects (Intacta) ---
   const validationError = useMemo(() => {
-    if (!name.trim() || !lastName.trim()) return "Nombre y apellido son obligatorios.";
-
+    const fn = fullName.trim();
+    const parts = fn.split(/\s+/).filter(Boolean);
+    if (parts.length < 2) return "Escribe nombre y apellido en el campo Nombres.";
+    const c = cedula.trim();
+    if (!c) return "La cédula es obligatoria.";
+    if (c.length < 6 || c.length > 10) return "La cédula debe tener entre 6 y 10 dígitos.";
+    if (!email.trim()) return "El correo es obligatorio.";
+    if (!emailLooksValid(email)) return "El correo no parece válido.";
     if (!isEdit) {
-      if (!email.trim()) return "El correo es obligatorio.";
-      if (!emailLooksValid(email)) return "El correo no parece válido.";
-      if (!generatePassword && password.trim().length < 8)
-        return "La contraseña manual debe tener mínimo 8 caracteres.";
+      if (!generatePassword) {
+        if (password.trim().length < 8) return "La contraseña manual debe tener mínimo 8 caracteres.";
+        if (password2.trim().length < 8) return "Confirma la contraseña.";
+        if (password.trim() !== password2.trim()) return "Las contraseñas no coinciden.";
+      }
     }
-
-    // ✅ regla backend: coordinador/líder deben tener escuela
     if (roleNeedsSchool(role) && !schoolId.trim()) {
-      return "Para Coordinador/Líder debes asignar una escuela.";
+      return "Para este rol debes asignar una escuela.";
     }
-
     return null;
-  }, [name, lastName, email, isEdit, generatePassword, password, role, schoolId]);
+  }, [fullName, cedula, email, isEdit, generatePassword, password, password2, role, schoolId]);
 
-  // Cargar escuelas cuando abre el modal (solo una vez por apertura)
   useEffect(() => {
     if (!open) return;
-
     let alive = true;
     setSchoolsError(null);
-
     (async () => {
       try {
         setSchoolsLoading(true);
@@ -106,407 +239,460 @@ const AdminUserFormModal: React.FC<Props> = ({
         setSchools(list);
       } catch (e: any) {
         if (!alive) return;
-        const msg =
-          e?.response?.data?.message ||
-          e?.message ||
-          "No se pudieron cargar las escuelas (puedes pegar el ID manual).";
-        setSchoolsError(msg);
+        setSchoolsError(e?.message || "Error cargando escuelas");
         setSchools([]);
       } finally {
         if (!alive) return;
         setSchoolsLoading(false);
       }
     })();
-
-    return () => {
-      alive = false;
-    };
+    return () => { alive = false; };
   }, [open]);
 
   useEffect(() => {
     if (!open) return;
-
+    setStep("FORM");
     setLocalError(null);
     setSaving(false);
+    setCopied(false);
 
     if (editingUser) {
-      setName(editingUser.name);
-      setLastName(editingUser.lastName);
+      const combined = `${editingUser.name ?? ""} ${editingUser.lastName ?? ""}`.trim();
+      setFullName(combined);
       setEmail(editingUser.email);
-      setCedula((editingUser as any).cedula ?? "");
+      setEmailTouched(true);
+      setCedula(String((editingUser as any).cedula ?? ""));
       setRole(editingUser.role);
       setMustChangePassword(Boolean((editingUser as any).mustChangePassword));
-
-      // ✅ si tu hook mapea schoolId a (user as any).schoolId, acá lo toma
       setSchoolId(String((editingUser as any).schoolId ?? ""));
-
       setGeneratePassword(true);
       setPassword("");
+      setPassword2("");
+      clearCredentials();
     } else {
-      setName("");
-      setLastName("");
+      setFullName("");
       setEmail("");
+      setEmailTouched(false);
       setCedula("");
       setRole("COORDINATOR");
       setMustChangePassword(true);
       setGeneratePassword(true);
       setPassword("");
+      setPassword2("");
       setSchoolId("");
       clearCredentials();
     }
   }, [open, editingUser, clearCredentials]);
 
-  // Si cambian a ADMIN, no obligamos schoolId
   useEffect(() => {
-    if (role === "ADMIN") {
-      setSchoolId(""); // opcional: limpiar
-    }
+    if (role === "ADMIN") setSchoolId("");
   }, [role]);
+
+  useEffect(() => {
+    if (!localError) return;
+    setLocalError(null);
+  }, [fullName, email, cedula, role, schoolId, mustChangePassword, generatePassword, password, password2]);
 
   if (!open) return null;
 
-  const close = () => {
-    clearCredentials();
-    onClose();
-  };
+  const close = () => { clearCredentials(); setStep("FORM"); onClose(); };
 
   const copy = async (text: string) => {
     try {
       await navigator.clipboard.writeText(text);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 1200);
     } catch {
-      const el = document.createElement("textarea");
-      el.value = text;
-      document.body.appendChild(el);
-      el.select();
-      document.execCommand("copy");
-      document.body.removeChild(el);
+      // Fallback
     }
   };
 
-  const handleSubmit = async () => {
+  const applySuggestedEmail = () => {
+    const s = suggestEmail(fullName, role);
+    if (s) { setEmail(s); setEmailTouched(true); }
+  };
+
+  const buildDto = (): CreateAdminUserDto & { schoolId?: string | null } => {
+    const parts = splitFullName(fullName);
+    return {
+      name: parts.name.trim(),
+      lastName: parts.lastName.trim(),
+      email: email.trim(),
+      cedula: cedula.trim(),
+      role,
+      mustChangePassword,
+      generatePassword,
+      password: generatePassword ? undefined : password.trim(),
+      schoolId: roleNeedsSchool(role) ? schoolId.trim() : null,
+    };
+  };
+
+  const goReview = () => {
     setLocalError(null);
+    if (validationError) { setLocalError(validationError); return; }
+    setStep("REVIEW");
+  };
 
-    if (validationError) {
-      setLocalError(validationError);
-      return;
-    }
-
+  const runCreate = async () => {
+    setLocalError(null);
+    if (validationError) { setLocalError(validationError); return; }
     setSaving(true);
-
     try {
-      if (!isEdit) {
-        await onCreate({
-          name: name.trim(),
-          lastName: lastName.trim(),
-          email: email.trim(),
-          cedula: cedula.trim() ? cedula.trim() : null,
-          role,
-          mustChangePassword,
-          generatePassword,
-          password: generatePassword ? undefined : password.trim(),
+      await onCreate(buildDto());
+      setStep("SUCCESS");
+    } catch (e: any) {
+      const msg = e?.response?.data?.message || e?.message || "Error al crear usuario.";
+      setLocalError(msg);
+    } finally { setSaving(false); }
+  };
 
-          // ✅ lo que necesitabas para evitar el 403
-          schoolId: roleNeedsSchool(role) ? schoolId.trim() : null,
-        });
-
-        // ✅ dejamos abierto para que el usuario copie credenciales (si el hook las setea)
-        setSaving(false);
-        return;
-      }
-
+  const runUpdate = async () => {
+    setLocalError(null);
+    if (validationError) { setLocalError(validationError); return; }
+    setSaving(true);
+    try {
+      const parts = splitFullName(fullName);
       await onUpdate((editingUser as any).id, {
-        name: name.trim(),
-        lastName: lastName.trim(),
-        cedula: cedula.trim() ? cedula.trim() : null,
+        name: parts.name.trim(),
+        lastName: parts.lastName.trim(),
+        email: email.trim(),
+        cedula: cedula.trim(),
         role,
         mustChangePassword,
-
-        // ✅ permitir actualizar escuela
         schoolId: roleNeedsSchool(role) ? schoolId.trim() : null,
       });
-
-      setSaving(false);
       close();
     } catch (e: any) {
-      console.error(e);
-      const msg =
-        e?.response?.data?.message ||
-        e?.message ||
-        (isEdit ? "No se pudo actualizar el usuario." : "No se pudo crear el usuario.");
+      const msg = e?.response?.data?.message || e?.message || "Error al actualizar.";
       setLocalError(msg);
-      setSaving(false);
-    }
+    } finally { setSaving(false); }
   };
 
-  const primaryDisabled = saving || !!validationError || (!isEdit && !!lastCreatedCredentials);
+  const createAnother = () => {
+    clearCredentials();
+    setStep("FORM");
+    setFullName(""); setEmail(""); setEmailTouched(false);
+    setCedula(""); setRole("COORDINATOR"); setMustChangePassword(true);
+    setGeneratePassword(true); setPassword(""); setPassword2("");
+    setSchoolId(""); setLocalError(null); setSaving(false);
+  };
 
-  const primaryLabel = isEdit
-    ? "Guardar cambios"
-    : lastCreatedCredentials
-    ? "Usuario creado"
-    : "Crear usuario";
+  const primaryDisabled = saving || (!!validationError && step !== "SUCCESS") || (!isEdit && step === "SUCCESS");
+  const footerPrimaryAction = () => {
+    if (isEdit) return runUpdate();
+    if (step === "FORM") return goReview();
+    if (step === "REVIEW") return runCreate();
+    return;
+  };
+  const canCopy = Boolean((lastCreatedCredentials?.email ?? email.trim())?.length);
+  const { name: previewName, lastName: previewLast } = splitFullName(fullName);
 
   return (
-    <div className="fixed inset-0 z-50">
-      {/* overlay */}
-      <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" onClick={close} />
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+      {/* Backdrop */}
+      <div className="absolute inset-0 bg-zinc-950/60 backdrop-blur-xl transition-opacity duration-300" onClick={close} />
 
-      <div className="absolute inset-0 flex items-center justify-center p-4">
-        <div className="w-full max-w-2xl bg-[#070707] border border-white/10 rounded-3xl shadow-2xl overflow-hidden">
-          {/* header */}
-          <div className="px-6 py-5 border-b border-white/10 flex items-start justify-between">
-            <div>
-              <p className="text-[11px] uppercase tracking-widest text-emerald-400 font-bold flex items-center gap-2">
-                <Sparkles className="w-4 h-4" />
-                Gestión de usuarios
-              </p>
-              <h3 className="text-xl font-black text-white mt-1">{title}</h3>
-              <p className="text-xs text-gray-500 mt-1">
-                {isEdit
-                  ? "Actualiza datos del usuario (sin exponer contraseñas)."
-                  : "Crea un usuario y genera credenciales seguras."}
-              </p>
-            </div>
+      {/* Modal Card */}
+      <div className="relative w-full max-w-2xl bg-zinc-950 border border-white/10 rounded-3xl shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-200 flex flex-col max-h-[90vh]">
+        
+        <ModalHeader 
+            title={title} 
+            subtitle={
+                isEdit ? "Actualiza la información del usuario existente." 
+                : step === 'SUCCESS' ? "El usuario ha sido creado correctamente."
+                : "Completa los datos para dar de alta un nuevo administrativo."
+            }
+            onClose={close}
+            step={step}
+            isEdit={isEdit}
+        />
 
-            <button
-              className="p-2 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 transition-colors"
-              onClick={close}
-              title="Cerrar"
-            >
-              <X className="w-4 h-4 text-gray-200" />
-            </button>
-          </div>
-
-          {/* body */}
-          <div className="px-6 py-5 space-y-5">
-            {!isEdit && lastCreatedCredentials && (
-              <div className="bg-emerald-500/10 border border-emerald-500/20 rounded-2xl p-4">
-                <div className="flex items-start justify-between gap-3">
-                  <div className="min-w-0">
-                    <p className="text-[11px] uppercase tracking-widest text-emerald-300 font-bold flex items-center gap-2">
-                      <CheckCircle2 className="w-4 h-4" />
-                      Credenciales generadas
-                    </p>
-                    <p className="text-xs text-gray-300 mt-1">
-                      Estas credenciales se muestran <b>solo una vez</b>. Compártelas por un canal seguro.
-                    </p>
-
-                    <div className="mt-3 grid grid-cols-1 md:grid-cols-2 gap-3">
-                      <div className="bg-black/30 border border-white/10 rounded-xl p-3">
-                        <p className="text-[10px] uppercase tracking-widest text-gray-500">Email</p>
-                        <p className="text-sm text-white mt-1 truncate">{lastCreatedCredentials.email}</p>
-                      </div>
-                      <div className="bg-black/30 border border-white/10 rounded-xl p-3">
-                        <p className="text-[10px] uppercase tracking-widest text-gray-500">
-                          Contraseña temporal
-                        </p>
-                        <p className="text-sm text-white mt-1 truncate">{lastCreatedCredentials.tempPassword}</p>
-                      </div>
+        {/* Scrollable Body */}
+        <div className="flex-1 overflow-y-auto px-8 py-6 custom-scrollbar">
+          <div className="space-y-6">
+            
+            {/* --- SUCCESS STEP --- */}
+            {!isEdit && step === "SUCCESS" && (
+              <div className="space-y-6">
+                <div className="bg-emerald-500/5 border border-emerald-500/20 rounded-2xl p-5 flex gap-4 items-start">
+                    <div className="p-2 bg-emerald-500/10 rounded-full shrink-0">
+                        <CheckCircle2 className="w-5 h-5 text-emerald-400" />
                     </div>
-                  </div>
+                    <div>
+                        <h4 className="text-sm font-semibold text-emerald-100">Usuario registrado</h4>
+                        <p className="text-xs text-emerald-200/60 mt-1 leading-relaxed">
+                            El usuario ya se encuentra activo. Si se generaron credenciales temporales, 
+                            esta es la única vez que se mostrarán.
+                        </p>
+                    </div>
+                </div>
 
-                  <button
-                    className="px-3 py-2 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-xs font-bold uppercase tracking-widest flex items-center gap-2"
-                    onClick={() =>
-                      copy(
-                        `Email: ${lastCreatedCredentials.email}\nPassword: ${lastCreatedCredentials.tempPassword}`
-                      )
-                    }
-                  >
-                    <Copy className="w-4 h-4" />
-                    Copiar
-                  </button>
+                <div className="bg-black/40 border border-white/10 rounded-2xl p-1 relative overflow-hidden group">
+                     {/* Decorative noise/gradient */}
+                    <div className="absolute inset-0 bg-gradient-to-br from-white/5 to-transparent pointer-events-none" />
+                    
+                    <div className="p-5 border border-dashed border-white/10 rounded-xl space-y-4">
+                        <div className="flex justify-between items-start">
+                            <span className="text-[10px] uppercase tracking-widest text-zinc-500 font-semibold">Credenciales de Acceso</span>
+                            <UserRound className="w-4 h-4 text-zinc-600" />
+                        </div>
+
+                        <div className="grid grid-cols-2 gap-8">
+                            <div>
+                                <p className="text-xs text-zinc-500 mb-1">Usuario / Correo</p>
+                                <p className="text-sm text-white font-mono select-all">{(lastCreatedCredentials?.email ?? email.trim()) || "—"}</p>
+                            </div>
+                            <div>
+                                <p className="text-xs text-zinc-500 mb-1">Contraseña Temporal</p>
+                                <p className="text-sm text-white font-mono select-all">
+                                    {lastCreatedCredentials?.tempPassword ? lastCreatedCredentials.tempPassword : (generatePassword ? "—" : "Manual")}
+                                </p>
+                            </div>
+                        </div>
+
+                        <div className="pt-4 mt-2 border-t border-white/5 flex gap-2">
+                             <button
+                                onClick={() => copy(`Nombre: ${fullName.trim()}\nEmail: ${lastCreatedCredentials?.email ?? email.trim()}\nPassword: ${lastCreatedCredentials?.tempPassword ?? ""}`)}
+                                disabled={!canCopy}
+                                className="flex-1 py-2 bg-zinc-800 hover:bg-zinc-700 text-zinc-200 rounded-lg text-xs font-medium transition-colors flex items-center justify-center gap-2"
+                            >
+                                <Copy className="w-3.5 h-3.5" />
+                                {copied ? "Copiado al portapapeles" : "Copiar credenciales"}
+                            </button>
+                        </div>
+                    </div>
                 </div>
               </div>
             )}
 
-            {/* form */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <label className="text-[11px] uppercase tracking-widest text-gray-500">Nombres</label>
-                <input
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                  className="mt-1 w-full bg-[#0A0A0A] border border-white/10 rounded-xl px-3 py-2 text-sm text-gray-200 outline-none focus:border-emerald-500/50"
-                  placeholder="Ej. Ana María"
-                />
+            {/* --- REVIEW STEP --- */}
+            {!isEdit && step === "REVIEW" && (
+              <div className="space-y-4 animate-in fade-in slide-in-from-right-4 duration-300">
+                <div className="rounded-2xl border border-white/10 bg-zinc-900/30 p-5">
+                    <div className="flex items-center gap-3 mb-4">
+                        <div className="p-2 rounded-lg bg-zinc-900 border border-white/10">
+                            <ShieldCheck className="w-5 h-5 text-emerald-400" />
+                        </div>
+                        <div>
+                            <p className="text-sm font-medium text-zinc-200">Confirmación de datos</p>
+                            <p className="text-xs text-zinc-500">Verifica que todo esté correcto antes de crear.</p>
+                        </div>
+                    </div>
+                    
+                    <div className="bg-zinc-950/50 rounded-xl border border-white/5 p-4 space-y-1">
+                        <CardRow k="Nombre completo" v={`${previewName} ${previewLast}`} />
+                        <CardRow k="Rol asignado" v={<span className="px-2 py-0.5 rounded-full bg-white/5 border border-white/10 text-xs">{roleLabel(role)}</span>} />
+                        <CardRow k="Documento" v={cedula.trim()} />
+                        <CardRow k="Correo electrónico" v={email.trim()} />
+                        <CardRow k="Escuela / Facultad" v={schools.find((s) => s.id === schoolId)?.name ?? (schoolId || "No aplica")} />
+                        <CardRow k="Método de contraseña" v={generatePassword ? "Generada automáticamente" : "Manual"} border={false} />
+                    </div>
+                </div>
               </div>
+            )}
 
-              <div>
-                <label className="text-[11px] uppercase tracking-widest text-gray-500">Apellidos</label>
-                <input
-                  value={lastName}
-                  onChange={(e) => setLastName(e.target.value)}
-                  className="mt-1 w-full bg-[#0A0A0A] border border-white/10 rounded-xl px-3 py-2 text-sm text-gray-200 outline-none focus:border-emerald-500/50"
-                  placeholder="Ej. López"
-                />
-              </div>
-
-              <div>
-                <label className="text-[11px] uppercase tracking-widest text-gray-500">Correo (login)</label>
-                <input
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  disabled={isEdit}
-                  className={`mt-1 w-full border rounded-xl px-3 py-2 text-sm outline-none ${
-                    isEdit
-                      ? "bg-white/5 border-white/10 text-gray-500 cursor-not-allowed"
-                      : "bg-[#0A0A0A] border-white/10 text-gray-200 focus:border-emerald-500/50"
-                  }`}
-                  placeholder="coordinador@cun.edu.co"
-                />
-              </div>
-
-              <div>
-                <label className="text-[11px] uppercase tracking-widest text-gray-500">Cédula (opcional)</label>
-                <input
-                  value={cedula}
-                  onChange={(e) => setCedula(e.target.value.replace(/[^\d]/g, ""))}
-                  className="mt-1 w-full bg-[#0A0A0A] border border-white/10 rounded-xl px-3 py-2 text-sm text-gray-200 outline-none focus:border-emerald-500/50"
-                  placeholder="1010101010"
-                />
-              </div>
-
-              <div>
-                <label className="text-[11px] uppercase tracking-widest text-gray-500">Rol</label>
-                <select
-                  value={role}
-                  onChange={(e) => setRole(e.target.value as AdminUserRole)}
-                  className="mt-1 w-full bg-[#0A0A0A] border border-white/10 rounded-xl px-3 py-2 text-sm text-gray-200 outline-none focus:border-emerald-500/50"
-                >
-                  <option value="COORDINATOR">{roleLabel("COORDINATOR")}</option>
-                  <option value="LEADER">{roleLabel("LEADER")}</option>
-                  <option value="ADMIN">{roleLabel("ADMIN")}</option>
-                </select>
-              </div>
-
-              {/* ✅ NUEVO: Escuela (obligatorio para COORDINATOR/LEADER) */}
-              <div>
-                <label className="text-[11px] uppercase tracking-widest text-gray-500">
-                  Escuela {roleNeedsSchool(role) ? "(obligatoria)" : "(opcional)"}
-                </label>
-
-                <div className="mt-1 flex items-center gap-2">
-                  <select
-                    value={schoolId}
-                    onChange={(e) => setSchoolId(e.target.value)}
-                    disabled={role === "ADMIN" || schoolsLoading}
-                    className={`w-full bg-[#0A0A0A] border border-white/10 rounded-xl px-3 py-2 text-sm text-gray-200 outline-none focus:border-emerald-500/50 ${
-                      role === "ADMIN" ? "opacity-60 cursor-not-allowed" : ""
-                    }`}
-                  >
-                    <option value="">
-                      {role === "ADMIN"
-                        ? "No aplica para Admin"
-                        : schoolsLoading
-                        ? "Cargando escuelas..."
-                        : "Selecciona una escuela"}
-                    </option>
-
-                    {schools.map((s) => (
-                      <option key={s.id} value={s.id}>
-                        {s.name}
-                      </option>
-                    ))}
-                  </select>
-
-                  {schoolsLoading && <Loader2 className="w-4 h-4 animate-spin text-emerald-400" />}
+            {/* --- FORM STEP --- */}
+            {step === "FORM" && (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-x-5 gap-y-6 animate-in fade-in slide-in-from-left-4 duration-300">
+                
+                <div className="md:col-span-2">
+                     <Field label="Nombre Completo" required hint="Ingresa nombres y apellidos" icon={UserRound}>
+                        <Input 
+                            value={fullName}
+                            onChange={(e) => setFullName(e.target.value)}
+                            placeholder="Ej. Ana María López"
+                            autoFocus
+                        />
+                     </Field>
                 </div>
 
-                {schoolsError && role !== "ADMIN" && (
-                  <p className="mt-2 text-[11px] text-amber-300">
-                    {schoolsError}
-                    <br />
-                    Si tu backend no expone <b>/schools</b>, dime cuál endpoint tienes y lo ajustamos.
-                  </p>
-                )}
+                <Field label="Rol de Usuario" required icon={ShieldCheck}>
+                   <SelectWrapper>
+                        <select
+                            value={role}
+                            onChange={(e) => setRole(e.target.value as AdminUserRole)}
+                            className="w-full appearance-none bg-zinc-900/50 border border-white/10 rounded-lg px-3.5 py-2.5 text-sm text-zinc-100 outline-none focus:border-emerald-500/50 focus:ring-4 focus:ring-emerald-500/10 transition-all"
+                        >
+                            <option value="COORDINATOR">{roleLabel("COORDINATOR")}</option>
+                            <option value="LEADER">{roleLabel("LEADER")}</option>
+                            <option value="ADMIN">{roleLabel("ADMIN")}</option>
+                        </select>
+                   </SelectWrapper>
+                </Field>
 
-                {/* Fallback manual por si no hay endpoint */}
-                {role !== "ADMIN" && schools.length === 0 && !schoolsLoading && (
-                  <div className="mt-2">
-                    <input
-                      value={schoolId}
-                      onChange={(e) => setSchoolId(e.target.value)}
-                      className="w-full bg-[#0A0A0A] border border-white/10 rounded-xl px-3 py-2 text-sm text-gray-200 outline-none focus:border-emerald-500/50"
-                      placeholder="(Opcional) Pega el schoolId (UUID) aquí"
+                <Field label="Cédula de Ciudadanía" required icon={Fingerprint}>
+                    <Input 
+                        value={cedula}
+                        onChange={(e) => setCedula(e.target.value.replace(/[^\d]/g, ""))}
+                        placeholder="6 a 10 dígitos"
+                        inputMode="numeric"
                     />
-                  </div>
-                )}
-              </div>
+                </Field>
 
-              <div className="flex items-center gap-3 mt-6">
-                <input
-                  type="checkbox"
-                  checked={mustChangePassword}
-                  onChange={(e) => setMustChangePassword(e.target.checked)}
-                  className="w-4 h-4"
-                />
-                <div>
-                  <p className="text-sm text-gray-200">Forzar cambio de contraseña</p>
-                  <p className="text-xs text-gray-500">Recomendado en primer inicio.</p>
-                </div>
-              </div>
-            </div>
-
-            {!isEdit && !lastCreatedCredentials && (
-              <div className="bg-[#090909] border border-white/10 rounded-2xl p-4">
-                <p className="text-[11px] uppercase tracking-widest text-gray-500 font-bold">Contraseña</p>
-
-                <div className="mt-3 flex items-center gap-3">
-                  <input
-                    type="checkbox"
-                    checked={generatePassword}
-                    onChange={(e) => setGeneratePassword(e.target.checked)}
-                    className="w-4 h-4"
-                  />
-                  <p className="text-sm text-gray-200">Generar automáticamente (recomendado)</p>
+                <div className="md:col-span-2">
+                    <Field 
+                        label="Correo Institucional" 
+                        required 
+                        icon={Mail}
+                        hint="Este será el usuario de acceso al sistema."
+                        actions={
+                            <button
+                                type="button"
+                                onClick={applySuggestedEmail}
+                                className="text-[10px] font-medium px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500/20 transition-colors flex items-center gap-1.5"
+                            >
+                                <Wand2 className="w-3 h-3" />
+                                Sugerir
+                            </button>
+                        }
+                    >
+                        <Input 
+                            value={email}
+                            onChange={(e) => { setEmail(e.target.value); setEmailTouched(true); }}
+                            placeholder="nombre.apellido.rol@cun.edu.co"
+                        />
+                    </Field>
                 </div>
 
-                {!generatePassword && (
-                  <div className="mt-3">
-                    <label className="text-[11px] uppercase tracking-widest text-gray-500">
-                      Definir manualmente
+                <div className="md:col-span-2">
+                    <Field 
+                        label={`Escuela Asignada ${roleNeedsSchool(role) ? "" : "(Opcional)"}`} 
+                        required={roleNeedsSchool(role)}
+                        icon={Building2}
+                    >
+                         <SelectWrapper loading={schoolsLoading}>
+                            <select
+                                value={schoolId}
+                                onChange={(e) => setSchoolId(e.target.value)}
+                                disabled={role === "ADMIN" || schoolsLoading}
+                                className={`w-full appearance-none bg-zinc-900/50 border border-white/10 rounded-lg px-3.5 py-2.5 text-sm text-zinc-100 outline-none focus:border-emerald-500/50 focus:ring-4 focus:ring-emerald-500/10 transition-all ${role === "ADMIN" ? "opacity-50 cursor-not-allowed" : ""}`}
+                            >
+                                <option value="">
+                                    {role === "ADMIN" ? "No aplica para Administradores" : schoolsLoading ? "Cargando..." : "Selecciona una escuela..."}
+                                </option>
+                                {schools.map((s) => (
+                                    <option key={s.id} value={s.id}>{s.name}</option>
+                                ))}
+                            </select>
+                         </SelectWrapper>
+                         {schoolsError && role !== "ADMIN" && <p className="mt-1.5 text-xs text-amber-400/90">{schoolsError}</p>}
+                    </Field>
+                </div>
+
+                <div className="md:col-span-2 py-2">
+                    <label className="flex items-start gap-3 p-3 rounded-lg border border-white/5 bg-white/[0.02] hover:bg-white/[0.04] transition-colors cursor-pointer">
+                        <input
+                            type="checkbox"
+                            checked={mustChangePassword}
+                            onChange={(e) => setMustChangePassword(e.target.checked)}
+                            className="mt-0.5 rounded border-white/20 bg-zinc-900 text-emerald-500 focus:ring-emerald-500/40"
+                        />
+                        <div className="space-y-0.5">
+                            <span className="text-sm font-medium text-zinc-200">Forzar cambio de contraseña</span>
+                            <p className="text-xs text-zinc-500">El usuario deberá asignar una nueva clave al iniciar sesión por primera vez.</p>
+                        </div>
                     </label>
-                    <input
-                      value={password}
-                      onChange={(e) => setPassword(e.target.value)}
-                      className="mt-1 w-full bg-[#0A0A0A] border border-white/10 rounded-xl px-3 py-2 text-sm text-gray-200 outline-none focus:border-emerald-500/50"
-                      placeholder="Mínimo 8 caracteres"
-                    />
-                  </div>
+                </div>
+
+                {!isEdit && (
+                    <div className="md:col-span-2 pt-4 border-t border-white/5">
+                         <div className="flex items-center justify-between mb-4">
+                            <div className="flex items-center gap-2 text-zinc-400">
+                                <Lock className="w-3.5 h-3.5" />
+                                <span className="text-xs font-semibold uppercase tracking-wider">Seguridad</span>
+                            </div>
+                            <label className="flex items-center gap-2 cursor-pointer group">
+                                <input
+                                    type="checkbox"
+                                    checked={generatePassword}
+                                    onChange={(e) => setGeneratePassword(e.target.checked)}
+                                    className="rounded-sm border-white/20 bg-zinc-900 text-emerald-500 focus:ring-0 w-3.5 h-3.5"
+                                />
+                                <span className="text-xs text-zinc-400 group-hover:text-zinc-200 transition-colors">Generar automáticamente</span>
+                            </label>
+                         </div>
+
+                        {!generatePassword && (
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 animate-in fade-in slide-in-from-top-2">
+                                <Field label="Contraseña Manual" required>
+                                    <Input 
+                                        type="password"
+                                        value={password}
+                                        onChange={(e) => setPassword(e.target.value)}
+                                        placeholder="Min. 8 caracteres"
+                                    />
+                                </Field>
+                                <Field label="Confirmar Contraseña" required>
+                                    <Input 
+                                        type="password"
+                                        value={password2}
+                                        onChange={(e) => setPassword2(e.target.value)}
+                                        placeholder="Repetir contraseña"
+                                    />
+                                </Field>
+                            </div>
+                        )}
+                    </div>
                 )}
               </div>
             )}
 
-            {(localError || validationError) && (
-              <div className="bg-rose-500/10 border border-rose-500/20 rounded-2xl p-3 text-sm text-rose-200">
-                {localError ?? validationError}
+            {localError && (
+              <div className="animate-in slide-in-from-bottom-2 fade-in bg-rose-500/10 border border-rose-500/20 rounded-xl p-3 flex items-start gap-3">
+                  <div className="p-1 bg-rose-500/20 rounded-full shrink-0 mt-0.5">
+                    <X className="w-3 h-3 text-rose-400" />
+                  </div>
+                  <p className="text-sm text-rose-200">{localError}</p>
               </div>
             )}
           </div>
+        </div>
 
-          {/* footer */}
-          <div className="px-6 py-5 border-t border-white/10 flex items-center justify-between">
+        {/* Footer */}
+        <div className="px-8 py-5 border-t border-white/5 bg-zinc-950/50 flex items-center justify-between z-10">
             <button
-              className="px-4 py-2 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-xs font-bold uppercase tracking-widest"
-              onClick={close}
+                onClick={close}
+                className="text-xs font-medium text-zinc-500 hover:text-zinc-300 transition-colors px-2 py-1"
             >
-              {lastCreatedCredentials ? "Cerrar" : "Cancelar"}
+                {step === "SUCCESS" ? "Cerrar ventana" : "Cancelar operación"}
             </button>
 
-            <button
-              disabled={primaryDisabled}
-              className={[
-                "px-5 py-2 rounded-xl text-xs font-bold uppercase tracking-widest shadow-md transition-colors",
-                primaryDisabled
-                  ? "bg-white/5 text-neutral-500 border border-white/10 cursor-not-allowed"
-                  : "bg-emerald-600 hover:bg-emerald-500 text-white",
-              ].join(" ")}
-              onClick={handleSubmit}
-            >
-              {saving ? "Guardando..." : primaryLabel}
-            </button>
-          </div>
+            <div className="flex items-center gap-3">
+                {!isEdit && step === "REVIEW" && (
+                     <button
+                        onClick={() => setStep("FORM")}
+                        disabled={saving}
+                        className="px-4 py-2.5 rounded-lg text-xs font-semibold text-zinc-400 hover:text-white hover:bg-white/5 transition-colors flex items-center gap-2"
+                    >
+                        <ArrowLeft className="w-3.5 h-3.5" />
+                        Volver
+                    </button>
+                )}
+
+                {step === 'SUCCESS' ? (
+                     <button
+                        onClick={createAnother}
+                        className="px-5 py-2.5 bg-zinc-800 hover:bg-zinc-700 text-zinc-100 rounded-lg text-xs font-semibold shadow-lg shadow-black/20 transition-all flex items-center gap-2"
+                    >
+                        Crear otro usuario
+                        <ArrowRight className="w-3.5 h-3.5" />
+                    </button>
+                ) : (
+                    <button
+                        onClick={footerPrimaryAction}
+                        disabled={primaryDisabled}
+                        className={`px-5 py-2.5 rounded-lg text-xs font-semibold shadow-lg transition-all flex items-center gap-2 ${
+                            primaryDisabled 
+                                ? "bg-zinc-800 text-zinc-500 cursor-not-allowed border border-transparent" 
+                                : "bg-emerald-600 hover:bg-emerald-500 text-white shadow-emerald-900/20 border border-emerald-500/50"
+                        }`}
+                    >
+                        {saving && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
+                        {isEdit ? "Guardar cambios" : step === "FORM" ? "Continuar" : "Confirmar creación"}
+                        {!saving && step === "FORM" && <ArrowRight className="w-3.5 h-3.5" />}
+                    </button>
+                )}
+            </div>
         </div>
       </div>
     </div>

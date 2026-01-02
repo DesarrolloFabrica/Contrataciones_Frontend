@@ -8,9 +8,11 @@ type Props = {
   onEdit: (u: AdminUser) => void;
   onToggleActive: (id: string) => Promise<{ ok: boolean }>;
   onResetPassword: (id: string) => Promise<ResetPasswordResult | null>;
+  onViewSecurity: (u: AdminUser) => void;
 };
 
-const fmtDate = (iso: string) => {
+const fmtDate = (iso?: string | null) => {
+  if (!iso) return "—";
   const d = new Date(iso);
   if (isNaN(d.getTime())) return "—";
   return d.toLocaleDateString("es-CO", {
@@ -56,8 +58,9 @@ const AdminUsersTable: React.FC<Props> = ({
   onEdit,
   onToggleActive,
   onResetPassword,
+  onViewSecurity,
 }) => {
-  if (users.length === 0) {
+  if (!users?.length) {
     return (
       <div className="flex items-center justify-center py-12 text-gray-500 text-sm border border-white/10 rounded-2xl bg-[#090909]">
         No hay usuarios para los filtros actuales.
@@ -96,7 +99,6 @@ const AdminUsersTable: React.FC<Props> = ({
                       </p>
                       <p className="text-[12px] text-gray-500 truncate">{u.email}</p>
 
-                      {/* Señal útil para soporte */}
                       {u.mustChangePassword && (
                         <span className="mt-1 inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-widest bg-yellow-500/10 text-yellow-200 border border-yellow-500/20">
                           Debe cambiar contraseña
@@ -136,12 +138,9 @@ const AdminUsersTable: React.FC<Props> = ({
                       <AdminUserRowActions
                         user={u}
                         onEdit={() => onEdit(u)}
-                        onToggleActive={async () => {
-                          await onToggleActive(u.id);
-                        }}
-                        onResetPassword={async () => {
-                          return await onResetPassword(u.id);
-                        }}
+                        onToggleActive={() => onToggleActive(u.id)}
+                        onResetPassword={() => onResetPassword(u.id)}
+                        onViewSecurity={onViewSecurity}
                       />
                     </div>
                   </td>
