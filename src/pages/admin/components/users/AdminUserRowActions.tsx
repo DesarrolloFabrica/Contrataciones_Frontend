@@ -10,14 +10,18 @@ import {
   AlertTriangle,
   X,
   CheckCircle2,
+  ShieldCheck, // ✅ NEW
 } from "lucide-react";
 import type { AdminUser, ResetPasswordResult } from "../../adminTypes";
 
 type Props = {
   user: AdminUser;
   onEdit: () => void;
-  onToggleActive: () => void; // se mantiene sync (en tabla lo envuelves async)
+  onToggleActive: () => void;
   onResetPassword: () => Promise<ResetPasswordResult | null>;
+
+  // ✅ NEW: abrir panel de estado/seguridad
+  onViewSecurity: (u: AdminUser) => void;
 };
 
 type Pos = { top: number; left: number; width: number };
@@ -40,6 +44,7 @@ const AdminUserRowActions: React.FC<Props> = ({
   onEdit,
   onToggleActive,
   onResetPassword,
+  onViewSecurity, // ✅ NEW
 }) => {
   const btnRef = useRef<HTMLButtonElement | null>(null);
   const menuRef = useRef<HTMLDivElement | null>(null);
@@ -49,7 +54,6 @@ const AdminUserRowActions: React.FC<Props> = ({
 
   const [busy, setBusy] = useState<null | "reset" | "toggle">(null);
 
-  // mini-dialogs
   const [confirmToggleOpen, setConfirmToggleOpen] = useState(false);
   const [resetResult, setResetResult] = useState<ResetPasswordResult | null>(null);
   const [copied, setCopied] = useState(false);
@@ -68,6 +72,10 @@ const AdminUserRowActions: React.FC<Props> = ({
   const handleEdit = useCallback(() => {
     onEdit();
   }, [onEdit]);
+
+  const handleViewSecurity = useCallback(() => {
+    onViewSecurity(user);
+  }, [onViewSecurity, user]);
 
   const handleToggleConfirm = useCallback(() => {
     setConfirmToggleOpen(true);
@@ -90,21 +98,13 @@ const AdminUserRowActions: React.FC<Props> = ({
 
       const res = await onResetPassword();
       if (!res) {
-        // sin alerts: mostramos un mensaje controlado
-        setResetResult({
-          userId: user.id,
-          temporaryPassword: "",
-        } as any);
+        setResetResult({ userId: user.id, temporaryPassword: "" } as any);
         return;
       }
-
       setResetResult(res);
     } catch (e) {
       console.error(e);
-      setResetResult({
-        userId: user.id,
-        temporaryPassword: "",
-      } as any);
+      setResetResult({ userId: user.id, temporaryPassword: "" } as any);
     } finally {
       setBusy(null);
     }
@@ -112,6 +112,13 @@ const AdminUserRowActions: React.FC<Props> = ({
 
   const items = useMemo(
     () => [
+      {
+        id: "security",
+        label: "Estado y seguridad",
+        icon: <ShieldCheck className="w-4 h-4 text-emerald-300" />,
+        onClick: handleViewSecurity,
+        disabled: busy !== null,
+      },
       {
         id: "edit",
         label: "Editar",
@@ -134,7 +141,7 @@ const AdminUserRowActions: React.FC<Props> = ({
         disabled: busy !== null,
       },
     ],
-    [handleEdit, runReset, handleToggleConfirm, isActive, busy]
+    [handleEdit, runReset, handleToggleConfirm, isActive, busy, handleViewSecurity]
   );
 
   const computePosition = useCallback(() => {
@@ -188,7 +195,6 @@ const AdminUserRowActions: React.FC<Props> = ({
     return () => document.removeEventListener("mousedown", onPointerDown);
   }, [open, closeMenu]);
 
-  // ✅ ESC cierra overlays
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if (e.key === "Escape") closeAllOverlays();

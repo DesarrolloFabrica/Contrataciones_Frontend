@@ -1,17 +1,20 @@
+// src/pages/admin/hooks/useAdminAudit.ts
 import { useCallback, useEffect, useMemo, useState } from "react";
 import type { AdminAuditEvent, AdminAuditEntityType } from "../adminTypes";
 import { adminMockDb } from "../utils/adminMockDb";
 
 type Opts = {
-  entityType?: AdminAuditEntityType; // "USER" | "EVALUATION" | "SYSTEM"
-  entityId?: string; // si viene -> detalle; si NO viene -> global
-
-  // scope (null/undefined = global)
+  entityType?: AdminAuditEntityType;
+  entityId?: string;
   schoolName?: string;
   programName?: string;
+
+  initialLimit?: number; // default 50
+  pageSize?: number;     // default 25
 };
 
-const MAX_EVENTS = 50;
+const DEFAULT_INITIAL = 50;
+const DEFAULT_PAGE = 25;
 
 const norm = (v: any) => String(v ?? "").trim().toLowerCase();
 
@@ -29,8 +32,8 @@ const isAllToken = (v?: string) => {
 };
 
 // Intenta inferir school/program desde meta (mock-friendly)
-function metaSchool(ev: AdminAuditEvent): string {
-  const m: any = (ev as any)?.meta ?? {};
+function metaSchool(ev: any): string {
+  const m: any = ev?.meta ?? {};
   return (
     m.schoolName ??
     m.school ??
@@ -41,8 +44,8 @@ function metaSchool(ev: AdminAuditEvent): string {
   );
 }
 
-function metaProgram(ev: AdminAuditEvent): string {
-  const m: any = (ev as any)?.meta ?? {};
+function metaProgram(ev: any): string {
+  const m: any = ev?.meta ?? {};
   return (
     m.programName ??
     m.program ??
@@ -54,11 +57,12 @@ function metaProgram(ev: AdminAuditEvent): string {
 }
 
 export const useAdminAudit = (opts?: Opts) => {
-  const [audit, setAudit] = useState<AdminAuditEvent[]>([]);
+  const [all, setAll] = useState<AdminAuditEvent[]>([]);
+  const [limit, setLimit] = useState(opts?.initialLimit ?? DEFAULT_INITIAL);
+
   const [loadingAudit, setLoadingAudit] = useState(false);
   const [errorAudit, setErrorAudit] = useState<string | null>(null);
 
-  // ✅ key estable para recargar cuando cambie filtro/scope
   const key = useMemo(() => {
     const t = opts?.entityType ?? "ALL";
     const id = opts?.entityId ?? "GLOBAL";
@@ -66,6 +70,10 @@ export const useAdminAudit = (opts?: Opts) => {
     const p = opts?.programName ?? "ALL_PROGRAMS";
     return `${t}:${id}:${s}:${p}`;
   }, [opts?.entityType, opts?.entityId, opts?.schoolName, opts?.programName]);
+
+  // ✅ Derivado, no estado duplicado
+  const visible = useMemo(() => all.slice(0, limit), [all, limit]);
+  const hasMore = visible.length < all.length;
 
   const refreshAudit = useCallback(async () => {
     setLoadingAudit(true);
@@ -78,26 +86,23 @@ export const useAdminAudit = (opts?: Opts) => {
         const type = opts.entityType ?? "SYSTEM";
         res = await adminMockDb.listAudit(type, opts.entityId);
       } else {
-        // ✅ Si entityType es undefined => debe significar "ALL"
         res = await adminMockDb.listAuditGlobal(opts?.entityType);
       }
 
-      // ✅ Scope filter (best-effort usando meta)
-      const sNeed = !isAllToken(opts?.schoolName) ? norm(opts?.schoolName) : null;
-      const pNeed = !isAllToken(opts?.programName) ? norm(opts?.programName) : null;
+      const sNeed =
+        opts?.schoolName && !isAllToken(opts.schoolName) ? norm(opts.schoolName) : null;
+      const pNeed =
+        opts?.programName && !isAllToken(opts.programName) ? norm(opts.programName) : null;
 
       let filtered = [...res];
 
-      // Filtra school si aplica
       if (sNeed) {
         filtered = filtered.filter((ev) => {
           const s = norm(metaSchool(ev));
-          // si no hay school en meta, no lo filtro (para no vaciar en mock)
           return !s || s === sNeed;
         });
       }
 
-      // Filtra program si aplica (independiente de school)
       if (pNeed) {
         filtered = filtered.filter((ev) => {
           const p = norm(metaProgram(ev));
@@ -105,33 +110,44 @@ export const useAdminAudit = (opts?: Opts) => {
         });
       }
 
-      const ordered = filtered
-        .sort((a, b) => {
-          // at puede ser ISO string: orden descendente
-          const ta = new Date(a.at).getTime();
-          const tb = new Date(b.at).getTime();
-          return (Number.isFinite(tb) ? tb : 0) - (Number.isFinite(ta) ? ta : 0);
-        })
-        .slice(0, MAX_EVENTS);
+      const ordered = filtered.sort((a, b) => {
+        const ta = new Date(a.at).getTime();
+        const tb = new Date(b.at).getTime();
+        return (Number.isFinite(tb) ? tb : 0) - (Number.isFinite(ta) ? ta : 0);
+      });
 
-      setAudit(ordered);
+      setAll(ordered);
     } catch (e) {
       console.error("Admin: error cargando auditoría", e);
       setErrorAudit("No se pudo cargar el historial de auditoría.");
-      setAudit([]);
+      setAll([]);
     } finally {
       setLoadingAudit(false);
     }
   }, [opts?.entityType, opts?.entityId, opts?.schoolName, opts?.programName]);
 
+  // ✅ cada vez que cambia filtro/scope reiniciamos límite
+  useEffect(() => {
+    setLimit(opts?.initialLimit ?? DEFAULT_INITIAL);
+  }, [key, opts?.initialLimit]);
+
   useEffect(() => {
     refreshAudit();
   }, [key, refreshAudit]);
 
+  const loadMore = useCallback(() => {
+    const step = opts?.pageSize ?? DEFAULT_PAGE;
+    setLimit((l) => Math.min(all.length || Number.POSITIVE_INFINITY, l + step));
+  }, [all.length, opts?.pageSize]);
+
   return {
-    audit,
+    audit: visible,
     loadingAudit,
     errorAudit,
     refreshAudit,
+    hasMore,
+    loadMore,
+    total: all.length,
+    showing: visible.length,
   };
 };

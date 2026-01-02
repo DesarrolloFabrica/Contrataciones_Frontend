@@ -1,4 +1,4 @@
-import React, { useMemo } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import type { AdminAuditEvent } from "../../adminTypes";
 import {
   buildHumanLine,
@@ -19,8 +19,21 @@ type Props = {
   title?: string;
   events: AdminAuditEvent[];
   compact?: boolean;
+
+  /**
+   * ✅ MODO CLÁSICO (limit simple)
+   * Si lo usas, recorta el total antes de paginar.
+   */
   limit?: number;
-  hideAdminEvents?: boolean; // ✅ oculta acciones del ADMIN si quieres
+
+  hideAdminEvents?: boolean;
+
+  /**
+   * ✅ Paginación interna del timeline
+   * - Si ya paginas arriba en AdminAuditPanel, pon paginate={false}
+   */
+  paginate?: boolean;
+  pageSize?: number; // default 30
 };
 
 export default function AdminAuditTimeline({
@@ -29,25 +42,59 @@ export default function AdminAuditTimeline({
   compact,
   limit,
   hideAdminEvents = false,
+  paginate = true,
+  pageSize = 10,
 }: Props) {
+  const [page, setPage] = useState(1); // 1-based
+
+  // Si cambia el dataset (o filtros), reinicia a página 1
+  useEffect(() => {
+    setPage(1);
+  }, [events, hideAdminEvents, limit, pageSize, paginate]);
+
   const filtered = useMemo(() => {
     const base = (events ?? []).filter((ev) =>
       shouldShowEvent(ev, { hideAdmin: hideAdminEvents })
     );
-    return typeof limit === "number" ? base.slice(0, limit) : base;
-  }, [events, limit, hideAdminEvents]);
+
+    // ✅ aseguramos orden descendente (por si events viene sin ordenar)
+    const ordered = [...base].sort((a, b) => {
+      const ta = new Date(a.at).getTime();
+      const tb = new Date(b.at).getTime();
+      return (Number.isFinite(tb) ? tb : 0) - (Number.isFinite(ta) ? ta : 0);
+    });
+
+    // ✅ limit clásico (recorta el universo antes de paginar)
+    return typeof limit === "number" ? ordered.slice(0, limit) : ordered;
+  }, [events, hideAdminEvents, limit]);
+
+  const total = filtered.length;
+  const totalPages = useMemo(() => {
+    const t = Math.ceil(total / pageSize);
+    return Math.max(1, Number.isFinite(t) ? t : 1);
+  }, [total, pageSize]);
+
+  const pageSlice = useMemo(() => {
+    if (!paginate) return filtered;
+    const start = (page - 1) * pageSize;
+    return filtered.slice(start, start + pageSize);
+  }, [filtered, paginate, page, pageSize]);
 
   const grouped = useMemo(() => {
     const map = new Map<string, { date: Date; items: AdminAuditEvent[] }>();
-    for (const ev of filtered) {
+
+    for (const ev of pageSlice) {
       const d = safeDate(ev.at);
       if (!d) continue;
+
       const k = dayKey(d);
       if (!map.has(k)) map.set(k, { date: d, items: [] });
       map.get(k)!.items.push(ev);
     }
+
+    // El slice ya viene ordenado desc, pero el grupo lo dejamos bien
     return Array.from(map.values()).sort((a, b) => (a.date < b.date ? 1 : -1));
-  }, [filtered]);
+  }, [pageSlice]);
 
   if (filtered.length === 0) {
     return (
@@ -56,6 +103,12 @@ export default function AdminAuditTimeline({
       </div>
     );
   }
+
+  const canPrev = page > 1;
+  const canNext = page < totalPages;
+
+  const from = paginate ? (page - 1) * pageSize + 1 : 1;
+  const to = paginate ? Math.min(page * pageSize, total) : total;
 
   return (
     <div className="space-y-3">
@@ -68,6 +121,41 @@ export default function AdminAuditTimeline({
             Eventos resumidos en lenguaje humano (sin ruido técnico).
           </p>
         </div>
+
+        {/* ✅ Controles de paginación (solo si paginate=true) */}
+        {paginate && (
+          <div className="flex items-center gap-2">
+            <span className="text-[11px] text-neutral-500 tabular-nums">
+              {from}-{to} / {total}
+            </span>
+
+            <button
+              type="button"
+              disabled={!canPrev}
+              onClick={() => setPage((p) => Math.max(1, p - 1))}
+              className={`px-3 py-1 rounded-full border text-[11px] uppercase tracking-widest transition ${
+                !canPrev
+                  ? "opacity-40 cursor-not-allowed border-white/10 text-neutral-500"
+                  : "border-white/10 text-neutral-300 hover:border-white/20 hover:bg-white/5"
+              }`}
+            >
+              Anterior
+            </button>
+
+            <button
+              type="button"
+              disabled={!canNext}
+              onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+              className={`px-3 py-1 rounded-full border text-[11px] uppercase tracking-widest transition ${
+                !canNext
+                  ? "opacity-40 cursor-not-allowed border-white/10 text-neutral-500"
+                  : "border-white/10 text-neutral-300 hover:border-white/20 hover:bg-white/5"
+              }`}
+            >
+              Siguiente
+            </button>
+          </div>
+        )}
       </div>
 
       <div className="space-y-4">
