@@ -269,12 +269,182 @@ const AdminUserRowActions: React.FC<Props> = ({
           document.body
         )}
 
-      {/* ... el resto (confirm toggle + reset result) igual */}
-      {/* (sin cambios debajo) */}
       {/* CONFIRM TOGGLE */}
-      {confirmToggleOpen && /* ... */ null}
+      {confirmToggleOpen &&
+        createPortal(
+          <div className="fixed inset-0 z-[10000]">
+            <div
+              className="absolute inset-0 bg-black/70 backdrop-blur-sm"
+              onClick={() => setConfirmToggleOpen(false)}
+            />
+            <div className="absolute inset-0 flex items-center justify-center p-4">
+              <div className="w-full max-w-md bg-[#070707] border border-white/10 rounded-3xl shadow-2xl overflow-hidden">
+                <div className="px-6 py-5 border-b border-white/10 flex items-start justify-between">
+                  <div>
+                    <p className="text-[11px] uppercase tracking-widest text-yellow-300 font-bold flex items-center gap-2">
+                      <AlertTriangle className="w-4 h-4" />
+                      Confirmar acción
+                    </p>
+                    <h3 className="text-lg font-black text-white mt-1">
+                      {isActive ? "Desactivar usuario" : "Activar usuario"}
+                    </h3>
+                    <p className="text-xs text-neutral-400 mt-1">
+                      {isActive
+                        ? "El usuario no podrá iniciar sesión hasta que lo actives de nuevo."
+                        : "El usuario recuperará acceso al sistema."}
+                    </p>
+                  </div>
+
+                  <button
+                    className="p-2 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 transition-colors"
+                    onClick={() => setConfirmToggleOpen(false)}
+                    title="Cerrar"
+                  >
+                    <X className="w-4 h-4 text-gray-200" />
+                  </button>
+                </div>
+
+                <div className="px-6 py-5">
+                  <div className="rounded-2xl border border-white/10 bg-black/30 p-4">
+                    <p className="text-sm text-white font-semibold">
+                      {user.name} {user.lastName}
+                    </p>
+                    <p className="text-xs text-neutral-500">{user.email}</p>
+                  </div>
+                </div>
+
+                <div className="px-6 py-5 border-t border-white/10 flex items-center justify-between">
+                  <button
+                    type="button"
+                    className="px-4 py-2 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-xs font-bold uppercase tracking-widest"
+                    onClick={() => setConfirmToggleOpen(false)}
+                    disabled={busy === "toggle"}
+                  >
+                    Cancelar
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={runToggle}
+                    disabled={busy === "toggle"}
+                    className={`px-5 py-2 rounded-xl text-xs font-bold uppercase tracking-widest shadow-md transition-colors ${
+                      busy === "toggle"
+                        ? "bg-white/5 text-neutral-500 border border-white/10 cursor-not-allowed"
+                        : isActive
+                        ? "bg-rose-600 hover:bg-rose-500 text-white"
+                        : "bg-emerald-600 hover:bg-emerald-500 text-white"
+                    }`}
+                  >
+                    {busy === "toggle"
+                      ? "Procesando..."
+                      : isActive
+                      ? "Desactivar"
+                      : "Activar"}
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>,
+          document.body
+        )}
+
       {/* RESET RESULT */}
-      {resetResult && /* ... */ null}
+      {resetResult &&
+        createPortal(
+          <div className="fixed inset-0 z-[10000]">
+            <div
+              className="absolute inset-0 bg-black/70 backdrop-blur-sm"
+              onClick={() => setResetResult(null)}
+            />
+            <div className="absolute inset-0 flex items-center justify-center p-4">
+              <div className="w-full max-w-md bg-[#070707] border border-white/10 rounded-3xl shadow-2xl overflow-hidden">
+                <div className="px-6 py-5 border-b border-white/10 flex items-start justify-between">
+                  <div>
+                    <p className="text-[11px] uppercase tracking-widest text-amber-300 font-bold flex items-center gap-2">
+                      <KeyRound className="w-4 h-4" />
+                      Contraseña temporal
+                    </p>
+                    <h3 className="text-lg font-black text-white mt-1">
+                      Reset de contraseña
+                    </h3>
+                    <p className="text-xs text-neutral-400 mt-1">
+                      Comparte esta contraseña por un canal seguro. Se recomienda forzar cambio al iniciar.
+                    </p>
+                  </div>
+
+                  <button
+                    className="p-2 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 transition-colors"
+                    onClick={() => setResetResult(null)}
+                    title="Cerrar"
+                  >
+                    <X className="w-4 h-4 text-gray-200" />
+                  </button>
+                </div>
+
+                <div className="px-6 py-5 space-y-3">
+                  <div className="rounded-2xl border border-white/10 bg-black/30 p-4">
+                    <p className="text-sm text-white font-semibold">
+                      {user.name} {user.lastName}
+                    </p>
+                    <p className="text-xs text-neutral-500">{user.email}</p>
+                  </div>
+
+                  {resetResult.temporaryPassword ? (
+                    <div className="rounded-2xl border border-emerald-500/20 bg-emerald-500/10 p-4">
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="min-w-0">
+                          <p className="text-[11px] uppercase tracking-widest text-emerald-300 font-bold flex items-center gap-2">
+                            <CheckCircle2 className="w-4 h-4" />
+                            Generada correctamente
+                          </p>
+                          <p className="text-sm text-white mt-2 break-all">
+                            {resetResult.temporaryPassword}
+                          </p>
+                          <p className="text-[11px] text-neutral-400 mt-2">
+                            Esta contraseña se muestra una sola vez.
+                          </p>
+                        </div>
+
+                        <button
+                          type="button"
+                          onClick={async () => {
+                            await copyText(resetResult.temporaryPassword);
+                            setCopied(true);
+                            setTimeout(() => setCopied(false), 1200);
+                          }}
+                          className="px-3 py-2 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-xs font-bold uppercase tracking-widest flex items-center gap-2"
+                        >
+                          <Copy className="w-4 h-4" />
+                          {copied ? "Copiado" : "Copiar"}
+                        </button>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="rounded-2xl border border-rose-500/20 bg-rose-500/10 p-4">
+                      <p className="text-sm text-rose-200 font-semibold">
+                        No se pudo generar la contraseña temporal.
+                      </p>
+                      <p className="text-xs text-neutral-400 mt-1">
+                        Intenta de nuevo o revisa la conexión con el backend.
+                      </p>
+                    </div>
+                  )}
+                </div>
+
+                <div className="px-6 py-5 border-t border-white/10 flex items-center justify-end">
+                  <button
+                    type="button"
+                    className="px-4 py-2 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-xs font-bold uppercase tracking-widest"
+                    onClick={() => setResetResult(null)}
+                  >
+                    Cerrar
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>,
+          document.body
+        )}
     </>
   );
 };
