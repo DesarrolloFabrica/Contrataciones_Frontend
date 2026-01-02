@@ -14,7 +14,7 @@ interface ProtectedRouteProps {
  * - Si el rol no está permitido → /
  */
 const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ allowedRoles }) => {
-  const { user } = useAuth();
+  const { user, isReady } = useAuth();
   const location = useLocation();
 
   const isOnChangePassword = location.pathname === "/change-password";
