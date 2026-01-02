@@ -1,3 +1,4 @@
+// src/pages/admin/components/audit/AdminAuditGlobalPanel.tsx
 import React, { useMemo, useState } from "react";
 import { ScrollText, Filter, Loader2 } from "lucide-react";
 import type { AdminAuditEntityType, AdminAuditEvent } from "../../adminTypes";
