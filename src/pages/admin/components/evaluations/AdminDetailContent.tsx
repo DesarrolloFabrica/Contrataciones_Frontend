@@ -1,33 +1,42 @@
-// src/pages/admin/components/AdminDetailContent.tsx
-import React, { useEffect, useMemo, useState } from "react";
+// src/pages/admin/components/evaluations/AdminDetailContent.tsx
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import {
   AlertCircle,
   LayoutDashboard,
   Loader2,
-  ShieldAlert,
   ShieldCheck,
-  Shield,
-  Info,
+  User,
+  FileText,
+  Gavel,
+  Users,
+  ScrollText,
+  ChevronDown,
+  ChevronUp,
 } from "lucide-react";
 
 import type { TeacherEvaluationSummary } from "../../../../types";
-import type { AdminTab, AdminSystemMeta } from "../../adminTypes";
 import { getBucket } from "../../utils/adminSelectors";
 
 import { useAdminAudit } from "../../hooks/useAdminAudit";
 import AdminAuditTimeline from "../audit/AdminAuditTimeline";
 
-import AdminSystemMetaCard from "../detail/AdminSystemMetaCard";
-
-// ✅ Servicios (como en el anterior)
 import {
   getExecutiveSummary,
-  updateAdminDecision,
   type TeacherExecutiveSummary as ExecSummary,
 } from "../../../../services/teachersService";
 
-const pillBase =
-  "px-3 py-1 rounded-full border text-[11px] uppercase tracking-widest transition inline-flex items-center gap-2";
+// ==========================================
+// 1) STYLES / HELPERS
+// ==========================================
+const STYLES = {
+  card: "rounded-2xl border border-white/10 bg-black/20 p-4",
+  subCard: "rounded-xl border border-white/10 bg-black/30 p-3",
+  pillBase:
+    "px-3 py-1 rounded-full border text-[11px] uppercase tracking-widest transition inline-flex items-center gap-2",
+  label: "text-[11px] uppercase tracking-widest text-neutral-500 font-bold",
+  chip:
+    "px-3 py-2 rounded-xl border text-[11px] font-bold uppercase tracking-widest transition inline-flex items-center gap-2",
+};
 
 const statusLabelEs = (
   status?: "PENDING" | "APPROVED" | "REJECTED" | null
@@ -43,22 +52,13 @@ const statusLabelEs = (
   }
 };
 
-function safeString(v: unknown, fallback = "-") {
-  if (v === null || v === undefined) return fallback;
-  const s = String(v).trim();
-  return s.length ? s : fallback;
-}
+const safeString = (v: unknown, fallback = "-") =>
+  v === null || v === undefined ? fallback : String(v).trim() || fallback;
 
-function safeNullishString(v: unknown): string | null {
-  if (v === null || v === undefined) return null;
-  const s = String(v).trim();
-  return s.length ? s : null;
-}
-
-function asNumber(v: unknown, fallback = 0) {
+const asNumber = (v: unknown, fallback = 0) => {
   const n = typeof v === "number" ? v : Number(v);
   return Number.isFinite(n) ? n : fallback;
-}
+};
 
 function pickArrayStrings(v: unknown): string[] {
   if (!Array.isArray(v)) return [];
@@ -68,16 +68,170 @@ function pickArrayStrings(v: unknown): string[] {
     .slice(0, 8);
 }
 
+function isoToEs(v?: any) {
+  if (!v) return null;
+  const d = new Date(v);
+  return Number.isNaN(d.getTime()) ? null : d.toLocaleString("es-CO");
+}
+
+function pickActorFromAny(
+  obj: any
+): { name: string; email?: string | null; id?: string | null } | null {
+  if (!obj) return null;
+  const name =
+    safeString(obj?.fullName, "") ||
+    safeString(
+      obj?.name && obj?.lastName ? `${obj.name} ${obj.lastName}` : obj?.name,
+      ""
+    ) ||
+    safeString(obj?.user?.fullName, "") ||
+    safeString(obj?.actorName, "") ||
+    safeString(obj?.createdByName, "");
+
+  const email =
+    safeString(obj?.email, "") || safeString(obj?.user?.email, "") || null;
+  const id = safeString(obj?.id, "") || safeString(obj?.userId, "") || null;
+
+  if (!name && !email && !id) return null;
+  return { name: name || email || id || "No disponible", email, id };
+}
+
+// ==========================================
+// 2) UI BLOQUES
+// ==========================================
+const StatusPill = ({
+  status,
+  text,
+  icon: Icon,
+  customClass,
+}: {
+  status?: string | null;
+  text?: string;
+  icon?: any;
+  customClass?: string;
+}) => {
+  let className = STYLES.pillBase;
+
+  if (customClass) {
+    className += ` ${customClass}`;
+  } else if (status === "APPROVED" || status === "RECOMENDADA") {
+    className += " border-emerald-500/30 bg-emerald-500/10 text-emerald-300";
+  } else if (status === "REJECTED" || status === "NO_RECOMENDAR") {
+    className += " border-rose-500/30 bg-rose-500/10 text-rose-300";
+  } else if (status === "PRECAUCION") {
+    className += " border-yellow-500/30 bg-yellow-500/10 text-yellow-300";
+  } else {
+    className += " border-white/10 bg-white/5 text-neutral-300";
+  }
+
+  return (
+    <span className={`${className} normal-case`}>
+      {Icon && <Icon className="w-4 h-4" />}
+      {text ?? status ?? "-"}
+    </span>
+  );
+};
+
+type ActorData = {
+  label: string;
+  name: string;
+  email?: string | null;
+  id?: string | null;
+  at?: string | null;
+  status?: "PENDING" | "APPROVED" | "REJECTED" | null;
+};
+
+const ActorCard = ({ actor }: { actor: ActorData }) => (
+  <div className={STYLES.subCard}>
+    <div className="flex items-start justify-between gap-3">
+      <div className="min-w-0">
+        <p className="text-[11px] uppercase tracking-widest text-neutral-500">
+          {actor.label}
+        </p>
+        <p className="text-sm font-bold text-white mt-1 truncate inline-flex items-center gap-2">
+          <User className="w-4 h-4 text-neutral-400" />
+          {actor.name}
+        </p>
+
+        {(actor.email || actor.id) && (
+          <p className="text-[11px] text-neutral-500 mt-1 truncate">
+            {actor.email ? actor.email : actor.id}
+          </p>
+        )}
+
+        {actor.at && (
+          <p className="text-[11px] text-neutral-600 mt-1">{actor.at}</p>
+        )}
+      </div>
+
+      {actor.status && (
+        <StatusPill status={actor.status} text={statusLabelEs(actor.status)} />
+      )}
+    </div>
+  </div>
+);
+
+function CollapsibleSection(props: {
+  id: string;
+  title: string;
+  subtitle?: string;
+  icon?: React.ElementType;
+  open: boolean;
+  onToggle: () => void;
+  innerRef?: React.RefObject<HTMLDivElement>;
+  right?: React.ReactNode;
+  children: React.ReactNode;
+}) {
+  const { title, subtitle, icon: Icon, open, onToggle, innerRef, right } = props;
+
+  return (
+    <div ref={innerRef} className={STYLES.card}>
+      <button
+        type="button"
+        onClick={onToggle}
+        className="w-full flex items-start justify-between gap-3 text-left"
+      >
+        <div className="min-w-0">
+          <div className="flex items-center gap-2">
+            {Icon ? <Icon className="w-4 h-4 text-neutral-400" /> : null}
+            <h5 className="text-sm font-bold text-white uppercase tracking-widest">
+              {title}
+            </h5>
+          </div>
+          {subtitle ? (
+            <p className="text-sm text-neutral-400 mt-1">{subtitle}</p>
+          ) : null}
+        </div>
+
+        <div className="flex items-center gap-2 shrink-0">
+          {right}
+          <span className="p-2 rounded-xl border border-white/10 bg-white/5 hover:bg-white/10 transition">
+            {open ? (
+              <ChevronUp className="w-4 h-4 text-neutral-200" />
+            ) : (
+              <ChevronDown className="w-4 h-4 text-neutral-200" />
+            )}
+          </span>
+        </div>
+      </button>
+
+      {open ? <div className="mt-4">{props.children}</div> : null}
+    </div>
+  );
+}
+
+// ==========================================
+// 3) MAIN
+// ==========================================
 type Props = {
   selectedId: string | null;
   loadingDetail: boolean;
   hasDetail: boolean;
-
   selectedSummary: TeacherEvaluationSummary | null;
   selectedDetail: { analysis: any; interview: any; raw: any } | null;
-
-  tab: AdminTab;
 };
+
+type SectionKey = "RESUMEN" | "DECISION" | "TRAZABILIDAD" | "AUDITORIA";
 
 export default function AdminDetailContent({
   selectedId,
@@ -85,528 +239,447 @@ export default function AdminDetailContent({
   hasDetail,
   selectedSummary,
   selectedDetail,
-  tab,
 }: Props) {
-  // ✅ Conexión actual (audit)
+  // ✅ Hooks SIEMPRE arriba
   const { audit, loadingAudit } = useAdminAudit({
     entityType: "EVALUATION",
     entityId: selectedId ?? undefined,
   });
 
-  // ✅ Conexiones anteriores (exec summary + admin decision)
   const [execSummary, setExecSummary] = useState<ExecSummary | null>(null);
   const [execLoading, setExecLoading] = useState(false);
   const [execError, setExecError] = useState<string | null>(null);
 
-  const [adminComment, setAdminComment] = useState("");
-  const [adminSaving, setAdminSaving] = useState(false);
-  const [adminError, setAdminError] = useState<string | null>(null);
+  // Collapsables
+  const [open, setOpen] = useState<Record<SectionKey, boolean>>({
+    RESUMEN: true,
+    DECISION: true,
+    TRAZABILIDAD: false,
+    AUDITORIA: false,
+  });
+
+  // Auditoría: 10 por defecto
+  const [auditExpanded, setAuditExpanded] = useState(false);
+
+  // Anchors (para chips)
+  const refResumen = useRef<HTMLDivElement>(null);
+  const refDecision = useRef<HTMLDivElement>(null);
+  const refTraz = useRef<HTMLDivElement>(null);
+  const refAudit = useRef<HTMLDivElement>(null);
+
+  const scrollTo = (key: SectionKey) => {
+    // Abre la sección antes de scrollear (para que exista altura)
+    setOpen((prev) => ({ ...prev, [key]: true }));
+
+    // Espera un tick para que React renderice la expansión
+    window.setTimeout(() => {
+      const map: Record<SectionKey, React.RefObject<HTMLDivElement>> = {
+        RESUMEN: refResumen,
+        DECISION: refDecision,
+        TRAZABILIDAD: refTraz,
+        AUDITORIA: refAudit,
+      };
+      map[key]?.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+    }, 60);
+  };
+
+  // Si cambia de evaluación: reset a estado “sano”
+  useEffect(() => {
+    setOpen({
+      RESUMEN: true,
+      DECISION: true,
+      TRAZABILIDAD: false,
+      AUDITORIA: false,
+    });
+    setAuditExpanded(false);
+  }, [selectedId]);
 
   useEffect(() => {
     if (!selectedId) {
       setExecSummary(null);
-      setExecError(null);
-      setExecLoading(false);
-      setAdminComment("");
-      setAdminError(null);
       return;
     }
-
-    let cancelled = false;
+    let active = true;
 
     const load = async () => {
+      setExecLoading(true);
+      setExecError(null);
       try {
-        setExecLoading(true);
-        setExecError(null);
         const data = await getExecutiveSummary(selectedId);
-        if (cancelled) return;
-
-        setExecSummary(data);
-        setAdminComment(data.adminDecision?.notes ?? "");
-      } catch (err) {
-        console.error("Error al cargar resumen ejecutivo:", err);
-        if (!cancelled) setExecError("No se pudo cargar el resumen ejecutivo.");
+        if (active) setExecSummary(data);
+      } catch {
+        if (active) setExecError("Error al cargar resumen ejecutivo.");
       } finally {
-        if (!cancelled) setExecLoading(false);
+        if (active) setExecLoading(false);
       }
     };
 
     load();
     return () => {
-      cancelled = true;
+      active = false;
     };
   }, [selectedId]);
 
-  const handleAdminDecision = async (status: "APPROVED" | "REJECTED") => {
-    if (!selectedId) return;
-
-    try {
-      setAdminSaving(true);
-      setAdminError(null);
-
-      const updated = await updateAdminDecision(selectedId, {
-        status,
-        comment: adminComment || undefined,
-      });
-
-      setExecSummary(updated);
-      setAdminComment(updated.adminDecision?.notes ?? "");
-    } catch (err) {
-      console.error("Error al actualizar decisión del admin:", err);
-      setAdminError("No se pudo guardar la decisión. Intenta de nuevo.");
-    } finally {
-      setAdminSaving(false);
-    }
-  };
-
-  // ✅ Normalización segura del análisis (UI actual)
-  const analysis = selectedDetail?.analysis;
-  const ai = analysis ?? {};
-
-  const strengths = useMemo(() => {
-    return pickArrayStrings(
-      ai?.strengths ??
-        ai?.strengthsList ??
-        ai?.positiveSignals ??
-        ai?.highlights
-    );
-  }, [analysis]);
-
-  const risks = useMemo(() => {
-    return pickArrayStrings(
-      ai?.risks ?? ai?.riskSignals ?? ai?.alerts ?? ai?.redFlags ?? ai?.concerns
-    );
-  }, [analysis]);
-
-  // ---- Estados base
-  if (!selectedId) {
-    return (
-      <div className="h-full flex flex-col items-center justify-center text-neutral-600 gap-4">
-        <div className="p-4 bg-white/5 rounded-full">
-          <LayoutDashboard size={32} className="opacity-50" />
-        </div>
-        <p className="text-sm text-center max-w-xs">
-          Selecciona una evaluación para ver su detalle.
-        </p>
-      </div>
-    );
-  }
-
-  if (loadingDetail) {
-    return (
-      <div className="h-full flex flex-col items-center justify-center text-neutral-500 gap-3">
-        <Loader2 className="w-8 h-8 animate-spin text-emerald-500" />
-        <p className="text-sm">Cargando detalle...</p>
-      </div>
-    );
-  }
-
-  if (!hasDetail || !selectedDetail) {
-    return (
-      <div className="h-full flex flex-col items-center justify-center text-neutral-600 gap-3">
-        <AlertCircle className="w-8 h-8 text-rose-400" />
-        <p className="text-sm text-center max-w-xs">
-          No se pudo cargar el detalle de esta evaluación.
-        </p>
-      </div>
-    );
-  }
-
-  // --- Derivados (con detail)
+  // ✅ Derivaciones seguras (sin romper)
+  const analysis = selectedDetail?.analysis ?? {};
   const bucket = getBucket(selectedSummary?.aiFinalRecommendation);
 
-  const badgeCls =
-    bucket === "RECOMENDADA"
-      ? "border-emerald-500/30 bg-emerald-500/10 text-emerald-300"
-      : bucket === "PRECAUCION"
-      ? "border-yellow-500/30 bg-yellow-500/10 text-yellow-300"
-      : bucket === "NO_RECOMENDAR"
-      ? "border-rose-500/30 bg-rose-500/10 text-rose-300"
-      : "border-white/10 bg-white/5 text-neutral-300";
-
-  const icon =
-    bucket === "RECOMENDADA" ? (
-      <ShieldCheck className="w-4 h-4" />
-    ) : bucket === "NO_RECOMENDAR" ? (
-      <ShieldAlert className="w-4 h-4" />
-    ) : (
-      <AlertCircle className="w-4 h-4" />
-    );
-
   const aiScore = asNumber(
-    ai?.scores?.teachingSuitability ??
-      ai?.teachingSuitabilityScore ??
-      selectedSummary?.aiTeachingSuitabilityScore ??
-      execSummary?.aiScore ??
-      0,
-    0
+    (analysis as any)?.scores?.teachingSuitability ??
+      (selectedSummary as any)?.aiTeachingSuitabilityScore ??
+      0
   );
 
-  const executiveSummary = safeString(
-    ai?.executiveSummary ??
-      ai?.summary ??
-      ai?.analysisExecutive ??
-      ai?.finalSummary,
+  const executiveText = safeString(
+    (analysis as any)?.executiveSummary || (analysis as any)?.summary,
     ""
   );
 
-  const currentCoordStatus =
-    execSummary?.coordinatorDecision?.verdict ??
-    (selectedSummary as any)?.coordinatorDecisionStatus ??
-    "PENDING";
+  const strengths = pickArrayStrings(
+    (analysis as any)?.strengths || (analysis as any)?.highlights
+  );
+  const risks = pickArrayStrings(
+    (analysis as any)?.risks || (analysis as any)?.alerts
+  );
 
-  const currentAdminStatus = execSummary?.adminDecision?.verdict ?? "PENDING";
+  const actors = useMemo(() => {
+    const raw = selectedDetail?.raw ?? {};
+    const sum = selectedSummary ?? ({} as any);
 
-  const systemMeta: AdminSystemMeta | null = {
-    evaluationId: selectedId,
-    model: safeNullishString(ai?.meta?.model ?? ai?.model),
-    promptVersion: safeNullishString(ai?.meta?.promptVersion ?? ai?.promptVersion),
-    requestId: safeNullishString(ai?.meta?.requestId ?? ai?.requestId),
-    createdAt: safeNullishString(selectedSummary?.createdAt),
-    updatedAt: safeNullishString((selectedSummary as any)?.updatedAt),
-  };
+    const leaderSrc =
+      selectedDetail?.interview?.leader ||
+      selectedDetail?.interview?.interviewer ||
+      (raw as any)?.leader ||
+      (sum as any)?.leader;
+
+    const leader: ActorData = {
+      label: "Líder (Entrevista)",
+      ...(pickActorFromAny(leaderSrc) || { name: "No disponible" }),
+      at: isoToEs((raw as any)?.createdAt || (sum as any)?.createdAt),
+      status: null,
+    };
+
+    const coordSrc =
+      (execSummary as any)?.coordinatorDecision?.decidedBy ||
+      (raw as any)?.coordinator;
+
+    const coord: ActorData = {
+      label: "Coordinador",
+      ...(pickActorFromAny(coordSrc) || { name: "No disponible" }),
+      at: isoToEs((execSummary as any)?.coordinatorDecision?.decidedAt),
+      status:
+        ((execSummary as any)?.coordinatorDecision?.verdict as any) ||
+        ((sum as any)?.coordinatorDecisionStatus as any) ||
+        "PENDING",
+    };
+
+    return { leader, coord };
+  }, [selectedDetail, selectedSummary, execSummary]);
+
+  const auditVisible = useMemo(() => {
+    const items = audit ?? [];
+    if (auditExpanded) return items;
+    return items.slice(0, 10);
+  }, [audit, auditExpanded]);
+
+  // ✅ Returns condicionales DESPUÉS de hooks
+  if (!selectedId)
+    return <EmptyState icon={LayoutDashboard} msg="Selecciona una evaluación." />;
+  if (loadingDetail)
+    return <EmptyState icon={Loader2} msg="Cargando detalle..." spin />;
+  if (!hasDetail || !selectedDetail)
+    return (
+      <EmptyState
+        icon={AlertCircle}
+        msg="No se pudo cargar el detalle."
+        isError
+      />
+    );
+
+  const chipClass = (active: boolean) =>
+    `${STYLES.chip} ${
+      active
+        ? "border-emerald-500/40 bg-emerald-500/10 text-emerald-200"
+        : "border-white/10 bg-white/5 text-neutral-300 hover:border-white/20 hover:bg-white/10"
+    }`;
 
   return (
-    <div className="space-y-4">
-      {/* Header candidato */}
-      <div className="rounded-2xl border border-white/10 bg-black/30 p-4">
+    <div className="space-y-6">
+      {/* 1) Header candidato */}
+      <div className={STYLES.card}>
         <div className="flex items-start justify-between gap-4">
           <div className="min-w-0">
-            <p className="text-xs text-neutral-500 uppercase tracking-widest">
-              Candidato
-            </p>
-            <h4 className="text-white font-bold text-lg leading-tight truncate">
+            <p className={STYLES.label}>Candidato</p>
+            <h4 className="text-white font-bold text-xl leading-tight truncate">
               {selectedSummary?.candidate?.fullName ?? "Sin nombre"}
             </h4>
             <p className="text-xs text-neutral-500 mt-1">
-              {(selectedSummary?.candidate?.schoolNameSnapshot ?? "Sin escuela") +
+              {(selectedSummary?.candidate?.schoolNameSnapshot ?? "-") +
                 " · " +
-                (selectedSummary?.candidate?.programNameSnapshot ?? "Sin programa")}
+                (selectedSummary?.candidate?.programNameSnapshot ?? "-")}
             </p>
           </div>
 
           <div className="text-right">
-            <p className="text-xs text-neutral-500 uppercase tracking-widest">
-              Score
-            </p>
-            <p className="text-2xl font-black text-white">
-              {(selectedSummary?.aiTeachingSuitabilityScore ?? aiScore ?? 0).toFixed(0)}
-              <span className="text-sm text-neutral-600">/100</span>
-            </p>
-            <p className="text-[11px] mt-1 text-neutral-500">
-              {selectedSummary?.createdAt
-                ? new Date(selectedSummary.createdAt).toLocaleString("es-CO")
-                : ""}
+            <p className={STYLES.label}>Score IA</p>
+            <p className="text-3xl font-black text-white">
+              {aiScore.toFixed(0)}
+              <span className="text-sm text-neutral-600 font-normal">/100</span>
             </p>
           </div>
         </div>
 
-        <div className="mt-3 flex flex-wrap gap-2">
-          <span className={`${pillBase} ${badgeCls} normal-case`}>
-            {icon}
-            {selectedSummary?.aiFinalRecommendation ?? "Sin recomendación IA"}
-          </span>
+        <div className="mt-4 flex flex-wrap gap-2">
+          <StatusPill
+            status={bucket}
+            text={selectedSummary?.aiFinalRecommendation ?? "Sin recomendación"}
+            icon={bucket === "RECOMENDADA" ? ShieldCheck : AlertCircle}
+          />
 
-          <span
-            className={`${pillBase} border-white/10 bg-white/5 text-neutral-200 normal-case`}
-          >
-            <ShieldCheck className="w-4 h-4 text-emerald-300" />
-            Coordinador:
-            <b className="ml-1">{statusLabelEs(currentCoordStatus)}</b>
-          </span>
-
-          <span
-            className={`${pillBase} border-cyan-500/30 bg-cyan-500/10 text-cyan-200 normal-case`}
-          >
-            <Shield className="w-4 h-4" />
-            Admin:
-            <b className="ml-1">{statusLabelEs(currentAdminStatus)}</b>
-          </span>
+          <StatusPill
+            status="CUSTOM"
+            customClass="border-white/10 bg-white/5 text-neutral-300"
+            text={`Coordinador: ${statusLabelEs(
+              actors.coord.status ?? "PENDING"
+            )}`}
+            icon={User}
+          />
 
           {execLoading && (
-            <span className={`${pillBase} border-white/10 bg-white/5 text-neutral-400 normal-case`}>
-              <Loader2 className="w-4 h-4 animate-spin" />
-              Cargando resumen ejecutivo...
-            </span>
+            <StatusPill
+              status="CUSTOM"
+              customClass="border-cyan-500/20 bg-cyan-500/10 text-cyan-300"
+              text="Sincronizando decisión…"
+              icon={Loader2}
+            />
           )}
+
           {execError && (
-            <span className={`${pillBase} border-rose-500/30 bg-rose-500/10 text-rose-200 normal-case`}>
-              <AlertCircle className="w-4 h-4" />
-              {execError}
-            </span>
+            <StatusPill
+              status="CUSTOM"
+              customClass="border-rose-500/20 bg-rose-500/10 text-rose-300"
+              text="No se pudo traer decisión"
+              icon={AlertCircle}
+            />
           )}
+        </div>
+
+        {/* Chips de navegación */}
+        <div className="mt-5 flex flex-wrap gap-2">
+          <button
+            type="button"
+            className={chipClass(open.RESUMEN)}
+            onClick={() => scrollTo("RESUMEN")}
+            title="Ir a Resumen"
+          >
+            <FileText className="w-4 h-4" />
+            Resumen
+          </button>
+
+          <button
+            type="button"
+            className={chipClass(open.DECISION)}
+            onClick={() => scrollTo("DECISION")}
+            title="Ir a Decisión"
+          >
+            <Gavel className="w-4 h-4" />
+            Decisión
+          </button>
+
+          <button
+            type="button"
+            className={chipClass(open.TRAZABILIDAD)}
+            onClick={() => scrollTo("TRAZABILIDAD")}
+            title="Ir a Trazabilidad"
+          >
+            <Users className="w-4 h-4" />
+            Trazabilidad
+          </button>
+
+          <button
+            type="button"
+            className={chipClass(open.AUDITORIA)}
+            onClick={() => scrollTo("AUDITORIA")}
+            title="Ir a Auditoría"
+          >
+            <ScrollText className="w-4 h-4" />
+            Auditoría
+          </button>
         </div>
       </div>
 
-      {/* TAB: RESUMEN */}
-      {tab === "RESUMEN" && (
-        <div className="rounded-2xl border border-white/10 bg-black/20 p-4 space-y-3">
-          <h5 className="text-sm font-bold text-white uppercase tracking-widest">
-            Resumen ejecutivo
-          </h5>
+      {/* 2) Resumen ejecutivo IA (colapsable) */}
+      <CollapsibleSection
+        id="sec-resumen"
+        title="Resumen ejecutivo (IA)"
+        subtitle="Síntesis del análisis y señales clave."
+        icon={FileText}
+        open={open.RESUMEN}
+        onToggle={() => setOpen((p) => ({ ...p, RESUMEN: !p.RESUMEN }))}
+        innerRef={refResumen}
+      >
+        <p className="text-sm text-neutral-300 leading-relaxed">
+          {executiveText || "Aún no hay resumen ejecutivo disponible."}
+        </p>
 
-          <p className="text-sm text-neutral-300 leading-relaxed">
-            {executiveSummary?.length
-              ? executiveSummary
-              : "Aún no hay resumen ejecutivo disponible."}
-          </p>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-3 pt-2">
-            <div className="rounded-xl border border-white/10 bg-black/30 p-3">
-              <p className="text-[11px] uppercase tracking-widest text-neutral-500 mb-2">
-                Fortalezas
-              </p>
-              {strengths.length ? (
-                <ul className="text-sm text-neutral-300 space-y-1">
-                  {strengths.map((s, i) => (
-                    <li key={i} className="flex gap-2">
-                      <span className="text-emerald-400">•</span>
-                      <span>{s}</span>
-                    </li>
-                  ))}
-                </ul>
-              ) : (
-                <p className="text-xs text-neutral-500">Sin datos</p>
-              )}
-            </div>
-
-            <div className="rounded-xl border border-white/10 bg-black/30 p-3">
-              <p className="text-[11px] uppercase tracking-widest text-neutral-500 mb-2">
-                Riesgos / alertas
-              </p>
-              {risks.length ? (
-                <ul className="text-sm text-neutral-300 space-y-1">
-                  {risks.map((s, i) => (
-                    <li key={i} className="flex gap-2">
-                      <span className="text-rose-400">•</span>
-                      <span>{s}</span>
-                    </li>
-                  ))}
-                </ul>
-              ) : (
-                <p className="text-xs text-neutral-500">Sin datos</p>
-              )}
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* TAB: IA */}
-      {tab === "IA" && (
-        <div className="rounded-2xl border border-white/10 bg-black/20 p-4 space-y-3">
-          <h5 className="text-sm font-bold text-white uppercase tracking-widest">
-            IA
-          </h5>
-
-          <div className="rounded-xl border border-white/10 bg-black/30 p-3">
-            <div className="flex items-start gap-2">
-              <Info className="w-4 h-4 text-cyan-300 mt-0.5" />
-              <p className="text-sm text-neutral-300 leading-relaxed">
-                Aquí se mostrarán secciones interpretables del análisis (cuando
-                el mapping esté completo).
-              </p>
-            </div>
-          </div>
-
-          <details className="rounded-xl border border-white/10 bg-black/30 p-3">
-            <summary className="cursor-pointer text-[11px] uppercase tracking-widest text-neutral-400">
-              Ver JSON (para soporte)
-            </summary>
-            <pre className="mt-3 text-[11px] text-neutral-300 overflow-auto max-h-64 whitespace-pre-wrap">
-              {JSON.stringify(selectedDetail.analysis, null, 2)}
-            </pre>
-          </details>
-        </div>
-      )}
-
-      {/* TAB: COORDINADOR (lectura) + Auditoría (actual) */}
-      {tab === "COORDINADOR" && (
-        <div className="space-y-3">
-          <div className="rounded-2xl border border-white/10 bg-black/20 p-4 space-y-4">
-            <h5 className="text-sm font-bold text-white uppercase tracking-widest">
-              Coordinador
-            </h5>
-            <p className="text-sm text-neutral-300 leading-relaxed">
-              Estado y comentarios registrados por el coordinador de programa.
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mt-4">
+          <div className={STYLES.subCard}>
+            <p className={`${STYLES.label} mb-2 text-emerald-500/80`}>
+              Fortalezas
             </p>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-              <div className="rounded-xl border border-white/10 bg-black/30 p-3">
-                <p className="text-[11px] uppercase tracking-widest text-neutral-500">
-                  Estado coordinador
-                </p>
-                <p className="text-base font-bold text-white mt-1">
-                  {statusLabelEs(currentCoordStatus ?? "PENDING")}
-                </p>
-                {execSummary?.coordinatorDecision?.decidedAt && (
-                  <p className="text-[11px] text-neutral-500 mt-1">
-                    Última actualización:{" "}
-                    {new Date(execSummary.coordinatorDecision.decidedAt).toLocaleString("es-CO")}
-                  </p>
-                )}
-              </div>
-
-              <div className="rounded-xl border border-white/10 bg-black/30 p-3">
-                <p className="text-[11px] uppercase tracking-widest text-neutral-500">
-                  Rol coordinador
-                </p>
-                <p className="text-xs text-neutral-400 mt-1">
-                  Aquí solo se visualiza lo decidido por el coordinador. La
-                  decisión final se toma desde la pestaña Admin.
-                </p>
-              </div>
-            </div>
-
-            <div className="rounded-xl border border-white/10 bg-black/30 p-3 space-y-2">
-              <p className="text-[11px] uppercase tracking-widest text-neutral-500">
-                Comentarios del coordinador
-              </p>
-              <textarea
-                rows={4}
-                className="w-full bg-black/40 border border-white/10 rounded-xl px-3 py-2 text-sm text-white placeholder:text-neutral-600"
-                value={execSummary?.coordinatorDecision?.notes ?? ""}
-                readOnly
-              />
-            </div>
+            {strengths.length ? (
+              <ul className="text-sm text-neutral-300 space-y-1">
+                {strengths.map((s, i) => (
+                  <li key={i} className="flex gap-2">
+                    <span className="text-emerald-400">•</span>
+                    {s}
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <p className="text-xs text-neutral-500">Sin datos</p>
+            )}
           </div>
 
-          {loadingAudit ? (
-            <div className="rounded-2xl border border-white/10 bg-black/20 p-4 text-sm text-neutral-400">
-              Cargando historial...
-            </div>
-          ) : (
-            <div className="rounded-2xl border border-white/10 bg-black/20 p-4">
-              <div className="flex items-center justify-between mb-3">
-                <h6 className="text-[11px] uppercase tracking-widest text-neutral-400 font-bold">
-                  Historial de cambios
-                </h6>
-                <span className="text-[11px] text-neutral-500">
-                  {audit.length} eventos
-                </span>
-              </div>
-              <div className="max-h-[280px] overflow-y-auto pr-2">
-                <AdminAuditTimeline events={audit} />
-              </div>
-            </div>
-          )}
-        </div>
-      )}
-
-      {/* TAB: ADMIN (acción final) */}
-      {tab === "ADMIN" && (
-        <div className="space-y-3">
-          <div className="rounded-2xl border border-white/10 bg-black/20 p-4 space-y-4">
-            <h5 className="text-sm font-bold text-white uppercase tracking-widest">
-              Decisión Admin
-            </h5>
-            <p className="text-sm text-neutral-300 leading-relaxed">
-              Define la decisión final basándote en IA y la recomendación del coordinador.
+          <div className={STYLES.subCard}>
+            <p className={`${STYLES.label} mb-2 text-rose-500/80`}>
+              Riesgos / Alertas
             </p>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-              <div className="rounded-xl border border-white/10 bg-black/30 p-3">
-                <p className="text-[11px] uppercase tracking-widest text-neutral-500">
-                  Estado actual (admin)
-                </p>
-                <p className="text-base font-bold text-white mt-1">
-                  {statusLabelEs(currentAdminStatus ?? "PENDING")}
-                </p>
-                {execSummary?.adminDecision?.decidedAt && (
-                  <p className="text-[11px] text-neutral-500 mt-1">
-                    Última actualización:{" "}
-                    {new Date(execSummary.adminDecision.decidedAt).toLocaleString("es-CO")}
-                  </p>
-                )}
-              </div>
-
-              <div className="rounded-xl border border-white/10 bg-black/30 p-3">
-                <p className="text-[11px] uppercase tracking-widest text-neutral-500">
-                  Acción admin
-                </p>
-                <p className="text-xs text-neutral-400 mt-1">
-                  Confirma si el candidato pasa a contratación o se cierra el proceso.
-                </p>
-                <div className="mt-3 flex flex-wrap gap-2">
-                  <button
-                    type="button"
-                    disabled={adminSaving}
-                    onClick={() => handleAdminDecision("APPROVED")}
-                    className="px-3 py-1.5 rounded-full text-[11px] font-semibold tracking-widest bg-emerald-600 hover:bg-emerald-500 disabled:opacity-60 disabled:cursor-not-allowed"
-                  >
-                    Aprobar contratación
-                  </button>
-                  <button
-                    type="button"
-                    disabled={adminSaving}
-                    onClick={() => handleAdminDecision("REJECTED")}
-                    className="px-3 py-1.5 rounded-full text-[11px] font-semibold tracking-widest bg-rose-600 hover:bg-rose-500 disabled:opacity-60 disabled:cursor-not-allowed"
-                  >
-                    No aprobar
-                  </button>
-                </div>
-              </div>
-            </div>
-
-            <div className="rounded-xl border border-white/10 bg-black/30 p-3 space-y-2">
-              <p className="text-[11px] uppercase tracking-widest text-neutral-500">
-                Comentarios del admin
-              </p>
-              <textarea
-                rows={4}
-                className="w-full bg-black/40 border border-white/10 rounded-xl px-3 py-2 text-sm text-white placeholder:text-neutral-600 focus:outline-none focus:ring-1 focus:ring-cyan-500/60"
-                placeholder="Describe la justificación final (máx. 2000 caracteres)."
-                value={adminComment}
-                onChange={(e) => setAdminComment(e.target.value)}
-                disabled={adminSaving}
-              />
-              {adminError && <p className="text-xs text-rose-400 mt-1">{adminError}</p>}
-              {adminSaving && (
-                <p className="text-xs text-neutral-400 mt-1 flex items-center gap-2">
-                  <Loader2 className="w-3 h-3 animate-spin" />
-                  Guardando decisión del admin...
-                </p>
-              )}
-            </div>
+            {risks.length ? (
+              <ul className="text-sm text-neutral-300 space-y-1">
+                {risks.map((s, i) => (
+                  <li key={i} className="flex gap-2">
+                    <span className="text-rose-400">•</span>
+                    {s}
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <p className="text-xs text-neutral-500">Sin datos</p>
+            )}
           </div>
-
-          {/* Auditoría también visible aquí (opcional pero útil) */}
-          {loadingAudit ? (
-            <div className="rounded-2xl border border-white/10 bg-black/20 p-4 text-sm text-neutral-400">
-              Cargando historial...
-            </div>
-          ) : (
-            <div className="rounded-2xl border border-white/10 bg-black/20 p-4">
-              <div className="flex items-center justify-between mb-3">
-                <h6 className="text-[11px] uppercase tracking-widest text-neutral-400 font-bold">
-                  Historial de cambios
-                </h6>
-                <span className="text-[11px] text-neutral-500">
-                  {audit.length} eventos
-                </span>
-              </div>
-              <div className="max-h-[280px] overflow-y-auto pr-2">
-                <AdminAuditTimeline events={audit} />
-              </div>
-            </div>
-          )}
         </div>
-      )}
+      </CollapsibleSection>
 
-      {/* TAB: TECNICO */}
-      {tab === "TECNICO" && (
-        <div className="space-y-3">
-          <AdminSystemMetaCard meta={systemMeta} />
-
-          <details className="rounded-2xl border border-white/10 bg-black/20 p-4">
-            <summary className="cursor-pointer text-[11px] uppercase tracking-widest text-neutral-400">
-              Ver respuesta cruda (soporte)
-            </summary>
-            <pre className="mt-3 text-[11px] text-neutral-300 overflow-auto max-h-64 whitespace-pre-wrap">
-              {JSON.stringify(selectedDetail.raw, null, 2)}
-            </pre>
-          </details>
+      {/* 3) Decisión del coordinador (colapsable) */}
+      <CollapsibleSection
+        id="sec-decision"
+        title="Decisión del Coordinador"
+        subtitle="Veredicto y comentario (si aplica)."
+        icon={Gavel}
+        open={open.DECISION}
+        onToggle={() => setOpen((p) => ({ ...p, DECISION: !p.DECISION }))}
+        innerRef={refDecision}
+        right={
+          <StatusPill
+            status={actors.coord.status ?? "PENDING"}
+            text={statusLabelEs(actors.coord.status ?? "PENDING")}
+          />
+        }
+      >
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+          <ActorCard actor={actors.coord} />
+          <div className={STYLES.subCard}>
+            <p className={STYLES.label}>Comentario</p>
+            <textarea
+              rows={4}
+              className="mt-2 w-full bg-black/40 border border-white/10 rounded-xl px-3 py-2 text-sm text-white resize-none"
+              value={(execSummary as any)?.coordinatorDecision?.notes ?? ""}
+              readOnly
+              placeholder="Sin comentario."
+            />
+          </div>
         </div>
-      )}
+      </CollapsibleSection>
+
+      {/* 4) Trazabilidad (colapsable) */}
+      <CollapsibleSection
+        id="sec-trazabilidad"
+        title="Trazabilidad humana"
+        subtitle="Roles y responsables."
+        icon={Users}
+        open={open.TRAZABILIDAD}
+        onToggle={() =>
+          setOpen((p) => ({ ...p, TRAZABILIDAD: !p.TRAZABILIDAD }))
+        }
+        innerRef={refTraz}
+      >
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+          <ActorCard actor={actors.leader} />
+          <ActorCard actor={actors.coord} />
+        </div>
+      </CollapsibleSection>
+
+      {/* 5) Auditoría (colapsable + 10 items por defecto) */}
+      <CollapsibleSection
+        id="sec-auditoria"
+        title="Auditoría"
+        subtitle="Historial de eventos y trazas."
+        icon={ScrollText}
+        open={open.AUDITORIA}
+        onToggle={() => setOpen((p) => ({ ...p, AUDITORIA: !p.AUDITORIA }))}
+        innerRef={refAudit}
+        right={
+          <span className="text-xs text-neutral-500">
+            {audit.length} items
+          </span>
+        }
+      >
+        {loadingAudit ? (
+          <div className="py-4 text-center text-neutral-500 text-sm">
+            Cargando trazas...
+          </div>
+        ) : audit.length ? (
+          <>
+            <div className="max-h-[420px] overflow-auto pr-2 scrollbar-pro">
+              <AdminAuditTimeline events={auditVisible} />
+            </div>
+
+            {audit.length > 10 && (
+              <div className="mt-3 flex justify-end">
+                <button
+                  type="button"
+                  onClick={() => setAuditExpanded((v) => !v)}
+                  className="px-3 py-2 rounded-xl border border-white/10 bg-white/5 hover:bg-white/10 transition text-xs font-bold uppercase tracking-widest text-neutral-200"
+                >
+                  {auditExpanded ? "Ver menos" : "Ver todo"}
+                </button>
+              </div>
+            )}
+          </>
+        ) : (
+          <div className="py-6 text-center text-neutral-600 text-sm">
+            Aún no hay actividad relevante.
+          </div>
+        )}
+      </CollapsibleSection>
     </div>
   );
 }
+
+// Empty / Loading
+const EmptyState = ({
+  icon: Icon,
+  msg,
+  spin,
+  isError,
+}: {
+  icon: any;
+  msg: string;
+  spin?: boolean;
+  isError?: boolean;
+}) => (
+  <div className="h-full flex flex-col items-center justify-center text-neutral-600 gap-4 min-h-[300px]">
+    <div
+      className={`p-4 rounded-full ${
+        isError ? "bg-rose-500/10 text-rose-500" : "bg-white/5"
+      }`}
+    >
+      <Icon
+        size={32}
+        className={`opacity-70 ${spin ? "animate-spin text-emerald-500" : ""}`}
+      />
+    </div>
+    <p className="text-sm text-center max-w-xs">{msg}</p>
+  </div>
+);

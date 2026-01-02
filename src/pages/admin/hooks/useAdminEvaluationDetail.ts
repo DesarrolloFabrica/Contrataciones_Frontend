@@ -1,5 +1,5 @@
 // src/pages/admin/hooks/useAdminEvaluationDetail.ts
-import { useCallback, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type {
   AnalysisResult,
   InterviewData,
@@ -7,7 +7,6 @@ import type {
 } from "../../../types";
 import { getTeacherEvaluationById } from "../../../services/teachersService";
 import { generateAnalysisPdfFromData } from "../../../services/pdfReport";
-import type { AdminTab } from "../adminTypes";
 import { adminMockDb } from "../utils/adminMockDb";
 
 type DetailPayload = {
@@ -16,7 +15,7 @@ type DetailPayload = {
   raw: any;
 };
 
-const DEFAULT_TAB: AdminTab = "RESUMEN";
+const LS_SELECTED_EVAL_KEY = "ADMIN_SELECTED_EVAL_ID";
 
 export function useAdminEvaluationDetail(params: {
   evaluations: TeacherEvaluationSummary[];
@@ -26,9 +25,11 @@ export function useAdminEvaluationDetail(params: {
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [loadingDetail, setLoadingDetail] = useState(false);
   const [selectedDetail, setSelectedDetail] = useState<DetailPayload | null>(null);
-  const [tab, setTab] = useState<AdminTab>(DEFAULT_TAB);
 
-  // ✅ Evita respuestas “tardías” cuando el admin cambia rápido de evaluación
+  // ✅ error visible
+  const [errorDetail, setErrorDetail] = useState<string | null>(null);
+
+  // ✅ Evita respuestas tardías cuando cambian rápido de evaluación
   const requestSeqRef = useRef(0);
 
   const selectedSummary = useMemo(() => {
@@ -36,30 +37,32 @@ export function useAdminEvaluationDetail(params: {
     return evaluations.find((e) => e.id === selectedId) ?? null;
   }, [selectedId, evaluations]);
 
-  const resetDetailState = useCallback((nextTab: AdminTab = DEFAULT_TAB) => {
-    setTab(nextTab);
+  const resetDetailState = useCallback(() => {
     setLoadingDetail(false);
     setSelectedDetail(null);
+    setErrorDetail(null);
   }, []);
 
   const handleSelectEvaluation = useCallback(async (id: string) => {
-    // ✅ Estado base inmediato (UX)
     setSelectedId(id);
-    setTab(DEFAULT_TAB);
     setLoadingDetail(true);
     setSelectedDetail(null);
+    setErrorDetail(null);
 
-    // ✅ AUDIT: detalle abierto
-    adminMockDb.logEvaluationEvent(id, "DETAIL_VIEWED", {
-      source: "AdminConsole",
-    });
+    // ✅ persistir selección
+    try {
+      localStorage.setItem(LS_SELECTED_EVAL_KEY, id);
+    } catch {
+      // ignore
+    }
+
+    adminMockDb.logEvaluationEvent(id, "DETAIL_VIEWED", { source: "AdminConsole" });
 
     const mySeq = ++requestSeqRef.current;
 
     try {
       const detail = await getTeacherEvaluationById(id);
 
-      // ✅ Si ya hubo otra selección después, ignoramos este resultado
       if (mySeq !== requestSeqRef.current) return;
 
       const analysis: AnalysisResult = detail.aiRawJson;
@@ -68,11 +71,11 @@ export function useAdminEvaluationDetail(params: {
 
       setSelectedDetail({ analysis, interview, raw: detail });
     } catch (e) {
-      // ✅ Solo reporta si sigue siendo el request vigente
       if (mySeq !== requestSeqRef.current) return;
 
       console.error("Admin: error cargando detalle", e);
       setSelectedDetail(null);
+      setErrorDetail("No se pudo cargar el detalle de esta evaluación.");
     } finally {
       if (mySeq !== requestSeqRef.current) return;
       setLoadingDetail(false);
@@ -80,27 +83,53 @@ export function useAdminEvaluationDetail(params: {
   }, []);
 
   const clearSelection = useCallback(() => {
-    // ✅ Invalida cualquier request en curso
     requestSeqRef.current += 1;
-
     setSelectedId(null);
-    resetDetailState(DEFAULT_TAB);
+    resetDetailState();
+
+    // ✅ limpiar persistencia
+    try {
+      localStorage.removeItem(LS_SELECTED_EVAL_KEY);
+    } catch {
+      // ignore
+    }
   }, [resetDetailState]);
+
+  // ✅ Restaurar selección al cargar (cuando ya exista evaluations)
+  useEffect(() => {
+    if (selectedId) return;
+    if (!evaluations || evaluations.length === 0) return;
+
+    let saved: string | null = null;
+    try {
+      saved = localStorage.getItem(LS_SELECTED_EVAL_KEY);
+    } catch {
+      saved = null;
+    }
+    if (!saved) return;
+
+    const exists = evaluations.some((e) => e.id === saved);
+    if (!exists) {
+      try {
+        localStorage.removeItem(LS_SELECTED_EVAL_KEY);
+      } catch {}
+      return;
+    }
+
+    // 🚀 auto-select
+    handleSelectEvaluation(saved);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [evaluations.length, selectedId]);
 
   const exportPdf = useCallback(async () => {
     if (!selectedDetail || !selectedId) return;
 
     try {
-      await generateAnalysisPdfFromData(
-        selectedDetail.analysis,
-        selectedDetail.interview,
-        { download: true }
-      );
-
-      // ✅ AUDIT: exportó PDF
-      adminMockDb.logEvaluationEvent(selectedId, "PDF_EXPORTED", {
-        via: "AdminDetailPanel",
+      await generateAnalysisPdfFromData(selectedDetail.analysis, selectedDetail.interview, {
+        download: true,
       });
+
+      adminMockDb.logEvaluationEvent(selectedId, "PDF_EXPORTED", { via: "AdminDetailPanel" });
     } catch (e) {
       console.error("Admin: error exportando PDF", e);
       alert("No se pudo generar el PDF.");
@@ -112,10 +141,9 @@ export function useAdminEvaluationDetail(params: {
     selectedSummary,
     loadingDetail,
     selectedDetail,
-    tab,
-    setTab,
     handleSelectEvaluation,
     clearSelection,
     exportPdf,
+    errorDetail,
   };
 }

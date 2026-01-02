@@ -1,9 +1,7 @@
-// src/components/EvaluationsHistory.tsx
+// src/components/EvaluationsHistory.tsx.
 import React, { useEffect, useMemo, useState } from "react";
 import {
-  History,
   Search,
-  Filter,
   Loader2,
   FileText,
   AlertCircle,
@@ -13,25 +11,25 @@ import {
   Briefcase,
   Download,
   ArrowLeft,
+  Filter,
   AlertTriangle,
+  ChevronRight,
+  MoreHorizontal,
+  User,
+  Building2,
+  GraduationCap
 } from "lucide-react";
 import type { TeacherEvaluationSummary } from "../types";
 import { listTeacherEvaluations } from "../services/teachersService";
-import { useAuth } from "../context/AuthContext"; // ✅ NEW
+import { useAuth } from "../context/AuthContext";
 
 interface EvaluationsHistoryProps {
   onBackToAnalyze: () => void;
   onOpenEvaluation: (evaluationId: string) => void;
 }
 
-/**
- * ✅ Recomendación por overallScore (preferente: aiRawJson.overallScore)
- * Reglas:
- * 0-49  => NO RECOMENDAR CONTRATACIÓN (rojo)
- * 50-79 => RECOMENDACIÓN CON PRECAUCIÓN (amarillo)
- * 80-89 => RECOMENDAR CONTRATACIÓN (azul)
- * 90-100=> CONTRATACIÓN INMEDIATA (verde)
- */
+// --- LÓGICA DE SCORES Y RECOMENDACIÓN (INTACTA) ---
+
 type HireRecommendationKey =
   | "NO_RECOMENDAR_CONTRATACION"
   | "RECOMENDACION_CON_PRECAUCION"
@@ -55,55 +53,21 @@ const pickScore = (ev: any) => {
 
 const getRecommendationFromScore = (
   score: number
-): { key: HireRecommendationKey; label: string } => {
+): { key: HireRecommendationKey; label: string; color: string } => {
   if (score >= 0 && score <= 49)
-    return { key: "NO_RECOMENDAR_CONTRATACION", label: "NO RECOMENDAR CONTRATACIÓN" };
+    return { key: "NO_RECOMENDAR_CONTRATACION", label: "No viable", color: "text-rose-500" };
 
   if (score >= 50 && score <= 79)
-    return { key: "RECOMENDACION_CON_PRECAUCION", label: "RECOMENDACIÓN CON PRECAUCIÓN" };
+    return { key: "RECOMENDACION_CON_PRECAUCION", label: "Revisar", color: "text-amber-500" };
 
   if (score >= 80 && score <= 89)
-    return { key: "RECOMENDAR_CONTRATACION", label: "RECOMENDAR CONTRATACIÓN" };
+    return { key: "RECOMENDAR_CONTRATACION", label: "Recomendado", color: "text-emerald-400" };
 
-  return { key: "CONTRATACION_INMEDIATA", label: "CONTRATACIÓN INMEDIATA" };
+  return { key: "CONTRATACION_INMEDIATA", label: "Top Perfil", color: "text-emerald-400" };
 };
 
-const badgeForScore = (score: number) => {
-  const rec = getRecommendationFromScore(score);
-
-  switch (rec.key) {
-    case "CONTRATACION_INMEDIATA":
-      return {
-        text: rec.label,
-        className: "bg-emerald-500/10 text-emerald-400 border border-emerald-500/30",
-        icon: <CheckCircle2 className="w-4 h-4" />,
-      };
-    case "RECOMENDAR_CONTRATACION":
-      return {
-        text: rec.label,
-        className: "bg-sky-500/10 text-sky-300 border border-sky-500/30",
-        icon: <CheckCircle2 className="w-4 h-4" />,
-      };
-    case "RECOMENDACION_CON_PRECAUCION":
-      return {
-        text: rec.label,
-        className: "bg-amber-500/10 text-amber-300 border border-amber-500/30",
-        icon: <AlertTriangle className="w-4 h-4" />,
-      };
-    case "NO_RECOMENDAR_CONTRATACION":
-    default:
-      return {
-        text: rec.label,
-        className: "bg-rose-500/10 text-rose-400 border border-rose-500/30",
-        icon: <XCircle className="w-4 h-4" />,
-      };
-  }
-};
-
-// ✅ robust schoolId extractor (eval/candidate pueden variar)
 const getSchoolIdFromSummary = (ev: any): string | null => {
   const c = ev?.candidate ?? null;
-
   const v =
     c?.schoolId ??
     c?.school_id ??
@@ -117,13 +81,15 @@ const getSchoolIdFromSummary = (ev: any): string | null => {
   return String(v);
 };
 
+// --- COMPONENTE PRINCIPAL ---
+
 const EvaluationsHistory: React.FC<EvaluationsHistoryProps> = ({
   onBackToAnalyze,
   onOpenEvaluation,
 }) => {
-  const { user } = useAuth(); // ✅ NEW
+  const { user } = useAuth();
 
-  // ✅ Detect role/schoolId del user (igual que en InterviewForm)
+  // Lógica de roles
   const roleRaw =
     (user as any)?.role ??
     (user as any)?.user?.role ??
@@ -155,8 +121,8 @@ const EvaluationsHistory: React.FC<EvaluationsHistoryProps> = ({
         const data = await listTeacherEvaluations();
         setEvaluations(data);
       } catch (err) {
-        console.error("Error al cargar historial de evaluaciones:", err);
-        setError("No se pudo cargar el historial de evaluaciones. Revisa el backend.");
+        console.error("Error cargando historial:", err);
+        setError("Error de conexión al cargar el historial.");
       } finally {
         setLoading(false);
       }
@@ -164,17 +130,14 @@ const EvaluationsHistory: React.FC<EvaluationsHistoryProps> = ({
     load();
   }, []);
 
-  // ✅ 1) scope por schoolId si es LÍDER
   const scopedEvaluations = useMemo(() => {
     if (!isLeader || !leaderSchoolId) return evaluations;
-
     return evaluations.filter((ev: any) => {
       const sid = getSchoolIdFromSummary(ev);
       return sid ? sid === leaderSchoolId : false;
     });
   }, [evaluations, isLeader, leaderSchoolId]);
 
-  // ✅ 2) búsqueda sobre el subset ya scoping
   const filtered = useMemo(() => {
     const s = search.trim().toLowerCase();
     if (!s) return scopedEvaluations;
@@ -187,7 +150,6 @@ const EvaluationsHistory: React.FC<EvaluationsHistoryProps> = ({
         (e.candidate as any)?.documentNumber?.toLowerCase?.() ??
         (e.candidate as any)?.document_number?.toLowerCase?.() ??
         "";
-
       return name.includes(s) || program.includes(s) || school.includes(s) || doc.includes(s);
     });
   }, [search, scopedEvaluations]);
@@ -195,250 +157,207 @@ const EvaluationsHistory: React.FC<EvaluationsHistoryProps> = ({
   const handleClearSearch = () => setSearch("");
 
   return (
-    <div className="min-h-screen w-full bg-[#020202] text-gray-200 font-sans relative overflow-hidden">
-      {/* blobs fondo */}
-      <div className="fixed top-0 left-0 w-full h-full overflow-hidden pointer-events-none z-0">
-        <div
-          className="absolute top-[-10%] left-[10%] w-[500px] h-[500px] bg-emerald-500/5 rounded-full blur-[120px] mix-blend-screen animate-pulse"
-          style={{ animationDuration: "8s" }}
-        />
-        <div className="absolute bottom-[10%] right-[5%] w-[600px] h-[600px] bg-blue-600/5 rounded-full blur-[150px] mix-blend-screen" />
-      </div>
-
-      <div className="relative z-10 max-w-7xl mx-auto px-6 py-16 space-y-10">
-        {/* HERO */}
-        <header className="text-center space-y-6">
-          <div className="inline-flex items-center gap-2.5 px-5 py-2 rounded-full border border-emerald-500/20 bg-emerald-500/5 text-emerald-400 text-xs font-bold uppercase tracking-widest backdrop-blur-md shadow-[0_0_20px_-5px_rgba(16,185,129,0.2)]">
-            <History className="w-4 h-4" />
-            <span>Historial de Evaluaciones</span>
-          </div>
-
-          <div className="space-y-4 max-w-3xl mx-auto">
-            <h2 className="text-3xl md:text-5xl font-black text-white tracking-tighter leading-[1.1]">
-              Panel de{" "}
-              <span className="text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 to-cyan-400">
-                Evaluaciones Docentes
-              </span>
-            </h2>
-            <p className="text-base md:text-lg text-gray-400 font-light leading-relaxed">
-              Consulta evaluaciones, filtra por candidato/programa/escuela y abre el detalle.
-            </p>
-          </div>
-        </header>
-
-        {/* TOOLBAR */}
-        <div className="sticky top-4 z-40 flex justify-center">
-          <div className="bg-[#0A0A0A]/90 backdrop-blur-xl px-3 py-2 rounded-2xl border border-white/10 shadow-2xl flex flex-wrap items-center gap-2 w-full md:w-auto">
-            <button
-              type="button"
-              onClick={onBackToAnalyze}
-              className="flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold uppercase tracking-wide text-gray-400 hover:text-emerald-400 hover:bg-emerald-500/10 transition-all"
-            >
-              <ArrowLeft className="w-4 h-4" />
-              <span className="hidden sm:inline">Volver</span>
-            </button>
-
-            <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-[#050505] border border-white/10 flex-1 md:flex-none min-w-[240px]">
-              <Search className="w-4 h-4 text-gray-500" />
-              <input
-                type="text"
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                className="bg-transparent outline-none text-xs md:text-sm text-gray-200 placeholder:text-gray-600 w-full"
-                placeholder="Buscar por nombre, programa, escuela o CC..."
-              />
-            </div>
-
-            <button
-              type="button"
-              className="flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold uppercase tracking-wide text-gray-400 hover:text-emerald-400 hover:bg-emerald-500/10 transition-all"
-            >
-              <Filter className="w-4 h-4" />
-              <span className="hidden sm:inline">Filtros rápidos</span>
-            </button>
-
-            <button
-              type="button"
-              onClick={handleClearSearch}
-              disabled={!search.trim()}
-              className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold uppercase tracking-wide transition-all
-                ${
-                  search.trim()
-                    ? "text-gray-300 hover:text-emerald-400 hover:bg-emerald-500/10"
-                    : "text-gray-600 cursor-not-allowed"
-                }`}
-            >
-              Limpiar búsqueda
-            </button>
-          </div>
+    <div className="w-full max-w-7xl mx-auto p-4 md:p-8 animate-in fade-in duration-500">
+      
+      {/* HEADER MINIMALISTA */}
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-8">
+        <div>
+          <button
+            onClick={onBackToAnalyze}
+            className="flex items-center gap-2 text-xs font-medium text-neutral-500 hover:text-emerald-400 mb-2 transition-colors uppercase tracking-wider"
+          >
+            <ArrowLeft className="w-3 h-3" />
+            Volver al análisis
+          </button>
+          <h1 className="text-3xl font-bold text-white tracking-tight">
+            Base de Talento
+          </h1>
+          <p className="text-neutral-400 mt-1 text-sm">
+            Gestión y seguimiento de evaluaciones docentes.
+          </p>
         </div>
 
-        {/* CONTENIDO */}
-        <div className="relative mt-6">
-          {loading && (
-            <div className="flex flex-col items-center justify-center py-20 text-gray-400 gap-3">
-              <Loader2 className="w-8 h-8 animate-spin" />
-              <p className="text-sm">Cargando historial de evaluaciones...</p>
+        {/* BARRA DE HERRAMIENTAS */}
+        <div className="flex items-center gap-3 w-full md:w-auto">
+          <div className="relative group w-full md:w-72">
+            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+              <Search className="h-4 w-4 text-neutral-600 group-focus-within:text-emerald-500 transition-colors" />
             </div>
-          )}
+            <input
+              type="text"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="
+                block w-full pl-10 pr-4 py-2.5 
+                bg-neutral-900/50 border border-white/5 rounded-lg
+                text-sm text-neutral-200 placeholder-neutral-600
+                focus:ring-1 focus:ring-emerald-500/50 focus:border-emerald-500/50 focus:bg-neutral-900
+                outline-none transition-all
+              "
+              placeholder="Buscar por nombre, ID, programa..."
+            />
+          </div>
+          <button className="hidden sm:flex items-center justify-center w-10 h-10 rounded-lg border border-white/5 bg-neutral-900/50 text-neutral-400 hover:text-white hover:bg-neutral-800 transition-all">
+            <Filter className="w-4 h-4" />
+          </button>
+        </div>
+      </div>
 
-          {!loading && error && (
-            <div className="flex flex-col items-center justify-center py-16 text-red-400 gap-3">
-              <AlertCircle className="w-8 h-8" />
-              <p className="text-sm text-center max-w-md">{error}</p>
+      {/* CONTENIDO PRINCIPAL - ESTILO LISTA */}
+      <div className="bg-neutral-900/30 border border-white/5 rounded-xl overflow-hidden backdrop-blur-sm">
+        
+        {/* ENCABEZADO DE TABLA (Solo desktop) */}
+        <div className="hidden md:grid grid-cols-12 gap-4 px-6 py-3 border-b border-white/5 bg-neutral-900/80 text-[11px] font-semibold text-neutral-500 uppercase tracking-wider">
+          <div className="col-span-4">Candidato</div>
+          <div className="col-span-3">Programa / Escuela</div>
+          <div className="col-span-2">Fecha</div>
+          <div className="col-span-2 text-right">Score & Estado</div>
+          <div className="col-span-1 text-right">Acción</div>
+        </div>
+
+        {loading && (
+          <div className="flex flex-col items-center justify-center py-20 text-neutral-500 gap-3">
+            <Loader2 className="w-6 h-6 animate-spin text-emerald-500" />
+            <span className="text-sm">Sincronizando registros...</span>
+          </div>
+        )}
+
+        {!loading && error && (
+          <div className="flex flex-col items-center justify-center py-12 text-rose-400 gap-2">
+            <AlertCircle className="w-8 h-8 opacity-50" />
+            <p className="text-sm">{error}</p>
+          </div>
+        )}
+
+        {!loading && !error && filtered.length === 0 && (
+          <div className="flex flex-col items-center justify-center py-24 text-neutral-600">
+            <div className="p-4 rounded-full bg-white/5 mb-4">
+              <Search className="w-6 h-6 opacity-40" />
             </div>
-          )}
+            <p className="text-sm">No se encontraron resultados para tu búsqueda.</p>
+            {search && (
+              <button onClick={handleClearSearch} className="mt-2 text-xs text-emerald-500 hover:text-emerald-400">
+                Limpiar filtros
+              </button>
+            )}
+          </div>
+        )}
 
-          {!loading && !error && filtered.length === 0 && (
-            <div className="flex flex-col items-center justify-center py-16 text-gray-500 gap-3">
-              <FileText className="w-8 h-8 opacity-60" />
-              <p className="text-sm text-center max-w-md">
-                No hay evaluaciones registradas, o no hay resultados para el criterio actual.
-              </p>
-            </div>
-          )}
+        {/* LISTA DE FILAS */}
+        {!loading && !error && filtered.length > 0 && (
+          <div className="divide-y divide-white/5">
+            {filtered.map((ev: any) => {
+              const score = pickScore(ev);
+              const rec = getRecommendationFromScore(score);
+              const createdAt = ev.createdAt ? new Date(ev.createdAt) : null;
+              const dateStr = createdAt
+                ? createdAt.toLocaleDateString("es-CO", { day: "2-digit", month: "short", year: "numeric" })
+                : "---";
+              
+              // Determinar color del borde/badge
+              let badgeClass = "bg-neutral-800 text-neutral-400 border-neutral-700"; // default
+              if (rec.key === "CONTRATACION_INMEDIATA") badgeClass = "bg-emerald-500/10 text-emerald-400 border-emerald-500/20";
+              else if (rec.key === "RECOMENDAR_CONTRATACION") badgeClass = "bg-emerald-900/20 text-emerald-300 border-emerald-500/20";
+              else if (rec.key === "RECOMENDACION_CON_PRECAUCION") badgeClass = "bg-amber-500/10 text-amber-300 border-amber-500/20";
+              else if (rec.key === "NO_RECOMENDAR_CONTRATACION") badgeClass = "bg-rose-500/10 text-rose-300 border-rose-500/20";
 
-          {!loading && !error && filtered.length > 0 && (
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              {filtered.map((ev: any) => {
-                const score = pickScore(ev);
-                const badge = badgeForScore(score);
-
-                const createdAt = ev.createdAt ? new Date(ev.createdAt) : null;
-                const dateLabel = createdAt
-                  ? createdAt.toLocaleDateString("es-CO", {
-                      year: "numeric",
-                      month: "short",
-                      day: "2-digit",
-                      hour: "2-digit",
-                      minute: "2-digit",
-                    })
-                  : "Fecha no disponible";
-
-                return (
-                  <div
-                    key={ev.id}
-                    className="
-                      rounded-3xl
-                      bg-[#0A0A0A]/70
-                      border border-white/10
-                      shadow-[0_22px_70px_-55px_rgba(0,0,0,0.95)]
-                      overflow-hidden
-                    "
-                  >
-                    <div className="relative p-6">
-                      <div className="pointer-events-none absolute -top-24 -right-24 h-56 w-56 rounded-full bg-emerald-500/10 blur-3xl" />
-
-                      <div className="relative flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
-                        <div className="min-w-0">
-                          <h3 className="text-xl font-semibold text-white leading-tight">
-                            {ev.candidate?.fullName ?? "Candidato sin nombre"}
-                          </h3>
-
-                          <div className="mt-1 flex flex-wrap items-center gap-2 text-xs text-white/45">
-                            {ev.candidate?.programNameSnapshot && (
-                              <span className="inline-flex items-center gap-1.5">
-                                <Briefcase className="w-3.5 h-3.5" />
-                                {ev.candidate.programNameSnapshot}
-                              </span>
-                            )}
-
-                            {ev.candidate?.schoolNameSnapshot && (
-                              <>
-                                <span className="mx-1 text-white/25">•</span>
-                                <span className="inline-flex items-center gap-1.5">
-                                  <Calendar className="w-3.5 h-3.5" />
-                                  {ev.candidate.schoolNameSnapshot}
-                                </span>
-                              </>
-                            )}
-                          </div>
-                        </div>
-
-                        <div
-                          className={`
-                            shrink-0
-                            inline-flex items-center gap-2
-                            px-4 py-2
-                            rounded-full
-                            text-[11px]
-                            font-semibold
-                            uppercase tracking-wider
-                            ${badge.className}
-                          `}
-                        >
-                          {badge.icon}
-                          <span>{badge.text}</span>
-                        </div>
-                      </div>
-
-                      <div className="relative mt-5 grid grid-cols-1 sm:grid-cols-2 gap-4">
-                        <div className="rounded-2xl bg-white/[0.03] border border-white/10 p-4">
-                          <p className="text-[10px] font-semibold uppercase tracking-widest text-white/45 mb-2">
-                            Score global
-                          </p>
-                          <p className="text-3xl font-semibold text-emerald-400">
-                            {Math.round(score)}
-                            <span className="text-sm text-white/35 ml-1">/100</span>
-                          </p>
-                        </div>
-
-                        <div className="rounded-2xl bg-white/[0.03] border border-white/10 p-4">
-                          <p className="text-[10px] font-semibold uppercase tracking-widest text-white/45 mb-2">
-                            Fecha evaluación
-                          </p>
-                          <p className="text-sm text-white/70">{dateLabel}</p>
-                        </div>
-                      </div>
-
-                      <p className="relative mt-5 text-sm text-white/55 leading-relaxed line-clamp-3">
-                        {ev.aiOverallComment}
+              return (
+                <div 
+                  key={ev.id} 
+                  className="group relative md:grid md:grid-cols-12 gap-4 px-6 py-4 items-center hover:bg-white/[0.02] transition-colors duration-200"
+                >
+                  {/* 1. Candidato */}
+                  <div className="col-span-4 flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-full bg-neutral-800 border border-white/5 flex items-center justify-center shrink-0">
+                      <User className="w-5 h-5 text-neutral-500" />
+                    </div>
+                    <div className="min-w-0">
+                      <p className="text-sm font-medium text-white truncate group-hover:text-emerald-400 transition-colors">
+                        {ev.candidate?.fullName || "Sin Nombre"}
                       </p>
-
-                      <div className="relative mt-5 pt-4 border-t border-white/10 flex items-center justify-between gap-3">
-                        <p className="text-[11px] text-white/35 font-mono">
-                          ID: {String(ev.id).slice(0, 8)}…
-                        </p>
-
-                        <div className="flex items-center gap-3">
-                          {ev.aiReportDriveFileId && (
-                            <a
-                              href={`https://drive.google.com/file/d/${ev.aiReportDriveFileId}/view`}
-                              target="_blank"
-                              rel="noreferrer"
-                              className="
-                                inline-flex items-center gap-2
-                                px-3 py-2
-                                rounded-xl
-                                text-[11px]
-                                font-semibold
-                                uppercase tracking-widest
-                                bg-white/[0.04]
-                                border border-white/10
-                                text-white/75
-                                hover:bg-white/[0.07]
-                              "
-                            >
-                              <Download className="w-3.5 h-3.5" />
-                              PDF en Drive
-                            </a>
-                          )}
-
-                          <button
-                            type="button"
-                            onClick={() => onOpenEvaluation(ev.id)}
-                            className="text-[11px] font-semibold uppercase tracking-widest text-emerald-400 hover:text-emerald-300"
-                          >
-                            Ver detalle
-                          </button>
-                        </div>
-                      </div>
+                      <p className="text-[11px] text-neutral-500 font-mono mt-0.5 truncate">
+                        ID: {String(ev.id).slice(0, 8)}
+                      </p>
                     </div>
                   </div>
-                );
-              })}
+
+                  {/* 2. Programa / Escuela */}
+                  <div className="col-span-3 min-w-0 md:block hidden">
+                    <div className="flex flex-col gap-1">
+                      {ev.candidate?.programNameSnapshot && (
+                        <div className="flex items-center gap-1.5 text-xs text-neutral-300">
+                          <GraduationCap className="w-3.5 h-3.5 text-neutral-600" />
+                          <span className="truncate">{ev.candidate.programNameSnapshot}</span>
+                        </div>
+                      )}
+                      {ev.candidate?.schoolNameSnapshot && (
+                         <div className="flex items-center gap-1.5 text-[11px] text-neutral-500">
+                           <Building2 className="w-3 h-3 text-neutral-700" />
+                           <span className="truncate">{ev.candidate.schoolNameSnapshot}</span>
+                         </div>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* 3. Fecha (Mobile & Desktop mixed logic) */}
+                  <div className="col-span-2 text-xs text-neutral-500 font-mono md:block hidden">
+                    {dateStr}
+                  </div>
+
+                  {/* 4. Score y Estado */}
+                  <div className="col-span-2 flex items-center justify-end gap-3">
+                    <div className={`px-2.5 py-1 rounded-md border text-[10px] font-bold uppercase tracking-wide ${badgeClass}`}>
+                      {rec.label}
+                    </div>
+                    <div className={`flex items-center justify-center w-8 h-8 rounded-lg font-bold text-sm ${rec.color} bg-white/5`}>
+                      {Math.round(score)}
+                    </div>
+                  </div>
+
+                  {/* 5. Acciones */}
+                  <div className="col-span-1 flex items-center justify-end gap-2">
+                    {ev.aiReportDriveFileId && (
+                      <a
+                        href={`https://drive.google.com/file/d/${ev.aiReportDriveFileId}/view`}
+                        target="_blank"
+                        rel="noreferrer"
+                        title="Descargar PDF"
+                        className="p-2 rounded-lg text-neutral-500 hover:text-white hover:bg-white/10 transition-colors"
+                      >
+                        <Download className="w-4 h-4" />
+                      </a>
+                    )}
+                    <button
+                      onClick={() => onOpenEvaluation(ev.id)}
+                      className="p-2 rounded-lg text-neutral-400 hover:text-emerald-400 hover:bg-emerald-500/10 transition-colors"
+                      title="Ver Detalles"
+                    >
+                      <ChevronRight className="w-4 h-4" />
+                    </button>
+                  </div>
+
+                  {/* Versión Mobile de la info oculta */}
+                  <div className="md:hidden mt-3 pt-3 border-t border-white/5 w-full flex justify-between items-center text-xs text-neutral-500">
+                     <span>{dateStr}</span>
+                     <span>{ev.candidate?.programNameSnapshot}</span>
+                  </div>
+
+                </div>
+              );
+            })}
+          </div>
+        )}
+
+        {/* FOOTER DE TABLA */}
+        <div className="px-6 py-3 border-t border-white/5 bg-neutral-900/50 flex justify-between items-center">
+            <span className="text-[11px] text-neutral-600">
+              Mostrando {filtered.length} registro(s)
+            </span>
+            {/* Paginación simple placeholder */}
+            <div className="flex gap-1">
+                <button className="p-1 rounded hover:bg-white/5 text-neutral-600 disabled:opacity-50" disabled><ArrowLeft className="w-3 h-3" /></button>
+                <button className="p-1 rounded hover:bg-white/5 text-neutral-600 disabled:opacity-50" disabled><ChevronRight className="w-3 h-3" /></button>
             </div>
-          )}
         </div>
       </div>
     </div>

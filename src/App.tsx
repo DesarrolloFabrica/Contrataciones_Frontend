@@ -12,46 +12,63 @@ import LoginPage from "./pages/Login/LoginPage";
 import ProtectedRoute from "./components/ProtectedRoute";
 
 import CoordinatorEvaluationReport from "./pages/coordinator/CoordinatorEvaluationReport";
-  
+import ChangePasswordPage from "./pages/auth/ChangePasswordPage";
 
-const App: React.FC = () => {
+/**
+ * ✅ Redirect base
+ * - Si no hay user → /login
+ * - Si mustResetPassword → /change-password
+ * - Si no, redirige según role
+ */
+const HomeRedirect: React.FC = () => {
   const { user } = useAuth();
 
-  // Ruta raíz: decide a dónde mandar según si hay usuario
-  const HomeRedirect = () => {
-    if (!user) return <Navigate to="/login" replace />;
+  if (!user) return <Navigate to="/login" replace />;
 
-    if (user.role === "leader") return <Navigate to="/leader" replace />;
-    if (user.role === "coordinator") return <Navigate to="/coordinator" replace />;
+  if (user.mustResetPassword) {
+    return <Navigate to="/change-password" replace />;
+  }
 
-    return <Navigate to="/admin" replace />;
-  };
+  const role = (user.role || "").toLowerCase();
 
+  if (role === "leader" || role === "lider") return <Navigate to="/leader" replace />;
+  if (role === "coordinator" || role === "coordinador") return <Navigate to="/coordinator" replace />;
+
+  return <Navigate to="/admin" replace />;
+};
+
+const App: React.FC = () => {
   return (
     <Routes>
+      {/* Home */}
       <Route path="/" element={<HomeRedirect />} />
+
+      {/* Pública */}
       <Route path="/login" element={<LoginPage />} />
 
-      {/* Rutas protegidas por rol */}
+      {/* ✅ Change password (protegida, cualquier rol logueado) */}
+      <Route element={<ProtectedRoute />}>
+        <Route path="/change-password" element={<ChangePasswordPage />} />
+      </Route>
+
+      {/* Protegidas por rol */}
       <Route element={<ProtectedRoute allowedRoles={["leader"]} />}>
         <Route path="/leader" element={<LeaderConsole />} />
       </Route>
 
       <Route element={<ProtectedRoute allowedRoles={["coordinator"]} />}>
-      <Route path="/coordinator" element={<CoordinatorConsole />} />
-
-      {/* ✅ NUEVA RUTA: reporte completo IA */}
-      <Route
-        path="/coordinator/evaluations/:evaluationId"
-        element={<CoordinatorEvaluationReport />}
-      />
+        <Route path="/coordinator" element={<CoordinatorConsole />} />
+        <Route
+          path="/coordinator/evaluations/:evaluationId"
+          element={<CoordinatorEvaluationReport />}
+        />
       </Route>
 
       <Route element={<ProtectedRoute allowedRoles={["admin"]} />}>
         <Route path="/admin" element={<AdminConsole />} />
       </Route>
 
-      {/* Fallback */}
+      {/* 404 */}
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
   );

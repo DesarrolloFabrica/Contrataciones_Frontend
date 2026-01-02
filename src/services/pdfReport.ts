@@ -3,6 +3,7 @@ import { jsPDF } from "jspdf";
 import type { AnalysisResult, InterviewData } from "../types";
 import logoCun from "../assets/images/LogoCUN.png";
 
+
 const MARGIN_X = 40;
 const MARGIN_Y = 40;
 const LINE_HEIGHT = 14;

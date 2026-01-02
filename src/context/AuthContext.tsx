@@ -1,5 +1,5 @@
 // src/context/AuthContext.tsx
-import React, { createContext, useContext, useEffect, useState } from "react";
+import React, { createContext, useContext, useMemo, useState } from "react";
 import api, { AUTH_STORAGE_KEY } from "../services/apiClient";
 import { auditAppend } from "../services/auditService";
 import type { AuditActor } from "../types";
@@ -22,10 +22,19 @@ export interface AuthUser {
   mustResetPassword?: boolean;
 }
 
+type StoredAuth = {
+  accessToken?: string;
+  user?: AuthUser;
+};
+
 interface AuthContextValue {
   user: AuthUser | null;
+  isReady: boolean; // ✅ clave para que ProtectedRoute espere
   login: (email: string, password: string) => Promise<AuthUser>;
   logout: () => void;
+
+  // ✅ NUEVO: actualizar parcialmente el user y persistirlo
+  updateUser: (patch: Partial<AuthUser>) => void;
 }
 
 const AuthContext = createContext<AuthContextValue | undefined>(undefined);
@@ -46,32 +55,69 @@ function setAxiosAuthHeader(token?: string) {
   }
 }
 
+/** Lee localStorage de forma segura (sin romper si está corrupto) */
+function readStoredAuth(): StoredAuth | null {
+  if (typeof window === "undefined") return null;
+
+  const raw = localStorage.getItem(AUTH_STORAGE_KEY);
+  if (!raw) return null;
+
+  try {
+    const parsed = JSON.parse(raw) as StoredAuth;
+
+    // Si hay token, inyecta header YA (antes del primer render de rutas)
+    if (parsed?.accessToken) setAxiosAuthHeader(parsed.accessToken);
+
+    return parsed;
+  } catch (err) {
+    console.warn("No se pudo leer auth desde localStorage", err);
+    localStorage.removeItem(AUTH_STORAGE_KEY);
+    setAxiosAuthHeader(undefined);
+    return null;
+  }
+}
+
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
   children,
 }) => {
-  const [user, setUser] = useState<AuthUser | null>(null);
+  // ✅ Hidratación sincrónica: evita “flash” de user=null en refresh
+  const boot = useMemo(() => readStoredAuth(), []);
 
-  // Cargar auth desde localStorage cuando monta el app
-  useEffect(() => {
-    if (typeof window === "undefined") return;
+  const [user, setUser] = useState<AuthUser | null>(() => boot?.user ?? null);
+  const [isReady, setIsReady] = useState<boolean>(() => true); // ✅ ya está listo desde el arranque
 
-    try {
-      const raw = localStorage.getItem(AUTH_STORAGE_KEY);
-      if (!raw) return;
+  // ✅ NUEVO: actualiza user en memoria + localStorage (mantiene accessToken)
+  const updateUser = (patch: Partial<AuthUser>) => {
+    setUser((prev) => {
+      if (!prev) return prev;
 
-      const parsed = JSON.parse(raw) as {
-        accessToken?: string;
-        user?: AuthUser;
-      };
+      const next = { ...prev, ...patch };
 
-      if (parsed.accessToken) setAxiosAuthHeader(parsed.accessToken);
-      if (parsed.user) setUser(parsed.user);
-    } catch (err) {
-      console.warn("No se pudo leer auth desde localStorage", err);
-      localStorage.removeItem(AUTH_STORAGE_KEY);
-      setAxiosAuthHeader(undefined);
-    }
-  }, []);
+      if (typeof window !== "undefined") {
+        try {
+          const raw = localStorage.getItem(AUTH_STORAGE_KEY);
+          if (raw) {
+            const parsed = JSON.parse(raw) as {
+              accessToken?: string;
+              user?: AuthUser;
+            };
+
+            localStorage.setItem(
+              AUTH_STORAGE_KEY,
+              JSON.stringify({ accessToken: parsed.accessToken, user: next })
+            );
+          } else {
+            // raro, pero por si no existía
+            localStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify({ user: next }));
+          }
+        } catch (err) {
+          console.warn("[AuthContext] No se pudo persistir updateUser", err);
+        }
+      }
+
+      return next;
+    });
+  };
 
   // ✅ login: email + password
   const login = async (email: string, password: string): Promise<AuthUser> => {
@@ -96,7 +142,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
       });
       data = resp.data;
     } catch (error: any) {
-      console.error("[AuthContext] Error en /auth/login:", error?.response?.data || error);
+      console.error(
+        "[AuthContext] Error en /auth/login:",
+        error?.response?.data || error
+      );
       throw error;
     }
 
@@ -128,7 +177,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
     setAxiosAuthHeader(accessToken);
     localStorage.setItem(
       AUTH_STORAGE_KEY,
-      JSON.stringify({ accessToken, user: authUser })
+      JSON.stringify({ accessToken, user: authUser } satisfies StoredAuth)
     );
 
     // Auditoría
@@ -146,6 +195,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
     });
 
     setUser(authUser);
+    setIsReady(true);
     return authUser;
   };
 
@@ -166,10 +216,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
     setUser(null);
     localStorage.removeItem(AUTH_STORAGE_KEY);
     setAxiosAuthHeader(undefined);
+    setIsReady(true);
   };
 
   return (
-    <AuthContext.Provider value={{ user, login, logout }}>
+    <AuthContext.Provider value={{ user, login, logout, updateUser }}>
       {children}
     </AuthContext.Provider>
   );
