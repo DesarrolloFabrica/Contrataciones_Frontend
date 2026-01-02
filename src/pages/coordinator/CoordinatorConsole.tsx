@@ -28,6 +28,10 @@ import { getTeacherEvaluationById } from "../../services/teachersService";
 import type { AnalysisResult } from "../../types";
 import { buildAverageAnalysis, computeVariability } from "./utils/analysisAggregate";
 
+
+import CoordinatorUsersPanel from "./components/users/CoordinatorUsersPanel";
+
+
 const API_BASE =
   (import.meta.env.VITE_API_URL as string | undefined) ??
   (import.meta.env.VITE_BACKEND_URL as string | undefined) ??
@@ -172,6 +176,9 @@ const CoordinatorConsole: React.FC = () => {
   const [selectedCandidateKey, setSelectedCandidateKey] = useState<string | null>(null);
   const [detailTab, setDetailTab] = useState<DetailTabKey>("AI");
   const [showDetail, setShowDetail] = useState(false);
+  const [mainTab, setMainTab] = useState<"evaluations" | "users">("evaluations");
+
+  
 
   // -----------------------------
   // 4) Resumen IA promedio (por candidato)
@@ -531,6 +538,8 @@ const CoordinatorConsole: React.FC = () => {
   const showError = !evals.loading && !!evals.error;
   const metrics = evals.metrics;
 
+  console.log(">>> CoordinatorConsole RENDER <<<");
+
   return (
     <div className="min-h-screen w-full bg-[#020202] text-gray-200 font-sans relative overflow-x-hidden">
       {/* blobs fondo */}
@@ -551,18 +560,53 @@ const CoordinatorConsole: React.FC = () => {
               <span>Consola de Coordinación</span>
             </div>
 
-            <button
-              type="button"
-              onClick={handleLogout}
-              className="px-4 py-2 rounded-xl text-[11px] uppercase tracking-widest
-                         border border-white/10 text-gray-400
-                         hover:border-rose-500/40 hover:text-rose-400
-                         transition inline-flex items-center gap-2"
-            >
-              <LogOut className="w-4 h-4" />
-              Cerrar sesión
-            </button>
+            {/* ✅ Tabs principales */}
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={() => setMainTab("evaluations")}
+                className={[
+                  "px-4 py-2 rounded-xl text-[11px] uppercase tracking-widest border transition inline-flex items-center gap-2",
+                  mainTab === "evaluations"
+                    ? "border-emerald-500/30 text-emerald-300 bg-emerald-500/10"
+                    : "border-white/10 text-gray-400 hover:border-white/20",
+                ].join(" ")}
+                title="Ver evaluaciones"
+              >
+                <FileText className="w-4 h-4" />
+                Evaluaciones
+              </button>
+              
+              <button
+                type="button"
+                onClick={() => setMainTab("users")}
+                className={[
+                  "px-4 py-2 rounded-xl text-[11px] uppercase tracking-widest border transition inline-flex items-center gap-2",
+                  mainTab === "users"
+                    ? "border-emerald-500/30 text-emerald-300 bg-emerald-500/10"
+                    : "border-white/10 text-gray-400 hover:border-white/20",
+                ].join(" ")}
+                title="Gestionar líderes de mi escuela"
+              >
+                <UserCheck className="w-4 h-4" />
+                Usuarios
+              </button>
+              
+              <button
+                type="button"
+                onClick={handleLogout}
+                className="px-4 py-2 rounded-xl text-[11px] uppercase tracking-widest
+                           border border-white/10 text-gray-400
+                           hover:border-rose-500/40 hover:text-rose-400
+                           transition inline-flex items-center gap-2"
+                title="Cerrar sesión"
+              >
+                <LogOut className="w-4 h-4" />
+                Cerrar sesión
+              </button>
+            </div>
           </div>
+
 
           <div className="space-y-4 max-w-3xl">
             <h2 className="text-3xl md:text-5xl font-black text-white tracking-tighter leading-[1.05]">
@@ -594,127 +638,138 @@ const CoordinatorConsole: React.FC = () => {
         )}
 
         {!showLoading && !showError && (
-          <>
-            {/* MÉTRICAS RÁPIDAS */}
-            <section className="grid grid-cols-1 md:grid-cols-3 gap-5 mb-6">
-              <div className="bg-[#1F1F1F]/30 border border-white/10 rounded-3xl px-5 py-4 flex flex-col justify-between shadow-lg">
-                <div className="flex items-center justify-between mb-4">
-                  <span className="text-[11px] uppercase tracking-widest text-gray-500">
-                    Evaluaciones Totales
-                  </span>
-                  <FileText className="w-4 h-4 text-emerald-400" />
+        <>
+          {/* ✅ Si estás en Evaluaciones */}
+          {mainTab === "evaluations" && (
+            <>
+              {/* MÉTRICAS RÁPIDAS */}
+              <section className="grid grid-cols-1 md:grid-cols-3 gap-5 mb-6">
+                <div className="bg-[#1F1F1F]/30 border border-white/10 rounded-3xl px-5 py-4 flex flex-col justify-between shadow-lg">
+                  <div className="flex items-center justify-between mb-4">
+                    <span className="text-[11px] uppercase tracking-widest text-gray-500">
+                      Evaluaciones Totales
+                    </span>
+                    <FileText className="w-4 h-4 text-emerald-400" />
+                  </div>
+                  <p className="text-3xl font-black text-white">{metrics.total}</p>
                 </div>
-                <p className="text-3xl font-black text-white">{metrics.total}</p>
-              </div>
-
-              <div className="bg-[#1F1F1F]/30 border border-white/10 rounded-3xl px-5 py-4 flex flex-col justify-between shadow-lg">
-                <div className="flex items-center justify-between mb-4">
-                  <span className="text-[11px] uppercase tracking-widest text-gray-500">
-                    Puntaje Global Promedio
-                  </span>
-                  <Activity className="w-4 h-4 text-cyan-400" />
+          
+                <div className="bg-[#1F1F1F]/30 border border-white/10 rounded-3xl px-5 py-4 flex flex-col justify-between shadow-lg">
+                  <div className="flex items-center justify-between mb-4">
+                    <span className="text-[11px] uppercase tracking-widest text-gray-500">
+                      Puntaje Global Promedio
+                    </span>
+                    <Activity className="w-4 h-4 text-cyan-400" />
+                  </div>
+                  <p className="text-3xl font-black text-white">
+                    {metrics.avgScore.toFixed(1)}
+                    <span className="text-sm text-gray-500 ml-1">/100</span>
+                  </p>
                 </div>
-                <p className="text-3xl font-black text-white">
-                  {metrics.avgScore.toFixed(1)}
-                  <span className="text-sm text-gray-500 ml-1">/100</span>
-                </p>
-              </div>
-
-              <div className="bg-[#1F1F1F]/30 border border-white/10 rounded-3xl px-5 py-4 flex flex-col justify-between shadow-lg">
-                <div className="flex items-center justify-between mb-4">
-                  <span className="text-[11px] uppercase tracking-widest text-gray-500">
-                    Próxima Fase
-                  </span>
-                  <UserCheck className="w-4 h-4 text-emerald-300" />
+          
+                <div className="bg-[#1F1F1F]/30 border border-white/10 rounded-3xl px-5 py-4 flex flex-col justify-between shadow-lg">
+                  <div className="flex items-center justify-between mb-4">
+                    <span className="text-[11px] uppercase tracking-widest text-gray-500">
+                      Próxima Fase
+                    </span>
+                    <UserCheck className="w-4 h-4 text-emerald-300" />
+                  </div>
+                  <p className="text-xs text-gray-400">
+                    Esto evita “listas infinitas” y prepara el terreno para filtros backend.
+                  </p>
                 </div>
-                <p className="text-xs text-gray-400">
-                  Esto evita “listas infinitas” y prepara el terreno para filtros backend.
-                </p>
-              </div>
-            </section>
-
-            {/* LISTA + DETALLE */}
-            <section className="flex flex-col gap-6">
-              <EvaluationsListPanel
-                schoolFilter={schoolFilter}
-                setSchoolFilter={setSchoolFilter}
-                programFilter={programFilter}
-                setProgramFilter={setProgramFilter}
-                schoolOptions={schoolOptions}
-                programOptions={programOptions}
-                mustChooseScope={mustChooseScope}
-                groupedCandidates={groupedCandidates}
-                selectedId={detail.selectedId}
-                search={evals.search}
-                setSearch={evals.setSearch}
-                decisionFilter={evals.decisionFilter}
-                setDecisionFilter={evals.setDecisionFilter}
-                localDecisions={evals.localDecisions}
-                lockedSchool={!!userSchoolId}
-                schoolHint={
-                  scopeLoading
-                    ? "Cargando programas de tu escuela…"
-                    : userSchoolId
-                    ? "Escuela asignada por tu usuario."
-                    : undefined
-                }
-                onSelectEvaluation={(candidateKey, evaluationId) => {
-                  setSelectedCandidateKey(candidateKey);
-                  detail.handleSelectEvaluation(evaluationId);
-                  setDetailTab("AI");
-                }}
-                onOpenDetail={(candidateKey, evaluationId) => {
-                  setSelectedCandidateKey(candidateKey);
-                  setShowDetail(true);
-                  detail.handleSelectEvaluation(evaluationId);
-                  setDetailTab("AI");
-                  scrollToDetailSection();
-                }}
-                onOpenSecond={(candidateKey, evaluationId) => {
-                  setSelectedCandidateKey(candidateKey);
-                  setShowDetail(true);
-                  detail.handleSelectEvaluation(evaluationId);
-                  setDetailTab("INTERVIEWS");
-                  scrollToDetailSection();
-                }}
-              />
-
-              <div ref={detailSectionRef} />
-
-              {showDetail && (
-                <EvaluationDetailPanel
+              </section>
+          
+              {/* LISTA + DETALLE */}
+              <section className="flex flex-col gap-6">
+                <EvaluationsListPanel
+                  schoolFilter={schoolFilter}
+                  setSchoolFilter={setSchoolFilter}
+                  programFilter={programFilter}
+                  setProgramFilter={setProgramFilter}
+                  schoolOptions={schoolOptions}
+                  programOptions={programOptions}
+                  mustChooseScope={mustChooseScope}
+                  groupedCandidates={groupedCandidates}
                   selectedId={detail.selectedId}
-                  selectedDetail={detail.selectedDetail}
-                  loadingDetail={detail.loadingDetail}
-                  onExportPdf={detail.exportPdf}
-                  detailTab={detailTab}
-                  setDetailTab={setDetailTab}
-                  decision={detail.decision}
-                  decisionComment={detail.decisionComment}
-                  setDecisionComment={detail.setDecisionComment}
-                  onDecisionCommentBlur={detail.onDecisionCommentBlur}
-                  onApplyDecision={detail.applyDecision}
-                  onOpenComparison={() => setDetailTab("INTERVIEWS")}
-                  notes={detail.notes}
-                  setNotes={detail.setNotes}
-                  criteria={detail.criteria}
-                  setCriteria={detail.setCriteria}
-                  canSubmitDecision={detail.canSubmitDecision}
-                  missingReasons={detail.missingReasons}
-                  onSubmitDecision={detail.submitDecisionToAdmin}
-                  candidateGroup={selectedCandidateGroup}
-                  onOpenInterview={(evaluationId) => {
-                    navigate(`/coordinator/evaluations/${encodeURIComponent(evaluationId)}`);
+                  search={evals.search}
+                  setSearch={evals.setSearch}
+                  decisionFilter={evals.decisionFilter}
+                  setDecisionFilter={evals.setDecisionFilter}
+                  localDecisions={evals.localDecisions}
+                  lockedSchool={!!userSchoolId}
+                  schoolHint={
+                    scopeLoading
+                      ? "Cargando programas de tu escuela…"
+                      : userSchoolId
+                      ? "Escuela asignada por tu usuario."
+                      : undefined
+                  }
+                  onSelectEvaluation={(candidateKey, evaluationId) => {
+                    setSelectedCandidateKey(candidateKey);
+                    detail.handleSelectEvaluation(evaluationId);
+                    setDetailTab("AI");
                   }}
-                  avgAnalysis={avgAnalysis}
-                  avgLoading={avgLoading}
-                  avgError={avgError}
-                  variabilityInfo={variabilityInfo}
+                  onOpenDetail={(candidateKey, evaluationId) => {
+                    setSelectedCandidateKey(candidateKey);
+                    setShowDetail(true);
+                    detail.handleSelectEvaluation(evaluationId);
+                    setDetailTab("AI");
+                    scrollToDetailSection();
+                  }}
+                  onOpenSecond={(candidateKey, evaluationId) => {
+                    setSelectedCandidateKey(candidateKey);
+                    setShowDetail(true);
+                    detail.handleSelectEvaluation(evaluationId);
+                    setDetailTab("INTERVIEWS");
+                    scrollToDetailSection();
+                  }}
                 />
-              )}
-            </section>
-          </>
-        )}
+
+                <div ref={detailSectionRef} />
+                
+                {showDetail && (
+                  <EvaluationDetailPanel
+                    selectedId={detail.selectedId}
+                    selectedDetail={detail.selectedDetail}
+                    loadingDetail={detail.loadingDetail}
+                    onExportPdf={detail.exportPdf}
+                    detailTab={detailTab}
+                    setDetailTab={setDetailTab}
+                    decision={detail.decision}
+                    decisionComment={detail.decisionComment}
+                    setDecisionComment={detail.setDecisionComment}
+                    onDecisionCommentBlur={detail.onDecisionCommentBlur}
+                    onApplyDecision={detail.applyDecision}
+                    onOpenComparison={() => setDetailTab("INTERVIEWS")}
+                    notes={detail.notes}
+                    setNotes={detail.setNotes}
+                    criteria={detail.criteria}
+                    setCriteria={detail.setCriteria}
+                    canSubmitDecision={detail.canSubmitDecision}
+                    missingReasons={detail.missingReasons}
+                    onSubmitDecision={detail.submitDecisionToAdmin}
+                    candidateGroup={selectedCandidateGroup}
+                    onOpenInterview={(evaluationId) => {
+                      navigate(`/coordinator/evaluations/${encodeURIComponent(evaluationId)}`);
+                    }}
+                    avgAnalysis={avgAnalysis}
+                    avgLoading={avgLoading}
+                    avgError={avgError}
+                    variabilityInfo={variabilityInfo}
+                  />
+                )}
+              </section>
+            </>
+          )}
+
+    {/* ✅ Si estás en Usuarios */}
+    {mainTab === "users" && (
+      <CoordinatorUsersPanel />
+    )}
+  </>
+)}
+
       </div>
     </div>
   );

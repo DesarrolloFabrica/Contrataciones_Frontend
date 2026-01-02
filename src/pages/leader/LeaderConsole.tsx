@@ -71,9 +71,12 @@ const mapFormToInterviewData = (form: TeacherForm): InterviewData => ({
 
 // --- COMPONENTE PRINCIPAL ---
 const LeaderConsole: React.FC = () => {
+  // =========================
+  // ✅ ESTADOS PRINCIPALES
+  // =========================
   const [mode, setMode] = useState<ViewMode>("analyze");
-
   const { user } = useAuth();
+
   const [interviewData, setInterviewData] = useState<InterviewData | null>(null);
   const [analysisResult, setAnalysisResult] = useState<AnalysisResult | null>(null);
   const [evaluationId, setEvaluationId] = useState<string | null>(null);
