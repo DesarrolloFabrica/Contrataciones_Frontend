@@ -7,7 +7,12 @@ import type {
   CreateAdminUserDto,
   UpdateAdminUserDto,
 } from "../adminTypes";
-import { adminMockDb } from "../utils/adminMockDb";
+
+import {
+  usersService,
+  type BackendUser,
+  type BackendRole,
+} from "../../../services/usersService";
 
 type RoleFilter = AdminUserRole | "ALL";
 type StatusFilter = AdminUserStatus | "ALL";
@@ -19,13 +24,73 @@ type ScopeArgs = {
 
 const norm = (v: any) => String(v ?? "").trim().toLowerCase();
 
-// ⚠️ AdminUser probablemente no tiene school/program aún.
-// Igual lo dejamos future-proof por si luego lo agregas desde backend.
 const pickUserSchool = (u: any) =>
-  u?.schoolName ?? u?.school ?? u?.schoolNameSnapshot ?? "";
+  u?.school?.name ?? u?.schoolName ?? u?.school ?? u?.schoolNameSnapshot ?? "";
 
 const pickUserProgram = (u: any) =>
   u?.programName ?? u?.program ?? u?.programNameSnapshot ?? "";
+
+// UI role -> Backend role (tu backend usa ES)
+function uiRoleToBackend(role: AdminUserRole): BackendRole {
+  if (role === "ADMIN") return "ADMIN";
+  if (role === "COORDINATOR") return "COORDINADOR";
+  return "LIDER";
+}
+
+// Helpers para fechas seguras (por si backend no las manda)
+function toIso(v: any) {
+  if (!v) return new Date().toISOString();
+  const d = v instanceof Date ? v : new Date(v);
+  return isNaN(d.getTime()) ? new Date().toISOString() : d.toISOString();
+}
+
+// BackendUser -> AdminUser (para el panel)
+function backendToAdminUser(b: BackendUser): AdminUser {
+const full = String((b as any).fullName ?? "").trim();
+  const parts = full ? full.split(/\s+/) : [];
+  const name = parts.shift() ?? "";
+  const lastName = parts.join(" ");
+
+  const roleUi: AdminUserRole =
+    b.role === "ADMIN"
+      ? "ADMIN"
+      : b.role === "COORDINADOR"
+      ? "COORDINATOR"
+      : "LEADER";
+
+  const isActive = (b as any).isActive !== false;
+  const statusUi: AdminUserStatus = isActive ? "ACTIVE" : "INACTIVE";
+
+  const mustChangePassword = Boolean((b as any).mustResetPassword);
+
+  // ✅ Solo propiedades "válidas" en AdminUser (según tu TS actual)
+  const u = {
+    id: b.id,
+    email: b.email,
+    name,
+    lastName,
+    cedula: "",
+    role: roleUi,
+    status: statusUi,
+    mustChangePassword,
+    createdAt: toIso((b as any).createdAt),
+    updatedAt: toIso((b as any).updatedAt),
+  } as AdminUser;
+
+  // ✅ Si quieres seguir teniendo estos campos para UI/búsqueda sin tocar adminTypes:
+  (u as any).schoolName = pickUserSchool(b);
+  (u as any).programName = pickUserProgram(b);
+  
+  return u;
+}
+
+function buildFullName(dto: any) {
+  const fullName =
+    dto.fullName ??
+    [dto.name, dto.lastName].filter(Boolean).join(" ") ??
+    [dto.nombres, dto.apellidos].filter(Boolean).join(" ");
+  return String(fullName || "").trim().replace(/\s+/g, " ");
+}
 
 export function useAdminUsers(scope: ScopeArgs) {
   const [users, setUsers] = useState<AdminUser[]>([]);
@@ -44,35 +109,41 @@ export function useAdminUsers(scope: ScopeArgs) {
 
   const clearCredentials = () => setLastCreatedCredentials(null);
 
-  // ✅ Load users (mockdb)
+  const loadUsers = async () => {
+    setLoading(true);
+    setError(null);
+
+    try {
+      const backendUsers = await usersService.list();
+      const mapped = (backendUsers ?? []).map(backendToAdminUser);
+      setUsers(mapped);
+    } catch (e: any) {
+      console.error(e);
+      const msg =
+        e?.response?.data?.message ||
+        e?.message ||
+        "No se pudo cargar la lista de usuarios.";
+      setError(msg);
+      setUsers([]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   useEffect(() => {
     let alive = true;
 
-    const loadUsers = async () => {
-      setLoading(true);
-      setError(null);
-      try {
-        const data = await adminMockDb.listUsers();
-        if (!alive) return;
-        setUsers(data ?? []);
-      } catch (e) {
-        console.error(e);
-        if (!alive) return;
-        setError("No se pudo cargar la lista de usuarios.");
-        setUsers([]);
-      } finally {
-        if (!alive) return;
-        setLoading(false);
-      }
-    };
+    (async () => {
+      if (!alive) return;
+      await loadUsers();
+    })();
 
-    loadUsers();
     return () => {
       alive = false;
     };
-  }, []);
+  }, [scope.selectedSchool, scope.selectedProgram]);
 
-  // ✅ Scope filter
+  // Scope filter
   const scopedUsers = useMemo(() => {
     let base = [...(users ?? [])];
 
@@ -95,7 +166,7 @@ export function useAdminUsers(scope: ScopeArgs) {
     return base;
   }, [users, scope.selectedSchool, scope.selectedProgram]);
 
-  // ✅ Filters + search
+  // Filters + search
   const filteredUsers = useMemo(() => {
     let base = [...scopedUsers];
 
@@ -126,7 +197,7 @@ export function useAdminUsers(scope: ScopeArgs) {
     return base;
   }, [scopedUsers, roleFilter, statusFilter, search]);
 
-  // ✅ Metrics
+  // Metrics
   const metrics = useMemo(() => {
     const total = filteredUsers.length;
     const active = filteredUsers.filter((u: any) => u.status === "ACTIVE").length;
@@ -139,42 +210,101 @@ export function useAdminUsers(scope: ScopeArgs) {
     return { total, active, inactive, leaders, coordinators, admins };
   }, [filteredUsers]);
 
-  // ✅ Actions (mockdb)
+  // Actions (backend real)
   const createUser = async (dto: CreateAdminUserDto) => {
-    const res = await adminMockDb.createUser(dto);
-    const next = await adminMockDb.listUsers();
-    setUsers(next ?? []);
+    clearCredentials();
 
-    if (res?.password?.temporaryPassword && res?.user?.email) {
-      setLastCreatedCredentials({
-        email: res.user.email,
-        tempPassword: res.password.temporaryPassword,
-      });
+    const fullName = buildFullName(dto);
+    const email = String((dto as any).email || "").trim();
+
+    const uiRole = (dto as any).role as AdminUserRole;
+    const backendRole = uiRoleToBackend(uiRole);
+
+    // UI: mustChangePassword  -> Backend: mustResetPassword
+    const mustChangePassword = Boolean(
+      (dto as any).mustChangePassword ??
+        (dto as any).mustResetPassword ??
+        (dto as any).forceResetPassword ??
+        true
+    );
+
+    const generatePassword = Boolean((dto as any).generatePassword ?? true);
+    const password = (dto as any).password;
+
+    const schoolId = (dto as any).schoolId ?? null;
+
+    const res = await usersService.create({
+      email,
+      fullName,
+      role: backendRole,
+      schoolId,
+      mustResetPassword: mustChangePassword,
+      generatePassword,
+      password,
+      isActive: true,
+    });
+
+    await loadUsers();
+
+    const temp =
+      (res as any)?.password?.temporaryPassword ||
+      (res as any)?.generatedPassword ||
+      (res as any)?.temporaryPassword;
+
+    if (temp && email) {
+      setLastCreatedCredentials({ email, tempPassword: String(temp) });
     }
   };
 
   const updateUser = async (userId: string, dto: UpdateAdminUserDto) => {
-    await adminMockDb.updateUser(userId, dto);
-    const next = await adminMockDb.listUsers();
-    setUsers(next ?? []);
+    const payload: any = {};
+
+    if ((dto as any).email) payload.email = String((dto as any).email).trim();
+    const fullName = buildFullName(dto);
+    if (fullName) payload.fullName = fullName;
+
+    if ((dto as any).role) payload.role = uiRoleToBackend((dto as any).role);
+
+    if ((dto as any).status === "ACTIVE") payload.isActive = true;
+    if ((dto as any).status === "INACTIVE") payload.isActive = false;
+
+    // UI mustChangePassword -> backend mustResetPassword
+    if ((dto as any).mustChangePassword !== undefined) {
+      payload.mustResetPassword = Boolean((dto as any).mustChangePassword);
+    } else if ((dto as any).mustResetPassword !== undefined) {
+      payload.mustResetPassword = Boolean((dto as any).mustResetPassword);
+    }
+
+    if ((dto as any).schoolId !== undefined) payload.schoolId = (dto as any).schoolId;
+
+    await usersService.update(userId, payload);
+    await loadUsers();
   };
 
   const toggleActive = async (userId: string) => {
-    await adminMockDb.toggleUserActive(userId);
-    const next = await adminMockDb.listUsers();
-    setUsers(next ?? []);
+    const u = users.find((x) => x.id === userId);
+    if (!u) return;
+
+    const nextActive = u.status !== "ACTIVE";
+    await usersService.setActive(userId, nextActive);
+    await loadUsers();
   };
 
   const resetPassword = async (userId: string) => {
-    const res = await adminMockDb.resetPassword(userId);
-    const next = await adminMockDb.listUsers();
-    setUsers(next ?? []);
+    clearCredentials();
 
-    if (res?.temporaryPassword) {
-      const u = (next ?? []).find((x) => x.id === userId);
-      if (u?.email) {
-        setLastCreatedCredentials({ email: u.email, tempPassword: res.temporaryPassword });
-      }
+    const res = await usersService.resetPassword(userId);
+    await loadUsers();
+
+    const temp =
+      (res as any)?.password?.temporaryPassword ||
+      (res as any)?.temporaryPassword ||
+      (res as any)?.generatedPassword ||
+      (res as any)?.tempPassword;
+
+    const u = users.find((x) => x.id === userId);
+    if (temp && u?.email) {
+      setLastCreatedCredentials({ email: u.email, tempPassword: String(temp) });
     }
   };
 
