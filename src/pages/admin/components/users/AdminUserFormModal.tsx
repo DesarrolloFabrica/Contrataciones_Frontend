@@ -14,6 +14,11 @@ type Props = {
 
   lastCreatedCredentials: { email: string; password: string } | null;
   clearCredentials: () => void;
+
+  // ✅ NUEVO: Para reutilizarlo en Coordinador (solo crea líderes)
+  forcedRole?: AdminUserRole;          // Ej: "LEADER"
+  hideRoleSelect?: boolean;            // Oculta el select de rol cuando role es fijo
+  forcedSchoolId?: string | null;      // Escuela que se asigna al usuario creado
 };
 
 const emailLooksValid = (email: string) =>
@@ -36,6 +41,11 @@ const AdminUserFormModal: React.FC<Props> = ({
   editingUser,
   lastCreatedCredentials,
   clearCredentials,
+
+  // ✅ NUEVOS
+  forcedRole,
+  hideRoleSelect,
+  forcedSchoolId,
 }) => {
   const isEdit = !!editingUser;
 
@@ -44,7 +54,7 @@ const AdminUserFormModal: React.FC<Props> = ({
   const [email, setEmail] = useState("");
   const [cedula, setCedula] = useState("");
 
-  const [role, setRole] = useState<AdminUserRole>("COORDINATOR");
+  const [role, setRole] = useState<AdminUserRole>(forcedRole ?? "COORDINATOR");
 
   const [generatePassword, setGeneratePassword] = useState(true);
   const [password, setPassword] = useState("");
@@ -91,7 +101,7 @@ const AdminUserFormModal: React.FC<Props> = ({
       setLastName("");
       setEmail("");
       setCedula("");
-      setRole("COORDINATOR");
+      setRole(forcedRole ?? "COORDINATOR");
       setMustChangePassword(true);
       setGeneratePassword(true);
       setPassword("");
@@ -136,10 +146,11 @@ const AdminUserFormModal: React.FC<Props> = ({
         lastName: lastName.trim(),
         email: email.trim(),
         cedula: cedula.trim() ? cedula.trim() : null,
-        role,
+        role: forcedRole ?? role,
         mustChangePassword,
         generatePassword,
         password: generatePassword ? undefined : password.trim(),
+        schoolId: forcedSchoolId ?? null,
       });
 
       if (!res.ok) {
@@ -322,15 +333,24 @@ const AdminUserFormModal: React.FC<Props> = ({
                 <label className="text-[11px] uppercase tracking-widest text-gray-500">
                   Rol
                 </label>
-                <select
-                  value={role}
-                  onChange={(e) => setRole(e.target.value as AdminUserRole)}
-                  className="mt-1 w-full bg-[#0A0A0A] border border-white/10 rounded-xl px-3 py-2 text-sm text-gray-200 outline-none focus:border-emerald-500/50"
-                >
-                  <option value="COORDINATOR">{roleLabel("COORDINATOR")}</option>
-                  <option value="LEADER">{roleLabel("LEADER")}</option>
-                  <option value="ADMIN">{roleLabel("ADMIN")}</option>
-                </select>
+                {/* ✅ Rol: visible solo cuando NO está forzado (Admin) */}
+              {!hideRoleSelect && (
+                <div>
+                  <label className="text-[11px] uppercase tracking-widest text-gray-500">
+                    Rol
+                  </label>
+              
+                  <select
+                    value={role}
+                    onChange={(e) => setRole(e.target.value as AdminUserRole)}
+                    className="mt-1 w-full bg-[#0A0A0A] border border-white/10 rounded-xl px-3 py-2 text-sm text-gray-200 outline-none focus:border-emerald-500/50"
+                  >
+                    <option value="COORDINATOR">{roleLabel("COORDINATOR")}</option>
+                    <option value="LEADER">{roleLabel("LEADER")}</option>
+                    <option value="ADMIN">{roleLabel("ADMIN")}</option>
+                  </select>
+                </div>
+              )}
               </div>
 
               <div className="flex items-center gap-3 mt-6">

@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
+import { Eye, EyeOff } from "lucide-react";
 import { useAuth } from "../../context/AuthContext";
 
 import BGImg from "../../assets/images/Gemini_Generated_Image_wsary2wsary2wsar (1).png";
@@ -16,6 +17,8 @@ const LoginPage: React.FC = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState(""); // ✅ NUEVO
   const [error, setError] = useState<string | null>(null);
+  const [showPassword, setShowPassword] = useState(false);//visualizar clave
+
 
   const from = location.state?.from?.pathname;
 
@@ -81,14 +84,41 @@ const LoginPage: React.FC = () => {
                 />
 
                 {/* ✅ NUEVO: password */}
-                <input
-                  type="password"
-                  required
-                  placeholder="Contraseña"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  className="w-full rounded-2xl bg-gray-200/80 border border-transparent px-4 py-3 text-sm text-gray-900 placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/40"
-                />
+                <div className="relative">
+                  <input
+                    // Cambia dinámicamente el tipo según el estado
+                    type={showPassword ? "text" : "password"}
+                    required
+                    placeholder="Contraseña"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    className="
+                      w-full rounded-2xl
+                      bg-gray-200/80
+                      border border-transparent
+                      px-4 py-3 pr-12
+                      text-sm text-gray-900
+                      placeholder:text-gray-500
+                      focus:outline-none
+                      focus:ring-2 focus:ring-emerald-500/40
+                    "
+                  />
+                
+                  {/* Botón ojo */}
+                  <button
+                    type="button" // IMPORTANTE: evita que el form se envíe
+                    onClick={() => setShowPassword((prev) => !prev)}
+                    className="
+                      absolute right-3 top-1/2 -translate-y-1/2
+                      text-gray-500 hover:text-gray-700
+                      transition-colors
+                    "
+                    aria-label={showPassword ? "Ocultar contraseña" : "Mostrar contraseña"}
+                  >
+                    {/* Cambia el icono según el estado */}
+                    {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                  </button>
+                </div>
 
                 <button
                   type="submit"

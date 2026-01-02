@@ -7,7 +7,13 @@
 // ✅ FIX UI: no mostrar "Crear candidato" si ya hay candidato seleccionado/creado
 // ✅ FIX race: invalida búsquedas en vuelo al seleccionar/crear
 
-import React, { useState, useEffect, useCallback, useRef, useMemo } from "react";
+import React, {
+  useState,
+  useEffect,
+  useCallback,
+  useRef,
+  useMemo,
+} from "react";
 import {
   User,
   Clock,
@@ -27,7 +33,11 @@ import {
 } from "lucide-react";
 import { InterviewData } from "../types";
 import { schools as mockSchools } from "../data/schools";
-import { approvedExample, mediumExample, rejectedExample } from "../data/exampleData";
+import {
+  approvedExample,
+  mediumExample,
+  rejectedExample,
+} from "../data/exampleData";
 
 import {
   createTeacherCandidate,
@@ -80,8 +90,8 @@ const initialFormData: InterviewData = {
 // UI
 // ---------------------------------------------------------------------
 
-const SectionHeader: React.FC<{ title: string; icon: React.ReactNode }> = React.memo(
-  ({ title, icon }) => (
+const SectionHeader: React.FC<{ title: string; icon: React.ReactNode }> =
+  React.memo(({ title, icon }) => (
     <div className="flex items-center gap-4 mb-8">
       <div className="relative group">
         <div className="absolute inset-0 bg-emerald-500 blur-lg opacity-10 group-hover:opacity-18 transition-opacity duration-500" />
@@ -95,8 +105,7 @@ const SectionHeader: React.FC<{ title: string; icon: React.ReactNode }> = React.
         <div className="h-0.5 w-12 bg-gradient-to-r from-emerald-500/50 to-transparent mt-2 rounded-full" />
       </div>
     </div>
-  )
-);
+  ));
 
 const FormSection: React.FC<{
   title: string;
@@ -140,7 +149,16 @@ const TextInput: React.FC<{
   required?: boolean;
   inputMode?: React.HTMLAttributes<HTMLInputElement>["inputMode"];
   pattern?: string;
-}> = ({ name, value, onChange, type = "text", placeholder, required = true, inputMode, pattern }) => (
+}> = ({
+  name,
+  value,
+  onChange,
+  type = "text",
+  placeholder,
+  required = true,
+  inputMode,
+  pattern,
+}) => (
   <input
     type={type}
     id={name}
@@ -253,7 +271,9 @@ const InterviewForm: React.FC<InterviewFormProps> = ({ onSubmit }) => {
     (user as any)?.profile?.role ??
     (user as any)?.payload?.role ??
     "";
-  const role = String(roleRaw ?? "").trim().toUpperCase();
+  const role = String(roleRaw ?? "")
+    .trim()
+    .toUpperCase();
 
   const leaderSchoolIdRaw =
     (user as any)?.schoolId ??
@@ -291,7 +311,9 @@ const InterviewForm: React.FC<InterviewFormProps> = ({ onSubmit }) => {
       name: s.name,
       programs: Array.isArray(s.programs)
         ? s.programs.map((p: any) =>
-            typeof p === "string" ? { id: undefined, name: p } : { id: p?.id, name: p?.name }
+            typeof p === "string"
+              ? { id: undefined, name: p }
+              : { id: p?.id, name: p?.name }
           )
         : [],
     }));
@@ -304,7 +326,9 @@ const InterviewForm: React.FC<InterviewFormProps> = ({ onSubmit }) => {
 
   const selectedProgramObj = useMemo(() => {
     if (!selectedSchool || !formData.program) return null;
-    return selectedSchool.programs.find((p) => p.name === formData.program) ?? null;
+    return (
+      selectedSchool.programs.find((p) => p.name === formData.program) ?? null
+    );
   }, [selectedSchool, formData.program]);
 
   // IDs usados para crear candidato
@@ -318,13 +342,43 @@ const InterviewForm: React.FC<InterviewFormProps> = ({ onSubmit }) => {
   }, [selectedProgramObj?.id]);
 
   // Candidate lookup
-  const [candidateMatches, setCandidateMatches] = useState<TeacherCandidateSearchItemDto[]>([]);
+  const [candidateMatches, setCandidateMatches] = useState<
+    TeacherCandidateSearchItemDto[]
+  >([]);
   const [isSearching, setIsSearching] = useState(false);
   const [lookupError, setLookupError] = useState<string | null>(null);
-  const [selectedCandidateId, setSelectedCandidateId] = useState<string | null>(null);
+  const [selectedCandidateId, setSelectedCandidateId] = useState<string | null>(
+    null
+  );
   const [isCreatingCandidate, setIsCreatingCandidate] = useState(false);
 
   const searchSeq = useRef(0);
+
+  // =============================
+  // ✅ Reglas de validación Cédula
+  // =============================
+
+  // Longitud típica en Colombia (ajústalo si tu negocio pide EXACTO)
+  const MIN_CC_LENGTH = 6;
+  const MAX_CC_LENGTH = 10;
+
+  // ✅ Valida cédula: obligatoria, rango de longitud y solo números
+  const isCedulaValid = useMemo(() => {
+    // formData.documentNumber debe existir en tu estado del formulario
+    // Si tu campo se llama distinto, cámbialo aquí y en el input
+    const cc = (formData.documentNumber ?? "").trim();
+
+    // Reglas:
+    // 1) no vacío
+    // 2) longitud entre min y max
+    // 3) solo dígitos
+    if (!cc) return false;
+    if (cc.length < MIN_CC_LENGTH) return false;
+    if (cc.length > MAX_CC_LENGTH) return false;
+    if (!/^\d+$/.test(cc)) return false;
+
+    return true;
+  }, [formData.documentNumber]);
 
   // cargar escuelas + programas
   useEffect(() => {
@@ -380,7 +434,9 @@ const InterviewForm: React.FC<InterviewFormProps> = ({ onSubmit }) => {
     if (!isLeader || !leaderSchoolId) return;
     if (schoolsLoading) return;
 
-    const s = normalizedSchools.find((x) => String(x.id ?? "") === leaderSchoolId);
+    const s = normalizedSchools.find(
+      (x) => String(x.id ?? "") === leaderSchoolId
+    );
     if (!s) return;
 
     setFormData((prev) => {
@@ -426,7 +482,11 @@ const InterviewForm: React.FC<InterviewFormProps> = ({ onSubmit }) => {
 
     const t = window.setTimeout(async () => {
       try {
-        const rows = await searchTeacherCandidates({ orgId: ORG_ID, q: cc, limit: 8 });
+        const rows = await searchTeacherCandidates({
+          orgId: ORG_ID,
+          q: cc,
+          limit: 8,
+        });
         if (mySeq !== searchSeq.current) return;
         setCandidateMatches(rows ?? []);
       } catch (e: any) {
@@ -458,7 +518,9 @@ const InterviewForm: React.FC<InterviewFormProps> = ({ onSubmit }) => {
 
       // ✅ si cambia escuela, resetea programa
       if (name === "school") {
-        setFormData((prev) => ({ ...prev, school: value, program: "" } as InterviewData));
+        setFormData(
+          (prev) => ({ ...prev, school: value, program: "" } as InterviewData)
+        );
         return;
       }
 
@@ -467,27 +529,32 @@ const InterviewForm: React.FC<InterviewFormProps> = ({ onSubmit }) => {
     []
   );
 
-const handlePickCandidate = useCallback((c: TeacherCandidateSearchItemDto) => {
-  searchSeq.current += 1;
-  setIsSearching(false);
+  const handlePickCandidate = useCallback(
+    (c: TeacherCandidateSearchItemDto) => {
+      searchSeq.current += 1;
+      setIsSearching(false);
 
-  setSelectedCandidateId(c.id);
+      setSelectedCandidateId(c.id);
 
-  setFormData((prev) => ({
-    ...prev,
-    documentNumber: String(c.documentNumber ?? prev.documentNumber ?? ""),
-    candidateName: c.fullName ?? prev.candidateName,
-    age: typeof c.age === "number" && !Number.isNaN(c.age) ? String(c.age) : prev.age,
+      setFormData((prev) => ({
+        ...prev,
+        documentNumber: String(c.documentNumber ?? prev.documentNumber ?? ""),
+        candidateName: c.fullName ?? prev.candidateName,
+        age:
+          typeof c.age === "number" && !Number.isNaN(c.age)
+            ? String(c.age)
+            : prev.age,
 
-    // ✅ si quieres autocompletar al seleccionar:
-    ...(c.schoolName ? { school: c.schoolName } : {}),
-    ...(c.programName ? { program: c.programName } : {}),
-  }));
+        // ✅ si quieres autocompletar al seleccionar:
+        ...(c.schoolName ? { school: c.schoolName } : {}),
+        ...(c.programName ? { program: c.programName } : {}),
+      }));
 
-  setCandidateMatches([]);
-  setLookupError(null);
-}, []);
-
+      setCandidateMatches([]);
+      setLookupError(null);
+    },
+    []
+  );
 
   // ✅ crear candidato solo si:
   // - no hay candidato seleccionado
@@ -516,7 +583,9 @@ const handlePickCandidate = useCallback((c: TeacherCandidateSearchItemDto) => {
     }
 
     if (!resolvedSchoolId || !resolvedProgramId) {
-      setLookupError("Selecciona escuela y programa antes de crear el candidato.");
+      setLookupError(
+        "Selecciona escuela y programa antes de crear el candidato."
+      );
       return;
     }
 
@@ -532,8 +601,8 @@ const handlePickCandidate = useCallback((c: TeacherCandidateSearchItemDto) => {
         documentNumber,
         fullName,
         age,
-        schoolId: resolvedSchoolId,     // ✅ NEW
-        programId: resolvedProgramId,   // ✅ NEW
+        schoolId: resolvedSchoolId, // ✅ NEW
+        programId: resolvedProgramId, // ✅ NEW
       });
 
       searchSeq.current += 1;
@@ -556,6 +625,11 @@ const handlePickCandidate = useCallback((c: TeacherCandidateSearchItemDto) => {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    
+    // ✅ Blindaje: si la cédula no es válida, no deja enviar
+    if (!isCedulaValid) return;
+    
+    // ✅ sigue el flujo normal
     onSubmit({ ...(formData as any), candidateId: selectedCandidateId } as any);
   };
 
@@ -571,7 +645,9 @@ const handlePickCandidate = useCallback((c: TeacherCandidateSearchItemDto) => {
     setFormData((prev) => {
       const next = { ...example };
       if (isLeader && leaderSchoolId) {
-        const s = normalizedSchools.find((x) => String(x.id ?? "") === leaderSchoolId);
+        const s = normalizedSchools.find(
+          (x) => String(x.id ?? "") === leaderSchoolId
+        );
         if (s) next.school = s.name;
       }
       return next;
@@ -591,7 +667,9 @@ const handlePickCandidate = useCallback((c: TeacherCandidateSearchItemDto) => {
     setFormData((prev) => {
       const next = { ...initialFormData };
       if (isLeader && leaderSchoolId) {
-        const s = normalizedSchools.find((x) => String(x.id ?? "") === leaderSchoolId);
+        const s = normalizedSchools.find(
+          (x) => String(x.id ?? "") === leaderSchoolId
+        );
         if (s) next.school = s.name;
       }
       return next;
@@ -625,8 +703,8 @@ const handlePickCandidate = useCallback((c: TeacherCandidateSearchItemDto) => {
               </span>
             </h2>
             <p className="text-base md:text-lg text-gray-400 font-light leading-relaxed">
-              Utiliza nuestra IA para analizar la coherencia pedagógica, ética y técnica de los
-              candidatos en tiempo real.
+              Utiliza nuestra IA para analizar la coherencia pedagógica, ética y
+              técnica de los candidatos en tiempo real.
             </p>
           </div>
         </header>
@@ -663,20 +741,33 @@ const handlePickCandidate = useCallback((c: TeacherCandidateSearchItemDto) => {
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-10">
-          <FormSection title="Identidad y Trayectoria" icon={<User className="w-6 h-6" />}>
+          <FormSection
+            title="Identidad y Trayectoria"
+            icon={<User className="w-6 h-6" />}
+          >
             {/* CC + Nombre + Edad */}
             <div className="grid grid-cols-1 md:grid-cols-6 gap-8">
               <div className="md:col-span-2">
                 <FormField label="Cédula (CC)" name="documentNumber">
                   <div className="relative">
-                    <TextInput
-                      name="documentNumber"
+                    <input
+                      // ✅ el valor correcto
                       value={formData.documentNumber}
+                      // ✅ usa tu handleChange porque ya limpia a solo dígitos
                       onChange={handleChange}
+                      name="documentNumber"
                       placeholder="Ej. 1030123456"
-                      inputMode="numeric"
-                      pattern="[0-9]+"
+                      className="w-full rounded-xl bg-[#070707] border border-white/[0.06] text-gray-200 text-sm px-4 py-3 outline-none
+                      focus:border-emerald-500/25 focus:ring-1 focus:ring-emerald-500/20"
                     />
+
+                    {/* ✅ Mensaje si está mal */}
+                    {formData.documentNumber?.trim() && !isCedulaValid && (
+                      <p className="mt-1 text-xs text-red-400">
+                        La cédula debe tener entre {MIN_CC_LENGTH} y{" "}
+                        {MAX_CC_LENGTH} números.
+                      </p>
+                    )}
 
                     <div className="absolute inset-y-0 right-0 flex items-center pr-4 text-white/35">
                       {isSearching ? (
@@ -716,7 +807,9 @@ const handlePickCandidate = useCallback((c: TeacherCandidateSearchItemDto) => {
                                   </div>
                                   <div className="text-[11px] text-white/45 font-mono">
                                     CC: {c.documentNumber ?? "—"}
-                                    {typeof c.age === "number" ? ` · ${c.age} años` : ""}
+                                    {typeof c.age === "number"
+                                      ? ` · ${c.age} años`
+                                      : ""}
                                   </div>
                                 </div>
 
@@ -770,8 +863,15 @@ const handlePickCandidate = useCallback((c: TeacherCandidateSearchItemDto) => {
                   name="school"
                   value={formData.school}
                   onChange={handleChange}
-                  options={normalizedSchools.map((s) => ({ value: s.name, label: s.name }))}
-                  placeholder={schoolsLoading ? "Cargando escuelas..." : "Seleccione una opción..."}
+                  options={normalizedSchools.map((s) => ({
+                    value: s.name,
+                    label: s.name,
+                  }))}
+                  placeholder={
+                    schoolsLoading
+                      ? "Cargando escuelas..."
+                      : "Seleccione una opción..."
+                  }
                   disabled={schoolsLoading || (isLeader && !!leaderSchoolId)} // ✅ líder no cambia
                 />
               </FormField>
@@ -781,7 +881,10 @@ const handlePickCandidate = useCallback((c: TeacherCandidateSearchItemDto) => {
                   name="program"
                   value={formData.program}
                   onChange={handleChange}
-                  options={availablePrograms.map((p) => ({ value: p, label: p }))}
+                  options={availablePrograms.map((p) => ({
+                    value: p,
+                    label: p,
+                  }))}
                   disabled={!formData.school || availablePrograms.length === 0}
                   placeholder={
                     !formData.school
@@ -797,18 +900,24 @@ const handlePickCandidate = useCallback((c: TeacherCandidateSearchItemDto) => {
             {/* ✅ CREAR CANDIDATO (MOVIDO ABAJO DE ESCUELA/PROGRAMA) */}
             {!selectedCandidateId && (
               <div className="space-y-2">
-                {missingScopeForCreate && (formData.documentNumber?.trim()?.length ?? 0) >= 3 && (
-                  <div className="rounded-2xl border border-white/10 bg-white/[0.03] px-4 py-3 flex items-center gap-2 text-xs text-white/60">
-                    <Info className="w-4 h-4 text-white/40" />
-                    <span>Selecciona escuela y programa para poder crear el candidato con IDs.</span>
-                  </div>
-                )}
+                {missingScopeForCreate &&
+                  (formData.documentNumber?.trim()?.length ?? 0) >= 3 && (
+                    <div className="rounded-2xl border border-white/10 bg-white/[0.03] px-4 py-3 flex items-center gap-2 text-xs text-white/60">
+                      <Info className="w-4 h-4 text-white/40" />
+                      <span>
+                        Selecciona escuela y programa para poder crear el
+                        candidato con IDs.
+                      </span>
+                    </div>
+                  )}
 
                 {canCreateCandidate && (
                   <div className="rounded-2xl border border-sky-500/35 bg-sky-950/15 px-4 py-3 flex items-center justify-between gap-3">
                     <div>
                       <div className="text-sky-200/90 font-semibold">
-                        {(formData.candidateName || "Nuevo candidato").toUpperCase()}
+                        {(
+                          formData.candidateName || "Nuevo candidato"
+                        ).toUpperCase()}
                       </div>
                       <div className="text-[11px] text-white/45 font-mono">
                         CC: {formData.documentNumber}
@@ -855,10 +964,16 @@ const handlePickCandidate = useCallback((c: TeacherCandidateSearchItemDto) => {
           </FormSection>
 
           {/* Resto igual */}
-          <FormSection title="Disponibilidad y Compromiso" icon={<Clock className="w-6 h-6" />}>
+          <FormSection
+            title="Disponibilidad y Compromiso"
+            icon={<Clock className="w-6 h-6" />}
+          >
             <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
               <div className="md:col-span-2">
-                <FormField label="Horario Disponible" name="availabilityDetails">
+                <FormField
+                  label="Horario Disponible"
+                  name="availabilityDetails"
+                >
                   <TextInput
                     name="availabilityDetails"
                     value={formData.availabilityDetails}
@@ -869,7 +984,10 @@ const handlePickCandidate = useCallback((c: TeacherCandidateSearchItemDto) => {
               </div>
 
               <div className="md:col-span-1">
-                <FormField label="Disposición a Comités" name="acceptsCommittees">
+                <FormField
+                  label="Disposición a Comités"
+                  name="acceptsCommittees"
+                >
                   <SelectInput
                     name="acceptsCommittees"
                     value={formData.acceptsCommittees}
@@ -884,7 +1002,10 @@ const handlePickCandidate = useCallback((c: TeacherCandidateSearchItemDto) => {
               </div>
             </div>
 
-            <FormField label="Conflictos de Interés / Otros Empleos" name="otherJobs">
+            <FormField
+              label="Conflictos de Interés / Otros Empleos"
+              name="otherJobs"
+            >
               <TextArea
                 name="otherJobs"
                 value={formData.otherJobs}
@@ -895,8 +1016,14 @@ const handlePickCandidate = useCallback((c: TeacherCandidateSearchItemDto) => {
             </FormField>
           </FormSection>
 
-          <FormSection title="Estrategia Pedagógica" icon={<Users className="w-6 h-6" />}>
-            <FormField label="Metodología de Evaluación" name="evaluationMethodology">
+          <FormSection
+            title="Estrategia Pedagógica"
+            icon={<Users className="w-6 h-6" />}
+          >
+            <FormField
+              label="Metodología de Evaluación"
+              name="evaluationMethodology"
+            >
               <TextArea
                 name="evaluationMethodology"
                 value={formData.evaluationMethodology}
@@ -906,7 +1033,10 @@ const handlePickCandidate = useCallback((c: TeacherCandidateSearchItemDto) => {
             </FormField>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-              <FormField label="Plan de Retención (Alto Fracaso)" name="failureRatePlan">
+              <FormField
+                label="Plan de Retención (Alto Fracaso)"
+                name="failureRatePlan"
+              >
                 <TextArea
                   name="failureRatePlan"
                   value={formData.failureRatePlan}
@@ -914,7 +1044,10 @@ const handlePickCandidate = useCallback((c: TeacherCandidateSearchItemDto) => {
                   placeholder="Estrategia ante un 50% de reprobación..."
                 />
               </FormField>
-              <FormField label="Manejo de Estudiantes Difíciles" name="apatheticStudentPlan">
+              <FormField
+                label="Manejo de Estudiantes Difíciles"
+                name="apatheticStudentPlan"
+              >
                 <TextArea
                   name="apatheticStudentPlan"
                   value={formData.apatheticStudentPlan}
@@ -925,8 +1058,14 @@ const handlePickCandidate = useCallback((c: TeacherCandidateSearchItemDto) => {
             </div>
           </FormSection>
 
-          <FormSection title="Integración de Inteligencia Artificial" icon={<Bot className="w-6 h-6" />}>
-            <FormField label="Uso Actual de Herramientas IA" name="aiToolsUsage">
+          <FormSection
+            title="Integración de Inteligencia Artificial"
+            icon={<Bot className="w-6 h-6" />}
+          >
+            <FormField
+              label="Uso Actual de Herramientas IA"
+              name="aiToolsUsage"
+            >
               <TextArea
                 name="aiToolsUsage"
                 value={formData.aiToolsUsage}
@@ -945,7 +1084,10 @@ const handlePickCandidate = useCallback((c: TeacherCandidateSearchItemDto) => {
                   placeholder="¿Cómo fomenta el uso responsable?"
                 />
               </FormField>
-              <FormField label="Detección y Manejo de Plagio IA" name="aiPlagiarismPrevention">
+              <FormField
+                label="Detección y Manejo de Plagio IA"
+                name="aiPlagiarismPrevention"
+              >
                 <TextArea
                   name="aiPlagiarismPrevention"
                   value={formData.aiPlagiarismPrevention}
@@ -956,7 +1098,10 @@ const handlePickCandidate = useCallback((c: TeacherCandidateSearchItemDto) => {
             </div>
           </FormSection>
 
-          <FormSection title="Casos Éticos y Resolución de Conflictos" icon={<ShieldCheck className="w-6 h-6" />}>
+          <FormSection
+            title="Casos Éticos y Resolución de Conflictos"
+            icon={<ShieldCheck className="w-6 h-6" />}
+          >
             <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
               <FormField label="Caso: Nota Límite (2.9)" name="scenario29">
                 <TextArea
@@ -968,7 +1113,10 @@ const handlePickCandidate = useCallback((c: TeacherCandidateSearchItemDto) => {
                 />
               </FormField>
 
-              <FormField label="Caso: Ausencia Inesperada" name="scenarioCoverage">
+              <FormField
+                label="Caso: Ausencia Inesperada"
+                name="scenarioCoverage"
+              >
                 <TextArea
                   name="scenarioCoverage"
                   value={formData.scenarioCoverage}
@@ -978,7 +1126,10 @@ const handlePickCandidate = useCallback((c: TeacherCandidateSearchItemDto) => {
                 />
               </FormField>
 
-              <FormField label="Caso: Feedback Negativo" name="scenarioFeedback">
+              <FormField
+                label="Caso: Feedback Negativo"
+                name="scenarioFeedback"
+              >
                 <TextArea
                   name="scenarioFeedback"
                   value={formData.scenarioFeedback}
@@ -1001,13 +1152,15 @@ const handlePickCandidate = useCallback((c: TeacherCandidateSearchItemDto) => {
 
             <button
               type="submit"
-              className="relative group px-12 py-5 bg-emerald-600 rounded-2xl overflow-hidden shadow-[0_0_36px_-12px_rgba(16,185,129,0.45)] transition-transform hover:scale-[1.02] hover:shadow-[0_0_52px_-14px_rgba(16,185,129,0.55)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/30"
+              disabled={!isCedulaValid} // ✅ bloquea si cédula inválida
+              className={`w-full rounded-2xl py-3 text-sm font-bold uppercase tracking-widest transition
+                ${
+                  !isCedulaValid
+                    ? "bg-white/10 text-white/30 cursor-not-allowed"
+                    : "bg-gradient-to-r from-emerald-500 to-emerald-400 text-black hover:brightness-110"
+                }`}
             >
-              <div className="absolute inset-0 bg-gradient-to-r from-emerald-500 via-teal-400 to-emerald-600 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
-              <div className="relative flex items-center gap-3 text-white font-black text-sm uppercase tracking-widest">
-                <Sparkles className="w-5 h-5 group-hover:animate-pulse" />
-                <span>Ejecutar Análisis IA</span>
-              </div>
+              Ejecutar Análisis IA
             </button>
           </div>
         </form>
