@@ -32,7 +32,7 @@ type MockDb = {
 };
 
 const nowIso = () => new Date().toISOString();
-
+const MAX_AUDIT_EVENTS = 200;
 const uid = () =>
   Math.random().toString(16).slice(2) + "-" + Date.now().toString(16);
 
@@ -107,7 +107,13 @@ const save = (db: MockDb) => {
 
 const addAudit = (db: MockDb, ev: Omit<AdminAuditEvent, "id">) => {
   db.audit.unshift({ id: uid(), ...ev });
+
+  // ✅ Capar tamaño (evita lista infinita)
+  if (db.audit.length > MAX_AUDIT_EVENTS) {
+    db.audit = db.audit.slice(0, MAX_AUDIT_EVENTS);
+  }
 };
+
 
 function genTempPassword() {
   const chars =
@@ -137,35 +143,44 @@ export const adminMockDb = {
   },
 
   setAdminScope(next: Partial<AdminScope>, actorUserId = "u-admin-1"): AdminScope {
-    const cur = this.getAdminScope();
+  const cur = this.getAdminScope();
 
-    const safe: AdminScope = {
-      selectedSchool: next.selectedSchool ?? cur.selectedSchool ?? null,
-      selectedProgram: next.selectedProgram ?? cur.selectedProgram ?? null,
-      search: next.search ?? cur.search ?? "",
-    };
+  const safe: AdminScope = {
+    selectedSchool: next.selectedSchool ?? cur.selectedSchool ?? null,
+    selectedProgram: next.selectedProgram ?? cur.selectedProgram ?? null,
+    search: next.search ?? cur.search ?? "",
+  };
 
-    // ✅ 1) Persistimos scope “rápido” (solo UI)
-    localStorage.setItem(SCOPE_KEY, JSON.stringify(safe));
+  // ✅ 0) Si no cambió, no guardes ni audites (evita spam infinito)
+  const same =
+    safe.selectedSchool === cur.selectedSchool &&
+    safe.selectedProgram === cur.selectedProgram &&
+    safe.search === cur.search;
 
-    // ✅ 2) También lo guardamos en la DB mock
-    const db = load();
-    db.ui.adminScope = safe;
+  if (same) return cur;
 
-    // ✅ 3) Audit opcional de settings
-    addAudit(db, {
-      entityType: "SYSTEM",
-      entityId: "SYSTEM",
-      action: "SETTINGS_UPDATED" as AdminAuditAction,
-      actorUserId,
-      actorRole: "ADMIN",
-      at: nowIso(),
-      meta: { adminScope: safe },
-    });
+  // ✅ 1) Persistimos scope “rápido” (solo UI)
+  localStorage.setItem(SCOPE_KEY, JSON.stringify(safe));
 
-    save(db);
-    return safe;
-  },
+  // ✅ 2) También lo guardamos en la DB mock
+  const db = load();
+  db.ui.adminScope = safe;
+
+  // ✅ 3) Audit (solo si hubo cambio REAL)
+  addAudit(db, {
+    entityType: "SYSTEM",
+    entityId: "SYSTEM",
+    action: "SETTINGS_UPDATED" as AdminAuditAction,
+    actorUserId,
+    actorRole: "ADMIN",
+    at: nowIso(),
+    meta: { adminScope: safe },
+  });
+
+  save(db);
+  return safe;
+},
+
 
   clearAdminScope(actorUserId = "u-admin-1"): void {
     localStorage.removeItem(SCOPE_KEY);
