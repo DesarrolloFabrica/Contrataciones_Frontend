@@ -72,7 +72,9 @@ api.interceptors.response.use(
 
     console.error("[apiClient] ERROR", status, url, data ?? error.message);
 
-    if (status === 401) localStorage.removeItem(AUTH_STORAGE_KEY);
+    if (status === 401) {
+  console.warn("[apiClient] 401 detectado. No borro cun-auth automáticamente.");
+}
     return Promise.reject(error);
   }
 );

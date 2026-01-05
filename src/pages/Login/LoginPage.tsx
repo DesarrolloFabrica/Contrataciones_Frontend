@@ -1,6 +1,7 @@
 // src/pages/Login/LoginPage.tsx
 import React, { useMemo, useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
+
 import { useAuth } from "../../context/AuthContext";
 
 import { Eye, EyeOff, AlertCircle, Loader2 } from "lucide-react";
@@ -29,6 +30,7 @@ const LoginPage: React.FC = () => {
   const [loading, setLoading] = useState(false);
 
   const [error, setError] = useState<string | null>(null);
+  const [showPassword, setShowPassword] = useState(false); //visualizar clave
 
   // ✅ Guardamos el objeto completo (pathname, state, etc.)
   const from = location.state?.from;
@@ -144,7 +146,9 @@ const LoginPage: React.FC = () => {
                     type="button"
                     onClick={() => setShowPass((v) => !v)}
                     className="absolute right-3 top-1/2 -translate-y-1/2 rounded-lg p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 transition"
-                    aria-label={showPass ? "Ocultar contraseña" : "Mostrar contraseña"}
+                    aria-label={
+                      showPass ? "Ocultar contraseña" : "Mostrar contraseña"
+                    }
                     tabIndex={-1}
                   >
                     {showPass ? (
@@ -162,7 +166,9 @@ const LoginPage: React.FC = () => {
                     "w-full rounded-2xl py-3 text-sm font-bold uppercase tracking-widest text-white",
                     "bg-gradient-to-r from-[#91DC00] to-[#31AB2E]",
                     "transition active:scale-[0.99]",
-                    canSubmit ? "hover:brightness-105" : "opacity-70 cursor-not-allowed",
+                    canSubmit
+                      ? "hover:brightness-105"
+                      : "opacity-70 cursor-not-allowed",
                   ].join(" ")}
                 >
                   {loading ? (
@@ -187,28 +193,28 @@ const LoginPage: React.FC = () => {
         </div>
 
         {/* Panel derecho */}
-<div className="relative hidden lg:block">
-  {/* Video */}
-  <video
-    src={BGVideo}
-    autoPlay
-    loop
-    muted
-    playsInline
-    className="absolute inset-0 h-full w-full object-cover"
-  />
+        <div className="relative hidden lg:block">
+          {/* Video */}
+          <video
+            src={BGVideo}
+            autoPlay
+            loop
+            muted
+            playsInline
+            className="absolute inset-0 h-full w-full object-cover"
+          />
 
-  {/* Difuminado lateral hacia el panel blanco */}
-  <div
-    className="absolute inset-y-0 left-0 w-16 pointer-events-none
+          {/* Difuminado lateral hacia el panel blanco */}
+          <div
+            className="absolute inset-y-0 left-0 w-16 pointer-events-none
       bg-gradient-to-r from-white/80 via-white/25 to-transparent"
-  />
+          />
 
-  {/* Overlay radial oscuro */}
-  <div
-    className="absolute inset-0 pointer-events-none"
-    style={{
-      background: `
+          {/* Overlay radial oscuro */}
+          <div
+            className="absolute inset-0 pointer-events-none"
+            style={{
+              background: `
         radial-gradient(
           ellipse at center,
           rgba(0,0,0,0.10) 0%,
@@ -216,27 +222,26 @@ const LoginPage: React.FC = () => {
           rgba(0,0,0,0.75) 100%
         )
       `,
-    }}
-  />
+            }}
+          />
 
-  {/* Logos inferiores */}
-  <div className="absolute bottom-6 left-0 right-0 z-10 flex justify-center gap-6 px-6">
-    <img
-      src={Enciendete}
-      alt="Enciéndete"
-      className="h-[140px] object-contain select-none"
-      draggable={false}
-    />
+          {/* Logos inferiores */}
+          <div className="absolute bottom-6 left-0 right-0 z-10 flex justify-center gap-6 px-6">
+            <img
+              src={Enciendete}
+              alt="Enciéndete"
+              className="h-[140px] object-contain select-none"
+              draggable={false}
+            />
 
-    <img
-      src={LogoCun2}
-      alt="CUN"
-      className="ml-auto mt-10 h-[70px] object-contain opacity-90 select-none"
-      draggable={false}
-    />
-  </div>
-</div>
-
+            <img
+              src={LogoCun2}
+              alt="CUN"
+              className="ml-auto mt-10 h-[70px] object-contain opacity-90 select-none"
+              draggable={false}
+            />
+          </div>
+        </div>
       </div>
     </div>
   );

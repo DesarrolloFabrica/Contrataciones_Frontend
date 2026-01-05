@@ -6,10 +6,11 @@ import type {
   AdminUserStatus,
   CreateAdminUserDto,
   UpdateAdminUserDto,
+  ResetPasswordResult, // ✅ IMPORTANTE
 } from "../adminTypes";
 
 import {
-  usersService,
+  usersService, // ✅ named export (NO default)
   type BackendUser,
   type BackendRole,
 } from "../../../services/usersService";
@@ -313,8 +314,9 @@ export function useAdminUsers(scope: ScopeArgs) {
     [users, loadUsers]
   );
 
+  // ✅ AQUÍ ESTÁ EL FIX DEL TYPE: DEVUELVE { userId, temporaryPassword }
   const resetPassword = useCallback(
-    async (userId: string) => {
+    async (userId: string): Promise<ResetPasswordResult | null> => {
       clearCredentials();
 
       const res = await usersService.resetPassword(userId);
@@ -331,7 +333,10 @@ export function useAdminUsers(scope: ScopeArgs) {
         setLastCreatedCredentials({ email: u.email, tempPassword: String(temp) });
       }
 
-      return res as any;
+      return {
+        userId,
+        temporaryPassword: temp ? String(temp) : "",
+      };
     },
     [clearCredentials, loadUsers, users]
   );
@@ -365,7 +370,6 @@ export function useAdminUsers(scope: ScopeArgs) {
     lastCreatedCredentials,
     clearCredentials,
 
-    // opcional por si quieres un botón "Refrescar"
     reload: loadUsers,
   };
 }

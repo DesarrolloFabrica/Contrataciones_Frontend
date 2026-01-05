@@ -60,6 +60,8 @@ export type AdminUserRole = "ADMIN" | "COORDINATOR" | "LEADER";
 
 export type AdminUserStatus = "ACTIVE" | "INACTIVE";
 
+
+
 export interface AdminUser {
   id: string;
   name: string;
@@ -88,6 +90,9 @@ export interface CreateAdminUserDto {
   // UX:
   generatePassword: boolean;
   password?: string; // si generatePassword=false, puede venir aquí
+
+  // ✅ NUEVO: permite que el coordinador cree líderes en SU escuela
+  schoolId?: string | null;
 }
 
 export interface UpdateAdminUserDto {

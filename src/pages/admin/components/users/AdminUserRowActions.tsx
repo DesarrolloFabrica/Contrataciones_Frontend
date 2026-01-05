@@ -10,17 +10,19 @@ import {
   AlertTriangle,
   X,
   CheckCircle2,
-  ShieldCheck, // ✅ NEW
+  ShieldCheck,
 } from "lucide-react";
 import type { AdminUser, ResetPasswordResult } from "../../adminTypes";
 
 type Props = {
   user: AdminUser;
   onEdit: () => void;
-  onToggleActive: () => void;
+
+  // ✅ ahora async (para poder await y manejar errores)
+  onToggleActive: () => Promise<{ ok: boolean }>;
+
   onResetPassword: () => Promise<ResetPasswordResult | null>;
 
-  // ✅ NEW: abrir panel de estado/seguridad
   onViewSecurity: (u: AdminUser) => void;
 };
 
@@ -44,7 +46,7 @@ const AdminUserRowActions: React.FC<Props> = ({
   onEdit,
   onToggleActive,
   onResetPassword,
-  onViewSecurity, // ✅ NEW
+  onViewSecurity,
 }) => {
   const btnRef = useRef<HTMLButtonElement | null>(null);
   const menuRef = useRef<HTMLDivElement | null>(null);
@@ -55,6 +57,8 @@ const AdminUserRowActions: React.FC<Props> = ({
   const [busy, setBusy] = useState<null | "reset" | "toggle">(null);
 
   const [confirmToggleOpen, setConfirmToggleOpen] = useState(false);
+  const [toggleError, setToggleError] = useState<string | null>(null);
+
   const [resetResult, setResetResult] = useState<ResetPasswordResult | null>(null);
   const [copied, setCopied] = useState(false);
 
@@ -67,6 +71,7 @@ const AdminUserRowActions: React.FC<Props> = ({
     setResetResult(null);
     setCopied(false);
     setBusy(null);
+    setToggleError(null);
   }, []);
 
   const handleEdit = useCallback(() => {
@@ -78,16 +83,29 @@ const AdminUserRowActions: React.FC<Props> = ({
   }, [onViewSecurity, user]);
 
   const handleToggleConfirm = useCallback(() => {
+    setToggleError(null);
     setConfirmToggleOpen(true);
   }, []);
 
   const runToggle = useCallback(async () => {
+    setBusy("toggle");
+    setToggleError(null);
+
     try {
-      setBusy("toggle");
-      onToggleActive();
+      const res = await onToggleActive();
+      if (!res?.ok) throw new Error("No se pudo actualizar el estado del usuario.");
+
+      setConfirmToggleOpen(false);
+    } catch (e: any) {
+      console.error(e);
+      setToggleError(
+        e?.response?.data?.message ??
+          e?.message ??
+          "No se pudo actualizar el estado del usuario."
+      );
+      // 👈 dejamos el modal abierto para que el admin vea el error
     } finally {
       setBusy(null);
-      setConfirmToggleOpen(false);
     }
   }, [onToggleActive]);
 
@@ -97,18 +115,16 @@ const AdminUserRowActions: React.FC<Props> = ({
       setCopied(false);
 
       const res = await onResetPassword();
-      if (!res) {
-        setResetResult({ userId: user.id, temporaryPassword: "" } as any);
-        return;
-      }
-      setResetResult(res);
+
+      // ✅ sin userId / sin any
+      setResetResult(res ?? ({ temporaryPassword: "" } as ResetPasswordResult));
     } catch (e) {
       console.error(e);
-      setResetResult({ userId: user.id, temporaryPassword: "" } as any);
+      setResetResult(({ temporaryPassword: "" } as ResetPasswordResult));
     } finally {
       setBusy(null);
     }
-  }, [onResetPassword, user.id]);
+  }, [onResetPassword]);
 
   const items = useMemo(
     () => [
@@ -304,13 +320,19 @@ const AdminUserRowActions: React.FC<Props> = ({
                   </button>
                 </div>
 
-                <div className="px-6 py-5">
+                <div className="px-6 py-5 space-y-3">
                   <div className="rounded-2xl border border-white/10 bg-black/30 p-4">
                     <p className="text-sm text-white font-semibold">
                       {user.name} {user.lastName}
                     </p>
                     <p className="text-xs text-neutral-500">{user.email}</p>
                   </div>
+
+                  {toggleError && (
+                    <div className="rounded-2xl border border-rose-500/20 bg-rose-500/10 p-3">
+                      <p className="text-xs text-rose-200">{toggleError}</p>
+                    </div>
+                  )}
                 </div>
 
                 <div className="px-6 py-5 border-t border-white/10 flex items-center justify-between">
@@ -348,7 +370,8 @@ const AdminUserRowActions: React.FC<Props> = ({
           document.body
         )}
 
-      {/* RESET RESULT */}
+      {/* RESET RESULT (tu bloque actual sirve tal cual, no lo toqué) */}
+      {/* ... deja el bloque como lo tienes ... */}
       {resetResult &&
         createPortal(
           <div className="fixed inset-0 z-[10000]">
@@ -408,7 +431,7 @@ const AdminUserRowActions: React.FC<Props> = ({
                         <button
                           type="button"
                           onClick={async () => {
-                            await copyText(resetResult.temporaryPassword);
+                            await copyText(resetResult.temporaryPassword!);
                             setCopied(true);
                             setTimeout(() => setCopied(false), 1200);
                           }}
