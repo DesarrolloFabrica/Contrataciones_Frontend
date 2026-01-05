@@ -11,13 +11,11 @@ const LINE_HEIGHT = 14;
 const BRAND_GREEN = { r: 0, g: 177, b: 113 }; // verde
 const BRAND_DARK = { r: 8, g: 32, b: 36 }; // fondo header
 
-// ✅ NUEVO: contexto opcional para completar ficha del candidato (Admin)
 export type PdfCandidateContext = {
   fullName?: string | null;
   programName?: string | null;
   schoolName?: string | null;
   age?: number | string | null;
-  // opcionales si luego quieres mostrarlos o usarlos
   evaluationId?: string | null;
 };
 
@@ -45,7 +43,6 @@ const safeAge = (v: any) => {
   if (v === null || v === undefined || v === "") return "N/D";
   const n = typeof v === "number" ? v : Number(v);
   if (Number.isFinite(n) && n > 0) return `${Math.round(n)} años`;
-  // si viene texto tipo "24"
   const t = String(v).trim();
   return t ? `${t} años` : "N/D";
 };
@@ -64,37 +61,49 @@ async function buildAnalysisPdfDoc(
   const pageHeight = doc.internal.pageSize.getHeight();
 
   // ---------------- HEADER CON BRANDING CUN ----------------
+  const drawSmallHeader = () => {
+    doc.setFillColor(BRAND_DARK.r, BRAND_DARK.g, BRAND_DARK.b);
+    doc.rect(0, 0, pageWidth, 40, "F");
+    doc.setTextColor(255, 255, 255);
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(11);
+    doc.text("Reporte de Evaluación de Candidato", MARGIN_X, 26);
+    doc.setTextColor(0, 0, 0);
+  };
+
   try {
     const img = await loadImage(logoCun);
 
-    // Cinta superior negra
     doc.setFillColor(BRAND_DARK.r, BRAND_DARK.g, BRAND_DARK.b);
     doc.rect(0, 0, pageWidth, 90, "F");
 
-    // Logo CUN
     const logoHeight = 50;
     const logoWidth = (img.width / img.height) * logoHeight;
     doc.addImage(img, "PNG", MARGIN_X, 20, logoWidth, logoHeight);
 
-    // Texto de encabezado
+    const headerX = MARGIN_X + logoWidth + 20;
+    const headerMaxW = pageWidth - headerX - MARGIN_X;
+
     doc.setTextColor(255, 255, 255);
+
+    const title1 = "Corporación Unificada Nacional de Educación Superior - CUN";
+    const title2 = "Reporte de Idoneidad y Evaluación de Candidato";
+
     doc.setFont("helvetica", "bold");
     doc.setFontSize(16);
-    doc.text(
-      "Corporación Unificada Nacional de Educación Superior - CUN",
-      MARGIN_X + logoWidth + 20,
-      35
-    );
+    const t1 = doc.splitTextToSize(title1, headerMaxW);
 
-    doc.setFontSize(13);
+    const baseY = 34;
+    const t1LineGap = 18;
+    doc.text(t1, headerX, baseY);
+
+    const afterT1Y = baseY + (t1.length - 1) * t1LineGap + 20;
+
     doc.setFont("helvetica", "normal");
-    doc.text(
-      "Reporte de Idoneidad y Evaluación de Candidato",
-      MARGIN_X + logoWidth + 20,
-      55
-    );
+    doc.setFontSize(13);
+    const t2 = doc.splitTextToSize(title2, headerMaxW);
+    doc.text(t2, headerX, afterT1Y);
   } catch {
-    // Si el logo falla, al menos dejamos la banda negra con título
     doc.setFillColor(BRAND_DARK.r, BRAND_DARK.g, BRAND_DARK.b);
     doc.rect(0, 0, pageWidth, 90, "F");
     doc.setTextColor(255, 255, 255);
@@ -103,12 +112,18 @@ async function buildAnalysisPdfDoc(
     doc.text("Reporte de Idoneidad y Evaluación de Candidato", MARGIN_X, 50);
   }
 
-  // A partir de aquí volvemos a texto negro
   doc.setTextColor(0, 0, 0);
-
-  let y = 110; // empezamos debajo del header
+  let y = 110;
 
   // ---------------- HELPERS DE MAQUETACIÓN ----------------
+  const ensureSpace = (extra = 0) => {
+    if (y > pageHeight - MARGIN_Y - extra) {
+      doc.addPage();
+      drawSmallHeader();
+      y = 60;
+    }
+  };
+
   const addTitle = (text: string) => {
     doc.setFont("helvetica", "bold");
     doc.setFontSize(14);
@@ -116,27 +131,28 @@ async function buildAnalysisPdfDoc(
     y += LINE_HEIGHT * 1.6;
   };
 
-  const addLabelValue = (label: string, value: string) => {
-    doc.setFontSize(11);
-    doc.setFont("helvetica", "bold");
-    doc.text(label + ":", MARGIN_X, y);
-    doc.setFont("helvetica", "normal");
-    doc.text(value, MARGIN_X + 95, y);
-    y += LINE_HEIGHT;
-  };
+  const addLabelValue = (label: string, value: string, maxWidth: number) => {
+    const labelX = MARGIN_X;
+    const labelColW = 150;
+    const valueX = MARGIN_X + labelColW;
 
-  const ensureSpace = (extra = 0) => {
-    if (y > pageHeight - MARGIN_Y - extra) {
-      doc.addPage();
-      // dibujar de nuevo cinta negra pequeña en páginas siguientes
-      doc.setFillColor(BRAND_DARK.r, BRAND_DARK.g, BRAND_DARK.b);
-      doc.rect(0, 0, pageWidth, 40, "F");
-      doc.setTextColor(255, 255, 255);
-      doc.setFont("helvetica", "bold");
-      doc.setFontSize(11);
-      doc.text("Reporte de Evaluación de Candidato", MARGIN_X, 26);
-      doc.setTextColor(0, 0, 0);
-      y = 60;
+    doc.setFontSize(11);
+
+    doc.setFont("helvetica", "bold");
+    doc.text(`${label}:`, labelX, y);
+
+    doc.setFont("helvetica", "normal");
+
+    const valueMaxW = Math.max(140, maxWidth - labelColW);
+    const lines = doc.splitTextToSize(value || "N/D", valueMaxW);
+
+    doc.text(lines[0] ?? "N/D", valueX, y);
+    y += LINE_HEIGHT;
+
+    for (let i = 1; i < lines.length; i++) {
+      ensureSpace();
+      doc.text(lines[i], valueX, y);
+      y += LINE_HEIGHT;
     }
   };
 
@@ -145,6 +161,7 @@ async function buildAnalysisPdfDoc(
     doc.setFontSize(11);
     const maxWidth = pageWidth - MARGIN_X * 2;
     const lines = doc.splitTextToSize(text ?? "", maxWidth);
+
     lines.forEach((line: string) => {
       ensureSpace();
       doc.text(line, MARGIN_X, y);
@@ -171,6 +188,38 @@ async function buildAnalysisPdfDoc(
     y += boxHeight + 10;
   };
 
+  const addInfoBox = (title: string, body: string) => {
+    ensureSpace(90);
+
+    const w = pageWidth - MARGIN_X * 2;
+
+    // título
+    doc.setDrawColor(BRAND_GREEN.r, BRAND_GREEN.g, BRAND_GREEN.b);
+    doc.setFillColor(232, 255, 244);
+    doc.roundedRect(MARGIN_X, y, w, 22, 4, 4, "FD");
+
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(11);
+    doc.setTextColor(BRAND_GREEN.r, BRAND_GREEN.g, BRAND_GREEN.b);
+    doc.text(title.toUpperCase(), MARGIN_X + 10, y + 14);
+
+    y += 32;
+
+    // body (wrap normal)
+    doc.setTextColor(0, 0, 0);
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(11);
+
+    const lines = doc.splitTextToSize(body ?? "", w);
+    lines.forEach((ln: string) => {
+      ensureSpace();
+      doc.text(ln, MARGIN_X, y);
+      y += LINE_HEIGHT - 2;
+    });
+
+    y += 6;
+  };
+
   const addBulletTitle = (text: string) => {
     ensureSpace();
     doc.setFont("helvetica", "bold");
@@ -182,7 +231,6 @@ async function buildAnalysisPdfDoc(
   // ---------------- FICHA DEL CANDIDATO ----------------
   addTitle("Ficha del Candidato");
 
-  // ✅ NUEVO: valores con prioridad (candidateContext -> interview -> N/D)
   const cand = options?.candidate;
 
   const candidateName = safeText(
@@ -199,40 +247,47 @@ async function buildAnalysisPdfDoc(
   );
   const ageText = safeAge(cand?.age ?? (interview as any)?.age);
 
-  // columna izquierda (datos), derecha (score)
-  const startY = y;
-  addLabelValue("Nombre", candidateName);
-  addLabelValue("Programa", programName);
-  addLabelValue("Escuela", schoolName);
-  addLabelValue("Edad", ageText);
-  y += 4;
-  addLabelValue(
-    "Ventana de Retención",
-    safeText((result as any)?.resignationRiskWindow, "No estimada")
-  );
-
-  // bloque verde de score a la derecha
+  // box score (derecha)
   const boxWidthScore = 170;
   const boxHeightScore = 90;
+  const gapToBox = 18;
+
+  const startY = y;
   const boxX = pageWidth - MARGIN_X - boxWidthScore;
   const boxY = startY - 10;
 
+  const leftMaxWidth = boxX - (MARGIN_X + gapToBox);
+
+  addLabelValue("Nombre", candidateName, leftMaxWidth);
+  addLabelValue("Programa", programName, leftMaxWidth);
+  addLabelValue("Escuela", schoolName, leftMaxWidth);
+  addLabelValue("Edad", ageText, leftMaxWidth);
+  y += 4;
+  addLabelValue(
+    "Ventana de Retención",
+    safeText((result as any)?.resignationRiskWindow, "No estimada"),
+    leftMaxWidth
+  );
+
+  // draw score box (solo métricas)
   doc.setDrawColor(BRAND_GREEN.r, BRAND_GREEN.g, BRAND_GREEN.b);
   doc.setFillColor(232, 255, 244);
   doc.roundedRect(boxX, boxY, boxWidthScore, boxHeightScore, 6, 6, "FD");
-
-  doc.setFont("helvetica", "bold");
-  doc.setFontSize(26);
-  doc.setTextColor(BRAND_GREEN.r, BRAND_GREEN.g, BRAND_GREEN.b);
 
   const score =
     typeof (result as any)?.overallScore === "number"
       ? (result as any).overallScore
       : Number((result as any)?.overallScore ?? 0);
 
-  doc.text(`${Number.isFinite(score) ? score.toFixed(1) : "0.0"}`, boxX + boxWidthScore / 2, boxY + 32, {
-    align: "center",
-  });
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(26);
+  doc.setTextColor(BRAND_GREEN.r, BRAND_GREEN.g, BRAND_GREEN.b);
+  doc.text(
+    `${Number.isFinite(score) ? score.toFixed(1) : "0.0"}`,
+    boxX + boxWidthScore / 2,
+    boxY + 32,
+    { align: "center" }
+  );
 
   doc.setFontSize(10);
   doc.setTextColor(60, 60, 60);
@@ -249,14 +304,17 @@ async function buildAnalysisPdfDoc(
     { align: "center" }
   );
 
-  doc.setFont("helvetica", "normal");
-  doc.setTextColor(80, 80, 80);
-  doc.text(safeText((result as any)?.finalVerdict, ""), boxX + boxWidthScore / 2, boxY + 80, {
-    align: "center",
-  });
-
   doc.setTextColor(0, 0, 0);
-  y += 16;
+
+  // ✅ baja el cursor debajo del box
+  const bottomScore = boxY + boxHeightScore;
+  y = Math.max(y, bottomScore) + 18;
+
+  // ✅ NUEVO: Veredicto completo fuera del cuadro (no se corta)
+  const verdictRaw = safeText((result as any)?.finalVerdict, "");
+  if (verdictRaw) {
+    addInfoBox("Veredicto / Recomendación", verdictRaw);
+  }
 
   // ---------------- RESUMEN EJECUTIVO ----------------
   addSectionBox("Resumen Ejecutivo");
@@ -268,13 +326,15 @@ async function buildAnalysisPdfDoc(
   ((result as any)?.categoryAnalyses ?? []).forEach((ca: any) => {
     ensureSpace(60);
 
-    // título de la dimensión
     doc.setFont("helvetica", "bold");
     doc.setFontSize(11);
-    doc.text(`• ${safeText(ca?.category)} (${Math.round(Number(ca?.score ?? 0))}/100)`, MARGIN_X, y);
+    doc.text(
+      `• ${safeText(ca?.category)} (${Math.round(Number(ca?.score ?? 0))}/100)`,
+      MARGIN_X,
+      y
+    );
     y += LINE_HEIGHT;
 
-    // subsecciones
     doc.setFont("helvetica", "bold");
     doc.setFontSize(10);
     doc.text("Hallazgos clave:", MARGIN_X, y);
@@ -297,7 +357,9 @@ async function buildAnalysisPdfDoc(
     doc.setFontSize(10);
     doc.text("Observación IA:", MARGIN_X, y);
     y += LINE_HEIGHT - 4;
-    addParagraph(ca?.observacionesCorregidas || "Sin observación generada por IA.");
+    addParagraph(
+      ca?.observacionesCorregidas || "Sin observación generada por IA."
+    );
 
     y += 4;
   });
@@ -305,22 +367,31 @@ async function buildAnalysisPdfDoc(
   // ---------------- PLAN DE MITIGACIÓN ----------------
   addSectionBox("Plan de Mitigación de Riesgos");
   if ((result as any)?.mitigationRecommendations?.length) {
-    (result as any).mitigationRecommendations.forEach((rec: string, idx: number) => {
-      addBulletTitle(`${idx + 1}.`);
-      addParagraph(rec);
-    });
+    (result as any).mitigationRecommendations.forEach(
+      (rec: string, idx: number) => {
+        addBulletTitle(`${idx + 1}.`);
+        addParagraph(rec);
+      }
+    );
   } else {
-    addParagraph("No se identificaron riesgos que requieran mitigación específica.");
+    addParagraph(
+      "No se identificaron riesgos que requieran mitigación específica."
+    );
   }
 
   // ---------------- FACTORES TEMPORALES ----------------
   addSectionBox("Factores de Retención (Riesgo Temporal)");
   addParagraph(
-    `Ventana crítica estimada: ${safeText((result as any)?.resignationRiskWindow, "No estimada")}.`
+    `Ventana crítica estimada: ${safeText(
+      (result as any)?.resignationRiskWindow,
+      "No estimada"
+    )}.`
   );
 
   if ((result as any)?.temporalRiskFactors?.length) {
-    addParagraph(`Indicadores detectados: ${(result as any).temporalRiskFactors.join("; ")}.`);
+    addParagraph(
+      `Indicadores detectados: ${(result as any).temporalRiskFactors.join("; ")}.`
+    );
   } else {
     addParagraph("No se detectaron factores de riesgo temporal relevantes.");
   }
@@ -339,7 +410,6 @@ export async function generateAnalysisPdfFromData(
 ): Promise<Blob> {
   const doc = await buildAnalysisPdfDoc(result, interview, options);
 
-  // ✅ Nombre seguro para archivo (prioriza candidate fullName)
   const nameForFile = safeText(
     options?.candidate?.fullName ?? (interview as any)?.candidateName,
     "Candidato"
@@ -351,6 +421,5 @@ export async function generateAnalysisPdfFromData(
     doc.save(fileName);
   }
 
-  const blob = doc.output("blob") as Blob;
-  return blob;
+  return doc.output("blob") as Blob;
 }
