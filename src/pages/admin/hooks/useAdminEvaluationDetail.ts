@@ -26,10 +26,7 @@ export function useAdminEvaluationDetail(params: {
   const [loadingDetail, setLoadingDetail] = useState(false);
   const [selectedDetail, setSelectedDetail] = useState<DetailPayload | null>(null);
 
-  // ✅ error visible
   const [errorDetail, setErrorDetail] = useState<string | null>(null);
-
-  // ✅ Evita respuestas tardías cuando cambian rápido de evaluación
   const requestSeqRef = useRef(0);
 
   const selectedSummary = useMemo(() => {
@@ -49,12 +46,9 @@ export function useAdminEvaluationDetail(params: {
     setSelectedDetail(null);
     setErrorDetail(null);
 
-    // ✅ persistir selección
     try {
       localStorage.setItem(LS_SELECTED_EVAL_KEY, id);
-    } catch {
-      // ignore
-    }
+    } catch {}
 
     adminMockDb.logEvaluationEvent(id, "DETAIL_VIEWED", { source: "AdminConsole" });
 
@@ -62,7 +56,6 @@ export function useAdminEvaluationDetail(params: {
 
     try {
       const detail = await getTeacherEvaluationById(id);
-
       if (mySeq !== requestSeqRef.current) return;
 
       const analysis: AnalysisResult = detail.aiRawJson;
@@ -87,15 +80,11 @@ export function useAdminEvaluationDetail(params: {
     setSelectedId(null);
     resetDetailState();
 
-    // ✅ limpiar persistencia
     try {
       localStorage.removeItem(LS_SELECTED_EVAL_KEY);
-    } catch {
-      // ignore
-    }
+    } catch {}
   }, [resetDetailState]);
 
-  // ✅ Restaurar selección al cargar (cuando ya exista evaluations)
   useEffect(() => {
     if (selectedId) return;
     if (!evaluations || evaluations.length === 0) return;
@@ -116,25 +105,83 @@ export function useAdminEvaluationDetail(params: {
       return;
     }
 
-    // 🚀 auto-select
     handleSelectEvaluation(saved);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [evaluations.length, selectedId]);
+
+  // ✅ NUEVO: arma contexto candidato desde summary + raw
+  const candidateContext = useMemo(() => {
+    const sum: any = selectedSummary ?? {};
+    const raw: any = selectedDetail?.raw ?? {};
+
+    const cand =
+      sum?.candidate ??
+      raw?.candidate ??
+      raw?.teacher ??
+      raw?.person ??
+      raw?.profile ??
+      {};
+
+    return {
+      // lo más importante:
+      fullName:
+        cand?.fullName ??
+        cand?.name ??
+        sum?.candidate?.fullName ??
+        raw?.candidateFullName ??
+        raw?.fullName ??
+        "",
+
+      schoolName:
+        cand?.schoolNameSnapshot ??
+        cand?.schoolName ??
+        sum?.candidate?.schoolNameSnapshot ??
+        raw?.schoolNameSnapshot ??
+        raw?.schoolName ??
+        "",
+
+      programName:
+        cand?.programNameSnapshot ??
+        cand?.programName ??
+        sum?.candidate?.programNameSnapshot ??
+        raw?.programNameSnapshot ??
+        raw?.programName ??
+        "",
+
+      // opcional: edad/fecha nacimiento si existe
+      age:
+        cand?.age ??
+        raw?.age ??
+        "",
+
+      // útil para el PDF
+      evaluationId: selectedId ?? "",
+    };
+  }, [selectedSummary, selectedDetail?.raw, selectedId]);
 
   const exportPdf = useCallback(async () => {
     if (!selectedDetail || !selectedId) return;
 
     try {
-      await generateAnalysisPdfFromData(selectedDetail.analysis, selectedDetail.interview, {
-        download: true,
-      });
+      await generateAnalysisPdfFromData(
+        selectedDetail.analysis,
+        selectedDetail.interview,
+        {
+          download: true,
 
-      adminMockDb.logEvaluationEvent(selectedId, "PDF_EXPORTED", { via: "AdminDetailPanel" });
+          // ✅ CLAVE: pasar metadata de candidato al PDF
+          candidate: candidateContext,
+        }
+      );
+
+      adminMockDb.logEvaluationEvent(selectedId, "PDF_EXPORTED", {
+        via: "AdminDetailPanel",
+      });
     } catch (e) {
       console.error("Admin: error exportando PDF", e);
       alert("No se pudo generar el PDF.");
     }
-  }, [selectedDetail, selectedId]);
+  }, [selectedDetail, selectedId, candidateContext]);
 
   return {
     selectedId,

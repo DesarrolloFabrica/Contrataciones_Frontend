@@ -3,7 +3,6 @@ import { jsPDF } from "jspdf";
 import type { AnalysisResult, InterviewData } from "../types";
 import logoCun from "../assets/images/LogoCUN.png";
 
-
 const MARGIN_X = 40;
 const MARGIN_Y = 40;
 const LINE_HEIGHT = 14;
@@ -11,6 +10,21 @@ const LINE_HEIGHT = 14;
 // Colores corporativos aproximados CUN
 const BRAND_GREEN = { r: 0, g: 177, b: 113 }; // verde
 const BRAND_DARK = { r: 8, g: 32, b: 36 }; // fondo header
+
+// ✅ NUEVO: contexto opcional para completar ficha del candidato (Admin)
+export type PdfCandidateContext = {
+  fullName?: string | null;
+  programName?: string | null;
+  schoolName?: string | null;
+  age?: number | string | null;
+  // opcionales si luego quieres mostrarlos o usarlos
+  evaluationId?: string | null;
+};
+
+export type PdfOptions = {
+  download?: boolean;
+  candidate?: PdfCandidateContext;
+};
 
 // Helper para cargar la imagen del logo
 function loadImage(src: string): Promise<HTMLImageElement> {
@@ -22,13 +36,28 @@ function loadImage(src: string): Promise<HTMLImageElement> {
   });
 }
 
+const safeText = (v: any, fallback = "N/D") => {
+  const s = String(v ?? "").trim();
+  return s ? s : fallback;
+};
+
+const safeAge = (v: any) => {
+  if (v === null || v === undefined || v === "") return "N/D";
+  const n = typeof v === "number" ? v : Number(v);
+  if (Number.isFinite(n) && n > 0) return `${Math.round(n)} años`;
+  // si viene texto tipo "24"
+  const t = String(v).trim();
+  return t ? `${t} años` : "N/D";
+};
+
 /**
  * Construye el jsPDF con todo el contenido del reporte.
  * No descarga ni devuelve blob: solo devuelve la instancia jsPDF.
  */
 async function buildAnalysisPdfDoc(
   result: AnalysisResult,
-  interview: InterviewData
+  interview: InterviewData,
+  options?: PdfOptions
 ): Promise<jsPDF> {
   const doc = new jsPDF("p", "pt", "a4");
   const pageWidth = doc.internal.pageSize.getWidth();
@@ -115,7 +144,7 @@ async function buildAnalysisPdfDoc(
     doc.setFont("helvetica", "normal");
     doc.setFontSize(11);
     const maxWidth = pageWidth - MARGIN_X * 2;
-    const lines = doc.splitTextToSize(text, maxWidth);
+    const lines = doc.splitTextToSize(text ?? "", maxWidth);
     lines.forEach((line: string) => {
       ensureSpace();
       doc.text(line, MARGIN_X, y);
@@ -153,16 +182,33 @@ async function buildAnalysisPdfDoc(
   // ---------------- FICHA DEL CANDIDATO ----------------
   addTitle("Ficha del Candidato");
 
+  // ✅ NUEVO: valores con prioridad (candidateContext -> interview -> N/D)
+  const cand = options?.candidate;
+
+  const candidateName = safeText(
+    cand?.fullName ?? (interview as any)?.candidateName,
+    "N/D"
+  );
+  const programName = safeText(
+    cand?.programName ?? (interview as any)?.program,
+    "N/D"
+  );
+  const schoolName = safeText(
+    cand?.schoolName ?? (interview as any)?.school,
+    "N/D"
+  );
+  const ageText = safeAge(cand?.age ?? (interview as any)?.age);
+
   // columna izquierda (datos), derecha (score)
   const startY = y;
-  addLabelValue("Nombre", interview.candidateName || "N/D");
-  addLabelValue("Programa", interview.program || "N/D");
-  addLabelValue("Escuela", interview.school || "N/D");
-  addLabelValue("Edad", interview.age ? `${interview.age} años` : "N/D");
+  addLabelValue("Nombre", candidateName);
+  addLabelValue("Programa", programName);
+  addLabelValue("Escuela", schoolName);
+  addLabelValue("Edad", ageText);
   y += 4;
   addLabelValue(
     "Ventana de Retención",
-    result.resignationRiskWindow || "No estimada"
+    safeText((result as any)?.resignationRiskWindow, "No estimada")
   );
 
   // bloque verde de score a la derecha
@@ -178,7 +224,13 @@ async function buildAnalysisPdfDoc(
   doc.setFont("helvetica", "bold");
   doc.setFontSize(26);
   doc.setTextColor(BRAND_GREEN.r, BRAND_GREEN.g, BRAND_GREEN.b);
-  doc.text(`${result.overallScore.toFixed(1)}`, boxX + boxWidthScore / 2, boxY + 32, {
+
+  const score =
+    typeof (result as any)?.overallScore === "number"
+      ? (result as any).overallScore
+      : Number((result as any)?.overallScore ?? 0);
+
+  doc.text(`${Number.isFinite(score) ? score.toFixed(1) : "0.0"}`, boxX + boxWidthScore / 2, boxY + 32, {
     align: "center",
   });
 
@@ -190,13 +242,16 @@ async function buildAnalysisPdfDoc(
 
   doc.setFont("helvetica", "bold");
   doc.setTextColor(BRAND_GREEN.r, BRAND_GREEN.g, BRAND_GREEN.b);
-  doc.text(`Riesgo: ${result.overallRiskLevel}`, boxX + boxWidthScore / 2, boxY + 64, {
-    align: "center",
-  });
+  doc.text(
+    `Riesgo: ${safeText((result as any)?.overallRiskLevel)}`,
+    boxX + boxWidthScore / 2,
+    boxY + 64,
+    { align: "center" }
+  );
 
   doc.setFont("helvetica", "normal");
   doc.setTextColor(80, 80, 80);
-  doc.text(result.finalVerdict, boxX + boxWidthScore / 2, boxY + 80, {
+  doc.text(safeText((result as any)?.finalVerdict, ""), boxX + boxWidthScore / 2, boxY + 80, {
     align: "center",
   });
 
@@ -205,18 +260,18 @@ async function buildAnalysisPdfDoc(
 
   // ---------------- RESUMEN EJECUTIVO ----------------
   addSectionBox("Resumen Ejecutivo");
-  addParagraph(result.executiveSummary);
+  addParagraph((result as any)?.executiveSummary ?? "");
 
   // ---------------- ANÁLISIS POR DIMENSIÓN ----------------
   addSectionBox("Análisis Detallado por Dimensión");
 
-  result.categoryAnalyses.forEach((ca) => {
+  ((result as any)?.categoryAnalyses ?? []).forEach((ca: any) => {
     ensureSpace(60);
 
     // título de la dimensión
     doc.setFont("helvetica", "bold");
     doc.setFontSize(11);
-    doc.text(`• ${ca.category} (${Math.round(ca.score)}/100)`, MARGIN_X, y);
+    doc.text(`• ${safeText(ca?.category)} (${Math.round(Number(ca?.score ?? 0))}/100)`, MARGIN_X, y);
     y += LINE_HEIGHT;
 
     // subsecciones
@@ -224,55 +279,48 @@ async function buildAnalysisPdfDoc(
     doc.setFontSize(10);
     doc.text("Hallazgos clave:", MARGIN_X, y);
     y += LINE_HEIGHT - 4;
-    addParagraph(ca.reporteAnalitico);
+    addParagraph(ca?.reporteAnalitico ?? "");
 
     doc.setFont("helvetica", "bold");
     doc.setFontSize(10);
     doc.text("Fortalezas detectadas:", MARGIN_X, y);
     y += LINE_HEIGHT - 4;
-    addParagraph(ca.oportunidades);
+    addParagraph(ca?.oportunidades ?? "");
 
     doc.setFont("helvetica", "bold");
     doc.setFontSize(10);
     doc.text("Recomendaciones:", MARGIN_X, y);
     y += LINE_HEIGHT - 4;
-    addParagraph(ca.recomendaciones);
+    addParagraph(ca?.recomendaciones ?? "");
 
     doc.setFont("helvetica", "bold");
     doc.setFontSize(10);
     doc.text("Observación IA:", MARGIN_X, y);
     y += LINE_HEIGHT - 4;
-    addParagraph(
-      ca.observacionesCorregidas || "Sin observación generada por IA."
-    );
+    addParagraph(ca?.observacionesCorregidas || "Sin observación generada por IA.");
 
     y += 4;
   });
 
   // ---------------- PLAN DE MITIGACIÓN ----------------
   addSectionBox("Plan de Mitigación de Riesgos");
-  if (result.mitigationRecommendations?.length) {
-    result.mitigationRecommendations.forEach((rec, idx) => {
+  if ((result as any)?.mitigationRecommendations?.length) {
+    (result as any).mitigationRecommendations.forEach((rec: string, idx: number) => {
       addBulletTitle(`${idx + 1}.`);
       addParagraph(rec);
     });
   } else {
-    addParagraph(
-      "No se identificaron riesgos que requieran mitigación específica."
-    );
+    addParagraph("No se identificaron riesgos que requieran mitigación específica.");
   }
 
   // ---------------- FACTORES TEMPORALES ----------------
   addSectionBox("Factores de Retención (Riesgo Temporal)");
   addParagraph(
-    `Ventana crítica estimada: ${
-      result.resignationRiskWindow || "No estimada"
-    }.`
+    `Ventana crítica estimada: ${safeText((result as any)?.resignationRiskWindow, "No estimada")}.`
   );
-  if (result.temporalRiskFactors?.length) {
-    addParagraph(
-      `Indicadores detectados: ${result.temporalRiskFactors.join("; ")}.`
-    );
+
+  if ((result as any)?.temporalRiskFactors?.length) {
+    addParagraph(`Indicadores detectados: ${(result as any).temporalRiskFactors.join("; ")}.`);
   } else {
     addParagraph("No se detectaron factores de riesgo temporal relevantes.");
   }
@@ -287,20 +335,22 @@ async function buildAnalysisPdfDoc(
 export async function generateAnalysisPdfFromData(
   result: AnalysisResult,
   interview: InterviewData,
-  options?: { download?: boolean }
+  options?: PdfOptions
 ): Promise<Blob> {
-  const doc = await buildAnalysisPdfDoc(result, interview);
+  const doc = await buildAnalysisPdfDoc(result, interview, options);
 
-  // Nombre seguro para archivo
-  const safeName = (interview.candidateName || "Candidato").replace(/ /g, "_");
+  // ✅ Nombre seguro para archivo (prioriza candidate fullName)
+  const nameForFile = safeText(
+    options?.candidate?.fullName ?? (interview as any)?.candidateName,
+    "Candidato"
+  );
+  const safeName = nameForFile.replace(/\s+/g, "_");
   const fileName = `Reporte_IA_${safeName}.pdf`;
 
-  // Descarga en el navegador (comportamiento anterior)
   if (options?.download !== false) {
     doc.save(fileName);
   }
 
-  // Devolver Blob para subir al backend
   const blob = doc.output("blob") as Blob;
   return blob;
 }

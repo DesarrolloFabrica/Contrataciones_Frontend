@@ -19,7 +19,7 @@ interface TeacherEvaluationItemProps {
   /**
    * ✅ Footer opcional para mostrar info extra dentro de la tarjeta
    * (ej: # entrevistas + botón ver detalle).
-   */
+   */x
   footer?: React.ReactNode;
 }
 

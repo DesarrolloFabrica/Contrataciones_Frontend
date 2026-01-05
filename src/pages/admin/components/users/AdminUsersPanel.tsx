@@ -9,8 +9,6 @@ import AdminUsersHeader from "./AdminUsersHeader";
 import AdminUsersTable from "./AdminUsersTable";
 import AdminUserFormModal from "./AdminUserFormModal";
 
-
-
 // ✅ helpers
 const fmtDateTime = (iso?: string | null) => {
   if (!iso) return "—";
@@ -232,12 +230,11 @@ const AdminUsersPanel: React.FC<Props> = ({ scope }) => {
       <AdminUserFormModal
         open={isCreateOpen}
         onClose={closeModal}
-        onCreate={users.createUser}           // debe ser async y devolver Promise<void>
-        onUpdate={users.updateUser}           // debe ser async y devolver Promise<void>
-        editingUser={editUser}               // 👈 OJO: usa el state local del panel
+        onCreate={users.createUser}
+        onUpdate={users.updateUser}
+        editingUser={editUser}
         lastCreatedCredentials={users.lastCreatedCredentials}
         clearCredentials={users.clearCredentials}
-        // ❌ NO forcedRole / forcedSchoolId aquí, porque Admin decide
       />
 
       {/* ✅ NEW: Drawer Estado y Seguridad */}
