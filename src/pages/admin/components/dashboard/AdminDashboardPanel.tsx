@@ -5,6 +5,9 @@ import { useAdminDashboard } from "../../hooks/useAdminDashboard";
 
 // ✅ DB scope service (para escuelas/programas)
 import { listProgramsBySchool, listSchools, ProgramOption, SchoolOption } from "../../../../services/adminScopeService";
+import AdminStatusBars from "./AdminStatusBars";
+import AdminScoreCard from "./AdminScoreCard";
+import AdminEvaluationsSeriesChart from "./AdminEvaluationsSeriesChart";
 
 type Props = {
   scope: {
@@ -629,7 +632,44 @@ const AdminDashboardPanel: React.FC<Props> = ({ scope }) => {
           </div>
         </div>
       )}
+      {!loading && !error && data && (
+        <>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            {/* KPIs */}
+          </div>
+
+          {/* Barras por estado (full width) */}
+          <div>
+            <AdminStatusBars
+              approved={data.kpis.approved}
+              rejected={data.kpis.rejected}
+              pending={data.kpis.pending}
+              noEval={data.kpis.noEvalCandidates}
+            />
+          </div>
+
+          {/* Abajo: serie temporal + score */}
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+            <div className="lg:col-span-7">
+              <AdminEvaluationsSeriesChart points={data.evaluationsSeries} />
+            </div>
+
+            <div className="lg:col-span-5">
+              <AdminScoreCard
+                avg={data.score.avg}
+                median={data.score.median}
+                min={data.score.min}
+                max={data.score.max}
+                count={data.score.count}
+              />
+            </div>
+          </div>
+        </>
+      )}
+
+
     </div>
+    
   );
 };
 

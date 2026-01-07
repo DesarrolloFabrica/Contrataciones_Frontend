@@ -1,0 +1,76 @@
+import React, { useMemo } from "react";
+
+type Props = {
+  avg: number | null;
+  median: number | null;
+  min: number | null;
+  max: number | null;
+  count: number;
+};
+
+function fmt(n: number | null, digits = 1) {
+  if (n === null || Number.isNaN(Number(n))) return "—";
+  const v = Number(n);
+  const p = Math.pow(10, digits);
+  return String(Math.round(v * p) / p);
+}
+
+export default function AdminScoreCard({ avg, median, min, max, count }: Props) {
+  const main = useMemo(() => fmt(avg, 1), [avg]);
+  const show = (count ?? 0) > 0;
+
+  return (
+    <div className="rounded-3xl border border-white/10 bg-white/5 p-5">
+      <div className="flex items-start justify-between gap-4">
+        <div>
+          <div className="text-[11px] uppercase tracking-widest text-neutral-500 font-bold">
+            Score (AI Teaching Suitability)
+          </div>
+          <div className="text-xs text-neutral-400 mt-1">
+            Solo evaluaciones con score ≠ null
+          </div>
+        </div>
+
+        <div className="text-[11px] uppercase tracking-widest text-neutral-500 font-bold">
+          n={count ?? 0}
+        </div>
+      </div>
+
+      {/* “pill” principal como tu boceto */}
+      <div
+        className={[
+          "mt-5 rounded-2xl border border-emerald-500/20 bg-emerald-500/20",
+          "px-6 py-6 flex items-center justify-center",
+        ].join(" ")}
+      >
+        <div className="text-4xl font-black text-emerald-50">
+          {show ? main : "—"}
+        </div>
+      </div>
+
+      <div className="mt-5 grid grid-cols-2 gap-3">
+        <Stat label="Promedio" value={show ? fmt(avg, 2) : "—"} />
+        <Stat label="Mediana" value={show ? fmt(median, 2) : "—"} />
+        <Stat label="Mín" value={show ? fmt(min, 2) : "—"} />
+        <Stat label="Máx" value={show ? fmt(max, 2) : "—"} />
+      </div>
+
+      {!show && (
+        <div className="mt-4 text-xs text-neutral-500">
+          No hay evaluaciones con score en el rango/filters seleccionados.
+        </div>
+      )}
+    </div>
+  );
+}
+
+function Stat({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="rounded-2xl border border-white/10 bg-black/20 p-3">
+      <div className="text-[11px] uppercase tracking-widest text-neutral-500 font-bold">
+        {label}
+      </div>
+      <div className="mt-1 text-xl font-extrabold text-neutral-100">{value}</div>
+    </div>
+  );
+}
