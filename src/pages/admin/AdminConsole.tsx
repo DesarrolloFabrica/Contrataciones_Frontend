@@ -1,6 +1,6 @@
 // src/pages/admin/AdminConsole.tsx
 import React, { useCallback, useMemo, useState } from "react";
-import { AlertCircle, Loader2, Users, FileText, ScrollText, X } from "lucide-react";
+import { AlertCircle, Loader2, Users, FileText, ScrollText, X, SquareKanban } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 
 import AdminHeader from "./components/AdminHeader";
@@ -27,8 +27,9 @@ import {
   type ProgramOption,
   type SchoolOption,
 } from "../../services/adminScopeService";
+import AdminDashboardPanel from "./components/dashboard/AdminDashboardPanel";
 
-type AdminView = "EVALUATIONS" | "USERS" | "AUDIT";
+type AdminView = "EVALUATIONS" | "USERS" | "AUDIT" | "DASHBOARD";
 
 /** ✅ Helpers: sacar IDs/Nombres de evaluaciones (para que el filtro matchee EXACTO con lo que usa el hook) */
 const pickSchoolName = (ev: any) =>
@@ -345,15 +346,25 @@ const AdminConsole: React.FC = () => {
           >
             <Users className="w-4 h-4" />
             Usuarios
-          </button>
+          </button>          
+          
           <button
+            type="button"
+            className={tabBtn(view === "DASHBOARD")}
+            onClick={() => handleSwitchView("DASHBOARD")}
+          >
+            <SquareKanban className="w-4 h-4" />
+            Dashboard
+          </button>
+          
+          {/* <button
             type="button"
             className={tabBtn(view === "AUDIT")}
             onClick={() => handleSwitchView("AUDIT")}
           >
             <ScrollText className="w-4 h-4" />
             Auditoría
-          </button>
+          </button> */}
         </div>
 
         {/* VIEW: EVALUATIONS */}
@@ -446,6 +457,16 @@ const AdminConsole: React.FC = () => {
         {view === "USERS" && (
           <AdminUsersPanel
             scope={{ selectedSchool: selectedSchoolName, selectedProgram: selectedProgramName }}
+          />
+        )}
+
+        {view === "DASHBOARD" && (
+        <AdminDashboardPanel
+            scope={{
+              orgId: (admin as any)?.orgId ?? null,
+              selectedSchoolId,
+              selectedProgramId,
+            }}
           />
         )}
 
