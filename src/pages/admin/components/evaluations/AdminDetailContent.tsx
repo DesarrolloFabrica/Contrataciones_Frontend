@@ -9,7 +9,6 @@ import {
   FileText,
   Gavel,
   Users,
-  ScrollText,
   ChevronDown,
   ChevronUp,
 } from "lucide-react";
@@ -18,12 +17,17 @@ import type { TeacherEvaluationSummary } from "../../../../types";
 import { getBucket } from "../../utils/adminSelectors";
 
 import { useAdminAudit } from "../../hooks/useAdminAudit";
-import AdminAuditTimeline from "../audit/AdminAuditTimeline";
 
 import {
   getExecutiveSummary,
   type TeacherExecutiveSummary as ExecSummary,
 } from "../../../../services/teachersService";
+
+// ✅ NEW: traer coordinador por coordinatorUserId
+import {
+  apiGetUserBasicById,
+  type UserBasic,
+} from "../../../../services/adminUsersService";
 
 // ==========================================
 // 1) STYLES / HELPERS
@@ -60,12 +64,34 @@ const asNumber = (v: unknown, fallback = 0) => {
   return Number.isFinite(n) ? n : fallback;
 };
 
-function pickArrayStrings(v: unknown): string[] {
-  if (!Array.isArray(v)) return [];
+function parseBullets(v: unknown): string[] {
+  if (!v) return [];
+  if (Array.isArray(v)) {
+    return v
+      .map((x) => (typeof x === "string" ? x.trim() : ""))
+      .filter(Boolean);
+  }
+  if (typeof v !== "string") return [];
+
   return v
-    .map((x) => (typeof x === "string" ? x.trim() : ""))
+    .split(/\r?\n/)
+    .map((s) => s.trim())
     .filter(Boolean)
-    .slice(0, 8);
+    .map((s) =>
+      s
+        .replace(/^[-•*]\s+/, "")
+        .replace(/^\d+[\.\)]\s+/, "")
+        .replace(/^\[[^\]]+\]\s*/, "")
+        .trim()
+    )
+    .filter(Boolean);
+}
+
+function takeTop(items: string[], max = 8) {
+  return Array.from(new Set(items.map((x) => x.trim()).filter(Boolean))).slice(
+    0,
+    max
+  );
 }
 
 function isoToEs(v?: any) {
@@ -94,6 +120,30 @@ function pickActorFromAny(
 
   if (!name && !email && !id) return null;
   return { name: name || email || id || "No disponible", email, id };
+}
+
+function pickCandidateSchoolProgramLabel(
+  summary: TeacherEvaluationSummary | null,
+  raw: any,
+  execSummary: ExecSummary | null
+) {
+  const school =
+    safeString((summary as any)?.candidate?.schoolNameSnapshot, "") ||
+    safeString(raw?.candidate?.schoolNameSnapshot, "") ||
+    safeString(raw?.formRawData?.candidate?.schoolName, "") ||
+    safeString((summary as any)?.formRawData?.candidate?.schoolName, "") ||
+    safeString((execSummary as any)?.schoolName, "") ||
+    "-";
+
+  const program =
+    safeString((summary as any)?.candidate?.programNameSnapshot, "") ||
+    safeString(raw?.candidate?.programNameSnapshot, "") ||
+    safeString(raw?.formRawData?.candidate?.programName, "") ||
+    safeString((summary as any)?.formRawData?.candidate?.programName, "") ||
+    safeString((execSummary as any)?.programName, "") ||
+    "-";
+
+  return `${school} · ${program}`;
 }
 
 // ==========================================
@@ -240,7 +290,6 @@ export default function AdminDetailContent({
   selectedSummary,
   selectedDetail,
 }: Props) {
-  // ✅ Hooks SIEMPRE arriba
   const { audit, loadingAudit } = useAdminAudit({
     entityType: "EVALUATION",
     entityId: selectedId ?? undefined,
@@ -250,7 +299,10 @@ export default function AdminDetailContent({
   const [execLoading, setExecLoading] = useState(false);
   const [execError, setExecError] = useState<string | null>(null);
 
-  // Collapsables
+  // ✅ NEW: user básico del coordinador (por coordinatorUserId)
+  const [coordUser, setCoordUser] = useState<UserBasic | null>(null);
+  const [coordUserLoading, setCoordUserLoading] = useState(false);
+
   const [open, setOpen] = useState<Record<SectionKey, boolean>>({
     RESUMEN: true,
     DECISION: true,
@@ -258,20 +310,15 @@ export default function AdminDetailContent({
     AUDITORIA: false,
   });
 
-  // Auditoría: 10 por defecto
   const [auditExpanded, setAuditExpanded] = useState(false);
 
-  // Anchors (para chips)
   const refResumen = useRef<HTMLDivElement>(null);
   const refDecision = useRef<HTMLDivElement>(null);
   const refTraz = useRef<HTMLDivElement>(null);
   const refAudit = useRef<HTMLDivElement>(null);
 
   const scrollTo = (key: SectionKey) => {
-    // Abre la sección antes de scrollear (para que exista altura)
     setOpen((prev) => ({ ...prev, [key]: true }));
-
-    // Espera un tick para que React renderice la expansión
     window.setTimeout(() => {
       const map: Record<SectionKey, React.RefObject<HTMLDivElement>> = {
         RESUMEN: refResumen,
@@ -283,7 +330,6 @@ export default function AdminDetailContent({
     }, 60);
   };
 
-  // Si cambia de evaluación: reset a estado “sano”
   useEffect(() => {
     setOpen({
       RESUMEN: true,
@@ -320,61 +366,143 @@ export default function AdminDetailContent({
     };
   }, [selectedId]);
 
-  // ✅ Derivaciones seguras (sin romper)
   const analysis = selectedDetail?.analysis ?? {};
+  const rawDetail = (selectedDetail?.raw ?? {}) as any;
+
+  // ✅ coordinatorUserId: primero desde raw/summary (porque executive-summary no trae decidedBy)
+  const coordinatorUserId = useMemo(() => {
+    const v =
+      safeString(rawDetail?.coordinatorUserId, "") ||
+      safeString((selectedSummary as any)?.coordinatorUserId, "") ||
+      safeString((execSummary as any)?.coordinatorDecision?.decidedBy?.id, "");
+    return v || null;
+  }, [rawDetail?.coordinatorUserId, selectedSummary, execSummary]);
+
+  // ✅ fetch user básico del coordinador por id
+  useEffect(() => {
+    let alive = true;
+
+    if (!coordinatorUserId) {
+      setCoordUser(null);
+      setCoordUserLoading(false);
+      return;
+    }
+
+    setCoordUserLoading(true);
+
+    apiGetUserBasicById(coordinatorUserId)
+      .then((u) => {
+        if (!alive) return;
+        setCoordUser(u);
+      })
+      .catch((e) => {
+        if (!alive) return;
+        console.error("No se pudo traer coordinator user:", e);
+        setCoordUser(null);
+      })
+      .finally(() => {
+        if (!alive) return;
+        setCoordUserLoading(false);
+      });
+
+    return () => {
+      alive = false;
+    };
+  }, [coordinatorUserId]);
+
   const bucket = getBucket(selectedSummary?.aiFinalRecommendation);
 
   const aiScore = asNumber(
     (analysis as any)?.scores?.teachingSuitability ??
+      rawDetail?.aiTeachingSuitabilityScore ??
       (selectedSummary as any)?.aiTeachingSuitabilityScore ??
       0
   );
 
   const executiveText = safeString(
-    (analysis as any)?.executiveSummary || (analysis as any)?.summary,
+    rawDetail?.executiveSummary ??
+      rawDetail?.aiOverallComment ??
+      (analysis as any)?.executiveSummary ??
+      (analysis as any)?.summary,
     ""
   );
 
-  const strengths = pickArrayStrings(
-    (analysis as any)?.strengths || (analysis as any)?.highlights
+  const strengthsFromSummary = parseBullets(
+    rawDetail?.aiSummaryStrengths ?? (selectedSummary as any)?.aiSummaryStrengths
   );
-  const risks = pickArrayStrings(
-    (analysis as any)?.risks || (analysis as any)?.alerts
+  const risksFromSummary = parseBullets(
+    rawDetail?.aiSummaryWeaknesses ?? (selectedSummary as any)?.aiSummaryWeaknesses
+  );
+
+  const categoryAnalyses =
+    rawDetail?.categoryAnalyses ?? (analysis as any)?.categoryAnalyses ?? [];
+
+  const strengthsFromCats = (categoryAnalyses ?? []).flatMap((c: any) =>
+    parseBullets(c?.oportunidades)
+  );
+  const risksFromCats = (categoryAnalyses ?? []).flatMap((c: any) =>
+    parseBullets(c?.recomendaciones)
+  );
+
+  const temporalRiskFactors =
+    rawDetail?.aiRawJson?.temporalRiskFactors ??
+    rawDetail?.temporalRiskFactors ??
+    (analysis as any)?.temporalRiskFactors ??
+    [];
+
+  const risksFromTemporal = parseBullets(temporalRiskFactors);
+
+  const strengths = takeTop([...strengthsFromSummary, ...strengthsFromCats], 8);
+  const risks = takeTop(
+    [...risksFromSummary, ...risksFromCats, ...risksFromTemporal],
+    8
   );
 
   const actors = useMemo(() => {
-    const raw = selectedDetail?.raw ?? {};
+    const raw = rawDetail ?? {};
     const sum = selectedSummary ?? ({} as any);
 
     const leaderSrc =
       selectedDetail?.interview?.leader ||
       selectedDetail?.interview?.interviewer ||
-      (raw as any)?.leader ||
-      (sum as any)?.leader;
+      raw?.leader ||
+      (sum as any)?.leader ||
+      raw?.interviewerUser;
 
     const leader: ActorData = {
       label: "Líder (Entrevista)",
       ...(pickActorFromAny(leaderSrc) || { name: "No disponible" }),
-      at: isoToEs((raw as any)?.createdAt || (sum as any)?.createdAt),
+      at: isoToEs(raw?.createdAt || (sum as any)?.createdAt),
       status: null,
     };
 
+    // ✅ coordinador: prioridad -> decidedBy (si existe) -> coordUser (lookup por id) -> raw.coordinator
     const coordSrc =
       (execSummary as any)?.coordinatorDecision?.decidedBy ||
-      (raw as any)?.coordinator;
+      coordUser ||
+      raw?.coordinator ||
+      (coordinatorUserId ? { id: coordinatorUserId } : null);
+
+    const coordAt =
+      (execSummary as any)?.coordinatorDecision?.decidedAt ??
+      raw?.coordinatorDecidedAt ??
+      (sum as any)?.coordinatorDecidedAt;
+
+    const coordStatus =
+      ((execSummary as any)?.coordinatorDecision?.verdict as any) ||
+      (raw?.coordinatorDecisionStatus as any) ||
+      ((sum as any)?.coordinatorDecisionStatus as any) ||
+      "PENDING";
 
     const coord: ActorData = {
       label: "Coordinador",
       ...(pickActorFromAny(coordSrc) || { name: "No disponible" }),
-      at: isoToEs((execSummary as any)?.coordinatorDecision?.decidedAt),
-      status:
-        ((execSummary as any)?.coordinatorDecision?.verdict as any) ||
-        ((sum as any)?.coordinatorDecisionStatus as any) ||
-        "PENDING",
+      at: isoToEs(coordAt),
+      status: coordStatus,
     };
 
     return { leader, coord };
-  }, [selectedDetail, selectedSummary, execSummary]);
+  }, [selectedDetail, selectedSummary, execSummary, rawDetail, coordUser]);
 
   const auditVisible = useMemo(() => {
     const items = audit ?? [];
@@ -382,18 +510,13 @@ export default function AdminDetailContent({
     return items.slice(0, 10);
   }, [audit, auditExpanded]);
 
-  // ✅ Returns condicionales DESPUÉS de hooks
   if (!selectedId)
     return <EmptyState icon={LayoutDashboard} msg="Selecciona una evaluación." />;
   if (loadingDetail)
     return <EmptyState icon={Loader2} msg="Cargando detalle..." spin />;
   if (!hasDetail || !selectedDetail)
     return (
-      <EmptyState
-        icon={AlertCircle}
-        msg="No se pudo cargar el detalle."
-        isError
-      />
+      <EmptyState icon={AlertCircle} msg="No se pudo cargar el detalle." isError />
     );
 
   const chipClass = (active: boolean) =>
@@ -403,21 +526,26 @@ export default function AdminDetailContent({
         : "border-white/10 bg-white/5 text-neutral-300 hover:border-white/20 hover:bg-white/10"
     }`;
 
+  const schoolProgramLabel = pickCandidateSchoolProgramLabel(
+    selectedSummary,
+    rawDetail,
+    execSummary
+  );
+
   return (
     <div className="space-y-6">
-      {/* 1) Header candidato */}
       <div className={STYLES.card}>
         <div className="flex items-start justify-between gap-4">
           <div className="min-w-0">
             <p className={STYLES.label}>Candidato</p>
             <h4 className="text-white font-bold text-xl leading-tight truncate">
-              {selectedSummary?.candidate?.fullName ?? "Sin nombre"}
+              {selectedSummary?.candidate?.fullName ??
+                rawDetail?.candidate?.fullName ??
+                rawDetail?.formRawData?.candidate?.fullName ??
+                "Sin nombre"}
             </h4>
-            <p className="text-xs text-neutral-500 mt-1">
-              {(selectedSummary?.candidate?.schoolNameSnapshot ?? "-") +
-                " · " +
-                (selectedSummary?.candidate?.programNameSnapshot ?? "-")}
-            </p>
+
+            <p className="text-xs text-neutral-500 mt-1">{schoolProgramLabel}</p>
           </div>
 
           <div className="text-right">
@@ -439,11 +567,18 @@ export default function AdminDetailContent({
           <StatusPill
             status="CUSTOM"
             customClass="border-white/10 bg-white/5 text-neutral-300"
-            text={`Coordinador: ${statusLabelEs(
-              actors.coord.status ?? "PENDING"
-            )}`}
+            text={`Coordinador: ${statusLabelEs(actors.coord.status ?? "PENDING")}`}
             icon={User}
           />
+
+          {coordUserLoading && (
+            <StatusPill
+              status="CUSTOM"
+              customClass="border-cyan-500/20 bg-cyan-500/10 text-cyan-300"
+              text="Buscando coordinador…"
+              icon={Loader2}
+            />
+          )}
 
           {execLoading && (
             <StatusPill
@@ -464,7 +599,6 @@ export default function AdminDetailContent({
           )}
         </div>
 
-        {/* Chips de navegación */}
         <div className="mt-5 flex flex-wrap gap-2">
           <button
             type="button"
@@ -495,20 +629,9 @@ export default function AdminDetailContent({
             <Users className="w-4 h-4" />
             Trazabilidad
           </button>
-
-          <button
-            type="button"
-            className={chipClass(open.AUDITORIA)}
-            onClick={() => scrollTo("AUDITORIA")}
-            title="Ir a Auditoría"
-          >
-            <ScrollText className="w-4 h-4" />
-            Auditoría
-          </button>
         </div>
       </div>
 
-      {/* 2) Resumen ejecutivo IA (colapsable) */}
       <CollapsibleSection
         id="sec-resumen"
         title="Resumen ejecutivo (IA)"
@@ -527,6 +650,7 @@ export default function AdminDetailContent({
             <p className={`${STYLES.label} mb-2 text-emerald-500/80`}>
               Fortalezas
             </p>
+
             {strengths.length ? (
               <ul className="text-sm text-neutral-300 space-y-1">
                 {strengths.map((s, i) => (
@@ -545,6 +669,7 @@ export default function AdminDetailContent({
             <p className={`${STYLES.label} mb-2 text-rose-500/80`}>
               Riesgos / Alertas
             </p>
+
             {risks.length ? (
               <ul className="text-sm text-neutral-300 space-y-1">
                 {risks.map((s, i) => (
@@ -561,7 +686,6 @@ export default function AdminDetailContent({
         </div>
       </CollapsibleSection>
 
-      {/* 3) Decisión del coordinador (colapsable) */}
       <CollapsibleSection
         id="sec-decision"
         title="Decisión del Coordinador"
@@ -579,6 +703,7 @@ export default function AdminDetailContent({
       >
         <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
           <ActorCard actor={actors.coord} />
+
           <div className={STYLES.subCard}>
             <p className={STYLES.label}>Comentario</p>
             <textarea
@@ -592,7 +717,6 @@ export default function AdminDetailContent({
         </div>
       </CollapsibleSection>
 
-      {/* 4) Trazabilidad (colapsable) */}
       <CollapsibleSection
         id="sec-trazabilidad"
         title="Trazabilidad humana"
@@ -610,49 +734,12 @@ export default function AdminDetailContent({
         </div>
       </CollapsibleSection>
 
-      {/* 5) Auditoría (colapsable + 10 items por defecto) */}
-      <CollapsibleSection
-        id="sec-auditoria"
-        title="Auditoría"
-        subtitle="Historial de eventos y trazas."
-        icon={ScrollText}
-        open={open.AUDITORIA}
-        onToggle={() => setOpen((p) => ({ ...p, AUDITORIA: !p.AUDITORIA }))}
-        innerRef={refAudit}
-        right={
-          <span className="text-xs text-neutral-500">
-            {audit.length} items
-          </span>
-        }
-      >
-        {loadingAudit ? (
-          <div className="py-4 text-center text-neutral-500 text-sm">
-            Cargando trazas...
-          </div>
-        ) : audit.length ? (
-          <>
-            <div className="max-h-[420px] overflow-auto pr-2 scrollbar-pro">
-              <AdminAuditTimeline events={auditVisible} />
-            </div>
-
-            {audit.length > 10 && (
-              <div className="mt-3 flex justify-end">
-                <button
-                  type="button"
-                  onClick={() => setAuditExpanded((v) => !v)}
-                  className="px-3 py-2 rounded-xl border border-white/10 bg-white/5 hover:bg-white/10 transition text-xs font-bold uppercase tracking-widest text-neutral-200"
-                >
-                  {auditExpanded ? "Ver menos" : "Ver todo"}
-                </button>
-              </div>
-            )}
-          </>
-        ) : (
-          <div className="py-6 text-center text-neutral-600 text-sm">
-            Aún no hay actividad relevante.
-          </div>
-        )}
-      </CollapsibleSection>
+      {/* Auditoría apagada */}
+      {false && loadingAudit && (
+        <pre className="text-xs text-neutral-400">
+          {JSON.stringify(auditVisible, null, 2)}
+        </pre>
+      )}
     </div>
   );
 }
