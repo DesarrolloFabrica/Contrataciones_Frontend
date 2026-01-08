@@ -311,7 +311,7 @@ const AdminConsole: React.FC = () => {
         <div className="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.02)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.02)_1px,transparent_1px)] bg-[size:40px_40px] opacity-20 [mask-image:radial-gradient(ellipse_80%_80%_at_50%_50%,#000_70%,transparent_100%)]" />
       </div>
 
-      <div className="relative z-10 max-w-7xl mx-auto px-6 py-10 space-y-8">
+      <div className="relative z-10 mx-auto px-12 py-10 space-y-8">
         <AdminHeader
           hasSelection={hasSelection}
           onClearSelection={detail.clearSelection}

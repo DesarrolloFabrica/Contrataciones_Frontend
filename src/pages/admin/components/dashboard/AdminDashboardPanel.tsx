@@ -551,10 +551,20 @@ const AdminDashboardPanel: React.FC<Props> = ({ scope }) => {
     to: toIso,
   });
 
-  const acceptancePct = useMemo(() => {
-    const r = data?.kpis?.acceptanceRate ?? 0;
-    return Math.round(r * 1000) / 10;
-  }, [data?.kpis?.acceptanceRate]);
+const acceptancePct = useMemo(() => {
+  const r = data?.kpis?.acceptanceRate ?? 0;
+  return Math.round(r * 1000) / 10; // 1 decimal
+}, [data?.kpis?.acceptanceRate]);
+
+const rejectionPct = useMemo(() => {
+  const approved = Number(data?.kpis?.approved ?? 0);
+  const rejected = Number(data?.kpis?.rejected ?? 0);
+  const decided = approved + rejected;
+
+  if (decided <= 0) return 0;
+  const rate = rejected / decided;
+  return Math.round(rate * 1000) / 10; // 1 decimal
+}, [data?.kpis?.approved, data?.kpis?.rejected]);
 
   return (
     <div className="space-y-6">
@@ -607,9 +617,9 @@ const AdminDashboardPanel: React.FC<Props> = ({ scope }) => {
           <span className="text-sm">{error}</span>
         </div>
       )}
-
       {!loading && !error && data && (
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <>
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
           <div className="rounded-2xl border border-white/10 bg-white/5 p-5">
             <div className="text-[11px] uppercase tracking-widest text-neutral-500 font-bold">
               Total candidatos
@@ -630,13 +640,14 @@ const AdminDashboardPanel: React.FC<Props> = ({ scope }) => {
             </div>
             <div className="mt-2 text-3xl font-black">{acceptancePct}%</div>
           </div>
-        </div>
-      )}
-      {!loading && !error && data && (
-        <>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            {/* KPIs */}
+          <div className="rounded-2xl border border-white/10 bg-white/5 p-5">
+          <div className="text-[11px] uppercase tracking-widest text-neutral-500 font-bold">
+            % tasa rechazo
           </div>
+          <div className="mt-2 text-3xl font-black">{rejectionPct}%</div>
+        </div>
+
+        </div>
 
           {/* Barras por estado (full width) */}
           <div>

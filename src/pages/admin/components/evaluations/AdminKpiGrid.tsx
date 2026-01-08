@@ -149,10 +149,6 @@ export default function AdminKpiGrid({
           <h3 className="text-white font-black text-lg">Resumen ejecutivo</h3>
           <p className="text-xs text-neutral-500 mt-1">{scopeLabel}</p>
         </div>
-
-        <div className="text-[11px] text-neutral-500">
-          Actualizado con datos del backend (mock por ahora)
-        </div>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-5">
