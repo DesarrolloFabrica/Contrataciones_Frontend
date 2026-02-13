@@ -12,6 +12,7 @@ import LoginPage from "./pages/Login/LoginPage";
 import ProtectedRoute from "./components/ProtectedRoute";
 
 import CoordinatorEvaluationReport from "./pages/coordinator/CoordinatorEvaluationReport";
+import CoordinatorEvaluationDetailPage from "./pages/coordinator/CoordinatorEvaluationDetailPage";
 import ChangePasswordPage from "./pages/auth/ChangePasswordPage";
 
 /**
@@ -31,8 +32,10 @@ const HomeRedirect: React.FC = () => {
 
   const role = (user.role || "").toLowerCase();
 
-  if (role === "leader" || role === "lider") return <Navigate to="/leader" replace />;
-  if (role === "coordinator" || role === "coordinador") return <Navigate to="/coordinator" replace />;
+  if (role === "leader" || role === "lider")
+    return <Navigate to="/leader" replace />;
+  if (role === "coordinator" || role === "coordinador")
+    return <Navigate to="/coordinator" replace />;
 
   return <Navigate to="/admin" replace />;
 };
@@ -58,8 +61,16 @@ const App: React.FC = () => {
 
       <Route element={<ProtectedRoute allowedRoles={["coordinator"]} />}>
         <Route path="/coordinator" element={<CoordinatorConsole />} />
+
+        {/* ✅ panel de decisión (el de abajo) */}
         <Route
           path="/coordinator/evaluations/:evaluationId"
+          element={<CoordinatorEvaluationDetailPage />}
+        />
+
+        {/* ✅ IA grande (pantalla completa) */}
+        <Route
+          path="/coordinator/evaluations/:evaluationId/report"
           element={<CoordinatorEvaluationReport />}
         />
       </Route>

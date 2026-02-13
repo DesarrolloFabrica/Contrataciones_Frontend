@@ -1,5 +1,5 @@
 // src/components/AnalysisResults.tsx
-import React, { useMemo, useState } from "react";
+import React, { useMemo, useState, useEffect } from "react";
 import {
   Download,
   AlertTriangle,
@@ -66,17 +66,21 @@ const getRiskBadgeStyles = (level: string) => {
 
 // ✅ Veredicto robusto (evita falsos rojos)
 function detectVerdictKind(finalVerdict?: string, overallScore?: number) {
-  const t = String(finalVerdict ?? "").toLowerCase().trim();
+  const t = String(finalVerdict ?? "")
+    .toLowerCase()
+    .trim();
 
   // negativos
   const negative =
     /(rechaz|no\s*recom|no\s*aprob|no\s*contrat|no\s*apto|descart|no\s*contin)/i.test(
-      t
+      t,
     );
 
   // positivos
   const positive =
-    /(recom|aprob|contrat|apto|id[oó]neo|favorable|proceder|continuar)/i.test(t);
+    /(recom|aprob|contrat|apto|id[oó]neo|favorable|proceder|continuar)/i.test(
+      t,
+    );
 
   if (negative) return "REJECTED";
   if (positive) return "APPROVED";
@@ -105,8 +109,12 @@ const StatCard: React.FC<{
       <span className="text-[10px] font-bold text-neutral-500 uppercase tracking-widest mb-2 flex items-center gap-2">
         {icon} {label}
       </span>
-      <div className="text-2xl font-bold text-white tracking-tight">{value}</div>
-      {sub && <div className="mt-1 text-xs font-medium text-neutral-500">{sub}</div>}
+      <div className="text-2xl font-bold text-white tracking-tight">
+        {value}
+      </div>
+      {sub && (
+        <div className="mt-1 text-xs font-medium text-neutral-500">{sub}</div>
+      )}
     </div>
   </div>
 );
@@ -119,19 +127,25 @@ const DimensionCard: React.FC<{ cat: any }> = ({ cat }) => {
       <div
         className={`absolute top-0 left-0 w-1 h-full ${styles.bg.replace(
           "/10",
-          ""
+          "",
         )} transition-all duration-300 opacity-40 group-hover:opacity-90`}
       />
 
       <div className="flex justify-between items-start mb-4">
         <div>
-          <h4 className="font-bold text-neutral-200 text-sm tracking-wide">{cat.category}</h4>
+          <h4 className="font-bold text-neutral-200 text-sm tracking-wide">
+            {cat.category}
+          </h4>
           <span className="text-[10px] text-neutral-500 uppercase font-mono mt-1 block">
             Análisis Vectorial
           </span>
         </div>
-        <div className={`flex items-center justify-center w-10 h-10 rounded-xl ${styles.bg} ${styles.border} border`}>
-          <span className={`text-sm font-bold ${styles.color}`}>{Math.round(cat.score)}</span>
+        <div
+          className={`flex items-center justify-center w-10 h-10 rounded-xl ${styles.bg} ${styles.border} border`}
+        >
+          <span className={`text-sm font-bold ${styles.color}`}>
+            {Math.round(cat.score)}
+          </span>
         </div>
       </div>
 
@@ -148,7 +162,9 @@ const DimensionCard: React.FC<{ cat: any }> = ({ cat }) => {
                 Fortaleza
               </span>
             </div>
-            <p className="text-[11px] text-neutral-500 leading-snug">{cat.oportunidades}</p>
+            <p className="text-[11px] text-neutral-500 leading-snug">
+              {cat.oportunidades}
+            </p>
           </div>
 
           <div className="bg-white/[0.02] p-3 rounded-lg border border-white/5">
@@ -171,6 +187,8 @@ const DimensionCard: React.FC<{ cat: any }> = ({ cat }) => {
 // =========================================================
 // ✅ PROPS
 // =========================================================
+type DetailTab = "ai" | "interviews" | "notes" | "decision";
+
 interface AnalysisResultsProps {
   result: AnalysisResult;
   interviewData: InterviewData;
@@ -178,6 +196,9 @@ interface AnalysisResultsProps {
   evaluationId?: string;
   resetLabel?: string;
   showReset?: boolean;
+
+  // ✅ NUEVO
+  initialTab?: DetailTab;
 }
 
 const REPORT_ELEMENT_ID = "report-to-download";
@@ -192,6 +213,7 @@ const AnalysisResults: React.FC<AnalysisResultsProps> = ({
   evaluationId,
   resetLabel = "Nuevo Análisis",
   showReset = true,
+  initialTab,
 }) => {
   const [isDownloading, setIsDownloading] = useState(false);
   const [decisionExpanded, setDecisionExpanded] = useState(false);
@@ -209,7 +231,7 @@ const AnalysisResults: React.FC<AnalysisResultsProps> = ({
 
   const verdictKind = useMemo(
     () => detectVerdictKind(result.finalVerdict, result.overallScore),
-    [result.finalVerdict, result.overallScore]
+    [result.finalVerdict, result.overallScore],
   );
 
   const verdictUI = useMemo(() => {
@@ -248,6 +270,17 @@ const AnalysisResults: React.FC<AnalysisResultsProps> = ({
 
     return base;
   }, [verdictKind, result.finalVerdict, brandFrom, brandTo]);
+
+  useEffect(() => {
+    if (!initialTab) return;
+
+    requestAnimationFrame(() => {
+      const el = document.querySelector(`[data-anchor="${initialTab}"]`);
+      if (el && "scrollIntoView" in el) {
+        (el as any).scrollIntoView({ behavior: "smooth", block: "start" });
+      }
+    });
+  }, [initialTab]);
 
   const handleDownloadPDF = async () => {
     try {
@@ -291,13 +324,13 @@ const AnalysisResults: React.FC<AnalysisResultsProps> = ({
                 <div
                   className={`absolute w-full h-full rounded-full ${scoreStyles.bg.replace(
                     "/10",
-                    ""
+                    "",
                   )} animate-ping opacity-40`}
                 />
                 <div
                   className={`relative w-2.5 h-2.5 rounded-full ${scoreStyles.bg.replace(
                     "/10",
-                    ""
+                    "",
                   )}`}
                 />
               </div>
@@ -308,7 +341,8 @@ const AnalysisResults: React.FC<AnalysisResultsProps> = ({
                 </span>
 
                 <span className="text-[11px] font-bold uppercase tracking-widest text-neutral-500">
-                  <span className="text-neutral-400">•</span> {new Date().getFullYear()}
+                  <span className="text-neutral-400">•</span>{" "}
+                  {new Date().getFullYear()}
                 </span>
               </div>
             </div>
@@ -352,7 +386,11 @@ const AnalysisResults: React.FC<AnalysisResultsProps> = ({
         </div>
       </div>
 
-      <div id={REPORT_ELEMENT_ID} className="max-w-7xl mx-auto px-6 py-10 space-y-12">
+      <div
+        id={REPORT_ELEMENT_ID}
+        data-anchor="ai"
+        className="max-w-7xl mx-auto px-6 py-10 space-y-12"
+      >
         {/* 2. HEADER HERO */}
         <div className="relative">
           {/* ✅ Menos gap y mejor balance */}
@@ -392,104 +430,103 @@ const AnalysisResults: React.FC<AnalysisResultsProps> = ({
             </div>
 
             {/* Right: Decision card (neutral, con acento) */}
-              <div className="relative w-full">
-                <div className="group relative overflow-hidden rounded-[22px] border border-white/10 bg-white/[0.02] backdrop-blur-xl shadow-[0_20px_60px_-35px_rgba(0,0,0,0.9)] hover:border-white/15 transition">
-                  {/* accent line */}
-                  <div
-                    className="h-[2px] w-full opacity-60 group-hover:opacity-95 transition-opacity"
-                    style={{ background: verdictUI.accentLine }}
-                  />
+            <div className="relative w-full">
+              <div className="group relative overflow-hidden rounded-[22px] border border-white/10 bg-white/[0.02] backdrop-blur-xl shadow-[0_20px_60px_-35px_rgba(0,0,0,0.9)] hover:border-white/15 transition">
+                {/* accent line */}
+                <div
+                  className="h-[2px] w-full opacity-60 group-hover:opacity-95 transition-opacity"
+                  style={{ background: verdictUI.accentLine }}
+                />
 
-                  <div className="px-6 py-5">
-                    {/* Header row */}
-                    <div className="flex items-center justify-between gap-3">
-                      <p className="text-[10px] font-extrabold uppercase tracking-[0.22em] text-white/55">
-                        Decisión IA
-                      </p>
+                <div className="px-6 py-5">
+                  {/* Header row */}
+                  <div className="flex items-center justify-between gap-3">
+                    <p className="text-[10px] font-extrabold uppercase tracking-[0.22em] text-white/55">
+                      Decisión IA
+                    </p>
 
-                      <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-2">
+                      <span
+                        className={`inline-flex items-center gap-2 rounded-full px-3 py-1 text-[11px] font-bold border ${verdictUI.chip}`}
+                      >
                         <span
-                          className={`inline-flex items-center gap-2 rounded-full px-3 py-1 text-[11px] font-bold border ${verdictUI.chip}`}
-                        >
-                          <span
-                            className={`h-1.5 w-1.5 rounded-full ${
-                              verdictKind === "APPROVED"
-                                ? "bg-emerald-400/80"
-                                : verdictKind === "REJECTED"
+                          className={`h-1.5 w-1.5 rounded-full ${
+                            verdictKind === "APPROVED"
+                              ? "bg-emerald-400/80"
+                              : verdictKind === "REJECTED"
                                 ? "bg-rose-400/80"
                                 : "bg-white/50"
-                            }`}
-                          />
-                          {verdictKind === "APPROVED"
-                            ? "Recomendado"
-                            : verdictKind === "REJECTED"
+                          }`}
+                        />
+                        {verdictKind === "APPROVED"
+                          ? "Recomendado"
+                          : verdictKind === "REJECTED"
                             ? "No recomendado"
                             : "En revisión"}
-                        </span>
+                      </span>
 
-                        <span
-                          className={`inline-flex items-center gap-2 rounded-full px-3 py-1 text-[11px] font-bold border ${getRiskBadgeStyles(
-                            result.overallRiskLevel
-                          )}`}
-                        >
-                          <ShieldAlert className="w-3.5 h-3.5 opacity-80" />
-                          {result.overallRiskLevel || "Riesgo N/A"}
-                        </span>
+                      <span
+                        className={`inline-flex items-center gap-2 rounded-full px-3 py-1 text-[11px] font-bold border ${getRiskBadgeStyles(
+                          result.overallRiskLevel,
+                        )}`}
+                      >
+                        <ShieldAlert className="w-3.5 h-3.5 opacity-80" />
+                        {result.overallRiskLevel || "Riesgo N/A"}
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Content row */}
+                  <div className="mt-4 flex items-start gap-4">
+                    {/* icon */}
+                    <div className="shrink-0">
+                      <div
+                        className={`h-9 w-9 rounded-xl border flex items-center justify-center ${verdictUI.iconWrap}`}
+                      >
+                        {verdictKind === "REJECTED" ? (
+                          <XCircle className="w-5 h-5" />
+                        ) : (
+                          <CheckCircle2 className="w-5 h-5" />
+                        )}
                       </div>
                     </div>
 
-                    {/* Content row */}
-                    <div className="mt-4 flex items-start gap-4">
-                      {/* icon */}
-                      <div className="shrink-0">
-                        <div
-                          className={`h-9 w-9 rounded-xl border flex items-center justify-center ${verdictUI.iconWrap}`}
-                        >
-                          {verdictKind === "REJECTED" ? (
-                            <XCircle className="w-5 h-5" />
-                          ) : (
-                            <CheckCircle2 className="w-5 h-5" />
-                          )}
-                        </div>
-                      </div>
+                    {/* text */}
+                    <div className="min-w-0 flex-1">
+                      <p
+                        className={`text-sm font-extrabold text-white/90 leading-6 ${
+                          verdictExpanded ? "" : "line-clamp-3"
+                        }`}
+                      >
+                        {result.finalVerdict}
+                      </p>
 
-                      {/* text */}
-                      <div className="min-w-0 flex-1">
-                        <p
-                          className={`text-sm font-extrabold text-white/90 leading-6 ${
-                            verdictExpanded ? "" : "line-clamp-3"
-                          }`}
-                        >
-                          {result.finalVerdict}
-                        </p>
-
-                        {/* footer row aligned */}
-                        <div className="mt-3 flex items-center justify-between gap-3">
-                          <p className="text-xs text-white/45 leading-relaxed">
-                            {verdictKind === "REJECTED"
-                              ? "Recomendación: no continuar el proceso. Requiere mejoras antes de una nueva evaluación."
-                              : verdictKind === "APPROVED"
+                      {/* footer row aligned */}
+                      <div className="mt-3 flex items-center justify-between gap-3">
+                        <p className="text-xs text-white/45 leading-relaxed">
+                          {verdictKind === "REJECTED"
+                            ? "Recomendación: no continuar el proceso. Requiere mejoras antes de una nueva evaluación."
+                            : verdictKind === "APPROVED"
                               ? "Recomendación: continuar el proceso. Validar evidencias y referencias en la siguiente fase."
                               : "Recomendación: revisar el reporte y validar evidencia antes de decidir."}
-                          </p>
+                        </p>
 
-                          <button
-                            type="button"
-                            onClick={() => setVerdictExpanded((v) => !v)}
-                            className="shrink-0 rounded-full px-4 py-2 text-[11px] font-extrabold uppercase tracking-widest
+                        <button
+                          type="button"
+                          onClick={() => setVerdictExpanded((v) => !v)}
+                          className="shrink-0 rounded-full px-4 py-2 text-[11px] font-extrabold uppercase tracking-widest
                                       border border-white/15 bg-white/[0.03] text-white/80
                                       hover:bg-white/[0.06] hover:text-white transition"
-                            aria-expanded={verdictExpanded}
-                          >
-                            {verdictExpanded ? "Ver menos" : "Ver más"}
-                          </button>
-                        </div>
+                          aria-expanded={verdictExpanded}
+                        >
+                          {verdictExpanded ? "Ver menos" : "Ver más"}
+                        </button>
                       </div>
                     </div>
                   </div>
                 </div>
               </div>
-
+            </div>
           </div>
         </div>
 
@@ -511,7 +548,9 @@ const AnalysisResults: React.FC<AnalysisResultsProps> = ({
             label="Nivel de Riesgo"
             icon={<ShieldAlert className="w-4 h-4" />}
             value={
-              <span className={`inline-flex px-2 py-0.5 text-sm rounded border ${getRiskBadgeStyles(result.overallRiskLevel)}`}>
+              <span
+                className={`inline-flex px-2 py-0.5 text-sm rounded border ${getRiskBadgeStyles(result.overallRiskLevel)}`}
+              >
                 {result.overallRiskLevel}
               </span>
             }
@@ -544,7 +583,10 @@ const AnalysisResults: React.FC<AnalysisResultsProps> = ({
               <div className="relative z-10 scale-110">
                 <GaugeChart value={result.overallScore} label="" size={200} />
               </div>
-              <div className="w-full mt-8 pt-6 border-t border-white/5 relative z-10">
+              <div
+                data-anchor="interviews"
+                className="w-full mt-8 pt-6 border-t border-white/5 relative z-10"
+              >
                 <ComparativeBars categoryAnalyses={result.categoryAnalyses} />
               </div>
             </div>
@@ -554,24 +596,33 @@ const AnalysisResults: React.FC<AnalysisResultsProps> = ({
                 <div className="p-2 rounded-lg bg-amber-500/10 text-amber-500">
                   <AlertTriangle className="w-4 h-4" />
                 </div>
-                <h3 className="text-sm font-bold text-white">Alertas & Mitigación</h3>
+                <h3 className="text-sm font-bold text-white">
+                  Alertas & Mitigación
+                </h3>
               </div>
 
               {result.mitigationRecommendations.length > 0 ? (
                 <div className="space-y-3">
                   {result.mitigationRecommendations.map((rec, i) => (
-                    <div key={i} className="flex gap-3 items-start bg-white/[0.02] p-3 rounded-xl border border-white/5">
+                    <div
+                      key={i}
+                      className="flex gap-3 items-start bg-white/[0.02] p-3 rounded-xl border border-white/5"
+                    >
                       <span className="flex-shrink-0 w-5 h-5 rounded-full bg-amber-500/20 text-amber-500 text-[10px] font-bold flex items-center justify-center mt-0.5">
                         {i + 1}
                       </span>
-                      <p className="text-xs text-neutral-400 leading-relaxed">{rec}</p>
+                      <p className="text-xs text-neutral-400 leading-relaxed">
+                        {rec}
+                      </p>
                     </div>
                   ))}
                 </div>
               ) : (
                 <div className="text-center py-4">
                   <CheckCircle2 className="w-8 h-8 text-neutral-700 mx-auto mb-2" />
-                  <p className="text-xs text-neutral-500">Sin riesgos críticos detectados.</p>
+                  <p className="text-xs text-neutral-500">
+                    Sin riesgos críticos detectados.
+                  </p>
                 </div>
               )}
             </div>
@@ -584,7 +635,9 @@ const AnalysisResults: React.FC<AnalysisResultsProps> = ({
 
               <div className="flex items-center gap-2 mb-6 text-emerald-400 relative z-10">
                 <Sparkles className="w-4 h-4" />
-                <h3 className="text-xs font-bold uppercase tracking-widest">Resumen Ejecutivo de IA</h3>
+                <h3 className="text-xs font-bold uppercase tracking-widest">
+                  Resumen Ejecutivo de IA
+                </h3>
               </div>
 
               <div className="prose prose-invert prose-sm max-w-none relative z-10">
@@ -600,7 +653,9 @@ const AnalysisResults: React.FC<AnalysisResultsProps> = ({
                   <Target className="w-4 h-4 text-neutral-500" />
                   Análisis Dimensional
                 </h3>
-                <span className="text-[10px] font-mono text-neutral-600">5 DIMENSIONES ANALIZADAS</span>
+                <span className="text-[10px] font-mono text-neutral-600">
+                  5 DIMENSIONES ANALIZADAS
+                </span>
               </div>
 
               <div className="grid md:grid-cols-2 gap-4">
@@ -614,8 +669,11 @@ const AnalysisResults: React.FC<AnalysisResultsProps> = ({
       </div>
 
       {/* Brand tiny note (optional visual cohesion) */}
-      <div className="pointer-events-none fixed inset-x-0 bottom-0 h-[1px] opacity-40"
-           style={{ background: `linear-gradient(90deg, transparent, ${brandFrom}, ${brandTo}, transparent)` }}
+      <div
+        className="pointer-events-none fixed inset-x-0 bottom-0 h-[1px] opacity-40"
+        style={{
+          background: `linear-gradient(90deg, transparent, ${brandFrom}, ${brandTo}, transparent)`,
+        }}
       />
     </div>
   );

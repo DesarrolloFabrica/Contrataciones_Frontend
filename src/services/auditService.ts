@@ -6,14 +6,15 @@ export interface AuditEvent {
   type: string;
   actor: AuditActor;
   timestamp: string;
+  evaluationId?: string | null;
   metadata?: Record<string, any>;
 }
 
 const STORAGE_KEY = "cun-audit-log";
 
 // ✅ parametrizable
-const MAX_STORED_EVENTS = 300;          // total guardados en localStorage
-const DEDUPE_WINDOW_MS = 1500;          // evita duplicados idénticos por spam
+const MAX_STORED_EVENTS = 300; // total guardados en localStorage
+const DEDUPE_WINDOW_MS = 1500; // evita duplicados idénticos por spam
 
 function generateId(): string {
   const c = (globalThis as any).crypto;
@@ -29,15 +30,27 @@ function safeParse<T>(raw: string | null, fallback: T): T {
   }
 }
 
-function signatureOf(input: { type: string; actor: AuditActor; metadata?: Record<string, any> }) {
+function signatureOf(input: {
+  type: string;
+  actor: AuditActor;
+  evaluationId?: string | null;
+  metadata?: Record<string, any>;
+}) {
   // firma “estable” para dedupe (no perfecta, pero suficiente para UI)
-  const a = input.actor?.id ?? input.actor?.email ?? input.actor?.name ?? "system";
-  return JSON.stringify({ t: input.type, a, m: input.metadata ?? null });
+  const a =
+    input.actor?.id ?? input.actor?.email ?? input.actor?.name ?? "system";
+  return JSON.stringify({
+    t: input.type,
+    a,
+    e: input.evaluationId ?? null,
+    m: input.metadata ?? null,
+  });
 }
 
 export function auditAppend(input: {
   type: string;
   actor: AuditActor;
+  evaluationId?: string | null;
   metadata?: Record<string, any>;
 }) {
   if (typeof window === "undefined") return;
@@ -47,6 +60,7 @@ export function auditAppend(input: {
     id: generateId(),
     type: input.type,
     actor: input.actor,
+    evaluationId: input.evaluationId ?? null,
     metadata: input.metadata,
     timestamp: nowIso,
   };
@@ -58,10 +72,17 @@ export function auditAppend(input: {
     // ✅ DEDUPE: si el último evento es idéntico y ocurrió hace nada, no lo agregues
     const last = list[list.length - 1];
     if (last) {
-      const lastSig = signatureOf({ type: last.type, actor: last.actor, metadata: last.metadata });
+      const lastSig = signatureOf({
+        type: last.type,
+        actor: last.actor,
+        evaluationId: last.evaluationId ?? null,
+        metadata: last.metadata,
+      });
       const newSig = signatureOf(input);
 
-      const dt = Math.abs(new Date(nowIso).getTime() - new Date(last.timestamp).getTime());
+      const dt = Math.abs(
+        new Date(nowIso).getTime() - new Date(last.timestamp).getTime(),
+      );
       if (lastSig === newSig && dt <= DEDUPE_WINDOW_MS) {
         return;
       }

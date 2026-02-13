@@ -6,6 +6,7 @@ import type {
   AnalysisResult,
   InterviewData,
   TeacherEvaluationSummary,
+  DecisionStatusApi,
 } from "../../../types";
 
 import { getTeacherEvaluationById } from "../../../services/teachersService";
@@ -18,10 +19,12 @@ import type {
   CoordinatorCriteria,
   CoordinatorNotesByEval,
   CoordinatorNotes,
+  CandidateGroup,
 } from "../types";
 
 import { DEFAULT_CRITERIA } from "../types";
 import { mapFormToInterviewData } from "../utils/mapFormToInterviewData";
+import { getCandidateKey } from "../utils/candidateKey";
 
 type Params = {
   user: any;
@@ -37,6 +40,13 @@ const emptyNotes = (): CoordinatorNotes => ({
   notes: "",
   criteria: emptyCriteria(),
 });
+
+function apiDecisionToLocal(v: DecisionStatusApi | null | undefined): LocalDecision {
+  const s = String(v ?? "").toUpperCase();
+  if (s === "APPROVED") return "APROBADO";
+  if (s === "REJECTED") return "RECHAZADO";
+  return "PENDIENTE";
+}
 
 export const useEvaluationDetail = ({
   user,
@@ -61,7 +71,7 @@ export const useEvaluationDetail = ({
   const [notesByEval, setNotesByEval] = useState<CoordinatorNotesByEval>({});
 
   const bumpAudit = useCallback(() => {
-    // placeholder por si luego quieres forzar refresh de auditoría
+    // placeholder (por si luego fuerzas refresh de auditoría)
   }, []);
 
   const clearSelection = useCallback(() => {
@@ -70,7 +80,7 @@ export const useEvaluationDetail = ({
     setLoadingDetail(false);
     setDecision("PENDIENTE");
     setDecisionComment("");
-    // ojo: no borramos notesByEval para que queden guardadas mientras navegas
+    // no borramos notesByEval para mantener notas al navegar
   }, []);
 
   // ✅ notas actuales según selectedId
@@ -78,6 +88,52 @@ export const useEvaluationDetail = ({
     if (!selectedId) return emptyNotes();
     return notesByEval[selectedId] ?? emptyNotes();
   }, [notesByEval, selectedId]);
+
+  // ✅ decisión actual: primero localDecisions, si no existe usa status de backend (summary)
+  const decisionStatus = useMemo(() => {
+    if (!selectedId) return "PENDIENTE" as LocalDecision;
+
+    const local = localDecisions[selectedId];
+    if (local) return local;
+
+    const api = evaluations.find((e) => e.id === selectedId)?.coordinatorDecisionStatus;
+    return apiDecisionToLocal(api);
+  }, [evaluations, localDecisions, selectedId]);
+
+  // ✅ candidateGroup para entrevistas
+  const candidateGroup = useMemo(() => {
+    if (!selectedId) return null;
+    const base = evaluations.find((e) => e.id === selectedId);
+    if (!base) return null;
+
+    const key = getCandidateKey(base);
+    const interviews = evaluations
+      .filter((ev) => getCandidateKey(ev) === key)
+      .slice()
+      .sort((a, b) =>
+        String(b.createdAt ?? "").localeCompare(String(a.createdAt ?? "")),
+      );
+
+    const latest = interviews[0] ?? base;
+
+    const doc = String(
+      latest.candidate?.documentNumber ??
+        latest.candidate?.document_number ??
+        "",
+    ).trim();
+
+    const group: CandidateGroup = {
+      key,
+      documentNumber: doc,
+      candidateName: latest.candidate?.fullName ?? "",
+      school: latest.candidate?.schoolNameSnapshot ?? "",
+      program: latest.candidate?.programNameSnapshot ?? "",
+      interviews,
+      latest,
+    };
+
+    return group;
+  }, [evaluations, selectedId]);
 
   // ✅ setters que escriben sobre notesByEval
   const setNotes = useCallback(
@@ -88,7 +144,7 @@ export const useEvaluationDetail = ({
         [selectedId]: { ...(prev[selectedId] ?? emptyNotes()), notes: v },
       }));
     },
-    [selectedId]
+    [selectedId],
   );
 
   const setCriteria = useCallback(
@@ -99,7 +155,7 @@ export const useEvaluationDetail = ({
         [selectedId]: { ...(prev[selectedId] ?? emptyNotes()), criteria: next },
       }));
     },
-    [selectedId]
+    [selectedId],
   );
 
   const handleSelectEvaluation = useCallback(
@@ -117,13 +173,13 @@ export const useEvaluationDetail = ({
       setSelectedDetail(null);
       setLoadingDetail(true);
 
-      const current =
-        localDecisions[id] ??
-        ((evaluations.find((e) => e.id === id)?.coordinatorDecisionStatus as
-          | LocalDecision
-          | undefined) ?? "PENDIENTE");
+      // ✅ decisión inicial (local o backend)
+      const fromLocal = localDecisions[id];
+      const fromApi = apiDecisionToLocal(
+        evaluations.find((e) => e.id === id)?.coordinatorDecisionStatus,
+      );
 
-      setDecision(current);
+      setDecision(fromLocal ?? fromApi);
       setDecisionComment("");
 
       // ✅ asegura notas base para esa evaluación
@@ -132,6 +188,9 @@ export const useEvaluationDetail = ({
       try {
         const detail = await getTeacherEvaluationById(id);
 
+        // ✅ ojo: tu backend guarda AnalysisResult en aiRawJson.rawOutput
+        // pero en tu types, TeacherAiResult.rawOutput?: AnalysisResult
+        // aquí asumimos que detail.aiRawJson YA ES AnalysisResult (como venías manejándolo).
         const analysis: AnalysisResult = detail.aiRawJson;
         const interview = mapFormToInterviewData(detail);
 
@@ -142,17 +201,15 @@ export const useEvaluationDetail = ({
         setLoadingDetail(false);
       }
     },
-    [actor, bumpAudit, evaluations, localDecisions, setNotesByEval]
+    [actor, bumpAudit, evaluations, localDecisions],
   );
 
   const exportPdf = useCallback(async () => {
     if (!selectedDetail || !selectedId) return;
     try {
-      await generateAnalysisPdfFromData(
-        selectedDetail.analysis,
-        selectedDetail.interview,
-        { download: true }
-      );
+      await generateAnalysisPdfFromData(selectedDetail.analysis, selectedDetail.interview, {
+        download: true,
+      });
 
       auditAppend({
         type: "REPORT_PDF_DOWNLOADED",
@@ -173,7 +230,7 @@ export const useEvaluationDetail = ({
 
       const decidedAt = new Date().toISOString();
       const decidedById = user?.id ?? null;
-      const decidedByName = user?.name ?? null;
+      const decidedByName = user?.name ?? user?.fullName ?? null;
 
       setDecision(newDecision);
       setLocalDecisions((prev) => ({ ...prev, [selectedId]: newDecision }));
@@ -193,7 +250,7 @@ export const useEvaluationDetail = ({
 
       bumpAudit();
     },
-    [actor, bumpAudit, selectedId, setLocalDecisions, user]
+    [actor, bumpAudit, selectedId, setLocalDecisions, user],
   );
 
   const onDecisionCommentBlur = useCallback(() => {
@@ -220,22 +277,18 @@ export const useEvaluationDetail = ({
 
   // ✅ Nota efectiva: primero NOTAS, si está vacía usa el comentario de DECISIÓN
   const effectiveNote = useMemo(() => {
-    const n = ((currentNotes.notes ?? "") as string).trim();
+    const n = String(currentNotes.notes ?? "").trim();
     if (n.length) return n;
-    return ((decisionComment ?? "") as string).trim();
+    return String(decisionComment ?? "").trim();
   }, [currentNotes.notes, decisionComment]);
 
-  const effectiveNoteLen = useMemo(() => effectiveNote.length, [effectiveNote]);
+  const effectiveNoteLen = effectiveNote.length;
 
   const missingReasons = useMemo(() => {
     const out: string[] = [];
     if (!selectedId) out.push("Selecciona una evaluación.");
-    if (decision === "PENDIENTE")
-      out.push("Selecciona una decisión (Aprobar o Rechazar).");
-
-    if (effectiveNoteLen < 30)
-      out.push("Escribe una nota breve (mínimo 30 caracteres).");
-
+    if (decision === "PENDIENTE") out.push("Selecciona una decisión (Aprobar o Rechazar).");
+    if (effectiveNoteLen < 30) out.push("Escribe una nota breve (mínimo 30 caracteres).");
     if (checkedCount < 2) out.push("Marca al menos 2 criterios en Notas.");
     return out;
   }, [checkedCount, decision, selectedId, effectiveNoteLen]);
@@ -246,14 +299,13 @@ export const useEvaluationDetail = ({
     if (!selectedId) return;
     if (!canSubmitDecision) return;
 
-    // (mock) esto es solo auditoría local; el POST real ya lo hace DecisionTab al guardar en backend
     auditAppend({
-      type: "COORDINATOR_DECISION_SET",
+      type: "COORDINATOR_DECISION_SUBMITTED",
       actor,
       evaluationId: selectedId,
       metadata: {
         status: decision,
-        criteria: currentNotes.criteria,
+        criteria: currentNotes.criteria as any,
         noteLen: effectiveNoteLen,
         source: "coordinator-submit",
       },
@@ -261,15 +313,7 @@ export const useEvaluationDetail = ({
 
     bumpAudit();
     alert("✅ Decisión enviada al administrador.");
-  }, [
-    actor,
-    bumpAudit,
-    canSubmitDecision,
-    currentNotes.criteria,
-    decision,
-    effectiveNoteLen,
-    selectedId,
-  ]);
+  }, [actor, bumpAudit, canSubmitDecision, currentNotes.criteria, decision, effectiveNoteLen, selectedId]);
 
   return {
     selectedId,
@@ -278,8 +322,10 @@ export const useEvaluationDetail = ({
 
     decision,
     decisionComment,
+    decisionStatus,
+    candidateGroup,
 
-    // ✅ notas + criterios (para NotesTab)
+    // ✅ notas + criterios (para NotesTab / UI)
     notes: currentNotes.notes,
     criteria: currentNotes.criteria,
     setNotes,

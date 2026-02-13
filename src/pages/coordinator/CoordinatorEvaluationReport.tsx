@@ -1,22 +1,29 @@
 // src/pages/coordinator/CoordinatorEvaluationReport.tsx
-import React, { useEffect, useMemo, useState, useCallback } from "react";
-import { useNavigate, useParams } from "react-router-dom";
+import React, { useEffect, useMemo, useState, useCallback, useRef } from "react";
+import { useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { ArrowLeft, Loader2, AlertCircle } from "lucide-react";
 
 import type { AnalysisResult, InterviewData } from "../../types";
-
-// ✅ Trae el detalle completo (mismo endpoint que usa líder y tu hook)
 import { getTeacherEvaluationById } from "../../services/teachersService";
-
-// ✅ Reutilizamos el mismo mapper que ya usa el coordinador (evita duplicar lógica)
 import { mapFormToInterviewData } from "./utils/mapFormToInterviewData";
-
-// ✅ Reutilizamos el mismo componente de reporte del líder
 import AnalysisResults from "../../components/AnalysisResults";
+
+type DetailTab = "ai" | "interviews" | "notes" | "decision";
+
+const normalizeTab = (raw: string | null): DetailTab => {
+  const t = String(raw ?? "").trim().toLowerCase();
+  if (t === "interviews" || t === "entrevistas" || t === "comparativa") return "interviews";
+  if (t === "notes" || t === "notas") return "notes";
+  if (t === "decision" || t === "decisión" || t === "decision") return "decision";
+  return "ai";
+};
 
 const CoordinatorEvaluationReport: React.FC = () => {
   const navigate = useNavigate();
   const { evaluationId } = useParams<{ evaluationId: string }>();
+  const [searchParams] = useSearchParams();
+
+  const initialTab = useMemo(() => normalizeTab(searchParams.get("tab")), [searchParams]);
 
   // -----------------------------
   // Estado local de carga
@@ -27,11 +34,13 @@ const CoordinatorEvaluationReport: React.FC = () => {
   const [analysis, setAnalysis] = useState<AnalysisResult | null>(null);
   const [interviewData, setInterviewData] = useState<InterviewData | null>(null);
 
+  // Para “auto-scroll” si el usuario viene por Comparativa
+  const rootRef = useRef<HTMLDivElement | null>(null);
+
   // -----------------------------
   // Helper: volver al panel de coordinador
   // -----------------------------
   const handleBack = useCallback(() => {
-    // ✅ vuelve a la consola del coordinador
     navigate("/coordinator", { replace: false });
   }, [navigate]);
 
@@ -50,13 +59,9 @@ const CoordinatorEvaluationReport: React.FC = () => {
       setError(null);
 
       try {
-        // ✅ 1) Obtener el detalle completo
         const detail = await getTeacherEvaluationById(evaluationId);
 
-        // ✅ 2) Extraer el JSON completo de IA (misma llave usada en tu hook)
         const ai: AnalysisResult = detail.aiRawJson;
-
-        // ✅ 3) Reconstruir InterviewData (misma función del coordinador)
         const interview: InterviewData = mapFormToInterviewData(detail);
 
         setAnalysis(ai);
@@ -64,9 +69,7 @@ const CoordinatorEvaluationReport: React.FC = () => {
       } catch (err) {
         console.error("Error cargando reporte (coordinator):", err);
         setError(
-          err instanceof Error
-            ? err.message
-            : "No se pudo cargar el reporte de la evaluación."
+          err instanceof Error ? err.message : "No se pudo cargar el reporte de la evaluación."
         );
       } finally {
         setLoading(false);
@@ -76,11 +79,59 @@ const CoordinatorEvaluationReport: React.FC = () => {
     load();
   }, [evaluationId]);
 
+  /**
+   * ✅ “Compatibilidad inteligente” con la navegación:
+   * - Si vienes con ?tab=interviews:
+   *   - Intentamos abrir esa sección.
+   *   - Como AnalysisResults es reutilizado y puede cambiar, hacemos fallback:
+   *     1) buscar un elemento con data-anchor="interviews"
+   *     2) buscar un heading que incluya "Entrevistas" o "Comparativa"
+   *     3) si no existe nada, al menos hacemos scroll al inicio del reporte.
+   */
+  useEffect(() => {
+    if (loading) return;
+    if (error) return;
+    if (!analysis || !interviewData) return;
+
+    if (initialTab !== "interviews") return;
+
+    // Espera un frame para que el DOM pinte
+    requestAnimationFrame(() => {
+      const root = rootRef.current ?? document;
+      const byAnchor =
+        (root as any).querySelector?.('[data-anchor="interviews"]') ??
+        document.querySelector?.('[data-anchor="interviews"]');
+
+      if (byAnchor && typeof (byAnchor as any).scrollIntoView === "function") {
+        (byAnchor as any).scrollIntoView({ behavior: "smooth", block: "start" });
+        return;
+      }
+
+      // Fallback: buscar título (muy tolerante)
+      const headings = Array.from(document.querySelectorAll("h1,h2,h3,h4,button"));
+      const target = headings.find((el) => {
+        const txt = (el.textContent ?? "").toLowerCase();
+        return txt.includes("entrevist") || txt.includes("comparativ");
+      });
+
+      if (target && typeof (target as any).scrollIntoView === "function") {
+        (target as any).scrollIntoView({ behavior: "smooth", block: "start" });
+        return;
+      }
+
+      // Último fallback
+      rootRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+    });
+  }, [initialTab, loading, error, analysis, interviewData]);
+
   // -----------------------------
   // UI
   // -----------------------------
   return (
-    <div className="min-h-screen w-full bg-[#020202] text-white font-sans relative overflow-x-hidden">
+    <div
+      ref={rootRef}
+      className="min-h-screen w-full bg-[#020202] text-white font-sans relative overflow-x-hidden"
+    >
       {/* Fondo suave para coherencia visual */}
       <div className="pointer-events-none absolute inset-0 overflow-hidden">
         <div className="absolute -top-24 -left-24 h-[420px] w-[420px] rounded-full blur-3xl opacity-25 bg-emerald-500/10" />
@@ -109,8 +160,14 @@ const CoordinatorEvaluationReport: React.FC = () => {
             Volver al panel
           </button>
 
-          <div className="text-xs text-white/45 font-mono">
-            Eval ID: {evaluationId ?? "—"}
+          <div className="flex items-center gap-3">
+            {initialTab === "interviews" ? (
+              <span className="text-[11px] px-2.5 py-1 rounded-full border border-emerald-500/25 bg-emerald-500/10 text-emerald-200">
+                Vista: Comparativa
+              </span>
+            ) : null}
+
+            <div className="text-xs text-white/45 font-mono">Eval ID: {evaluationId ?? "—"}</div>
           </div>
         </div>
       </div>
@@ -142,16 +199,12 @@ const CoordinatorEvaluationReport: React.FC = () => {
         {!loading && !error && analysis && interviewData && (
           <div className="animate-[fadeInUp_320ms_ease-out]">
             <AnalysisResults
-              // ✅ Igual que el líder
               result={analysis}
               interviewData={interviewData}
-
-              // ✅ En coordinador, “reset” lo interpretamos como volver al panel
               onReset={handleBack}
-
-              // ✅ Útil si el componente exporta / sube PDF
               evaluationId={evaluationId ?? undefined}
               resetLabel="Volver al panel"
+              initialTab={initialTab}
             />
           </div>
         )}

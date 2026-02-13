@@ -19,7 +19,7 @@ interface TeacherEvaluationItemProps {
   /**
    * ✅ Footer opcional para mostrar info extra dentro de la tarjeta
    * (ej: # entrevistas + botón ver detalle).
-   */x
+   */
   footer?: React.ReactNode;
 }
 
@@ -27,7 +27,8 @@ const pillBase =
   "inline-flex items-center px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-widest border";
 
 function getIaBadge(verdict: string) {
-  const v = (verdict ?? "").toLowerCase().trim();
+  const full = (verdict ?? "").trim();
+  const v = full.toLowerCase();
 
   const isNotRecommended =
     v.includes("no recomend") ||
@@ -39,7 +40,8 @@ function getIaBadge(verdict: string) {
   if (isNotRecommended) {
     return {
       cls: "bg-rose-500/10 text-rose-300 border-rose-500/30",
-      label: verdict || "No recomendada",
+      short: "No recomendado",
+      full: full || "No recomendado",
     };
   }
 
@@ -53,22 +55,29 @@ function getIaBadge(verdict: string) {
   if (isCaution) {
     return {
       cls: "bg-amber-500/10 text-amber-300 border-amber-500/30",
-      label: verdict || "Precaución",
+      short: "Con reservas",
+      full: full || "Con reservas",
     };
   }
 
-  const isRecommended = v.includes("recomend") || v.includes("apto") || v.includes("idóneo");
+  const isRecommended =
+    v.includes("recomend") || v.includes("apto") || v.includes("idóneo");
 
   if (isRecommended) {
+    // si viene “Recomendación fuerte…” o “altamente recomendada…”
+    const isStrong =
+      v.includes("fuerte") || v.includes("altamente") || v.includes("excepcional");
     return {
       cls: "bg-emerald-500/10 text-emerald-300 border-emerald-500/30",
-      label: verdict || "Recomendada",
+      short: isStrong ? "Recomendación fuerte" : "Recomendado",
+      full: full || "Recomendado",
     };
   }
 
   return {
     cls: "bg-slate-500/10 text-slate-300 border-slate-500/30",
-    label: verdict || "Sin veredicto",
+    short: "Sin veredicto",
+    full: full || "Sin veredicto",
   };
 }
 
@@ -114,12 +123,15 @@ const TeacherEvaluationItem: React.FC<TeacherEvaluationItemProps> = ({
   }, [evaluation.createdAt]);
 
   const verdict = evaluation.aiFinalRecommendation || "";
-  const ia = useMemo(() => getIaBadge(verdict), [verdict]);
+  const ia = useMemo(() => getIaBadge(verdict), remembering => remembering, [verdict]);
   const decision = useMemo(() => getDecisionBadge(decisionStatus), [decisionStatus]);
 
   const score = Math.round(evaluation.aiTeachingSuitabilityScore || 0);
-
   const clickableCls = onClick ? "cursor-pointer" : "cursor-default";
+
+  const name = evaluation.candidate?.fullName ?? "Candidato sin nombre";
+  const school = evaluation.candidate?.schoolNameSnapshot ?? "";
+  const program = evaluation.candidate?.programNameSnapshot ?? "";
 
   return (
     <div
@@ -148,35 +160,37 @@ const TeacherEvaluationItem: React.FC<TeacherEvaluationItemProps> = ({
       <div className="flex items-start justify-between gap-4">
         {/* LEFT */}
         <div className="min-w-0 space-y-1">
-          <p className="text-sm font-semibold text-white truncate">
-            {evaluation.candidate?.fullName ?? "Candidato sin nombre"}
-          </p>
+          <p className="text-sm font-semibold text-white truncate">{name}</p>
+
+          {/* 👇 “Sin veredicto / estado IA corto” va abajo del nombre */}
+          <div className="text-[11px] text-white/55">
+            {ia.short}
+          </div>
 
           <div className="text-[11px] text-gray-500 flex flex-wrap items-center gap-2">
-            {evaluation.candidate?.schoolNameSnapshot && (
-              <span className="truncate max-w-[220px]">
-                {evaluation.candidate.schoolNameSnapshot}
-              </span>
-            )}
-
-            {evaluation.candidate?.programNameSnapshot && (
-              <>
-                <span className="w-1 h-1 rounded-full bg-gray-600" />
-                <span className="truncate max-w-[260px]">
-                  {evaluation.candidate.programNameSnapshot}
-                </span>
-              </>
-            )}
+            {school && <span className="truncate max-w-[220px]">{school}</span>}
+            {school && program && <span className="w-1 h-1 rounded-full bg-gray-600" />}
+            {program && <span className="truncate max-w-[260px]">{program}</span>}
           </div>
 
           <p className="text-[11px] text-neutral-600">{dateLabel}</p>
 
-          {decision && <div className={`${pillBase} ${decision.cls} normal-case mt-2`}>{decision.label}</div>}
+          {decision && (
+            <div className={`${pillBase} ${decision.cls} normal-case mt-2`}>
+              {decision.label}
+            </div>
+          )}
         </div>
 
         {/* RIGHT */}
-        <div className="text-right flex flex-col items-end gap-2 shrink-0">
-          <div className={`${pillBase} ${ia.cls} normal-case max-w-[240px] truncate`}>{ia.label}</div>
+        <div className="text-right flex flex-col items-end gap-2 shrink-0 min-w-[140px]">
+          {/* ✅ IA pill arriba, pero CORTA; texto largo queda en tooltip */}
+          <div
+            title={ia.full}
+            className={`${pillBase} ${ia.cls} normal-case max-w-[220px] truncate`}
+          >
+            {ia.short}
+          </div>
 
           <div className="text-xs font-semibold">
             <span className="text-neutral-400">Score </span>

@@ -1,10 +1,6 @@
 // src/services/geminiService.ts
 import { GoogleGenAI, Type } from "@google/genai";
-import {
-  InterviewData,
-  AnalysisResult,
-  TeacherAiResult,
-} from "../types";
+import { InterviewData, AnalysisResult, TeacherAiResult } from "../types";
 
 // Tomar la API key desde Vite
 const apiKey = import.meta.env.VITE_GEMINI_API_KEY as string | undefined;
@@ -12,7 +8,7 @@ const apiKey = import.meta.env.VITE_GEMINI_API_KEY as string | undefined;
 // ⚠️ IMPORTANTE: ya NO lanzamos error aquí
 if (!apiKey) {
   console.warn(
-    "⚠️ VITE_GEMINI_API_KEY no está configurada. La IA del frontend estará deshabilitada en este entorno."
+    "⚠️ VITE_GEMINI_API_KEY no está configurada. La IA del frontend estará deshabilitada en este entorno.",
   );
 }
 
@@ -119,118 +115,117 @@ const analysisSchema = {
   ],
 };
 
-  export type InterviewComparisonResult = {
-    interviewsCompared: number;
-  
-    // Resumen ultra corto para encabezado
-    executiveComparison: string;
-  
-    // Similitudes fuertes (3–8 bullets)
-    similarities: string[];
-  
-    // Diferencias claras por temas (3–10 bullets)
-    differences: string[];
-  
-    // Evolución entre entrevistas (mejoró/empeoró/estable) con explicación
-    evolution: {
-      overallTrend: "Mejora" | "Empeora" | "Estable" | "Mixto";
-      scoreTrend: string; // explicación breve
-      riskTrend: string;  // explicación breve
-      verdictTrend: string; // explicación breve
-    };
-  
-    // Hallazgos por dimensión (las 4 categorías)
-    categoryChanges: Array<{
-      category: string;
-      trend: "Mejora" | "Empeora" | "Estable" | "Mixto";
-      keyChanges: string[]; // bullets
-    }>;
-  
-    // Alertas o inconsistencias (opcional)
-    redFlags: string[];
-  
-    // Qué entrevista parece "más fuerte" (si aplica)
-    bestInterview: {
-      evaluationId: string;
-      reason: string;
-    } | null;
-  
-    // Qué entrevista parece "más débil" (si aplica)
-    weakestInterview: {
-      evaluationId: string;
-      reason: string;
-    } | null;
+export type InterviewComparisonResult = {
+  interviewsCompared: number;
+
+  // Resumen ultra corto para encabezado
+  executiveComparison: string;
+
+  // Similitudes fuertes (3–8 bullets)
+  similarities: string[];
+
+  // Diferencias claras por temas (3–10 bullets)
+  differences: string[];
+
+  // Evolución entre entrevistas (mejoró/empeoró/estable) con explicación
+  evolution: {
+    overallTrend: "Mejora" | "Empeora" | "Estable" | "Mixto";
+    scoreTrend: string; // explicación breve
+    riskTrend: string; // explicación breve
+    verdictTrend: string; // explicación breve
   };
-  
-  // ✅ Schema para obligar JSON consistente (Gemini responseSchema)
-  const comparisonSchema = {
-    type: Type.OBJECT,
-    properties: {
-      interviewsCompared: { type: Type.NUMBER },
-      executiveComparison: { type: Type.STRING },
-      similarities: { type: Type.ARRAY, items: { type: Type.STRING } },
-      differences: { type: Type.ARRAY, items: { type: Type.STRING } },
-      evolution: {
+
+  // Hallazgos por dimensión (las 4 categorías)
+  categoryChanges: Array<{
+    category: string;
+    trend: "Mejora" | "Empeora" | "Estable" | "Mixto";
+    keyChanges: string[]; // bullets
+  }>;
+
+  // Alertas o inconsistencias (opcional)
+  redFlags: string[];
+
+  // Qué entrevista parece "más fuerte" (si aplica)
+  bestInterview: {
+    evaluationId: string;
+    reason: string;
+  } | null;
+
+  // Qué entrevista parece "más débil" (si aplica)
+  weakestInterview: {
+    evaluationId: string;
+    reason: string;
+  } | null;
+};
+
+// ✅ Schema para obligar JSON consistente (Gemini responseSchema)
+const comparisonSchema = {
+  type: Type.OBJECT,
+  properties: {
+    interviewsCompared: { type: Type.NUMBER },
+    executiveComparison: { type: Type.STRING },
+    similarities: { type: Type.ARRAY, items: { type: Type.STRING } },
+    differences: { type: Type.ARRAY, items: { type: Type.STRING } },
+    evolution: {
+      type: Type.OBJECT,
+      properties: {
+        overallTrend: {
+          type: Type.STRING,
+          enum: ["Mejora", "Empeora", "Estable", "Mixto"],
+        },
+        scoreTrend: { type: Type.STRING },
+        riskTrend: { type: Type.STRING },
+        verdictTrend: { type: Type.STRING },
+      },
+      required: ["overallTrend", "scoreTrend", "riskTrend", "verdictTrend"],
+    },
+    categoryChanges: {
+      type: Type.ARRAY,
+      items: {
         type: Type.OBJECT,
         properties: {
-          overallTrend: {
+          category: { type: Type.STRING },
+          trend: {
             type: Type.STRING,
             enum: ["Mejora", "Empeora", "Estable", "Mixto"],
           },
-          scoreTrend: { type: Type.STRING },
-          riskTrend: { type: Type.STRING },
-          verdictTrend: { type: Type.STRING },
+          keyChanges: { type: Type.ARRAY, items: { type: Type.STRING } },
         },
-        required: ["overallTrend", "scoreTrend", "riskTrend", "verdictTrend"],
-      },
-      categoryChanges: {
-        type: Type.ARRAY,
-        items: {
-          type: Type.OBJECT,
-          properties: {
-            category: { type: Type.STRING },
-            trend: {
-              type: Type.STRING,
-              enum: ["Mejora", "Empeora", "Estable", "Mixto"],
-            },
-            keyChanges: { type: Type.ARRAY, items: { type: Type.STRING } },
-          },
-          required: ["category", "trend", "keyChanges"],
-        },
-      },
-      redFlags: { type: Type.ARRAY, items: { type: Type.STRING } },
-      bestInterview: {
-        type: Type.OBJECT,
-        nullable: true,
-        properties: {
-          evaluationId: { type: Type.STRING },
-          reason: { type: Type.STRING },
-        },
-        required: ["evaluationId", "reason"],
-      },
-      weakestInterview: {
-        type: Type.OBJECT,
-        nullable: true,
-        properties: {
-          evaluationId: { type: Type.STRING },
-          reason: { type: Type.STRING },
-        },
-        required: ["evaluationId", "reason"],
+        required: ["category", "trend", "keyChanges"],
       },
     },
-    required: [
-      "interviewsCompared",
-      "executiveComparison",
-      "similarities",
-      "differences",
-      "evolution",
-      "categoryChanges",
-      "redFlags",
-      "bestInterview",
-      "weakestInterview",
-    ],
-  };
-
+    redFlags: { type: Type.ARRAY, items: { type: Type.STRING } },
+    bestInterview: {
+      type: Type.OBJECT,
+      nullable: true,
+      properties: {
+        evaluationId: { type: Type.STRING },
+        reason: { type: Type.STRING },
+      },
+      required: ["evaluationId", "reason"],
+    },
+    weakestInterview: {
+      type: Type.OBJECT,
+      nullable: true,
+      properties: {
+        evaluationId: { type: Type.STRING },
+        reason: { type: Type.STRING },
+      },
+      required: ["evaluationId", "reason"],
+    },
+  },
+  required: [
+    "interviewsCompared",
+    "executiveComparison",
+    "similarities",
+    "differences",
+    "evolution",
+    "categoryChanges",
+    "redFlags",
+    "bestInterview",
+    "weakestInterview",
+  ],
+};
 
 function buildPrompt(data: InterviewData): string {
   return `
@@ -287,12 +282,12 @@ function buildPrompt(data: InterviewData): string {
 
 // --- Función principal de análisis ---
 export const analyzeInterviewData = async (
-  data: InterviewData
+  data: InterviewData,
 ): Promise<AnalysisResult> => {
   // 👉 Aquí sí validamos que exista el cliente antes de usarlo
   if (!ai) {
     throw new Error(
-      "La función de análisis con IA no está disponible en este entorno (falta VITE_GEMINI_API_KEY)."
+      "La función de análisis con IA no está disponible en este entorno (falta VITE_GEMINI_API_KEY).",
     );
   }
 
@@ -323,7 +318,7 @@ export const analyzeInterviewData = async (
     const result: AnalysisResult = JSON.parse(jsonText);
     if (!result.categoryAnalyses.every((c) => "observacionesCorregidas" in c)) {
       console.warn(
-        "La respuesta de la IA no incluyó 'observacionesCorregidas' en todas las categorías."
+        "La respuesta de la IA no incluyó 'observacionesCorregidas' en todas las categorías.",
       );
     }
 
@@ -332,11 +327,11 @@ export const analyzeInterviewData = async (
     console.error("Error al llamar a la API de Gemini:", error);
     if (error instanceof Error && error.message.includes("SAFETY")) {
       throw new Error(
-        "La solicitud fue bloqueada por políticas de seguridad. Revisa el contenido de las respuestas."
+        "La solicitud fue bloqueada por políticas de seguridad. Revisa el contenido de las respuestas.",
       );
     }
     throw new Error(
-      "No se pudo completar el análisis. Inténtalo de nuevo más tarde."
+      "No se pudo completar el análisis. Inténtalo de nuevo más tarde.",
     );
   }
 };
@@ -355,12 +350,12 @@ type CompareInput = Array<{
  * Devuelve un JSON estructurado con similitudes, diferencias y evolución.
  */
 export const compareTeacherEvaluations = async (
-  reports: CompareInput
+  reports: CompareInput,
 ): Promise<InterviewComparisonResult> => {
   // 👉 Validación: cliente IA disponible
   if (!ai) {
     throw new Error(
-      "La comparación con IA no está disponible en este entorno (falta VITE_GEMINI_API_KEY)."
+      "La comparación con IA no está disponible en este entorno (falta VITE_GEMINI_API_KEY).",
     );
   }
 
@@ -371,7 +366,7 @@ export const compareTeacherEvaluations = async (
 
   // ✅ Ordena por fecha ascendente para analizar evolución correctamente
   const ordered = [...reports].sort(
-    (a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
+    (a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime(),
   );
 
   // ✅ Tomamos datos de contexto del primer reporte (si existen)
@@ -454,10 +449,65 @@ Instrucciones:
   }
 };
 
+type CompareInterviewsInput = {
+  interviewA: unknown;
+  interviewB: unknown;
+  meta?: {
+    candidateName?: string;
+    program?: string | null;
+    school?: string | null;
+    evaluationIdA?: string;
+    evaluationIdB?: string;
+    createdAtA?: string;
+    createdAtB?: string;
+  };
+};
+
+const normalizeAnalysisResult = (raw: unknown): AnalysisResult => {
+  if (typeof raw === "string") {
+    return JSON.parse(raw) as AnalysisResult;
+  }
+
+  return raw as AnalysisResult;
+};
+
+/**
+ * ✅ Compat: comparar 2 entrevistas en formato raw (string u objeto).
+ */
+export const compareInterviewsWithGemini = async (
+  input: CompareInterviewsInput,
+): Promise<InterviewComparisonResult> => {
+  const analysisA = normalizeAnalysisResult(input.interviewA);
+  const analysisB = normalizeAnalysisResult(input.interviewB);
+
+  const createdAtA = input.meta?.createdAtA ?? new Date(0).toISOString();
+  const createdAtB = input.meta?.createdAtB ?? new Date(1).toISOString();
+
+  const reports: CompareInput = [
+    {
+      evaluationId: input.meta?.evaluationIdA ?? "A",
+      createdAt: createdAtA,
+      analysis: analysisA,
+      candidateName: input.meta?.candidateName,
+      programName: input.meta?.program ?? undefined,
+      schoolName: input.meta?.school ?? undefined,
+    },
+    {
+      evaluationId: input.meta?.evaluationIdB ?? "B",
+      createdAt: createdAtB,
+      analysis: analysisB,
+      candidateName: input.meta?.candidateName,
+      programName: input.meta?.program ?? undefined,
+      schoolName: input.meta?.school ?? undefined,
+    },
+  ];
+
+  return compareTeacherEvaluations(reports);
+};
 
 // --- Helper que empaqueta el resultado para el backend ---
 export const analyzeTeacherInterview = async (
-  data: InterviewData
+  data: InterviewData,
 ): Promise<TeacherAiResult> => {
   const result = await analyzeInterviewData(data);
 
