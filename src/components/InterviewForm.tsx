@@ -46,6 +46,7 @@ import {
 } from "../services/teachersService";
 
 import { useAuth } from "../context/AuthContext";
+import api from "../services/apiClient";
 
 interface InterviewFormProps {
   onSubmit: (data: InterviewData) => void;
@@ -467,24 +468,9 @@ useEffect(() => {
     const loadSchools = async () => {
       setSchoolsLoading(true);
       try {
-        const token =
-          (user as any)?.accessToken ??
-          (user as any)?.token ??
-          (user as any)?.jwt ??
-          null;
-
-        const res = await fetch(apiUrl("/schools?includePrograms=true"), {
-          method: "GET",
-          headers: {
-            "Content-Type": "application/json",
-            ...(token ? { Authorization: `Bearer ${token}` } : {}),
-          },
+        const { data } = await api.get<RemoteSchool[]>("/schools", {
+          params: { includePrograms: "true" },
         });
-
-        if (!res.ok) throw new Error(`GET /schools failed: ${res.status}`);
-
-        const data = (await res.json()) as RemoteSchool[];
-        if (!alive) return;
 
         let rows = Array.isArray(data) ? data : [];
 
@@ -493,6 +479,7 @@ useEffect(() => {
           rows = rows.filter((s) => String(s.id ?? "") === leaderSchoolId);
         }
 
+        if (!alive) return;
         setRemoteSchools(rows);
       } catch {
         if (!alive) return;

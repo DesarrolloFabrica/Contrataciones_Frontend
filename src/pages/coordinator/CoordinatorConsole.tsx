@@ -26,6 +26,7 @@ import CoordinatorUsersPanel from "./components/users/CoordinatorUsersPanel";
 
 import type { CandidateGroup } from "./types";
 import { getCandidateKey } from "./utils/candidateKey";
+import api from "../../services/apiClient";
 
 // -------------------- API BASE --------------------
 const API_BASE =
@@ -318,23 +319,11 @@ const CoordinatorConsole: React.FC = () => {
 
       setScopeLoading(true);
       try {
-        const token =
-          (user as any)?.accessToken ??
-          (user as any)?.token ??
-          (user as any)?.jwt ??
-          null;
-
-        const res = await fetch(apiUrl("/schools?includePrograms=true"), {
-          method: "GET",
-          headers: {
-            "Content-Type": "application/json",
-            ...(token ? { Authorization: `Bearer ${token}` } : {}),
-          },
+        const res = await api.get<RemoteSchool[]>("/schools", {
+          params: { includePrograms: true },
         });
 
-        if (!res.ok) throw new Error(`GET /schools failed: ${res.status}`);
-
-        const data = (await res.json()) as RemoteSchool[];
+        const data = res.data;
         const list = Array.isArray(data) ? data : [];
         const found = list.find((s) => String(s?.id) === String(userSchoolId));
 

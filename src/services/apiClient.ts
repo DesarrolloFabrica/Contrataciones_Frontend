@@ -1,16 +1,21 @@
 // src/services/apiClient.ts
-import axios, { AxiosError, AxiosHeaders, InternalAxiosRequestConfig } from "axios";
+import axios, {
+  AxiosError,
+  AxiosHeaders,
+  InternalAxiosRequestConfig,
+} from "axios";
 
 export const AUTH_STORAGE_KEY = "cun-auth";
 
 // ✅ Limpia comillas, espacios y slash final (evita caer a localhost por un espacio)
 const rawBaseUrl =
-  (import.meta.env.VITE_API_URL as string | undefined) ?? "http://localhost:3001";
+  (import.meta.env.VITE_API_URL as string | undefined) ??
+  "http://localhost:3001";
 
 const API_BASE_URL = rawBaseUrl
-  .replace(/^"+|"+$/g, "")   // quita "..."
-  .trim()                    // quita espacios
-  .replace(/\/+$/, "");      // quita trailing /
+  .replace(/^"+|"+$/g, "") // quita "..."
+  .trim() // quita espacios
+  .replace(/\/+$/, ""); // quita trailing /
 
 console.log("[apiClient] MODE:", import.meta.env.MODE);
 console.log("[apiClient] usando baseURL:", API_BASE_URL);
@@ -29,14 +34,27 @@ function isNoAuthRoute(url?: string) {
 }
 
 function getStoredToken(): string | null {
+  const raw = localStorage.getItem(AUTH_STORAGE_KEY);
+  if (!raw) return null;
+
+  // Si guardaste el token como string plano
+  if (raw.startsWith("eyJ")) return raw; // JWT típico
+
   try {
-    const raw = localStorage.getItem(AUTH_STORAGE_KEY);
-    if (!raw) return null;
-    const parsed = JSON.parse(raw) as { accessToken?: string };
-    return parsed?.accessToken ?? null;
+    const parsed = JSON.parse(raw) as any;
+
+    // Variantes comunes
+    return (
+      parsed?.accessToken ??
+      parsed?.access_token ??
+      parsed?.token ??
+      parsed?.jwt ??
+      null
+    );
   } catch {
-    localStorage.removeItem(AUTH_STORAGE_KEY);
-    return null;
+    // Si no es JSON y no empieza con eyJ, igual puede ser token con comillas
+    const cleaned = raw.replace(/^"+|"+$/g, "").trim();
+    return cleaned.startsWith("eyJ") ? cleaned : null;
   }
 }
 
@@ -49,7 +67,12 @@ api.interceptors.request.use((config: InternalAxiosRequestConfig) => {
   // ✅ Rutas sin auth
   if (isNoAuthRoute(config.url)) {
     config.headers.delete("Authorization");
-    console.log("[apiClient] ->", config.method?.toUpperCase(), config.url, "| (no-auth)");
+    console.log(
+      "[apiClient] ->",
+      config.method?.toUpperCase(),
+      config.url,
+      "| (no-auth)",
+    );
     return config;
   }
 
@@ -73,10 +96,12 @@ api.interceptors.response.use(
     console.error("[apiClient] ERROR", status, url, data ?? error.message);
 
     if (status === 401) {
-  console.warn("[apiClient] 401 detectado. No borro cun-auth automáticamente.");
-}
+      console.warn(
+        "[apiClient] 401 detectado. No borro cun-auth automáticamente.",
+      );
+    }
     return Promise.reject(error);
-  }
+  },
 );
 
 export default api;
