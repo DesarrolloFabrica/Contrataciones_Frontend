@@ -1,6 +1,7 @@
 // src/components/TeacherEvaluationItem.tsx
 import React, { useMemo } from "react";
 import type { TeacherEvaluationSummary } from "../types";
+import { useTheme } from "../context/ThemeContext";
 
 type LocalDecision = "PENDIENTE" | "APROBADO" | "RECHAZADO";
 
@@ -26,7 +27,7 @@ interface TeacherEvaluationItemProps {
 const pillBase =
   "inline-flex items-center px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-widest border";
 
-function getIaBadge(verdict: string) {
+function getIaBadge(verdict: string, isDark: boolean) {
   const full = (verdict ?? "").trim();
   const v = full.toLowerCase();
 
@@ -39,7 +40,9 @@ function getIaBadge(verdict: string) {
 
   if (isNotRecommended) {
     return {
-      cls: "bg-rose-500/10 text-rose-300 border-rose-500/30",
+      cls: isDark
+        ? "bg-rose-500/10 text-rose-300 border-rose-500/30"
+        : "bg-rose-50 text-rose-700 border-rose-200",
       short: "No recomendado",
       full: full || "No recomendado",
     };
@@ -54,7 +57,9 @@ function getIaBadge(verdict: string) {
 
   if (isCaution) {
     return {
-      cls: "bg-amber-500/10 text-amber-300 border-amber-500/30",
+      cls: isDark
+        ? "bg-amber-500/10 text-amber-300 border-amber-500/30"
+        : "bg-amber-50 text-amber-700 border-amber-200",
       short: "Con reservas",
       full: full || "Con reservas",
     };
@@ -68,36 +73,46 @@ function getIaBadge(verdict: string) {
     const isStrong =
       v.includes("fuerte") || v.includes("altamente") || v.includes("excepcional");
     return {
-      cls: "bg-emerald-500/10 text-emerald-300 border-emerald-500/30",
+      cls: isDark
+        ? "bg-emerald-500/10 text-emerald-300 border-emerald-500/30"
+        : "bg-emerald-50 text-emerald-700 border-emerald-200",
       short: isStrong ? "Recomendación fuerte" : "Recomendado",
       full: full || "Recomendado",
     };
   }
 
   return {
-    cls: "bg-slate-500/10 text-slate-300 border-slate-500/30",
+    cls: isDark
+      ? "bg-slate-500/10 text-slate-300 border-slate-500/30"
+      : "bg-slate-100 text-slate-700 border-slate-300/80",
     short: "Sin veredicto",
     full: full || "Sin veredicto",
   };
 }
 
-function getDecisionBadge(decisionStatus?: LocalDecision) {
+function getDecisionBadge(decisionStatus: LocalDecision | undefined, isDark: boolean) {
   if (!decisionStatus) return null;
 
   if (decisionStatus === "APROBADO") {
     return {
-      cls: "bg-emerald-600/15 text-emerald-300 border-emerald-500/40",
+      cls: isDark
+        ? "bg-emerald-600/15 text-emerald-300 border-emerald-500/40"
+        : "bg-emerald-50 text-emerald-700 border-emerald-200",
       label: "Aprobado coordinación",
     };
   }
   if (decisionStatus === "RECHAZADO") {
     return {
-      cls: "bg-rose-600/15 text-rose-300 border-rose-500/40",
+      cls: isDark
+        ? "bg-rose-600/15 text-rose-300 border-rose-500/40"
+        : "bg-rose-50 text-rose-700 border-rose-200",
       label: "Rechazado coordinación",
     };
   }
   return {
-    cls: "bg-slate-600/20 text-slate-200 border-slate-500/40",
+    cls: isDark
+      ? "bg-slate-600/20 text-slate-200 border-slate-500/40"
+      : "bg-slate-100 text-slate-700 border-slate-300/80",
     label: "Pendiente coordinación",
   };
 }
@@ -109,6 +124,8 @@ const TeacherEvaluationItem: React.FC<TeacherEvaluationItemProps> = ({
   decisionStatus,
   footer,
 }) => {
+  const { theme } = useTheme();
+  const isDark = theme === "dark";
   const dateLabel = useMemo(() => {
     const createdAt = evaluation.createdAt ? new Date(evaluation.createdAt) : null;
     if (!createdAt || isNaN(createdAt.getTime())) return "Fecha no disponible";
@@ -123,8 +140,14 @@ const TeacherEvaluationItem: React.FC<TeacherEvaluationItemProps> = ({
   }, [evaluation.createdAt]);
 
   const verdict = evaluation.aiFinalRecommendation || "";
-  const ia = useMemo(() => getIaBadge(verdict), remembering => remembering, [verdict]);
-  const decision = useMemo(() => getDecisionBadge(decisionStatus), [decisionStatus]);
+  const ia = useMemo(
+    () => getIaBadge(verdict, isDark),
+    [verdict, isDark],
+  );
+  const decision = useMemo(
+    () => getDecisionBadge(decisionStatus, isDark),
+    [decisionStatus, isDark],
+  );
 
   const score = Math.round(evaluation.aiTeachingSuitabilityScore || 0);
   const clickableCls = onClick ? "cursor-pointer" : "cursor-default";
@@ -151,8 +174,12 @@ const TeacherEvaluationItem: React.FC<TeacherEvaluationItemProps> = ({
         "flex flex-col gap-3",
         "focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/30 focus-visible:ring-offset-0",
         selected
-          ? "border-emerald-500/60 bg-emerald-500/5"
-          : "border-white/5 bg-[#090909] hover:border-emerald-500/35 hover:bg-white/[0.02]",
+          ? isDark
+            ? "border-emerald-500/60 bg-emerald-500/5"
+            : "border-emerald-400 bg-emerald-50 shadow-[0_18px_40px_rgba(16,185,129,0.25)]"
+          : isDark
+            ? "border-white/5 bg-[#090909] hover:border-emerald-500/35 hover:bg-white/[0.02]"
+            : "border-slate-200 bg-slate-50 hover:border-emerald-300 hover:bg-white hover:shadow-[0_18px_50px_rgba(15,23,42,0.10)]",
         clickableCls,
       ].join(" ")}
     >
@@ -160,20 +187,46 @@ const TeacherEvaluationItem: React.FC<TeacherEvaluationItemProps> = ({
       <div className="flex items-start justify-between gap-4">
         {/* LEFT */}
         <div className="min-w-0 space-y-1">
-          <p className="text-sm font-semibold text-white truncate">{name}</p>
+          <p
+            className={`text-sm font-semibold truncate ${
+              isDark ? "text-white" : "text-slate-900"
+            }`}
+          >
+            {name}
+          </p>
 
           {/* 👇 “Sin veredicto / estado IA corto” va abajo del nombre */}
-          <div className="text-[11px] text-white/55">
+          <div
+            className={`text-[11px] ${
+              isDark ? "text-white/55" : "text-slate-500"
+            }`}
+          >
             {ia.short}
           </div>
 
-          <div className="text-[11px] text-gray-500 flex flex-wrap items-center gap-2">
+          <div
+            className={`text-[11px] flex flex-wrap items-center gap-2 ${
+              isDark ? "text-gray-500" : "text-slate-500"
+            }`}
+          >
             {school && <span className="truncate max-w-[220px]">{school}</span>}
-            {school && program && <span className="w-1 h-1 rounded-full bg-gray-600" />}
+            {school && program && (
+              <span
+                className={`w-1 h-1 rounded-full ${
+                  isDark ? "bg-gray-600" : "bg-slate-400"
+                }`}
+              />
+            )}
             {program && <span className="truncate max-w-[260px]">{program}</span>}
           </div>
 
-          <p className="text-[11px] text-neutral-600">{dateLabel}</p>
+          <p
+            className={`text-[11px] ${
+              isDark ? "text-neutral-600" : "text-slate-500"
+            }`}
+          >
+            {dateLabel}
+          </p>
 
           {decision && (
             <div className={`${pillBase} ${decision.cls} normal-case mt-2`}>
@@ -202,7 +255,11 @@ const TeacherEvaluationItem: React.FC<TeacherEvaluationItemProps> = ({
 
       {/* FOOTER */}
       {footer && (
-        <div className="pt-3 border-t border-white/10 flex items-center justify-between gap-3">
+        <div
+          className={`pt-3 border-t flex items-center justify-between gap-3 ${
+            isDark ? "border-white/10" : "border-slate-200"
+          }`}
+        >
           {footer}
         </div>
       )}

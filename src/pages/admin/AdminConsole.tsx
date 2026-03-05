@@ -1,11 +1,10 @@
 // src/pages/admin/AdminConsole.tsx
 import React, { useCallback, useMemo, useState } from "react";
-import { AlertCircle, Loader2, Users, FileText, ScrollText, X, SquareKanban } from "lucide-react";
+import { AlertCircle, Loader2, Users, FileText, ScrollText, X, SquareKanban, Download } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 
 import AdminHeader from "./components/AdminHeader";
 import AdminKpiGrid from "./components/evaluations/AdminKpiGrid";
-import AdminFiltersBar from "./components/evaluations/AdminFiltersBar";
 import AdminEvaluationsPanel from "./components/evaluations/AdminEvaluationsPanel";
 import AdminDetailPanel from "./components/evaluations/AdminDetailPanel";
 import AdminUsersPanel from "./components/users/AdminUsersPanel";
@@ -28,6 +27,7 @@ import {
   type SchoolOption,
 } from "../../services/adminScopeService";
 import AdminDashboardPanel from "./components/dashboard/AdminDashboardPanel";
+import { useTheme } from "../../context/ThemeContext";
 
 type AdminView = "EVALUATIONS" | "USERS" | "AUDIT" | "DASHBOARD";
 
@@ -73,9 +73,12 @@ const norm = (s: string) =>
 
 const AdminConsole: React.FC = () => {
   const navigate = useNavigate();
+  const { theme } = useTheme();
+  const isDark = theme === "dark";
 
   const [view, setView] = useState<AdminView>("EVALUATIONS");
   const [showScopePicker, setShowScopePicker] = useState(false);
+  const [showDetailModal, setShowDetailModal] = useState(false);
 
   const admin = useAdminEvaluations();
   const detail = useAdminEvaluationDetail({ evaluations: admin.evaluations });
@@ -186,19 +189,39 @@ const AdminConsole: React.FC = () => {
   }, [selectedSchoolName, selectedProgramName]);
 
   const tabBtn = (active: boolean) =>
-    `px-4 py-2 rounded-xl text-xs font-bold uppercase tracking-widest border transition-colors flex items-center gap-2 ${
+    [
+      "px-4 py-2 rounded-xl text-xs font-bold uppercase tracking-widest border transition-colors flex items-center gap-2",
       active
-        ? "bg-emerald-600 text-white border-emerald-500/40"
-        : "bg-white/5 text-gray-300 border-white/10 hover:bg-white/10"
-    }`;
+        ? isDark
+          ? "bg-emerald-600 text-white border-emerald-500/40"
+          : "bg-emerald-600 text-white border-emerald-500/60 shadow-[0_10px_25px_rgba(16,185,129,0.35)]"
+        : isDark
+          ? "bg-white/5 text-gray-300 border-white/10 hover:bg-white/10"
+          : "bg-white text-slate-600 border-slate-200 hover:border-emerald-200 hover:text-emerald-700 hover:bg-emerald-50",
+    ].join(" ");
 
   const handleSwitchView = useCallback(
     (next: AdminView) => {
       setView(next);
-      if (next !== "EVALUATIONS") detail.clearSelection();
+      if (next !== "EVALUATIONS") {
+        detail.clearSelection();
+        setShowDetailModal(false);
+      }
     },
     [detail]
   );
+
+  const handleOpenDetail = useCallback(
+    (id: string) => {
+      detail.handleSelectEvaluation(id);
+      setShowDetailModal(true);
+    },
+    [detail]
+  );
+
+  const handleCloseDetail = useCallback(() => {
+    setShowDetailModal(false);
+  }, []);
 
   const handleLogout = useCallback(() => {
     localStorage.removeItem("token");
@@ -232,6 +255,16 @@ const AdminConsole: React.FC = () => {
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
   }, [showScopePicker]);
+
+  // bloquear scroll del body cuando el modal de detalle está abierto
+  React.useEffect(() => {
+    if (!showDetailModal) return;
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.body.style.overflow = prev;
+    };
+  }, [showDetailModal]);
 
   // ✅ bloquear scroll del body cuando el modal está abierto
   React.useEffect(() => {
@@ -303,69 +336,82 @@ const AdminConsole: React.FC = () => {
   }, [selectedSchoolId]);
 
   return (
-    <div className="min-h-screen w-full bg-[#020202] text-white font-sans relative overflow-x-hidden selection:bg-emerald-500/30">
+    <div
+      className={[
+        "min-h-screen w-full font-sans relative overflow-x-hidden selection:bg-emerald-500/30",
+        isDark ? "bg-[#020202] text-white" : "bg-gray-50 text-gray-900",
+      ].join(" ")}
+    >
       {/* Ambient bg */}
-      <div className="fixed inset-0 pointer-events-none">
-        <div className="absolute top-[-10%] left-[-5%] w-[600px] h-[600px] bg-emerald-500/5 rounded-full blur-[150px]" />
-        <div className="absolute bottom-[-10%] right-[-5%] w-[600px] h-[600px] bg-cyan-600/5 rounded-full blur-[150px]" />
-        <div className="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.02)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.02)_1px,transparent_1px)] bg-[size:40px_40px] opacity-20 [mask-image:radial-gradient(ellipse_80%_80%_at_50%_50%,#000_70%,transparent_100%)]" />
-      </div>
-
-      <div className="relative z-10 mx-auto px-12 py-10 space-y-8">
-        <AdminHeader
-          hasSelection={hasSelection}
-          onClearSelection={detail.clearSelection}
-          onLogout={handleLogout}
-          selectedSchool={selectedSchoolName}
-          selectedProgram={selectedProgramName}
-          onChangeScope={() => setShowScopePicker(true)}
-          onResetScope={() => {
-            setSelectedSchoolId(null);
-            setSelectedProgramId(null);
-            admin.setSelectedSchool(null);
-            admin.setSelectedProgram(null);
-            admin.setSearch("");
-            detail.clearSelection();
-          }}
-        />
-
-        {/* Tabs */}
-        <div className="flex flex-wrap items-center gap-2">
-          <button
-            type="button"
-            className={tabBtn(view === "EVALUATIONS")}
-            onClick={() => handleSwitchView("EVALUATIONS")}
-          >
-            <FileText className="w-4 h-4" />
-            Evaluaciones
-          </button>
-          <button
-            type="button"
-            className={tabBtn(view === "USERS")}
-            onClick={() => handleSwitchView("USERS")}
-          >
-            <Users className="w-4 h-4" />
-            Usuarios
-          </button>          
-          
-          <button
-            type="button"
-            className={tabBtn(view === "DASHBOARD")}
-            onClick={() => handleSwitchView("DASHBOARD")}
-          >
-            <SquareKanban className="w-4 h-4" />
-            Dashboard
-          </button>
-          
-          {/* <button
-            type="button"
-            className={tabBtn(view === "AUDIT")}
-            onClick={() => handleSwitchView("AUDIT")}
-          >
-            <ScrollText className="w-4 h-4" />
-            Auditoría
-          </button> */}
+      {isDark && (
+        <div className="fixed inset-0 pointer-events-none">
+          <div className="absolute top-[-10%] left-[-5%] w-[600px] h-[600px] bg-emerald-500/5 rounded-full blur-[150px]" />
+          <div className="absolute bottom-[-10%] right-[-5%] w-[600px] h-[600px] bg-cyan-600/5 rounded-full blur-[150px]" />
+          <div className="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.02)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.02)_1px,transparent_1px)] bg-[size:40px_40px] opacity-20 [mask-image:radial-gradient(ellipse_80%_80%_at_50%_50%_at_50%_50%,#000_70%,transparent_100%)]" />
         </div>
+      )}
+
+      <div className="relative z-10 mx-auto px-4 md:px-12 py-6 md:py-8">
+        {/* Header + Tabs fijos en la parte superior (sin bloque opaco delante del fondo) */}
+        <div className="sticky top-0 z-30 pb-4 mb-6">
+          <div className="pt-2 md:pt-0 space-y-4">
+            <AdminHeader
+              hasSelection={hasSelection}
+              onClearSelection={detail.clearSelection}
+              onLogout={handleLogout}
+              selectedSchool={selectedSchoolName}
+              selectedProgram={selectedProgramName}
+              onChangeScope={() => setShowScopePicker(true)}
+              onResetScope={() => {
+                setSelectedSchoolId(null);
+                setSelectedProgramId(null);
+                admin.setSelectedSchool(null);
+                admin.setSelectedProgram(null);
+                admin.setSearch("");
+                detail.clearSelection();
+              }}
+            />
+
+            {/* Tabs */}
+            <div className="flex flex-wrap items-center gap-2">
+              <button
+                type="button"
+                className={tabBtn(view === "EVALUATIONS")}
+                onClick={() => handleSwitchView("EVALUATIONS")}
+              >
+                <FileText className="w-4 h-4" />
+                Evaluaciones
+              </button>
+              <button
+                type="button"
+                className={tabBtn(view === "USERS")}
+                onClick={() => handleSwitchView("USERS")}
+              >
+                <Users className="w-4 h-4" />
+                Usuarios
+              </button>
+              <button
+                type="button"
+                className={tabBtn(view === "DASHBOARD")}
+                onClick={() => handleSwitchView("DASHBOARD")}
+              >
+                <SquareKanban className="w-4 h-4" />
+                Dashboard
+              </button>
+              {/* <button
+                type="button"
+                className={tabBtn(view === "AUDIT")}
+                onClick={() => handleSwitchView("AUDIT")}
+              >
+                <ScrollText className="w-4 h-4" />
+                Auditoría
+              </button> */}
+            </div>
+          </div>
+        </div>
+
+        {/* Contenido debajo del header fijo */}
+        <div className="space-y-8">
 
         {/* VIEW: EVALUATIONS */}
         {view === "EVALUATIONS" && (
@@ -386,68 +432,223 @@ const AdminConsole: React.FC = () => {
 
             {!admin.loading && !admin.error && (
               <>
-                <AdminKpiGrid
-                  metrics={admin.metrics}
-                  recommendedPct={admin.recommendedPct}
-                  highRiskPct={admin.highRiskPct}
-                  scopeLabel={scopeLabel}
-                />
+                {/* Encabezado común para métricas y sidebar */}
+                <div className="mb-4 flex items-end justify-between gap-4">
+                  <div>
+                    <p
+                      className={[
+                        "text-[11px] uppercase tracking-[0.22em]",
+                        isDark ? "text-neutral-500" : "text-slate-500",
+                      ].join(" ")}
+                    >
+                      Métricas del scope
+                    </p>
+                    <h3
+                      className={[
+                        "font-black text-lg",
+                        isDark ? "text-white" : "text-slate-900",
+                      ].join(" ")}
+                    >
+                      Resumen ejecutivo
+                    </h3>
+                    <p
+                      className={[
+                        "text-xs mt-1",
+                        isDark ? "text-neutral-500" : "text-slate-600",
+                      ].join(" ")}
+                    >
+                      {scopeLabel}
+                    </p>
+                  </div>
+                </div>
 
-                <AdminFiltersBar
-                  search={admin.search}
-                  setSearch={admin.setSearch}
-                  selectedSchool={selectedSchoolName}
-                  setSelectedSchool={(schoolNameOrId) => {
-                    // soporta que venga nombre (filtro) o id (si lo pasas así)
-                    const byId = schoolNameById.get(String(schoolNameOrId));
-                    const schoolId = byId
-                      ? String(schoolNameOrId)
-                      : (schoolsDb.find((s) => s.name === schoolNameOrId)?.id ?? null);
+                <div className="grid grid-cols-1 xl:grid-cols-[minmax(0,2.1fr)_minmax(0,1fr)] gap-6 items-start">
+                  {/* Columna principal */}
+                  <div className="space-y-6">
+                    <AdminKpiGrid
+                      metrics={admin.metrics}
+                      recommendedPct={admin.recommendedPct}
+                      highRiskPct={admin.highRiskPct}
+                      scopeLabel={scopeLabel}
+                    />
 
-                    setSelectedSchoolId(schoolId);
-                    setSelectedProgramId(null);
-
-                    admin.setSelectedProgram(null);
-                    admin.setSearch("");
-                    detail.clearSelection();
-                  }}
-                  schoolOptions={admin.schoolOptions}
-                  selectedProgram={selectedProgramName}
-                  setSelectedProgram={(programNameOrId) => {
-                    const byId = programNameById.get(String(programNameOrId));
-                    const programId = byId
-                      ? String(programNameOrId)
-                      : (programsDb.find((p) => p.name === programNameOrId)?.id ?? null);
-
-                    setSelectedProgramId(programId);
-                    admin.setSearch("");
-                    detail.clearSelection();
-                  }}
-                  programOptions={admin.programOptions}
-                  resultsCount={admin.filteredEvaluations.length}
-                />
-
-                <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
-                  <div className="lg:col-span-5 space-y-6">
                     <AdminEvaluationsPanel
                       filteredEvaluations={admin.filteredEvaluations}
                       selectedId={detail.selectedId}
-                      onSelect={detail.handleSelectEvaluation}
+                      onSelect={handleOpenDetail}
                       selectedSchool={selectedSchoolName ?? ""}
                       selectedProgram={selectedProgramName ?? ""}
+                      search={admin.search}
+                      setSearch={admin.setSearch}
                     />
                   </div>
 
-                  <div className="lg:col-span-7 space-y-6">
-                    <AdminDetailPanel
-                      selectedId={detail.selectedId}
-                      selectedSummary={detail.selectedSummary}
-                      loadingDetail={detail.loadingDetail}
-                      selectedDetail={detail.selectedDetail}
-                      onExportPdf={detail.exportPdf}
-                      errorDetail={detail.errorDetail}
-                    />
-                  </div>
+                  {/* Sidebar contextual */}
+                  <aside className="space-y-4">
+                    {/* Guía rápida / acciones */}
+                    <div
+                      className={[
+                        "rounded-3xl border backdrop-blur-md p-5 space-y-3",
+                        isDark
+                          ? "border-white/10 bg-[#050505]/90 shadow-[0_18px_60px_rgba(0,0,0,0.65)]"
+                          : "border-slate-200 bg-white shadow-[0_18px_50px_rgba(15,23,42,0.12)]",
+                      ].join(" ")}
+                    >
+                      <p
+                        className={[
+                          "text-[11px] uppercase tracking-[0.22em] font-bold",
+                          isDark ? "text-neutral-500" : "text-slate-500",
+                        ].join(" ")}
+                      >
+                        Guía rápida
+                      </p>
+                      <p
+                        className={[
+                          "text-sm font-semibold",
+                          isDark ? "text-neutral-200" : "text-slate-900",
+                        ].join(" ")}
+                      >
+                        Cómo leer este panel
+                      </p>
+                      <ul
+                        className={[
+                          "mt-2 space-y-2 text-xs list-disc list-inside",
+                          isDark ? "text-neutral-400" : "text-slate-600",
+                        ].join(" ")}
+                      >
+                        <li>
+                          Usa los KPIs para tener un vistazo ejecutivo del volumen y riesgos.
+                        </li>
+                        <li>
+                          Filtra por escuela / programa y después aplica búsqueda puntual.
+                        </li>
+                        <li>
+                          Abre el detalle de una evaluación para ver el reporte completo IA +
+                          decisión.
+                        </li>
+                      </ul>
+                    </div>
+
+                    {/* Scope actual */}
+                    <div
+                      className={[
+                        "rounded-3xl border p-5 space-y-3",
+                        isDark
+                          ? "border-emerald-500/20 bg-emerald-500/5"
+                          : "border-emerald-100 bg-emerald-50",
+                      ].join(" ")}
+                    >
+                      <p
+                        className={[
+                          "text-[11px] uppercase tracking-[0.22em] font-bold",
+                          isDark ? "text-emerald-300" : "text-emerald-700",
+                        ].join(" ")}
+                      >
+                        Scope actual
+                      </p>
+                      <p
+                        className={[
+                          "text-xs leading-relaxed",
+                          isDark ? "text-neutral-100" : "text-slate-700",
+                        ].join(" ")}
+                      >
+                        {scopeLabel}
+                      </p>
+                      <div className="flex flex-wrap gap-2 pt-1">
+                        <span
+                          className={[
+                            "px-3 py-1 rounded-full text-[10px] uppercase tracking-widest",
+                            isDark
+                              ? "bg-black/30 border border-white/10 text-neutral-300"
+                              : "bg-white border border-slate-200 text-slate-600",
+                          ].join(" ")}
+                        >
+                          {selectedSchoolName ? "Escuela filtrada" : "Todas las escuelas"}
+                        </span>
+                        <span
+                          className={[
+                            "px-3 py-1 rounded-full text-[10px] uppercase tracking-widest",
+                            isDark
+                              ? "bg-black/30 border border-white/10 text-neutral-300"
+                              : "bg-white border border-slate-200 text-slate-600",
+                          ].join(" ")}
+                        >
+                          {selectedProgramName ? "Programa filtrado" : "Todos los programas"}
+                        </span>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => setShowScopePicker(true)}
+                        className={[
+                          "mt-2 inline-flex items-center justify-center px-3 py-1.5 rounded-xl text-[11px] font-bold uppercase tracking-widest transition-colors border",
+                          isDark
+                            ? "bg-emerald-500/15 hover:bg-emerald-500/25 border-emerald-500/40 text-emerald-100"
+                            : "bg-emerald-600 hover:bg-emerald-500 border-emerald-500 text-white shadow-[0_8px_22px_rgba(16,185,129,0.35)]",
+                        ].join(" ")}
+                      >
+                        Ajustar scope
+                      </button>
+                    </div>
+
+                    {/* Estado del sistema / atajos */}
+                    <div
+                      className={[
+                        "rounded-3xl border p-5 space-y-3",
+                        isDark
+                          ? "border-white/10 bg-[#050505]/90"
+                          : "border-slate-200 bg-white shadow-[0_18px_50px_rgba(15,23,42,0.10)]",
+                      ].join(" ")}
+                    >
+                      <p
+                        className={[
+                          "text-[11px] uppercase tracking-[0.22em] font-bold",
+                          isDark ? "text-neutral-500" : "text-slate-500",
+                        ].join(" ")}
+                      >
+                        Atajos del panel
+                      </p>
+                      <div
+                        className={[
+                          "space-y-2 text-xs",
+                          isDark ? "text-neutral-300" : "text-slate-700",
+                        ].join(" ")}
+                      >
+                        <button
+                          type="button"
+                          onClick={() => handleSwitchView("USERS")}
+                          className={[
+                            "w-full text-left px-3 py-2 rounded-xl text-[11px] font-semibold uppercase tracking-widest border",
+                            isDark
+                              ? "bg-white/5 hover:bg-white/10 border-white/10"
+                              : "bg-slate-50 hover:bg-slate-100 border-slate-200",
+                          ].join(" ")}
+                        >
+                          Ir a gestión de usuarios
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => handleSwitchView("DASHBOARD")}
+                          className={[
+                            "w-full text-left px-3 py-2 rounded-xl text-[11px] font-semibold uppercase tracking-widest border",
+                            isDark
+                              ? "bg-white/5 hover:bg-white/10 border-white/10"
+                              : "bg-slate-50 hover:bg-slate-100 border-slate-200",
+                          ].join(" ")}
+                        >
+                          Ver dashboard global
+                        </button>
+                      </div>
+                      <p
+                        className={[
+                          "text-[10px] pt-1",
+                          isDark ? "text-neutral-500" : "text-slate-500",
+                        ].join(" ")}
+                      >
+                        Tip: usa este panel como vista ejecutiva. El detalle completo está en cada
+                        evaluación individual.
+                      </p>
+                    </div>
+                  </aside>
                 </div>
               </>
             )}
@@ -455,13 +656,18 @@ const AdminConsole: React.FC = () => {
         )}
 
         {view === "USERS" && (
-          <AdminUsersPanel
-            scope={{ selectedSchool: selectedSchoolName, selectedProgram: selectedProgramName }}
-          />
+          <div className="max-w-7xl mx-auto w-full">
+            <AdminUsersPanel
+              scope={{
+                selectedSchool: selectedSchoolName,
+                selectedProgram: selectedProgramName,
+              }}
+            />
+          </div>
         )}
 
         {view === "DASHBOARD" && (
-        <AdminDashboardPanel
+          <AdminDashboardPanel
             scope={{
               orgId: (admin as any)?.orgId ?? null,
               selectedSchoolId,
@@ -479,9 +685,101 @@ const AdminConsole: React.FC = () => {
             <AdminAuditTimelinePreview />
           </div>
         )}
+        </div>
       </div>
 
-      {/* ✅ Scope Wizard Modal Overlay */}
+      {/* ✅ Modal: detalle de evaluación (vista completa) */}
+      {showDetailModal && view === "EVALUATIONS" && (
+        <div className="fixed inset-0 z-[70] flex items-center justify-center p-4">
+          <div
+            className="absolute inset-0 bg-black/70 backdrop-blur-sm"
+            onClick={handleCloseDetail}
+          />
+
+          <div className="relative z-[71] w-full max-w-5xl max-h-[90vh] flex flex-col">
+            <div
+              className={[
+                "rounded-[28px] overflow-hidden flex flex-col max-h-[90vh] border",
+                isDark
+                  ? "border-white/15 bg-[#161c22] shadow-[0_30px_80px_rgba(0,0,0,0.5),0_0_0_1px_rgba(255,255,255,0.06)]"
+                  : "border-slate-300 bg-white shadow-[0_24px_80px_rgba(15,23,42,0.35)]",
+              ].join(" ")}
+            >
+              {/* Header del modal */}
+              <div
+                className={[
+                  "shrink-0 px-6 py-5 border-b flex items-center justify-between gap-4 backdrop-blur-sm",
+                  isDark
+                    ? "border-white/10 bg-[#1a2028]/90"
+                    : "border-slate-200 bg-slate-50",
+                ].join(" ")}
+              >
+                <div className="min-w-0">
+                  <h2
+                    className={[
+                      "text-lg font-bold tracking-tight",
+                      isDark ? "text-white" : "text-slate-900",
+                    ].join(" ")}
+                  >
+                    Detalle de evaluación
+                  </h2>
+                  <p
+                    className={[
+                      "text-xs mt-1",
+                      isDark ? "text-neutral-400" : "text-slate-600",
+                    ].join(" ")}
+                  >
+                    Vista completa de la ficha de evaluación seleccionada.
+                  </p>
+                </div>
+                <div className="flex items-center gap-2 shrink-0">
+                  {detail.selectedDetail && (
+                    <button
+                      type="button"
+                      onClick={detail.exportPdf}
+                      className={[
+                        "inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold uppercase tracking-widest transition-colors shadow-lg",
+                        isDark
+                          ? "bg-emerald-600 hover:bg-emerald-500 text-white shadow-emerald-900/30"
+                          : "bg-emerald-600 hover:bg-emerald-500 text-white shadow-[0_10px_30px_rgba(16,185,129,0.45)]",
+                      ].join(" ")}
+                    >
+                      <Download className="w-4 h-4" />
+                      PDF
+                    </button>
+                  )}
+                  <button
+                    type="button"
+                    onClick={handleCloseDetail}
+                    className={[
+                      "p-2.5 rounded-xl border transition shrink-0",
+                      isDark
+                        ? "border-white/15 bg-white/10 hover:bg-white/15 text-neutral-200"
+                        : "border-slate-200 bg-white hover:bg-slate-100 text-slate-600",
+                    ].join(" ")}
+                    title="Cerrar detalle"
+                  >
+                    <X className="w-5 h-5" />
+                  </button>
+                </div>
+              </div>
+
+              {/* Área de contenido con espacio para que no se vea pegado */}
+              <div className="flex-1 min-h-0 overflow-y-auto pt-8 px-6 pb-6 bg-transparent">
+                <AdminDetailPanel
+                  hideHeader
+                  selectedId={detail.selectedId}
+                  selectedSummary={detail.selectedSummary}
+                  loadingDetail={detail.loadingDetail}
+                  selectedDetail={detail.selectedDetail}
+                  onExportPdf={detail.exportPdf}
+                  errorDetail={detail.errorDetail}
+                />
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
       {showScopePicker && (
         <div className="fixed inset-0 z-[80] flex items-center justify-center p-4">
           <div

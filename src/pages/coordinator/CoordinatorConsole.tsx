@@ -16,6 +16,7 @@ import {
 import { useNavigate } from "react-router-dom";
 
 import { useAuth } from "../../context/AuthContext";
+import { useTheme } from "../../context/ThemeContext";
 import { actorFromUser } from "../../services/auditActor";
 import { AUTH_STORAGE_KEY } from "../../services/apiClient";
 
@@ -27,6 +28,7 @@ import CoordinatorUsersPanel from "./components/users/CoordinatorUsersPanel";
 import type { CandidateGroup } from "./types";
 import { getCandidateKey } from "./utils/candidateKey";
 import api from "../../services/apiClient";
+import ThemeToggle from "../../components/ThemeToggle";
 
 // -------------------- API BASE --------------------
 const API_BASE =
@@ -284,6 +286,9 @@ const CoordinatorConsole: React.FC = () => {
   const { user } = useAuth();
   actorFromUser(user);
   const navigate = useNavigate();
+  const { theme } = useTheme();
+
+  const isDark = theme === "dark";
 
   // 1) Hook lista
   const evals = useCoordinatorEvaluations();
@@ -592,21 +597,35 @@ const CoordinatorConsole: React.FC = () => {
   const metrics = evals.metrics;
 
   return (
-    <div className="min-h-screen w-full bg-[#020202] text-gray-200 font-sans relative overflow-x-hidden">
+    <div
+      className={[
+        "min-h-screen w-full font-sans relative overflow-x-hidden",
+        isDark ? "bg-[#020202] text-gray-200" : "bg-gray-50 text-gray-900",
+      ].join(" ")}
+    >
       {/* blobs fondo */}
-      <div className="fixed top-0 left-0 w-full h-full overflow-hidden pointer-events-none z-0">
-        <div
-          className="absolute top-[-10%] left-[10%] w-[500px] h-[500px] bg-emerald-500/6 rounded-full blur-[140px] mix-blend-screen animate-pulse"
-          style={{ Animation, animationDuration: "9s" } as any}
-        />
-        <div className="absolute bottom-[5%] right-[0%] w-[600px] h-[600px] bg-cyan-500/5 rounded-full blur-[160px] mix-blend-screen" />
-      </div>
+      {isDark && (
+        <div className="fixed top-0 left-0 w-full h-full overflow-hidden pointer-events-none z-0">
+          <div
+            className="absolute top-[-10%] left-[10%] w-[500px] h-[500px] bg-emerald-500/6 rounded-full blur-[140px] mix-blend-screen animate-pulse"
+            style={{ Animation, animationDuration: "9s" } as any}
+          />
+          <div className="absolute bottom-[5%] right-[0%] w-[600px] h-[600px] bg-cyan-500/5 rounded-full blur-[160px] mix-blend-screen" />
+        </div>
+      )}
 
       <div className="relative z-10 max-w-7xl mx-auto px-6 py-14 space-y-10">
         {/* HEADER */}
         <header className="space-y-6">
           <div className="flex items-center justify-between gap-4">
-            <div className="inline-flex items-center gap-2.5 px-5 py-2 rounded-full border border-emerald-500/20 bg-emerald-500/5 text-emerald-400 text-xs font-bold uppercase tracking-widest backdrop-blur-md shadow-[0_0_20px_-5px_rgba(16,185,129,0.4)]">
+            <div
+              className={[
+                "inline-flex items-center gap-2.5 px-5 py-2 rounded-full border text-xs font-bold uppercase tracking-widest backdrop-blur-md",
+                isDark
+                  ? "border-emerald-500/20 bg-emerald-500/5 text-emerald-400 shadow-[0_0_20px_-5px_rgba(16,185,129,0.4)]"
+                  : "border-[#00B894]/25 bg-[#E6FFF7] text-[#006B57] shadow-[0_0_18px_rgba(0,184,148,0.20)]",
+              ].join(" ")}
+            >
               <ShieldAlert className="w-4 h-4" />
               <span>Consola de Coordinación</span>
             </div>
@@ -619,12 +638,22 @@ const CoordinatorConsole: React.FC = () => {
                 className={[
                   "px-4 py-2 rounded-xl text-[11px] uppercase tracking-widest border transition inline-flex items-center gap-2",
                   mainTab === "evaluations"
-                    ? "border-emerald-500/30 text-emerald-300 bg-emerald-500/10"
-                    : "border-white/10 text-gray-400 hover:border-white/20",
+                    ? isDark
+                      ? "border-emerald-500/30 text-emerald-300 bg-emerald-500/10"
+                      : "border-[#00B894]/40 bg-[#00B894] text-white shadow-[0_8px_22px_rgba(0,184,148,0.45)]"
+                    : isDark
+                      ? "border-white/10 text-gray-400 hover:border-white/20"
+                      : "border-slate-200 text-slate-500 hover:border-slate-300 hover:bg-slate-50",
                 ].join(" ")}
                 title="Ver evaluaciones"
               >
-                <FileText className="w-4 h-4" />
+                <FileText
+                  className={`w-4 h-4 ${
+                    mainTab === "evaluations" && !isDark
+                      ? "text-white"
+                      : ""
+                  }`}
+                />
                 Evaluaciones
               </button>
 
@@ -634,19 +663,34 @@ const CoordinatorConsole: React.FC = () => {
                 className={[
                   "px-4 py-2 rounded-xl text-[11px] uppercase tracking-widest border transition inline-flex items-center gap-2",
                   mainTab === "users"
-                    ? "border-emerald-500/30 text-emerald-300 bg-emerald-500/10"
-                    : "border-white/10 text-gray-400 hover:border-white/20",
+                    ? isDark
+                      ? "border-emerald-500/30 text-emerald-300 bg-emerald-500/10"
+                      : "border-[#00B894]/40 bg-[#00B894] text-white shadow-[0_8px_22px_rgba(0,184,148,0.45)]"
+                    : isDark
+                      ? "border-white/10 text-gray-400 hover:border-white/20"
+                      : "border-slate-200 text-slate-500 hover:border-slate-300 hover:bg-slate-50",
                 ].join(" ")}
                 title="Gestionar líderes de mi escuela"
               >
-                <UserCheck className="w-4 h-4" />
+                <UserCheck
+                  className={`w-4 h-4 ${
+                    mainTab === "users" && !isDark ? "text-white" : ""
+                  }`}
+                />
                 Usuarios
               </button>
+
+              <ThemeToggle />
 
               <button
                 type="button"
                 onClick={handleLogout}
-                className="px-4 py-2 rounded-xl text-[11px] uppercase tracking-widest border border-white/10 text-gray-400 hover:border-rose-500/40 hover:text-rose-400 transition inline-flex items-center gap-2"
+                className={[
+                  "px-4 py-2 rounded-xl text-[11px] uppercase tracking-widest border transition inline-flex items-center gap-2",
+                  isDark
+                    ? "border-white/10 text-gray-400 hover:border-rose-500/40 hover:text-rose-400"
+                    : "border-slate-200 bg-white text-slate-600 hover:border-rose-400 hover:text-rose-500 hover:bg-rose-50",
+                ].join(" ")}
                 title="Cerrar sesión"
               >
                 <LogOut className="w-4 h-4" />
@@ -656,14 +700,22 @@ const CoordinatorConsole: React.FC = () => {
           </div>
 
           <div className="space-y-3 max-w-4xl">
-            <h2 className="text-3xl md:text-5xl font-black text-white tracking-tighter leading-[1.05]">
+            <h2
+              className={`text-3xl md:text-5xl font-black tracking-tighter leading-[1.05] ${
+                isDark ? "text-white" : "text-slate-900"
+              }`}
+            >
               Panel de Coordinación{" "}
               <span className="text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 to-cyan-400">
                 (Revisión & Aprobación)
               </span>
             </h2>
 
-            <p className="text-sm md:text-base text-gray-400 font-light leading-relaxed">
+            <p
+              className={`text-sm md:text-base font-light leading-relaxed ${
+                isDark ? "text-gray-400" : "text-slate-600"
+              }`}
+            >
               Diseñado para tomar decisiones rápido: <b>Top recomendados</b>{" "}
               arriba y el <b>detalle siempre en una nueva pantalla</b>.
             </p>
@@ -694,41 +746,79 @@ const CoordinatorConsole: React.FC = () => {
                   {/* Métricas (premium) */}
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                     {/* --- CARD 1: TOTAL EVALUACIONES (Emerald Focus) --- */}
-                    <div className="group relative overflow-hidden rounded-[24px] border border-white/5 bg-[#0A0C10] p-6 shadow-2xl transition-all duration-500 hover:-translate-y-1 hover:border-emerald-500/30 hover:shadow-[0_20px_40px_-15px_rgba(16,185,129,0.2)]">
-                      {/* Ambient Background Glows */}
-                      <div className="absolute top-0 right-0 -mt-16 -mr-16 h-64 w-64 rounded-full bg-emerald-500/10 blur-[80px] transition-all duration-700 group-hover:bg-emerald-500/20" />
-                      <div className="absolute bottom-0 left-0 -mb-16 -ml-16 h-40 w-40 rounded-full bg-teal-500/5 blur-[60px]" />
+                    <div
+                      className={[
+                        "group relative overflow-hidden rounded-[24px] p-6 transition-all duration-500 hover:-translate-y-1",
+                        isDark
+                          ? "border border-white/5 bg-[#0A0C10] shadow-2xl hover:border-emerald-500/30 hover:shadow-[0_20px_40px_-15px_rgba(16,185,129,0.2)]"
+                          : "border border-slate-200 bg-white shadow-[0_18px_50px_rgba(15,23,42,0.12)] hover:border-emerald-200",
+                      ].join(" ")}
+                    >
+                      {/* Ambient Background Glows (solo oscuro) */}
+                      {isDark && (
+                        <>
+                          <div className="absolute top-0 right-0 -mt-16 -mr-16 h-64 w-64 rounded-full bg-emerald-500/10 blur-[80px] transition-all duration-700 group-hover:bg-emerald-500/20" />
+                          <div className="absolute bottom-0 left-0 -mb-16 -ml-16 h-40 w-40 rounded-full bg-teal-500/5 blur-[60px]" />
+                        </>
+                      )}
 
                       <div className="relative flex items-start justify-between gap-4">
                         <div className="min-w-0 flex-1">
                           {/* Label */}
                           <div className="flex items-center gap-2 mb-3">
                             <div className="h-1.5 w-1.5 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.6)] animate-pulse" />
-                            <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-slate-400 group-hover:text-emerald-400/80 transition-colors">
+                            <span
+                              className={`text-[10px] font-bold uppercase tracking-[0.2em] transition-colors ${
+                                isDark
+                                  ? "text-slate-400 group-hover:text-emerald-400/80"
+                                  : "text-slate-500 group-hover:text-emerald-600"
+                              }`}
+                            >
                               Evaluaciones
                             </span>
                           </div>
 
                           {/* Metric */}
                           <div className="flex items-baseline gap-2">
-                            <p className="text-5xl font-black tracking-tighter text-white drop-shadow-lg">
+                            <p
+                              className={`text-5xl font-black tracking-tighter drop-shadow-lg ${
+                                isDark ? "text-white" : "text-slate-900"
+                              }`}
+                            >
                               {metrics.total}
                             </p>
-                            <span className="text-sm font-medium text-slate-500">
+                            <span
+                              className={`text-sm font-medium ${
+                                isDark ? "text-slate-500" : "text-slate-500"
+                              }`}
+                            >
                               total
                             </span>
                           </div>
                         </div>
 
                         {/* Icon Container */}
-                        <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-[#15191E] border border-white/5 text-emerald-500 shadow-inner group-hover:scale-110 group-hover:bg-emerald-500 group-hover:text-[#0A0C10] group-hover:border-transparent transition-all duration-300">
+                        <div
+                          className={[
+                            "flex h-12 w-12 items-center justify-center rounded-2xl border shadow-inner group-hover:scale-110 transition-all duration-300",
+                            isDark
+                              ? "bg-[#15191E] border-white/5 text-emerald-500 group-hover:bg-emerald-500 group-hover:text-[#0A0C10] group-hover:border-transparent"
+                              : "bg-emerald-50 border-emerald-100 text-emerald-600 group-hover:bg-emerald-500 group-hover:text-white group-hover:border-emerald-500",
+                          ].join(" ")}
+                        >
                           <FileText className="h-5 w-5" />
                         </div>
                       </div>
 
                       {/* Progress Bar Section */}
                       <div className="relative mt-6">
-                        <div className="h-1.5 w-full rounded-full bg-[#15191E] overflow-hidden border border-white/5">
+                        <div
+                          className={`h-1.5 w-full rounded-full overflow-hidden border ${
+                            isDark
+                              ? "bg-[#15191E] border-white/5"
+                              : "bg-slate-100 border-slate-200"
+                          }`}
+                        >
                           <div
                             className="h-full rounded-full bg-gradient-to-r from-emerald-600 to-emerald-400 shadow-[0_0_12px_rgba(16,185,129,0.4)]"
                             style={{
@@ -748,24 +838,45 @@ const CoordinatorConsole: React.FC = () => {
                     </div>
 
                     {/* --- CARD 2: PROMEDIO GLOBAL (Teal/Cyan Focus) --- */}
-                    <div className="group relative overflow-hidden rounded-[24px] border border-white/5 bg-[#0A0C10] p-6 shadow-2xl transition-all duration-500 hover:-translate-y-1 hover:border-cyan-500/30 hover:shadow-[0_20px_40px_-15px_rgba(34,211,238,0.2)]">
+                    <div
+                      className={[
+                        "group relative overflow-hidden rounded-[24px] p-6 transition-all duration-500 hover:-translate-y-1",
+                        isDark
+                          ? "border border-white/5 bg-[#0A0C10] shadow-2xl hover:border-cyan-500/30 hover:shadow-[0_20px_40px_-15px_rgba(34,211,238,0.2)]"
+                          : "border border-slate-200 bg-white shadow-[0_18px_50px_rgba(15,23,42,0.12)] hover:border-cyan-200",
+                      ].join(" ")}
+                    >
                       {/* Ambient Background Glows */}
-                      <div className="absolute top-0 right-0 -mt-16 -mr-16 h-64 w-64 rounded-full bg-cyan-500/10 blur-[80px] transition-all duration-700 group-hover:bg-cyan-500/20" />
-                      <div className="absolute bottom-0 left-0 -mb-16 -ml-16 h-40 w-40 rounded-full bg-emerald-500/5 blur-[60px]" />
+                      {isDark && (
+                        <>
+                          <div className="absolute top-0 right-0 -mt-16 -mr-16 h-64 w-64 rounded-full bg-cyan-500/10 blur-[80px] transition-all duration-700 group-hover:bg-cyan-500/20" />
+                          <div className="absolute bottom-0 left-0 -mb-16 -ml-16 h-40 w-40 rounded-full bg-emerald-500/5 blur-[60px]" />
+                        </>
+                      )}
 
                       <div className="relative flex items-start justify-between gap-4">
                         <div className="min-w-0 flex-1">
                           {/* Label */}
                           <div className="flex items-center gap-2 mb-3">
                             <div className="h-1.5 w-1.5 rounded-full bg-cyan-400 shadow-[0_0_8px_rgba(34,211,238,0.6)]" />
-                            <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-slate-400 group-hover:text-cyan-400/80 transition-colors">
+                            <span
+                              className={`text-[10px] font-bold uppercase tracking-[0.2em] transition-colors ${
+                                isDark
+                                  ? "text-slate-400 group-hover:text-cyan-400/80"
+                                  : "text-slate-500 group-hover:text-cyan-600"
+                              }`}
+                            >
                               Promedio Global
                             </span>
                           </div>
 
                           {/* Metric */}
                           <div className="flex items-baseline gap-2">
-                            <p className="text-5xl font-black tracking-tighter text-white drop-shadow-lg">
+                            <p
+                              className={`text-5xl font-black tracking-tighter drop-shadow-lg ${
+                                isDark ? "text-white" : "text-slate-900"
+                              }`}
+                            >
                               {metrics.avgScore.toFixed(1)}
                             </p>
                             <span className="text-sm font-medium text-slate-500">
@@ -775,14 +886,27 @@ const CoordinatorConsole: React.FC = () => {
                         </div>
 
                         {/* Icon Container */}
-                        <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-[#15191E] border border-white/5 text-cyan-400 shadow-inner group-hover:scale-110 group-hover:bg-cyan-400 group-hover:text-[#0A0C10] group-hover:border-transparent transition-all duration-300">
+                        <div
+                          className={[
+                            "flex h-12 w-12 items-center justify-center rounded-2xl border shadow-inner group-hover:scale-110 group-hover:border-transparent transition-all duration-300",
+                            isDark
+                              ? "bg-[#15191E] border-white/5 text-cyan-400 group-hover:bg-cyan-400 group-hover:text-[#0A0C10]"
+                              : "bg-cyan-50 border-cyan-100 text-cyan-600 group-hover:bg-cyan-500 group-hover:text-white",
+                          ].join(" ")}
+                        >
                           <Activity className="h-5 w-5" />
                         </div>
                       </div>
 
                       {/* Progress Bar Section */}
                       <div className="relative mt-6">
-                        <div className="h-1.5 w-full rounded-full bg-[#15191E] overflow-hidden border border-white/5">
+                        <div
+                          className={`h-1.5 w-full rounded-full overflow-hidden border ${
+                            isDark
+                              ? "bg-[#15191E] border-white/5"
+                              : "bg-slate-100 border-slate-200"
+                          }`}
+                        >
                           <div
                             className="h-full rounded-full bg-gradient-to-r from-cyan-600 to-cyan-400 shadow-[0_0_12px_rgba(34,211,238,0.4)]"
                             style={{
@@ -800,16 +924,29 @@ const CoordinatorConsole: React.FC = () => {
                     </div>
 
                     {/* --- CARD 3: FLUJO DE PROCESO (Workflow Focus) --- */}
-                    <div className="group relative overflow-hidden rounded-[24px] border border-white/5 bg-[#0A0C10] p-6 shadow-2xl transition-all duration-500 hover:-translate-y-1 hover:border-white/20 hover:shadow-[0_20px_40px_-15px_rgba(255,255,255,0.05)]">
+                    <div
+                      className={[
+                        "group relative overflow-hidden rounded-[24px] p-6 transition-all duration-500 hover:-translate-y-1",
+                        isDark
+                          ? "border border-white/5 bg-[#0A0C10] shadow-2xl hover:border-white/20 hover:shadow-[0_20px_40px_-15px_rgba(255,255,255,0.05)]"
+                          : "border border-slate-200 bg-white shadow-[0_18px_50px_rgba(15,23,42,0.12)] hover:border-slate-300",
+                      ].join(" ")}
+                    >
                       {/* Ambient Background Glows */}
-                      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 h-40 w-40 rounded-full bg-white/5 blur-[90px] group-hover:bg-white/10 transition-all" />
+                      {isDark && (
+                        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 h-40 w-40 rounded-full bg-white/5 blur-[90px] group-hover:bg-white/10 transition-all" />
+                      )}
 
                       <div className="relative flex items-start justify-between gap-4">
                         <div className="w-full">
                           {/* Label */}
                           <div className="flex items-center gap-2 mb-4">
                             <div className="h-1.5 w-1.5 rounded-full bg-slate-400" />
-                            <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-slate-400">
+                            <span
+                              className={`text-[10px] font-bold uppercase tracking-[0.2em] ${
+                                isDark ? "text-slate-400" : "text-slate-600"
+                              }`}
+                            >
                               Flujo Activo
                             </span>
                           </div>
@@ -818,7 +955,14 @@ const CoordinatorConsole: React.FC = () => {
                           <div className="flex items-center w-full gap-2">
                             {/* Step 1 */}
                             <div className="flex-1 flex flex-col items-center gap-2 group/step">
-                              <div className="w-full py-1.5 rounded-lg border border-white/10 bg-white/5 text-center text-[10px] font-bold text-slate-400 uppercase tracking-wider group-hover/step:border-white/20 transition-colors">
+                              <div
+                                className={[
+                                  "w-full py-1.5 rounded-lg border text-center text-[10px] font-bold uppercase tracking-wider group-hover/step:border-white/20 transition-colors",
+                                  isDark
+                                    ? "border-white/10 bg-white/5 text-slate-400"
+                                    : "border-slate-200 bg-slate-50 text-slate-600",
+                                ].join(" ")}
+                              >
                                 Lista
                               </div>
                             </div>
@@ -827,7 +971,14 @@ const CoordinatorConsole: React.FC = () => {
 
                             {/* Step 2 */}
                             <div className="flex-1 flex flex-col items-center gap-2 group/step">
-                              <div className="w-full py-1.5 rounded-lg border border-white/10 bg-white/5 text-center text-[10px] font-bold text-slate-400 uppercase tracking-wider group-hover/step:border-white/20 transition-colors">
+                              <div
+                                className={[
+                                  "w-full py-1.5 rounded-lg border text-center text-[10px] font-bold uppercase tracking-wider group-hover/step:border-white/20 transition-colors",
+                                  isDark
+                                    ? "border-white/10 bg-white/5 text-slate-400"
+                                    : "border-slate-200 bg-slate-50 text-slate-600",
+                                ].join(" ")}
+                              >
                                 Detalle
                               </div>
                             </div>
@@ -844,11 +995,22 @@ const CoordinatorConsole: React.FC = () => {
 
                           {/* Description */}
                           <div className="mt-5 flex items-center justify-between">
-                            <p className="text-xs text-slate-500 font-medium leading-relaxed max-w-[80%]">
+                            <p
+                              className={`text-xs font-medium leading-relaxed max-w-[80%] ${
+                                isDark ? "text-slate-500" : "text-slate-600"
+                              }`}
+                            >
                               Optimizado para revisión rápida y toma de
                               decisiones sin fricción.
                             </p>
-                            <div className="h-8 w-8 flex items-center justify-center rounded-full bg-white/5 border border-white/5 text-slate-400 group-hover:text-white group-hover:bg-white/10 transition-colors">
+                            <div
+                              className={[
+                                "h-8 w-8 flex items-center justify-center rounded-full border transition-colors",
+                                isDark
+                                  ? "bg-white/5 border-white/5 text-slate-400 group-hover:text-white group-hover:bg-white/10"
+                                  : "bg-slate-50 border-slate-200 text-slate-500 group-hover:text-emerald-600 group-hover:bg-emerald-50 group-hover:border-emerald-200",
+                              ].join(" ")}
+                            >
                               <UserCheck className="h-4 w-4" />
                             </div>
                           </div>
@@ -858,29 +1020,63 @@ const CoordinatorConsole: React.FC = () => {
                   </div>
 
                   {/* TOP RECOMENDADOS (Premium Emerald Layout) */}
-                  <div className="relative overflow-hidden rounded-[24px] border border-white/5 bg-[#0A0C10] shadow-2xl">
+                  <div
+                    className={[
+                      "relative overflow-hidden rounded-[24px] border shadow-2xl",
+                      isDark
+                        ? "border-white/5 bg-[#0A0C10]"
+                        : "border-slate-200 bg-white shadow-[0_20px_60px_rgba(15,23,42,0.16)]",
+                    ].join(" ")}
+                  >
                     {/* Ambient Background Glows */}
-                    <div className="pointer-events-none absolute top-0 right-0 -mt-24 -mr-24 h-96 w-96 rounded-full bg-emerald-500/5 blur-[100px]" />
-                    <div className="pointer-events-none absolute bottom-0 left-0 -mb-24 -ml-24 h-80 w-80 rounded-full bg-cyan-500/5 blur-[80px]" />
-                    <div className="pointer-events-none absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-[0.03]" />
+                    {isDark && (
+                      <>
+                        <div className="pointer-events-none absolute top-0 right-0 -mt-24 -mr-24 h-96 w-96 rounded-full bg-emerald-500/5 blur-[100px]" />
+                        <div className="pointer-events-none absolute bottom-0 left-0 -mb-24 -ml-24 h-80 w-80 rounded-full bg-cyan-500/5 blur-[80px]" />
+                        <div className="pointer-events-none absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-[0.03]" />
+                      </>
+                    )}
 
                     <div className="relative p-8">
                       {/* --- Header Section --- */}
                       <div className="flex flex-col gap-6 sm:flex-row sm:items-start sm:justify-between mb-8">
                         <div className="flex gap-5">
                           {/* Icon Box */}
-                          <div className="shrink-0 grid h-12 w-12 place-items-center rounded-2xl border border-emerald-500/20 bg-emerald-500/10 shadow-[0_0_15px_rgba(16,185,129,0.15)]">
-                            <TrendingUp className="h-6 w-6 text-emerald-400" />
+                          <div
+                            className={[
+                              "shrink-0 grid h-12 w-12 place-items-center rounded-2xl border shadow-[0_0_15px_rgba(16,185,129,0.15)]",
+                              isDark
+                                ? "border-emerald-500/20 bg-emerald-500/10"
+                                : "border-emerald-100 bg-emerald-50",
+                            ].join(" ")}
+                          >
+                            <TrendingUp
+                              className={`h-6 w-6 ${
+                                isDark ? "text-emerald-400" : "text-emerald-600"
+                              }`}
+                            />
                           </div>
 
                           <div className="min-w-0 pt-1">
-                            <h3 className="text-xl font-bold text-white tracking-tight leading-tight">
+                            <h3
+                              className={`text-xl font-bold tracking-tight leading-tight ${
+                                isDark ? "text-white" : "text-slate-900"
+                              }`}
+                            >
                               Top Recomendados
                             </h3>
-                            <p className="mt-1.5 text-sm text-slate-400 font-medium">
+                            <p
+                              className={`mt-1.5 text-sm font-medium ${
+                                isDark ? "text-slate-400" : "text-slate-600"
+                              }`}
+                            >
                               Ranking automático por probabilidad de éxito.
                             </p>
-                            <div className="mt-2 flex items-center gap-2 text-xs text-slate-500">
+                            <div
+                              className={`mt-2 flex items-center gap-2 text-xs ${
+                                isDark ? "text-slate-500" : "text-slate-500"
+                              }`}
+                            >
                               <div
                                 className={`h-1.5 w-1.5 rounded-full ${userSchoolId ? "bg-amber-500" : "bg-emerald-500"}`}
                               />
@@ -903,7 +1099,12 @@ const CoordinatorConsole: React.FC = () => {
                                 block: "start",
                               })
                           }
-                          className="group flex items-center gap-2 rounded-xl border border-white/5 bg-white/[0.02] px-4 py-2.5 text-xs font-semibold uppercase tracking-wider text-slate-400 transition-all hover:border-emerald-500/20 hover:bg-emerald-500/5 hover:text-emerald-400 active:scale-95"
+                          className={[
+                            "group flex items-center gap-2 rounded-xl px-4 py-2.5 text-xs font-semibold uppercase tracking-wider transition-all active:scale-95 border",
+                            isDark
+                              ? "border-white/5 bg-white/[0.02] text-slate-400 hover:border-emerald-500/20 hover:bg-emerald-500/5 hover:text-emerald-400"
+                              : "border-slate-200 bg-white text-slate-600 hover:border-emerald-300 hover:bg-emerald-50 hover:text-emerald-700 shadow-sm",
+                          ].join(" ")}
                         >
                           Ver Historial
                           <ArrowRight className="h-3.5 w-3.5 transition-transform group-hover:translate-x-1" />
@@ -913,11 +1114,21 @@ const CoordinatorConsole: React.FC = () => {
                       {/* --- Grid de Tarjetas --- */}
                       <div className="grid gap-4 md:grid-cols-2">
                         {topRecommended.length === 0 ? (
-                          <div className="col-span-2 flex flex-col items-center justify-center rounded-2xl border border-dashed border-white/10 bg-white/[0.02] p-12 text-center">
-                            <div className="text-slate-600 mb-2">
-                              <TrendingUp className="h-8 w-8 opacity-20" />
+                          <div
+                            className={`col-span-2 flex flex-col items-center justify-center rounded-2xl border border-dashed p-12 text-center ${
+                              isDark
+                                ? "border-white/10 bg-white/[0.02]"
+                                : "border-slate-200 bg-slate-50"
+                            }`}
+                          >
+                            <div className="text-slate-500 mb-2">
+                              <TrendingUp className="h-8 w-8 opacity-30" />
                             </div>
-                            <p className="text-sm font-medium text-slate-500">
+                            <p
+                              className={`text-sm font-medium ${
+                                isDark ? "text-slate-500" : "text-slate-600"
+                              }`}
+                            >
                               Aún no hay suficientes datos para generar el
                               ranking.
                             </p>
@@ -933,22 +1144,32 @@ const CoordinatorConsole: React.FC = () => {
                             const isHigh = score >= 85;
                             const isMed = score >= 70 && score < 85;
 
-                            let toneColor = "text-slate-400"; // Default
+                            let toneColor = isDark
+                              ? "text-slate-400"
+                              : "text-slate-500"; // Default
                             let toneBg = "bg-slate-500";
-                            let borderHighlight = "group-hover:border-white/10";
+                            let borderHighlight = isDark
+                              ? "group-hover:border-white/10"
+                              : "group-hover:border-emerald-200";
 
                             if (isHigh) {
-                              toneColor = "text-emerald-400";
+                              toneColor = isDark
+                                ? "text-emerald-400"
+                                : "text-emerald-600";
                               toneBg = "bg-emerald-500";
                               borderHighlight =
                                 "group-hover:border-emerald-500/30 group-hover:shadow-[0_4px_20px_-10px_rgba(16,185,129,0.3)]";
                             } else if (isMed) {
-                              toneColor = "text-cyan-400";
+                              toneColor = isDark
+                                ? "text-cyan-400"
+                                : "text-cyan-600";
                               toneBg = "bg-cyan-500";
                               borderHighlight =
                                 "group-hover:border-cyan-500/30 group-hover:shadow-[0_4px_20px_-10px_rgba(34,211,238,0.3)]";
                             } else if (score >= 55) {
-                              toneColor = "text-indigo-400";
+                              toneColor = isDark
+                                ? "text-indigo-400"
+                                : "text-indigo-600";
                               toneBg = "bg-indigo-500";
                               borderHighlight =
                                 "group-hover:border-indigo-500/30";
@@ -962,14 +1183,22 @@ const CoordinatorConsole: React.FC = () => {
                                     `/coordinator/evaluations/${encodeURIComponent(c.id)}/report`,
                                   )
                                 }
-                                className={`group relative flex flex-col justify-between overflow-hidden rounded-2xl border border-white/5 bg-[#15191E] p-5 text-left transition-all duration-300 hover:-translate-y-1 ${borderHighlight}`}
+                                className={`group relative flex flex-col justify-between overflow-hidden rounded-2xl border p-5 text-left transition-all duration-300 hover:-translate-y-1 ${borderHighlight} ${
+                                  isDark
+                                    ? "border-white/5 bg-[#15191E]"
+                                    : "border-slate-200 bg-white shadow-[0_10px_30px_rgba(15,23,42,0.08)]"
+                                }`}
                               >
                                 <div className="flex w-full items-start justify-between gap-4">
                                   {/* Left Info */}
                                   <div className="min-w-0 flex-1">
                                     <div className="flex items-center gap-2 mb-1">
                                       <span
-                                        className={`flex h-5 min-w-[1.25rem] items-center justify-center rounded bg-white/5 px-1.5 text-[10px] font-bold font-mono ${toneColor}`}
+                                        className={`flex h-5 min-w-[1.25rem] items-center justify-center rounded px-1.5 text-[10px] font-bold font-mono ${toneColor} ${
+                                          isDark
+                                            ? "bg-white/5"
+                                            : "bg-slate-50 border border-slate-200"
+                                        }`}
                                       >
                                         #{rank}
                                       </span>
@@ -980,11 +1209,21 @@ const CoordinatorConsole: React.FC = () => {
                                       )}
                                     </div>
 
-                                    <h4 className="truncate text-base font-bold text-white group-hover:text-white/90">
+                                    <h4
+                                      className={`truncate text-base font-bold group-hover:text-emerald-400 ${
+                                        isDark ? "text-white" : "text-slate-900"
+                                      }`}
+                                    >
                                       {c.name}
                                     </h4>
 
-                                    <div className="mt-1 text-xs text-slate-500 truncate">
+                                    <div
+                                      className={`mt-1 text-xs truncate ${
+                                        isDark
+                                          ? "text-slate-500"
+                                          : "text-slate-500"
+                                      }`}
+                                    >
                                       {c.school || "Sin escuela registrada"}
                                     </div>
                                   </div>
@@ -995,10 +1234,16 @@ const CoordinatorConsole: React.FC = () => {
                                       title={c.verdictFull || "Sin veredicto"}
                                       className={`inline-flex items-center rounded-lg border px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider ${
                                         isHigh
-                                          ? "border-emerald-500/20 bg-emerald-500/10 text-emerald-400"
+                                          ? isDark
+                                            ? "border-emerald-500/20 bg-emerald-500/10 text-emerald-400"
+                                            : "border-emerald-200 bg-emerald-50 text-emerald-700"
                                           : isMed
-                                            ? "border-cyan-500/20 bg-cyan-500/10 text-cyan-400"
-                                            : "border-white/10 bg-white/5 text-slate-400"
+                                            ? isDark
+                                              ? "border-cyan-500/20 bg-cyan-500/10 text-cyan-400"
+                                              : "border-cyan-200 bg-cyan-50 text-cyan-700"
+                                            : isDark
+                                              ? "border-white/10 bg-white/5 text-slate-400"
+                                              : "border-slate-200 bg-slate-50 text-slate-600"
                                       }`}
                                     >
                                       {c.verdictShort === "Sin veredicto"
@@ -1041,12 +1286,34 @@ const CoordinatorConsole: React.FC = () => {
 
                       {/* --- Footer / Pagination --- */}
                       {topTotal > 0 && (
-                        <div className="mt-8 border-t border-white/5 pt-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-                          <div className="text-xs font-medium text-slate-500">
+                        <div
+                          className={`mt-8 border-t pt-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between ${
+                            isDark ? "border-white/5" : "border-slate-200"
+                          }`}
+                        >
+                          <div
+                            className={`text-xs font-medium ${
+                              isDark ? "text-slate-500" : "text-slate-600"
+                            }`}
+                          >
                             Mostrando{" "}
-                            <span className="text-white">{topStart + 1}</span> –{" "}
-                            <span className="text-white">{topEnd}</span> de{" "}
-                            <span className="text-white">{topTotal}</span>
+                            <span
+                              className={isDark ? "text-white" : "text-slate-900"}
+                            >
+                              {topStart + 1}
+                            </span>{" "}
+                            –{" "}
+                            <span
+                              className={isDark ? "text-white" : "text-slate-900"}
+                            >
+                              {topEnd}
+                            </span>{" "}
+                            de{" "}
+                            <span
+                              className={isDark ? "text-white" : "text-slate-900"}
+                            >
+                              {topTotal}
+                            </span>
                           </div>
 
                           <div className="flex flex-wrap items-center gap-3">
@@ -1058,7 +1325,11 @@ const CoordinatorConsole: React.FC = () => {
                                   setTopPageSize(Number(e.target.value) as any);
                                   setTopPage(1);
                                 }}
-                                className="appearance-none cursor-pointer rounded-xl border border-white/10 bg-[#15191E] pl-3 pr-8 py-2 text-xs font-medium text-slate-300 outline-none transition hover:border-white/20 focus:border-emerald-500/50"
+                                className={`appearance-none cursor-pointer rounded-xl pl-3 pr-8 py-2 text-xs font-medium outline-none transition border ${
+                                  isDark
+                                    ? "border-white/10 bg-[#15191E] text-slate-300 hover:border-white/20 focus:border-emerald-500/50"
+                                    : "border-slate-200 bg-white text-slate-700 hover:border-slate-300 focus:border-emerald-500/60 shadow-sm"
+                                }`}
                               >
                                 {TOP_PAGE_SIZE_OPTIONS.map((n) => (
                                   <option key={n} value={n}>
@@ -1067,7 +1338,11 @@ const CoordinatorConsole: React.FC = () => {
                                 ))}
                               </select>
                               {/* Custom Arrow */}
-                              <div className="pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-500">
+                              <div
+                                className={`pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 ${
+                                  isDark ? "text-slate-500" : "text-slate-400"
+                                }`}
+                              >
                                 <svg
                                   width="10"
                                   height="6"
@@ -1086,7 +1361,11 @@ const CoordinatorConsole: React.FC = () => {
                               </div>
                             </div>
 
-                            <div className="h-4 w-px bg-white/10 mx-1" />
+                            <div
+                              className={`h-4 w-px mx-1 ${
+                                isDark ? "bg-white/10" : "bg-slate-200"
+                              }`}
+                            />
 
                             {/* Navigation Buttons */}
                             <div className="flex items-center gap-1">
@@ -1098,8 +1377,12 @@ const CoordinatorConsole: React.FC = () => {
                                 disabled={safeTopPage <= 1}
                                 className={`grid h-8 w-8 place-items-center rounded-xl border transition ${
                                   safeTopPage <= 1
-                                    ? "border-transparent text-slate-700 cursor-not-allowed"
-                                    : "border-white/10 bg-[#15191E] text-slate-300 hover:bg-white/5 hover:text-white"
+                                    ? isDark
+                                      ? "border-transparent text-slate-700 cursor-not-allowed"
+                                      : "border-transparent text-slate-300 cursor-not-allowed"
+                                    : isDark
+                                      ? "border-white/10 bg-[#15191E] text-slate-300 hover:bg-white/5 hover:text-white"
+                                      : "border-slate-200 bg-white text-slate-700 hover:bg-slate-50 hover:border-emerald-300 hover:text-emerald-700 shadow-sm"
                                 }`}
                               >
                                 <svg
@@ -1116,7 +1399,11 @@ const CoordinatorConsole: React.FC = () => {
                                 </svg>
                               </button>
 
-                              <span className="min-w-[3rem] text-center text-xs font-medium text-slate-400">
+                              <span
+                                className={`min-w-[3rem] text-center text-xs font-medium ${
+                                  isDark ? "text-slate-400" : "text-slate-500"
+                                }`}
+                              >
                                 {safeTopPage} / {topTotalPages}
                               </span>
 
@@ -1130,8 +1417,12 @@ const CoordinatorConsole: React.FC = () => {
                                 disabled={safeTopPage >= topTotalPages}
                                 className={`grid h-8 w-8 place-items-center rounded-xl border transition ${
                                   safeTopPage >= topTotalPages
-                                    ? "border-transparent text-slate-700 cursor-not-allowed"
-                                    : "border-white/10 bg-[#15191E] text-slate-300 hover:bg-white/5 hover:text-white"
+                                    ? isDark
+                                      ? "border-transparent text-slate-700 cursor-not-allowed"
+                                      : "border-transparent text-slate-300 cursor-not-allowed"
+                                    : isDark
+                                      ? "border-white/10 bg-[#15191E] text-slate-300 hover:bg-white/5 hover:text-white"
+                                      : "border-slate-200 bg-white text-slate-700 hover:bg-slate-50 hover:border-emerald-300 hover:text-emerald-700 shadow-sm"
                                 }`}
                               >
                                 <svg
@@ -1185,46 +1476,115 @@ const CoordinatorConsole: React.FC = () => {
 
                 {/* COLUMNA DERECHA (premium) */}
                 <aside className="col-span-12 xl:col-span-4 space-y-6">
-                  <div className="relative overflow-hidden rounded-[28px] border border-white/10 bg-[#0B0F14]/70 backdrop-blur-xl p-6 shadow-[0_24px_90px_-70px_rgba(34,211,238,0.20)]">
-                    <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_85%_0%,rgba(34,211,238,0.08),transparent_55%)]" />
+                  <div
+                    className={`relative overflow-hidden rounded-[28px] border backdrop-blur-xl p-6 ${
+                      isDark
+                        ? "border-white/10 bg-[#0B0F14]/70 shadow-[0_24px_90px_-70px_rgba(34,211,238,0.20)]"
+                        : "border-slate-200 bg-white shadow-[0_18px_60px_rgba(15,23,42,0.08)]"
+                    }`}
+                  >
+                    {isDark && (
+                      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_85%_0%,rgba(34,211,238,0.08),transparent_55%)]" />
+                    )}
                     <div className="relative">
-                      <div className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.04] px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.22em] text-white/70">
-                        <Sparkles className="h-3.5 w-3.5 text-cyan-200" />
+                      <div
+                        className={`inline-flex items-center gap-2 rounded-full border px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.22em] ${
+                          isDark
+                            ? "border-white/10 bg-white/[0.04] text-white/70"
+                            : "border-emerald-100 bg-emerald-50 text-emerald-700"
+                        }`}
+                      >
+                        <Sparkles
+                          className={`h-3.5 w-3.5 ${
+                            isDark ? "text-cyan-200" : "text-emerald-500"
+                          }`}
+                        />
                         Guía rápida
                       </div>
 
-                      <div className="mt-3 text-sm font-semibold text-white/90">
+                      <div
+                        className={`mt-3 text-sm font-semibold ${
+                          isDark ? "text-white/90" : "text-slate-900"
+                        }`}
+                      >
                         Flujo recomendado
                       </div>
 
-                      <ul className="mt-3 space-y-2 text-xs text-white/60 leading-relaxed">
+                      <ul
+                        className={`mt-3 space-y-2 text-xs leading-relaxed ${
+                          isDark ? "text-white/60" : "text-slate-600"
+                        }`}
+                      >
                         <li className="flex gap-2">
-                          <span className="text-cyan-200">1)</span>
+                          <span
+                            className={
+                              isDark ? "text-cyan-200" : "text-emerald-500"
+                            }
+                          >
+                            1)
+                          </span>
                           <span>
                             Revisa{" "}
-                            <b className="text-white/80">Top recomendados</b>{" "}
+                            <b
+                              className={
+                                isDark ? "text-white/80" : "text-emerald-700"
+                              }
+                            >
+                              Top recomendados
+                            </b>{" "}
                             para decisiones rápidas.
                           </span>
                         </li>
                         <li className="flex gap-2">
-                          <span className="text-cyan-200">2)</span>
+                          <span
+                            className={
+                              isDark ? "text-cyan-200" : "text-emerald-500"
+                            }
+                          >
+                            2)
+                          </span>
                           <span>
-                            En <b className="text-white/80">Historial</b>,
-                            filtra por programa y usa búsqueda.
+                            En{" "}
+                            <b
+                              className={
+                                isDark ? "text-white/80" : "text-emerald-700"
+                              }
+                            >
+                              Historial
+                            </b>
+                            , filtra por programa y usa búsqueda.
                           </span>
                         </li>
                         <li className="flex gap-2">
-                          <span className="text-cyan-200">3)</span>
+                          <span
+                            className={
+                              isDark ? "text-cyan-200" : "text-emerald-500"
+                            }
+                          >
+                            3)
+                          </span>
                           <span>
                             Abre detalle: apruebas/rechazas y exportas PDF.
                           </span>
                         </li>
                       </ul>
 
-                      <div className="mt-5 rounded-2xl border border-white/10 bg-white/[0.03] p-4 text-[11px] text-white/55">
+                      <div
+                        className={`mt-5 rounded-2xl border p-4 text-[11px] ${
+                          isDark
+                            ? "border-white/10 bg-white/[0.03] text-white/55"
+                            : "border-slate-200 bg-slate-50 text-slate-600"
+                        }`}
+                      >
                         Tip: en desktop, usa{" "}
-                        <b className="text-white/75">Comparativa</b> solo cuando
-                        haya 2+ entrevistas.
+                        <b
+                          className={
+                            isDark ? "text-white/75" : "text-emerald-700"
+                          }
+                        >
+                          Comparativa
+                        </b>{" "}
+                        solo cuando haya 2+ entrevistas.
                       </div>
                     </div>
                   </div>

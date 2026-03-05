@@ -46,6 +46,7 @@ import {
 } from "../services/teachersService";
 
 import { useAuth } from "../context/AuthContext";
+import { useTheme } from "../context/ThemeContext";
 import api from "../services/apiClient";
 
 interface InterviewFormProps {
@@ -124,55 +125,155 @@ function safeParseDraft(raw: string | null): InterviewDraft | null {
 // UI
 // ---------------------------------------------------------------------
 
-const SectionHeader: React.FC<{ title: string; icon: React.ReactNode }> =
-  React.memo(({ title, icon }) => (
-    <div className="flex items-center gap-4 mb-8">
-      <div className="relative group">
-        <div className="absolute inset-0 bg-emerald-500 blur-lg opacity-10 group-hover:opacity-18 transition-opacity duration-500" />
-        <div className="relative p-3 rounded-2xl bg-[#0E1115] border border-white/10 text-emerald-400 shadow-lg">
-          {icon}
-        </div>
-      </div>
-
-      <div className="flex flex-col">
-        <h3 className="text-xl font-bold text-white tracking-tight">{title}</h3>
-        <div className="h-0.5 w-12 bg-gradient-to-r from-emerald-500/50 to-transparent mt-2 rounded-full" />
-      </div>
-    </div>
-  ));
-
-const FormSection: React.FC<{
+type SectionHeaderProps = {
   title: string;
   icon: React.ReactNode;
+  step: number;
+  subtitle?: string;
+};
+
+const SectionHeader: React.FC<SectionHeaderProps> = React.memo(
+  ({ title, icon, step, subtitle }) => {
+    const { theme } = useTheme();
+    const isDark = theme === "dark";
+
+    return (
+      <div className="flex items-start gap-4 mb-8">
+        <div className="relative group">
+          <div className="absolute inset-0 bg-emerald-500 blur-xl opacity-10 group-hover:opacity-20 transition-opacity duration-500" />
+          <div
+            className={[
+              "relative flex items-center justify-center h-12 w-12 rounded-2xl border shadow-[0_0_32px_rgba(16,185,129,0.35)]",
+              isDark
+                ? "bg-gradient-to-br from-emerald-500/25 via-emerald-500/12 to-transparent border-emerald-400/50 text-emerald-300"
+                : "bg-gradient-to-br from-emerald-50 via-white to-emerald-50 border-emerald-200 text-emerald-600",
+            ].join(" ")}
+          >
+            {icon}
+          </div>
+        </div>
+
+        <div className="flex flex-col gap-1">
+          <div className="flex items-center gap-3">
+            <span
+              className={[
+                "inline-flex h-7 w-7 items-center justify-center rounded-full border text-[11px] font-semibold",
+                isDark
+                  ? "border-emerald-500/60 bg-emerald-500/10 text-emerald-200"
+                  : "border-emerald-300 bg-emerald-50 text-emerald-700",
+              ].join(" ")}
+            >
+              {step}
+            </span>
+            <h3
+              className={[
+                "text-xl md:text-2xl font-semibold tracking-tight",
+                isDark ? "text-white" : "text-slate-900",
+              ].join(" ")}
+            >
+              {title}
+            </h3>
+          </div>
+          {subtitle && (
+            <p
+              className={`text-xs md:text-sm max-w-xl ${
+                isDark ? "text-gray-400" : "text-slate-600"
+              }`}
+            >
+              {subtitle}
+            </p>
+          )}
+          <div
+            className={[
+              "h-px w-20 mt-3 rounded-full bg-gradient-to-r from-emerald-500/60 via-emerald-400/10 to-transparent",
+              !isDark ? "opacity-70" : "",
+            ].join(" ")}
+          />
+        </div>
+      </div>
+    );
+  }
+);
+
+type FormSectionProps = {
+  title: string;
+  icon: React.ReactNode;
+  step: number;
+  subtitle?: string;
   children: React.ReactNode;
-}> = React.memo(({ title, icon, children }) => (
-  <div className="relative group rounded-3xl p-[1px]  ">
-    <div className="relative bg-[#1F1F1F]/30 p-6 md:p-10 rounded-3xl overflow-hidden h-full ">
-      <div className="absolute -top-24 -right-24 w-48 h-48 bg-emerald-500/5 rounded-full blur-3xl group-hover:bg-emerald-500/10 transition-colors duration-700" />
-      <SectionHeader title={title} icon={icon} />
-      <div className="space-y-8 relative z-10">{children}</div>
-    </div>
-  </div>
-));
+};
+
+const FormSection: React.FC<FormSectionProps> = React.memo(
+  ({ title, icon, step, subtitle, children }) => {
+    const { theme } = useTheme();
+    const isDark = theme === "dark";
+
+    return (
+      <section
+        className={[
+          "relative group rounded-3xl overflow-hidden border",
+          isDark
+            ? "bg-white/[0.03] backdrop-blur-2xl border-white/10 shadow-[0_22px_80px_rgba(0,0,0,0.75)]"
+            : "bg-white border-slate-200 shadow-[0_18px_60px_rgba(15,23,42,0.10)]",
+        ].join(" ")}
+      >
+        {/* franja superior sutil */}
+        <div className="absolute inset-x-0 top-0 h-[2px] bg-gradient-to-r from-emerald-400/60 via-emerald-200/40 to-cyan-400/60" />
+
+        {/* acento diagonal muy suave (solo en oscuro para no ensuciar el fondo claro) */}
+        {isDark && (
+          <div className="pointer-events-none absolute -top-24 right-0 w-56 h-40 bg-emerald-500/8 blur-3xl" />
+        )}
+
+        <div
+          className={[
+            "relative p-6 md:p-8 lg:p-10",
+            isDark
+              ? "bg-gradient-to-br from-[#05070b] via-[#070b11] to-[#05070b]"
+              : "bg-gradient-to-br from-white via-slate-50 to-slate-50",
+          ].join(" ")}
+        >
+          <SectionHeader
+            title={title}
+            icon={icon}
+            step={step}
+            subtitle={subtitle}
+          />
+          <div className="space-y-8 relative z-10">{children}</div>
+        </div>
+      </section>
+    );
+  }
+);
 
 const FormField: React.FC<{
   label: string;
   name: string;
   children: React.ReactNode;
-}> = React.memo(({ label, name, children }) => (
-  <div className="flex flex-col gap-3 group">
-    <label
-      htmlFor={name}
-      className="text-xs font-bold uppercase tracking-[0.14em] text-gray-100 group-focus-within:text-emerald-400 transition-colors duration-300 ml-1"
-    >
-      {label}
-    </label>
-    {children}
-  </div>
-));
+}> = React.memo(({ label, name, children }) => {
+  const { theme } = useTheme();
+  const isDark = theme === "dark";
 
-const baseInputStyles =
+  return (
+    <div className="flex flex-col gap-3 group">
+      <label
+        htmlFor={name}
+        className={`text-xs font-bold uppercase tracking-[0.14em] ml-1 transition-colors duration-300 group-focus-within:text-emerald-500 ${
+          isDark ? "text-gray-100" : "text-slate-700"
+        }`}
+      >
+        {label}
+      </label>
+      {children}
+    </div>
+  );
+});
+
+const darkInputStyles =
   "w-full bg-[#07090B] border border-white/[0.10] text-gray-200 text-sm rounded-xl px-4 py-3.5 outline-none transition-all duration-300 placeholder:text-gray-500 focus:bg-[#0F1216] focus:border-emerald-500/25 focus:ring-1 focus:ring-emerald-500/20 focus:shadow-[0_0_18px_-10px_rgba(16,185,129,0.14)] hover:border-white/[0.14] hover:bg-[#0C0F12]";
+
+const lightInputStyles =
+  "w-full bg-white border border-slate-200 text-slate-900 text-sm rounded-xl px-4 py-3.5 outline-none transition-all duration-200 placeholder:text-slate-400 focus:bg-white focus:border-emerald-500/60 focus:ring-1 focus:ring-emerald-500/30 focus:shadow-[0_0_0_1px_rgba(16,185,129,0.20)] hover:border-slate-300";
 
 const TextInput: React.FC<{
   name: keyof InterviewData;
@@ -192,21 +293,26 @@ const TextInput: React.FC<{
   required = true,
   inputMode,
   pattern,
-}) => (
-  <input
-    type={type}
-    id={name}
-    name={name}
-    value={value}
-    onChange={onChange}
-    className={baseInputStyles}
-    placeholder={placeholder}
-    required={required}
-    autoComplete="off"
-    inputMode={inputMode}
-    pattern={pattern}
-  />
-);
+}) => {
+  const { theme } = useTheme();
+  const isDark = theme === "dark";
+
+  return (
+    <input
+      type={type}
+      id={name}
+      name={name}
+      value={value}
+      onChange={onChange}
+      className={isDark ? darkInputStyles : lightInputStyles}
+      placeholder={placeholder}
+      required={required}
+      autoComplete="off"
+      inputMode={inputMode}
+      pattern={pattern}
+    />
+  );
+};
 
 const TextArea: React.FC<{
   name: keyof InterviewData;
@@ -216,6 +322,8 @@ const TextArea: React.FC<{
   placeholder?: string;
 }> = ({ name, value, onChange, rows = 3, placeholder }) => {
   const ref = useRef<HTMLTextAreaElement | null>(null);
+  const { theme } = useTheme();
+  const isDark = theme === "dark";
 
   useEffect(() => {
     if (!ref.current) return;
@@ -231,7 +339,9 @@ const TextArea: React.FC<{
       value={value}
       onChange={onChange}
       rows={rows}
-      className={`${baseInputStyles} resize-none leading-relaxed overflow-hidden min-h-[80px]`}
+      className={`${
+        isDark ? darkInputStyles : lightInputStyles
+      } resize-none leading-relaxed overflow-hidden min-h-[80px]`}
       placeholder={placeholder}
       required
     />
@@ -245,35 +355,54 @@ const SelectInput: React.FC<{
   options: { value: string; label: string }[];
   disabled?: boolean;
   placeholder?: string;
-}> = ({ name, value, onChange, options, disabled, placeholder }) => (
-  <div className="relative group/select">
-    <select
-      id={name}
-      name={name}
-      value={value}
-      onChange={onChange}
-      className={`${baseInputStyles} appearance-none cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed pr-10`}
-      required
-      disabled={disabled}
-    >
-      {placeholder && (
-        <option value="" disabled className="text-gray-500">
-          {placeholder}
-        </option>
-      )}
+}> = ({ name, value, onChange, options, disabled, placeholder }) => {
+  const { theme } = useTheme();
+  const isDark = theme === "dark";
 
-      {options.map((opt) => (
-        <option key={opt.value} value={opt.value} className="bg-[#1a1a1a] py-2">
-          {opt.label}
-        </option>
-      ))}
-    </select>
+  return (
+    <div className="relative group/select">
+      <select
+        id={name}
+        name={name}
+        value={value}
+        onChange={onChange}
+        className={`${
+          isDark ? darkInputStyles : lightInputStyles
+        } appearance-none cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed pr-10`}
+        required
+        disabled={disabled}
+      >
+        {placeholder && (
+          <option
+            value=""
+            disabled
+            className={isDark ? "text-gray-500" : "text-slate-400"}
+          >
+            {placeholder}
+          </option>
+        )}
 
-    <div className="absolute inset-y-0 right-0 flex items-center px-4 pointer-events-none text-gray-600 group-focus-within/select:text-emerald-400 transition-colors">
-      <ChevronDown className="w-4 h-4" />
+        {options.map((opt) => (
+          <option
+            key={opt.value}
+            value={opt.value}
+            className={isDark ? "bg-[#1a1a1a] py-2" : "bg-white py-2"}
+          >
+            {opt.label}
+          </option>
+        ))}
+      </select>
+
+      <div
+        className={`absolute inset-y-0 right-0 flex items-center px-4 pointer-events-none transition-colors ${
+          isDark ? "text-gray-600 group-focus-within/select:text-emerald-400" : "text-slate-400 group-focus-within/select:text-emerald-500"
+        }`}
+      >
+        <ChevronDown className="w-4 h-4" />
+      </div>
     </div>
-  </div>
-);
+  );
+};
 
 // ---------------------------------------------------------------------
 // Types
@@ -297,6 +426,8 @@ type NormalizedSchool = {
 
 const InterviewForm: React.FC<InterviewFormProps> = ({ onSubmit }) => {
   const { user } = useAuth();
+  const { theme } = useTheme();
+  const isDark = theme === "dark";
 
   // role + schoolId (robusto)
   const roleRaw =
@@ -751,29 +882,55 @@ useEffect(() => {
 
   return (
     <div className="w-full">
-      <div className="fixed top-0 left-0 w-full h-full overflow-hidden pointer-events-none z-0">
-        <div
-          className="absolute top-[-10%] left-[10%] w-[500px] h-[500px] bg-emerald-500/5 rounded-full blur-[120px] mix-blend-screen animate-pulse"
-          style={{ animationDuration: "8s" }}
-        />
-        <div className="absolute bottom-[10%] right-[5%] w-[600px] h-[600px] bg-blue-600/5 rounded-full blur-[150px] mix-blend-screen" />
+      {/* Fondo decorativo global del formulario. Usamos z negativo para que nunca tape otras secciones. */}
+      <div className="fixed top-0 left-0 w-full h-full overflow-hidden pointer-events-none -z-10">
+        {isDark ? (
+          <>
+            <div
+              className="absolute top-[-10%] left-[10%] w-[500px] h-[500px] bg-emerald-500/5 rounded-full blur-[120px] mix-blend-screen animate-pulse"
+              style={{ animationDuration: "8s" }}
+            />
+            <div className="absolute bottom-[10%] right-[5%] w-[600px] h-[600px] bg-blue-600/5 rounded-full blur-[150px] mix-blend-screen" />
+          </>
+        ) : (
+          <>
+            {/* Fondo muy limpio en modo claro para no “lavar” el contenido */}
+            <div className="absolute inset-0 bg-gradient-to-b from-white to-slate-50" />
+          </>
+        )}
       </div>
 
       <div className="relative z-10 max-w-7xl mx-auto px-6 py-16 space-y-16">
         <header className="text-center space-y-6">
-          <div className="inline-flex items-center gap-2.5 px-5 py-2 rounded-full border border-emerald-500/20 bg-emerald-500/5 text-emerald-400 text-xs font-bold uppercase tracking-widest backdrop-blur-md shadow-[0_0_20px_-5px_rgba(16,185,129,0.2)]">
+          <div
+            className={[
+              "inline-flex items-center gap-2.5 px-5 py-2 rounded-full border text-xs font-bold uppercase tracking-widest backdrop-blur-md",
+              isDark
+                ? "border-emerald-500/20 bg-emerald-500/5 text-emerald-400 shadow-[0_0_20px_-5px_rgba(16,185,129,0.2)]"
+                : "border-[#00B894]/30 bg-[#E6FFF7] text-[#006B57] shadow-[0_0_18px_rgba(0,184,148,0.20)]",
+            ].join(" ")}
+          >
             <BrainCircuit className="w-4 h-4" />
             <span>Sistema Inteligente</span>
           </div>
 
           <div className="relative space-y-4 max-w-3xl mx-auto">
-            <h2 className="text-4xl md:text-6xl font-black text-white tracking-tighter leading-[1.1]">
+            <h2
+              className={[
+                "text-4xl md:text-6xl font-black tracking-tighter leading-[1.1]",
+                isDark ? "text-white" : "text-slate-900",
+              ].join(" ")}
+            >
               Evaluación de{" "}
-              <span className="text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 to-cyan-400">
+              <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#00B894] to-[#06b6d4]">
                 Talento Docente
               </span>
             </h2>
-            <p className="text-base md:text-lg text-gray-400 font-light leading-relaxed">
+            <p
+              className={`text-base md:text-lg font-light leading-relaxed ${
+                isDark ? "text-gray-400" : "text-slate-600"
+              }`}
+            >
               Utiliza nuestra IA para analizar la coherencia pedagógica, ética y
               técnica de los candidatos en tiempo real.
             </p>
@@ -781,11 +938,18 @@ useEffect(() => {
         </header>
 
         <div className="sticky top-4 z-50 flex justify-center">
-          <div className="bg-[#0A0A0A]/90 backdrop-blur-xl p-1.5 rounded-2xl border border-white/10 shadow-2xl flex flex-wrap justify-center gap-1">
+          <div
+            className={[
+              "backdrop-blur-xl p-1.5 rounded-2xl border flex flex-wrap justify-center gap-1",
+              isDark
+                ? "bg-[#0A0A0A]/90 border-white/10 shadow-2xl"
+                : "bg-white border-slate-200 shadow-[0_14px_40px_rgba(15,23,42,0.16)]",
+            ].join(" ")}
+          >
             <button
               type="button"
               onClick={() => loadExample(approvedExample)}
-              className="group flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold uppercase tracking-wide text-gray-400 hover:text-emerald-400 hover:bg-emerald-500/10 transition-all"
+              className="group flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold uppercase tracking-wide text-gray-500 hover:text-emerald-500 hover:bg-emerald-500/10 transition-all"
             >
               <CheckCircle2 className="w-4 h-4 transition-transform group-hover:scale-110" />
               <span className="hidden sm:inline">Perfil Aprobado</span>
@@ -794,7 +958,7 @@ useEffect(() => {
             <button
               type="button"
               onClick={() => loadExample(mediumExample)}
-              className="group flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold uppercase tracking-wide text-gray-400 hover:text-amber-400 hover:bg-amber-500/10 transition-all"
+              className="group flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold uppercase tracking-wide text-gray-500 hover:text-amber-500 hover:bg-amber-500/10 transition-all"
             >
               <AlertCircle className="w-4 h-4 transition-transform group-hover:scale-110" />
               <span className="hidden sm:inline">Perfil Medio</span>
@@ -803,7 +967,7 @@ useEffect(() => {
             <button
               type="button"
               onClick={() => loadExample(rejectedExample)}
-              className="group flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold uppercase tracking-wide text-gray-400 hover:text-rose-400 hover:bg-rose-500/10 transition-all"
+              className="group flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold uppercase tracking-wide text-gray-500 hover:text-rose-500 hover:bg-rose-500/10 transition-all"
             >
               <XCircle className="w-4 h-4 transition-transform group-hover:scale-110" />
               <span className="hidden sm:inline">Perfil Rechazado</span>
@@ -815,6 +979,8 @@ useEffect(() => {
           <FormSection
             title="Identidad y Trayectoria"
             icon={<User className="w-6 h-6" />}
+            step={1}
+            subtitle="Recoge los datos básicos del candidato y su trayectoria profesional."
           >
             {/* CC + Nombre + Edad */}
             <div className="grid grid-cols-1 md:grid-cols-6 gap-8">
@@ -828,8 +994,9 @@ useEffect(() => {
                       onChange={handleChange}
                       name="documentNumber"
                       placeholder="Ej. 1030123456"
-                      className="w-full rounded-xl bg-[#070707] border border-white/[0.06] text-gray-200 text-sm px-4 py-3 outline-none
-                      focus:border-emerald-500/25 focus:ring-1 focus:ring-emerald-500/20"
+                      className={`rounded-xl px-4 py-3 outline-none ${
+                        isDark ? darkInputStyles : lightInputStyles
+                      }`}
                     />
 
                     {/* ✅ Mensaje si está mal */}
@@ -840,7 +1007,11 @@ useEffect(() => {
                       </p>
                     )}
 
-                    <div className="absolute inset-y-0 right-0 flex items-center pr-4 text-white/35">
+                    <div
+                      className={`absolute inset-y-0 right-0 flex items-center pr-4 ${
+                        isDark ? "text-white/35" : "text-slate-400"
+                      }`}
+                    >
                       {isSearching ? (
                         <Loader2 className="w-4 h-4 animate-spin" />
                       ) : (
@@ -858,25 +1029,57 @@ useEffect(() => {
                     )}
 
                     {candidateMatches.length > 0 && (
-                      <div className="rounded-2xl border border-emerald-500/25 bg-[#061015] overflow-hidden">
-                        <div className="px-4 py-3 border-b border-white/10 text-[11px] font-extrabold uppercase tracking-[0.22em] text-emerald-200/80">
+                      <div
+                        className={`rounded-2xl overflow-hidden border ${
+                          isDark
+                            ? "border-emerald-500/25 bg-[#061015]"
+                            : "border-emerald-200 bg-white shadow-[0_10px_30px_rgba(15,23,42,0.12)]"
+                        }`}
+                      >
+                        <div
+                          className={`px-4 py-3 border-b text-[11px] font-extrabold uppercase tracking-[0.22em] ${
+                            isDark
+                              ? "border-white/10 text-emerald-200/80"
+                              : "border-emerald-100 text-emerald-700"
+                          }`}
+                        >
                           Coincidencias por cédula
                         </div>
 
-                        <div className="divide-y divide-white/10">
+                        <div
+                          className={`divide-y ${
+                            isDark ? "divide-white/10" : "divide-slate-100"
+                          }`}
+                        >
                           {candidateMatches.map((c) => (
                             <button
                               key={c.id}
                               type="button"
                               onClick={() => handlePickCandidate(c)}
-                              className="w-full text-left px-4 py-3 hover:bg-white/[0.04] transition"
+                              className={`w-full text-left px-4 py-3 transition ${
+                                isDark
+                                  ? "hover:bg-white/[0.04]"
+                                  : "hover:bg-emerald-50/60"
+                              }`}
                             >
                               <div className="flex items-center justify-between gap-3">
                                 <div>
-                                  <div className="text-sm text-white/85 font-semibold">
+                                  <div
+                                    className={`text-sm font-semibold ${
+                                      isDark
+                                        ? "text-white/85"
+                                        : "text-slate-900"
+                                    }`}
+                                  >
                                     {c.fullName}
                                   </div>
-                                  <div className="text-[11px] text-white/45 font-mono">
+                                  <div
+                                    className={`text-[11px] font-mono ${
+                                      isDark
+                                        ? "text-white/45"
+                                        : "text-slate-500"
+                                    }`}
+                                  >
                                     CC: {c.documentNumber ?? "—"}
                                     {typeof c.age === "number"
                                       ? ` · ${c.age} años`
@@ -884,7 +1087,13 @@ useEffect(() => {
                                   </div>
                                 </div>
 
-                                <div className="text-[11px] font-extrabold uppercase tracking-[0.18em] text-emerald-300/80">
+                                <div
+                                  className={`text-[11px] font-extrabold uppercase tracking-[0.18em] ${
+                                    isDark
+                                      ? "text-emerald-300/80"
+                                      : "text-emerald-600"
+                                  }`}
+                                >
                                   Seleccionar
                                 </div>
                               </div>
@@ -895,7 +1104,7 @@ useEffect(() => {
                     )}
 
                     {selectedCandidateId && (
-                      <div className="rounded-xl border border-emerald-500/20 bg-emerald-500/10 px-4 py-2 text-[11px] font-bold uppercase tracking-[0.22em] text-emerald-200/80">
+                      <div className="rounded-xl border border-emerald-500/20 bg-emerald-500/10 px-4 py-2 text-[11px] font-bold uppercase tracking-[0.22em] text-emerald-600/80">
                         Candidato seleccionado
                       </div>
                     )}
@@ -1034,10 +1243,11 @@ useEffect(() => {
             </div>
           </FormSection>
 
-          {/* Resto igual */}
           <FormSection
             title="Disponibilidad y Compromiso"
             icon={<Clock className="w-6 h-6" />}
+            step={2}
+            subtitle="Define la compatibilidad horaria y los posibles conflictos de interés."
           >
             <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
               <div className="md:col-span-2">
@@ -1090,6 +1300,8 @@ useEffect(() => {
           <FormSection
             title="Estrategia Pedagógica"
             icon={<Users className="w-6 h-6" />}
+            step={3}
+            subtitle="Explora cómo el candidato enseña, evalúa y maneja retos en el aula."
           >
             <FormField
               label="Metodología de Evaluación"
@@ -1132,6 +1344,8 @@ useEffect(() => {
           <FormSection
             title="Integración de Inteligencia Artificial"
             icon={<Bot className="w-6 h-6" />}
+            step={4}
+            subtitle="Analiza su relación con la IA y las medidas éticas que aplica."
           >
             <FormField
               label="Uso Actual de Herramientas IA"
@@ -1172,6 +1386,8 @@ useEffect(() => {
           <FormSection
             title="Casos Éticos y Resolución de Conflictos"
             icon={<ShieldCheck className="w-6 h-6" />}
+            step={5}
+            subtitle="Profundiza en su criterio frente a dilemas éticos y situaciones sensibles."
           >
             <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
               <FormField label="Caso: Nota Límite (2.9)" name="scenario29">
@@ -1212,11 +1428,11 @@ useEffect(() => {
             </div>
           </FormSection>
 
-          <div className="flex flex-col sm:flex-row items-center justify-center gap-6 pt-12 pb-8 border-t border-white/5">
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-4 pt-12 pb-10 border-t border-white/5">
             <button
               type="button"
               onClick={resetForm}
-              className="px-8 py-4 rounded-xl text-gray-500 hover:text-white hover:bg-white/5 transition-all text-sm font-bold uppercase tracking-widest flex items-center gap-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/15"
+              className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full text-[11px] font-semibold uppercase tracking-[0.22em] text-neutral-400 hover:text-white hover:bg-white/8 transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/15"
             >
               <RotateCcw className="w-4 h-4" /> Resetear
             </button>
@@ -1224,11 +1440,13 @@ useEffect(() => {
             <button
               type="submit"
               disabled={!isCedulaValid} // ✅ bloquea si cédula inválida
-              className={`w-full rounded-2xl py-3 text-sm font-bold uppercase tracking-widest transition
+              className={`inline-flex items-center justify-center rounded-full px-7 py-3 text-[11px] font-semibold uppercase tracking-[0.25em] transition
                 ${
                   !isCedulaValid
-                    ? "bg-white/10 text-white/30 cursor-not-allowed"
-                    : "bg-gradient-to-r from-emerald-500 to-emerald-400 text-black hover:brightness-110"
+                    ? isDark
+                      ? "bg-white/5 text-white/40 border border-white/15 cursor-not-allowed shadow-none"
+                      : "bg-slate-100 text-slate-400 border border-slate-200 cursor-not-allowed shadow-none"
+                    : "bg-gradient-to-r from-emerald-400 via-emerald-300 to-cyan-400 text-black hover:brightness-110 shadow-[0_12px_30px_rgba(45,212,191,0.35)]"
                 }`}
             >
               Ejecutar Análisis IA

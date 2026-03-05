@@ -1,4 +1,5 @@
 import React, { useMemo } from "react";
+import { useTheme } from "../../../../context/ThemeContext";
 
 type Props = {
   avg: number | null;
@@ -16,22 +17,47 @@ function fmt(n: number | null, digits = 1) {
 }
 
 export default function AdminScoreCard({ avg, median, min, max, count }: Props) {
+  const { theme } = useTheme();
+  const isDark = theme === "dark";
+
   const main = useMemo(() => fmt(avg, 1), [avg]);
   const show = (count ?? 0) > 0;
 
   return (
-    <div className="rounded-3xl border border-white/10 bg-white/5 p-5">
+    <div
+      className={[
+        "rounded-3xl border p-5",
+        isDark
+          ? "border-white/10 bg-white/5"
+          : "border-slate-200 bg-white shadow-sm",
+      ].join(" ")}
+    >
       <div className="flex items-start justify-between gap-4">
         <div>
-          <div className="text-[11px] uppercase tracking-widest text-neutral-500 font-bold">
+          <div
+            className={[
+              "text-[11px] uppercase tracking-widest font-bold",
+              isDark ? "text-neutral-500" : "text-slate-500",
+            ].join(" ")}
+          >
             Score (AI Teaching Suitability)
           </div>
-          <div className="text-xs text-neutral-400 mt-1">
+          <div
+            className={[
+              "text-xs mt-1",
+              isDark ? "text-neutral-400" : "text-slate-600",
+            ].join(" ")}
+          >
             Solo evaluaciones con score ≠ null
           </div>
         </div>
 
-        <div className="text-[11px] uppercase tracking-widest text-neutral-500 font-bold">
+        <div
+          className={[
+            "text-[11px] uppercase tracking-widest font-bold",
+            isDark ? "text-neutral-500" : "text-slate-500",
+          ].join(" ")}
+        >
           n={count ?? 0}
         </div>
       </div>
@@ -39,11 +65,18 @@ export default function AdminScoreCard({ avg, median, min, max, count }: Props) 
       {/* “pill” principal como tu boceto */}
       <div
         className={[
-          "mt-5 rounded-2xl border border-emerald-500/20 bg-emerald-500/20",
-          "px-6 py-6 flex items-center justify-center",
+          "mt-5 rounded-2xl border px-6 py-6 flex items-center justify-center",
+          isDark
+            ? "border-emerald-500/20 bg-emerald-500/20"
+            : "border-emerald-200 bg-emerald-50",
         ].join(" ")}
       >
-        <div className="text-4xl font-black text-emerald-50">
+        <div
+          className={[
+            "text-4xl font-black",
+            isDark ? "text-emerald-50" : "text-emerald-700",
+          ].join(" ")}
+        >
           {show ? main : "—"}
         </div>
       </div>
@@ -56,7 +89,12 @@ export default function AdminScoreCard({ avg, median, min, max, count }: Props) 
       </div>
 
       {!show && (
-        <div className="mt-4 text-xs text-neutral-500">
+        <div
+          className={[
+            "mt-4 text-xs",
+            isDark ? "text-neutral-500" : "text-slate-500",
+          ].join(" ")}
+        >
           No hay evaluaciones con score en el rango/filters seleccionados.
         </div>
       )}
@@ -65,12 +103,34 @@ export default function AdminScoreCard({ avg, median, min, max, count }: Props) 
 }
 
 function Stat({ label, value }: { label: string; value: string }) {
+  const { theme } = useTheme();
+  const isDark = theme === "dark";
+
   return (
-    <div className="rounded-2xl border border-white/10 bg-black/20 p-3">
-      <div className="text-[11px] uppercase tracking-widest text-neutral-500 font-bold">
+    <div
+      className={[
+        "rounded-2xl border p-3",
+        isDark
+          ? "border-white/10 bg-black/20"
+          : "border-slate-200 bg-slate-50",
+      ].join(" ")}
+    >
+      <div
+        className={[
+          "text-[11px] uppercase tracking-widest font-bold",
+          isDark ? "text-neutral-500" : "text-slate-500",
+        ].join(" ")}
+      >
         {label}
       </div>
-      <div className="mt-1 text-xl font-extrabold text-neutral-100">{value}</div>
+      <div
+        className={[
+          "mt-1 text-xl font-extrabold",
+          isDark ? "text-neutral-100" : "text-slate-900",
+        ].join(" ")}
+      >
+        {value}
+      </div>
     </div>
   );
 }

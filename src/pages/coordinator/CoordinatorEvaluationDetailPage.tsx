@@ -24,6 +24,7 @@ import { useCoordinatorEvaluations } from "./hooks/useCoordinatorEvaluations";
 import { useEvaluationDetail } from "./hooks/useEvaluationDetail";
 import { getTeacherEvaluationById } from "../../services/teachersService";
 import { compareInterviewsWithGemini } from "../../services/geminiService";
+import { useTheme } from "../../context/ThemeContext";
 
 // --- COMPONENTES UI DE ALTA GAMA ---
 
@@ -35,41 +36,76 @@ const GlassCard = ({
   children: React.ReactNode;
   className?: string;
   glowing?: boolean;
-}) => (
-  <div
-    className={`relative overflow-hidden rounded-[24px] border backdrop-blur-xl transition-all duration-300
-    ${
-      glowing
-        ? "bg-[#0A1014]/80 border-emerald-500/20 shadow-[0_0_40px_-10px_rgba(16,185,129,0.1)]"
-        : "bg-[#0A0C10]/60 border-white/[0.06] shadow-2xl"
-    } ${className}`}
-  >
-    {children}
-  </div>
-);
+}) => {
+  const { theme } = useTheme();
+  const isDark = theme === "dark";
 
-const SectionLabel = ({ icon: Icon, label }: { icon?: any; label: string }) => (
-  <div className="flex items-center gap-2 mb-3">
-    {Icon && <Icon className="w-3.5 h-3.5 text-emerald-500" />}
-    <span className="text-[10px] font-bold text-slate-400 uppercase tracking-[0.2em]">
-      {label}
-    </span>
-  </div>
-);
+  return (
+    <div
+      className={`relative overflow-hidden rounded-[24px] border backdrop-blur-xl transition-all duration-300
+      ${
+        glowing
+          ? isDark
+            ? "bg-[#0A1014]/80 border-emerald-500/20 shadow-[0_0_40px_-10px_rgba(16,185,129,0.1)]"
+            : "bg-emerald-50 border-emerald-200 shadow-[0_18px_50px_rgba(16,185,129,0.20)]"
+          : isDark
+            ? "bg-[#0A0C10]/60 border-white/[0.06] shadow-2xl"
+            : "bg-white border-slate-200 shadow-[0_18px_50px_rgba(15,23,42,0.10)]"
+      } ${className}`}
+    >
+      {children}
+    </div>
+  );
+};
+
+const SectionLabel = ({ icon: Icon, label }: { icon?: any; label: string }) => {
+  const { theme } = useTheme();
+  const isDark = theme === "dark";
+
+  return (
+    <div className="flex items-center gap-2 mb-3">
+      {Icon && (
+        <Icon
+          className={`w-3.5 h-3.5 ${
+            isDark ? "text-emerald-500" : "text-emerald-600"
+          }`}
+        />
+      )}
+      <span
+        className={`text-[10px] font-bold uppercase tracking-[0.2em] ${
+          isDark ? "text-slate-400" : "text-slate-500"
+        }`}
+      >
+        {label}
+      </span>
+    </div>
+  );
+};
 
 function RiskBadge({ risk }: { risk: string }) {
   const r = (risk ?? "").toLowerCase();
-  let style = "bg-slate-500/10 text-slate-400 border-slate-500/20";
+  const { theme } = useTheme();
+  const isDark = theme === "dark";
+
+  let style = isDark
+    ? "bg-slate-500/10 text-slate-400 border-slate-500/20"
+    : "bg-slate-100 text-slate-700 border-slate-300";
 
   if (r.includes("alto"))
     style =
-      "bg-rose-500/10 text-rose-300 border-rose-500/20 shadow-[0_0_10px_rgba(244,63,94,0.1)]";
+      isDark
+        ? "bg-rose-500/10 text-rose-300 border-rose-500/20 shadow-[0_0_10px_rgba(244,63,94,0.1)]"
+        : "bg-rose-50 text-rose-700 border-rose-200 shadow-[0_0_10px_rgba(244,63,94,0.15)]";
   if (r.includes("medio"))
     style =
-      "bg-amber-500/10 text-amber-300 border-amber-500/20 shadow-[0_0_10px_rgba(245,158,11,0.1)]";
+      isDark
+        ? "bg-amber-500/10 text-amber-300 border-amber-500/20 shadow-[0_0_10px_rgba(245,158,11,0.1)]"
+        : "bg-amber-50 text-amber-700 border-amber-200 shadow-[0_0_10px_rgba(245,158,11,0.15)]";
   if (r.includes("bajo"))
     style =
-      "bg-emerald-500/10 text-emerald-300 border-emerald-500/20 shadow-[0_0_10px_rgba(16,185,129,0.1)]";
+      isDark
+        ? "bg-emerald-500/10 text-emerald-300 border-emerald-500/20 shadow-[0_0_10px_rgba(16,185,129,0.1)]"
+        : "bg-emerald-50 text-emerald-700 border-emerald-200 shadow-[0_0_10px_rgba(16,185,129,0.15)]";
 
   return (
     <span
@@ -93,16 +129,24 @@ function StatusBadge({ status }: { status?: string }) {
   const s = (status ?? "").toUpperCase();
   const isApproved = s.includes("APROB");
   const isRejected = s.includes("RECH");
+  const { theme } = useTheme();
+  const isDark = theme === "dark";
 
   return (
     <div
       className={`flex items-center gap-2 px-4 py-1.5 rounded-full border text-xs font-semibold backdrop-blur-md transition-all
       ${
         isApproved
-          ? "bg-emerald-500/10 border-emerald-500/20 text-emerald-400 shadow-[0_0_15px_-3px_rgba(16,185,129,0.2)]"
+          ? isDark
+            ? "bg-emerald-500/10 border-emerald-500/20 text-emerald-400 shadow-[0_0_15px_-3px_rgba(16,185,129,0.2)]"
+            : "bg-emerald-50 border-emerald-200 text-emerald-700 shadow-[0_0_15px_-3px_rgba(16,185,129,0.25)]"
           : isRejected
-            ? "bg-rose-500/10 border-rose-500/20 text-rose-400 shadow-[0_0_15px_-3px_rgba(244,63,94,0.2)]"
-            : "bg-white/5 border-white/10 text-slate-400"
+            ? isDark
+              ? "bg-rose-500/10 border-rose-500/20 text-rose-400 shadow-[0_0_15px_-3px_rgba(244,63,94,0.2)]"
+              : "bg-rose-50 border-rose-200 text-rose-700 shadow-[0_0_15px_-3px_rgba(244,63,94,0.25)]"
+            : isDark
+              ? "bg-white/5 border-white/10 text-slate-400"
+              : "bg-slate-100 border-slate-300 text-slate-700"
       }`}
     >
       {isApproved ? (
@@ -137,6 +181,8 @@ export default function CoordinatorEvaluationDetailPage() {
 
   const { user } = useAuth();
   const actor = actorFromUser(user);
+  const { theme } = useTheme();
+  const isDark = theme === "dark";
 
   const evals = useCoordinatorEvaluations();
   const [activeTab, setActiveTab] = useState<"details" | "interviews">(
@@ -325,17 +371,31 @@ export default function CoordinatorEvaluationDetailPage() {
   );
 
   return (
-    <div className="min-h-screen w-full text-slate-200 font-sans selection:bg-emerald-500/30">
-      <BackgroundEffects />
+    <div
+      className={`min-h-screen w-full font-sans selection:bg-emerald-500/30 ${
+        isDark ? "bg-[#020408] text-slate-200" : "bg-gray-50 text-gray-900"
+      }`}
+    >
+      {isDark && <BackgroundEffects />}
 
       <div className="max-w-[1500px] mx-auto px-6 py-8 space-y-8">
         {/* --- HEADER --- */}
         <header className="flex flex-col md:flex-row md:items-center justify-between gap-6">
           <button
             onClick={() => navigate("/coordinator")}
-            className="group flex items-center gap-3 text-sm font-medium text-slate-400 hover:text-emerald-400 transition-colors pl-1"
+            className={`group flex items-center gap-3 text-sm font-medium transition-colors pl-1 ${
+              isDark
+                ? "text-slate-400 hover:text-emerald-400"
+                : "text-slate-600 hover:text-emerald-700"
+            }`}
           >
-            <div className="flex items-center justify-center w-8 h-8 rounded-full bg-white/5 border border-white/5 group-hover:border-emerald-500/30 group-hover:bg-emerald-500/10 transition-all">
+            <div
+              className={`flex items-center justify-center w-8 h-8 rounded-full border transition-all ${
+                isDark
+                  ? "bg-white/5 border-white/5 group-hover:border-emerald-500/30 group-hover:bg-emerald-500/10"
+                  : "bg-white border-slate-200 group-hover:border-emerald-300 group-hover:bg-emerald-50 shadow-sm"
+              }`}
+            >
               <ArrowLeft className="w-4 h-4" />
             </div>
             <span className="tracking-wide">Volver al Dashboard</span>
@@ -348,7 +408,11 @@ export default function CoordinatorEvaluationDetailPage() {
               }
             />
 
-            <div className="h-6 w-px bg-white/10 mx-1 hidden md:block"></div>
+            <div
+              className={`h-6 w-px mx-1 hidden md:block ${
+                isDark ? "bg-white/10" : "bg-slate-200"
+              }`}
+            ></div>
 
             <button
               onClick={detail.exportPdf}
@@ -356,8 +420,12 @@ export default function CoordinatorEvaluationDetailPage() {
               className={`flex items-center gap-2 px-5 py-2.5 rounded-xl border text-sm font-semibold transition-all shadow-lg
                 ${
                   canExport
-                    ? "bg-[#0F161A] border-emerald-500/30 text-emerald-400 hover:bg-emerald-500 hover:text-[#020408] hover:border-transparent hover:shadow-[0_0_20px_rgba(16,185,129,0.4)]"
-                    : "bg-white/[0.02] border-white/5 text-white/10 cursor-not-allowed"
+                    ? isDark
+                      ? "bg-[#0F161A] border-emerald-500/30 text-emerald-400 hover:bg-emerald-500 hover:text-[#020408] hover:border-transparent hover:shadow-[0_0_20px_rgba(16,185,129,0.4)]"
+                      : "bg-emerald-500 border-emerald-500 text-white hover:bg-emerald-600 hover:shadow-[0_18px_40px_rgba(16,185,129,0.45)]"
+                    : isDark
+                      ? "bg-white/[0.02] border-white/5 text-white/10 cursor-not-allowed"
+                      : "bg-slate-100 border-slate-200 text-slate-400 cursor-not-allowed"
                 }`}
             >
               <FileText className="w-4 h-4" />
@@ -388,31 +456,67 @@ export default function CoordinatorEvaluationDetailPage() {
             <div className="col-span-12 lg:col-span-7 space-y-6">
               {/* Tarjeta Principal del Candidato */}
               <div className="relative group">
-                <div className="absolute -inset-0.5 bg-gradient-to-r from-emerald-500/20 to-teal-500/20 rounded-[32px] blur opacity-50 group-hover:opacity-100 transition duration-500"></div>
-                <div className="relative rounded-[30px] bg-[#080A0E] border border-white/10 p-8 shadow-2xl">
+                <div
+                  className={`absolute -inset-0.5 rounded-[32px] blur opacity-50 group-hover:opacity-100 transition duration-500 ${
+                    isDark
+                      ? "bg-gradient-to-r from-emerald-500/20 to-teal-500/20"
+                      : "bg-gradient-to-r from-emerald-300/40 to-cyan-300/30"
+                  }`}
+                />
+                <div
+                  className={`relative rounded-[30px] border p-8 shadow-2xl ${
+                    isDark
+                      ? "bg-[#080A0E] border-white/10"
+                      : "bg-white border-slate-200 shadow-[0_24px_70px_rgba(15,23,42,0.12)]"
+                  }`}
+                >
                   <div className="flex flex-col md:flex-row gap-6 md:items-start justify-between">
                     <div>
-                      <div className="flex items-center gap-2 text-emerald-500 mb-3">
+                      <div
+                        className={`flex items-center gap-2 mb-3 ${
+                          isDark ? "text-emerald-500" : "text-emerald-600"
+                        }`}
+                      >
                         <User className="w-4 h-4" />
                         <span className="text-[10px] font-bold tracking-[0.2em] uppercase">
                           Perfil del Candidato
                         </span>
                       </div>
-                      <h1 className="text-4xl font-black text-white tracking-tight mb-4 drop-shadow-md">
+                      <h1
+                        className={`text-4xl font-black tracking-tight mb-4 drop-shadow-md ${
+                          isDark ? "text-white" : "text-slate-900"
+                        }`}
+                      >
                         {candidateName}
                       </h1>
                       <div className="flex flex-wrap items-center gap-3">
                         {program && (
-                          <div className="flex items-center gap-2 bg-emerald-500/5 border border-emerald-500/10 px-4 py-1.5 rounded-full text-emerald-200/80 text-sm font-medium">
+                          <div
+                            className={`flex items-center gap-2 px-4 py-1.5 rounded-full text-sm font-medium border ${
+                              isDark
+                                ? "bg-emerald-500/5 border-emerald-500/10 text-emerald-200/80"
+                                : "bg-emerald-50 border-emerald-200 text-emerald-700"
+                            }`}
+                          >
                             <GraduationCap className="w-4 h-4 opacity-70" />
                             {program}
                           </div>
                         )}
                         {school && (
-                          <span className="text-slate-600 text-lg">•</span>
+                          <span
+                            className={`text-lg ${
+                              isDark ? "text-slate-600" : "text-slate-400"
+                            }`}
+                          >
+                            •
+                          </span>
                         )}
                         {school && (
-                          <span className="text-slate-400 font-medium">
+                          <span
+                            className={`font-medium ${
+                              isDark ? "text-slate-400" : "text-slate-600"
+                            }`}
+                          >
                             {school}
                           </span>
                         )}
@@ -423,7 +527,13 @@ export default function CoordinatorEvaluationDetailPage() {
                       <div className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">
                         ID Evaluación
                       </div>
-                      <div className="font-mono text-[11px] text-slate-400 bg-white/[0.03] px-3 py-1.5 rounded-lg border border-white/5">
+                      <div
+                        className={`font-mono text-[11px] px-3 py-1.5 rounded-lg border ${
+                          isDark
+                            ? "text-slate-400 bg-white/[0.03] border-white/5"
+                            : "text-slate-700 bg-slate-50 border-slate-200"
+                        }`}
+                      >
                         {id}
                       </div>
                     </div>
@@ -509,18 +619,32 @@ export default function CoordinatorEvaluationDetailPage() {
 
               {/* Tabs de Detalle */}
               <div className="pt-2">
-                <div className="flex items-center gap-8 border-b border-white/5 mb-6">
+                <div
+                  className={`flex items-center gap-8 border-b mb-6 ${
+                    isDark ? "border-white/5" : "border-slate-200"
+                  }`}
+                >
                   <button
                     onClick={() => setActiveTab("details")}
                     className={`pb-3 text-sm font-semibold tracking-wide transition-colors relative ${
                       activeTab === "details"
-                        ? "text-emerald-400"
-                        : "text-slate-500 hover:text-slate-300"
+                        ? isDark
+                          ? "text-emerald-400"
+                          : "text-emerald-600"
+                        : isDark
+                          ? "text-slate-500 hover:text-slate-300"
+                          : "text-slate-500 hover:text-slate-700"
                     }`}
                   >
                     Análisis Inteligente
                     {activeTab === "details" && (
-                      <div className="absolute bottom-0 left-0 w-full h-0.5 bg-emerald-500 shadow-[0_0_12px_#10b981]" />
+                      <div
+                        className={`absolute bottom-0 left-0 w-full h-0.5 bg-emerald-500 ${
+                          isDark
+                            ? "shadow-[0_0_12px_#10b981]"
+                            : "shadow-[0_0_8px_rgba(16,185,129,0.6)]"
+                        }`}
+                      />
                     )}
                   </button>
 
@@ -528,13 +652,23 @@ export default function CoordinatorEvaluationDetailPage() {
                     onClick={() => setActiveTab("interviews")}
                     className={`pb-3 text-sm font-semibold tracking-wide transition-colors relative ${
                       activeTab === "interviews"
-                        ? "text-emerald-400"
-                        : "text-slate-500 hover:text-slate-300"
+                        ? isDark
+                          ? "text-emerald-400"
+                          : "text-emerald-600"
+                        : isDark
+                          ? "text-slate-500 hover:text-slate-300"
+                          : "text-slate-500 hover:text-slate-700"
                     }`}
                   >
                     Historial Entrevistas
                     {activeTab === "interviews" && (
-                      <div className="absolute bottom-0 left-0 w-full h-0.5 bg-emerald-500 shadow-[0_0_12px_#10b981]" />
+                      <div
+                        className={`absolute bottom-0 left-0 w-full h-0.5 bg-emerald-500 ${
+                          isDark
+                            ? "shadow-[0_0_12px_#10b981]"
+                            : "shadow-[0_0_8px_rgba(16,185,129,0.6)]"
+                        }`}
+                      />
                     )}
                   </button>
 
@@ -544,22 +678,48 @@ export default function CoordinatorEvaluationDetailPage() {
                 {activeTab === "details" && (
                   <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
                     <GlassCard className="p-8">
-                      <h3 className="text-lg font-bold text-white mb-4 flex items-center gap-2">
-                        <Activity className="w-5 h-5 text-emerald-500" />{" "}
+                      <h3
+                        className={`text-lg font-bold mb-4 flex items-center gap-2 ${
+                          isDark ? "text-white" : "text-slate-900"
+                        }`}
+                      >
+                        <Activity
+                          className={`w-5 h-5 ${
+                            isDark ? "text-emerald-500" : "text-emerald-600"
+                          }`}
+                        />{" "}
                         Veredicto del Sistema
                       </h3>
-                      <div className="bg-[#050709]/50 rounded-xl p-6 border border-white/5">
-                        <p className="text-slate-300 leading-7 text-[15px]">
+                      <div
+                        className={`rounded-xl p-6 border ${
+                          isDark
+                            ? "bg-[#050709]/50 border-white/5"
+                            : "bg-slate-100 border-slate-200"
+                        }`}
+                      >
+                        <p
+                          className={`leading-7 text-[15px] ${
+                            isDark ? "text-slate-300" : "text-slate-700"
+                          }`}
+                        >
                           {verdict || "Sin veredicto disponible."}
                         </p>
                       </div>
                     </GlassCard>
 
                     <GlassCard className="p-8">
-                      <h3 className="text-lg font-bold text-white mb-4">
+                      <h3
+                        className={`text-lg font-bold mb-4 ${
+                          isDark ? "text-white" : "text-slate-900"
+                        }`}
+                      >
                         Resumen Ejecutivo
                       </h3>
-                      <p className="text-slate-400 leading-7 text-sm whitespace-pre-wrap">
+                      <p
+                        className={`leading-7 text-sm whitespace-pre-wrap ${
+                          isDark ? "text-slate-400" : "text-slate-700"
+                        }`}
+                      >
                         {executive || "Sin resumen ejecutivo disponible."}
                       </p>
                     </GlassCard>
@@ -570,15 +730,37 @@ export default function CoordinatorEvaluationDetailPage() {
                   <div className="space-y-3 animate-in fade-in slide-in-from-right-4 duration-300">
                     {/* ✅ Compare Bar (Premium) */}
                     {interviewsSorted.length >= 2 && (
-                      <div className="relative overflow-hidden rounded-2xl border border-white/10 bg-white/[0.03] backdrop-blur-xl">
-                        <div className="absolute inset-0 bg-gradient-to-r from-emerald-500/10 via-teal-500/5 to-transparent" />
+                      <div
+                        className={`relative overflow-hidden rounded-2xl border backdrop-blur-xl ${
+                          isDark
+                            ? "border-white/10 bg-white/[0.03]"
+                            : "border-emerald-100 bg-white shadow-[0_18px_40px_rgba(15,23,42,0.08)]"
+                        }`}
+                      >
+                        <div
+                          className={`absolute inset-0 bg-gradient-to-r from-emerald-500/10 via-teal-500/5 to-transparent ${
+                            !isDark ? "opacity-70" : ""
+                          }`}
+                        />
                         <div className="relative p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4">
                           <div className="flex-1 min-w-0">
-                            <div className="flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.22em] text-slate-400">
-                              <Sparkles className="w-3.5 h-3.5 text-emerald-400" />
+                            <div
+                              className={`flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.22em] ${
+                                isDark ? "text-slate-400" : "text-slate-500"
+                              }`}
+                            >
+                              <Sparkles
+                                className={`w-3.5 h-3.5 ${
+                                  isDark ? "text-emerald-400" : "text-emerald-600"
+                                }`}
+                              />
                               Comparación IA entre entrevistas
                             </div>
-                            <div className="mt-1 text-sm text-slate-300">
+                            <div
+                              className={`mt-1 text-sm ${
+                                isDark ? "text-slate-300" : "text-slate-700"
+                              }`}
+                            >
                               Compara la entrevista actual vs la más reciente
                               del historial.
                             </div>
@@ -586,10 +768,22 @@ export default function CoordinatorEvaluationDetailPage() {
 
                           <div className="flex items-center gap-3">
                             <div className="hidden sm:flex items-center gap-2 text-[11px] text-slate-400">
-                              <span className="px-2.5 py-1 rounded-full border border-white/10 bg-white/[0.02]">
+                              <span
+                                className={`px-2.5 py-1 rounded-full border ${
+                                  isDark
+                                    ? "border-white/10 bg-white/[0.02]"
+                                    : "border-slate-200 bg-slate-50"
+                                }`}
+                              >
                                 {interviewsSorted.length} entrevistas
                               </span>
-                              <span className="px-2.5 py-1 rounded-full border border-white/10 bg-white/[0.02]">
+                              <span
+                                className={`px-2.5 py-1 rounded-full border ${
+                                  isDark
+                                    ? "border-white/10 bg-white/[0.02]"
+                                    : "border-slate-200 bg-slate-50"
+                                }`}
+                              >
                                 {compareWithId
                                   ? "Listo para comparar"
                                   : "Sin pareja"}
@@ -603,8 +797,12 @@ export default function CoordinatorEvaluationDetailPage() {
                               className={`inline-flex items-center justify-center gap-2 rounded-xl px-4 py-2 text-xs font-black uppercase tracking-wider border transition-all
                       ${
                         canCompareInline && !compareLoading
-                          ? "border-emerald-500/25 bg-emerald-500/10 text-emerald-300 hover:bg-emerald-500 hover:text-[#020408] hover:border-transparent shadow-[0_0_18px_rgba(16,185,129,0.18)]"
-                          : "border-white/10 bg-white/[0.02] text-white/25 cursor-not-allowed"
+                          ? isDark
+                            ? "border-emerald-500/25 bg-emerald-500/10 text-emerald-300 hover:bg-emerald-500 hover:text-[#020408] hover:border-transparent shadow-[0_0_18px_rgba(16,185,129,0.18)]"
+                            : "border-emerald-500 bg-emerald-500 text-white hover:bg-emerald-600 shadow-[0_10px_25px_rgba(16,185,129,0.35)]"
+                          : isDark
+                            ? "border-white/10 bg-white/[0.02] text-white/25 cursor-not-allowed"
+                            : "border-slate-200 bg-slate-100 text-slate-400 cursor-not-allowed"
                       }`}
                               title={
                                 canCompareInline
@@ -631,15 +829,39 @@ export default function CoordinatorEvaluationDetailPage() {
 
                     {/* ✅ Error Premium (compacto) */}
                     {compareError && (
-                      <div className="rounded-2xl border border-rose-500/20 bg-rose-500/10 px-4 py-3 flex items-start gap-3">
-                        <div className="mt-0.5 w-9 h-9 rounded-xl bg-rose-500/10 border border-rose-500/20 flex items-center justify-center">
-                          <AlertTriangle className="w-5 h-5 text-rose-300" />
+                      <div
+                        className={`rounded-2xl border px-4 py-3 flex items-start gap-3 ${
+                          isDark
+                            ? "border-rose-500/20 bg-rose-500/10"
+                            : "border-rose-200 bg-rose-50"
+                        }`}
+                      >
+                        <div
+                          className={`mt-0.5 w-9 h-9 rounded-xl border flex items-center justify-center ${
+                            isDark
+                              ? "bg-rose-500/10 border-rose-500/20"
+                              : "bg-white border-rose-200"
+                          }`}
+                        >
+                          <AlertTriangle
+                            className={`w-5 h-5 ${
+                              isDark ? "text-rose-300" : "text-rose-500"
+                            }`}
+                          />
                         </div>
                         <div className="min-w-0 flex-1">
-                          <div className="text-[11px] font-black uppercase tracking-[0.18em] text-rose-200">
+                          <div
+                            className={`text-[11px] font-black uppercase tracking-[0.18em] ${
+                              isDark ? "text-rose-200" : "text-rose-600"
+                            }`}
+                          >
                             No se pudo generar la comparación IA
                           </div>
-                          <div className="mt-1 text-sm text-rose-100/80">
+                          <div
+                            className={`mt-1 text-sm ${
+                              isDark ? "text-rose-100/80" : "text-rose-700"
+                            }`}
+                          >
                             {compareError}
                           </div>
 
@@ -648,7 +870,11 @@ export default function CoordinatorEvaluationDetailPage() {
                               type="button"
                               onClick={runCompareInline}
                               disabled={compareLoading}
-                              className="inline-flex items-center gap-2 rounded-lg px-3 py-1.5 text-[11px] font-black uppercase tracking-wider border border-rose-500/20 bg-rose-500/10 text-rose-200 hover:bg-rose-500/15 transition-all disabled:opacity-50"
+                              className={`inline-flex items-center gap-2 rounded-lg px-3 py-1.5 text-[11px] font-black uppercase tracking-wider border transition-all disabled:opacity-50 ${
+                                isDark
+                                  ? "border-rose-500/20 bg-rose-500/10 text-rose-200 hover:bg-rose-500/15"
+                                  : "border-rose-300 bg-rose-100 text-rose-700 hover:bg-rose-200"
+                              }`}
                             >
                               <Sparkles className="w-4 h-4" />
                               Reintentar
@@ -657,7 +883,11 @@ export default function CoordinatorEvaluationDetailPage() {
                             <button
                               type="button"
                               onClick={() => setCompareError("")}
-                              className="text-[11px] font-bold text-slate-400 hover:text-slate-200 transition-colors"
+                              className={`text-[11px] font-bold transition-colors ${
+                                isDark
+                                  ? "text-slate-400 hover:text-slate-200"
+                                  : "text-slate-500 hover:text-slate-700"
+                              }`}
                             >
                               Ocultar
                             </button>
@@ -674,7 +904,11 @@ export default function CoordinatorEvaluationDetailPage() {
                             <div className="text-[10px] font-black uppercase tracking-[0.22em] text-emerald-400">
                               Resultado Comparativo IA
                             </div>
-                            <div className="mt-1 text-sm text-slate-300">
+                            <div
+                              className={`mt-1 text-sm ${
+                                isDark ? "text-slate-300" : "text-slate-700"
+                              }`}
+                            >
                               Diferencias clave y recomendación final.
                             </div>
                           </div>
@@ -682,19 +916,35 @@ export default function CoordinatorEvaluationDetailPage() {
                           <button
                             type="button"
                             onClick={() => setComparison(null)}
-                            className="px-3 py-1.5 rounded-lg text-[11px] font-black uppercase tracking-wider border border-white/10 bg-white/[0.02] text-slate-300 hover:bg-white/[0.04] transition-all"
+                            className={`px-3 py-1.5 rounded-lg text-[11px] font-black uppercase tracking-wider border transition-all ${
+                              isDark
+                                ? "border-white/10 bg-white/[0.02] text-slate-300 hover:bg-white/[0.04]"
+                                : "border-slate-200 bg-white text-slate-700 hover:bg-slate-50"
+                            }`}
                           >
                             Cerrar
                           </button>
                         </div>
 
-                        <div className="mt-4 rounded-xl border border-white/10 bg-[#050709]/40 p-5">
+                        <div
+                          className={`mt-4 rounded-xl border p-5 ${
+                            isDark
+                              ? "border-white/10 bg-[#050709]/40"
+                              : "border-slate-200 bg-slate-50"
+                          }`}
+                        >
                           {typeof comparison?.executiveSummary === "string" ? (
-                            <p className="text-sm text-slate-200/90 whitespace-pre-wrap leading-7">
+                            <p
+                              className={`text-sm whitespace-pre-wrap leading-7 ${
+                                isDark
+                                  ? "text-slate-200/90"
+                                  : "text-slate-800"
+                              }`}
+                            >
                               {comparison.executiveSummary}
                             </p>
                           ) : (
-                            <pre className="text-xs text-slate-300 whitespace-pre-wrap break-words">
+                            <pre className="text-xs text-slate-600 whitespace-pre-wrap break-words">
                               {JSON.stringify(comparison, null, 2)}
                             </pre>
                           )}
@@ -710,7 +960,12 @@ export default function CoordinatorEvaluationDetailPage() {
                       return (
                         <div
                           key={evId}
-                          className="group flex items-center justify-between p-5 rounded-2xl bg-[#0A0C10] border border-white/5 hover:border-emerald-500/30 hover:bg-[#0F1418] transition-all"
+                          className={`group flex items-center justify-between p-5 rounded-2xl border transition-all
+                            ${
+                              isDark
+                                ? "bg-[#0A0C10] border-white/5 hover:border-emerald-500/30 hover:bg-[#0F1418]"
+                                : "bg-white border-slate-200 hover:border-emerald-200 hover:bg-emerald-50/40 shadow-[0_10px_30px_rgba(15,23,42,0.08)]"
+                            }`}
                         >
                           {/* ✅ Click en el bloque: ir a REPORTE IA */}
                           <button
@@ -719,17 +974,34 @@ export default function CoordinatorEvaluationDetailPage() {
                             onClick={() => goToReport(evId)}
                             title="Abrir análisis IA"
                           >
-                            <div className="w-12 h-12 rounded-full bg-[#151a20] flex items-center justify-center text-slate-500 group-hover:text-emerald-400 group-hover:shadow-[0_0_15px_rgba(16,185,129,0.2)] transition-all">
+                            <div
+                              className={`w-12 h-12 rounded-full flex items-center justify-center transition-all
+                                ${
+                                  isDark
+                                    ? "bg-[#151a20] text-slate-500 group-hover:text-emerald-400 group-hover:shadow-[0_0_15px_rgba(16,185,129,0.2)]"
+                                    : "bg-emerald-50 text-emerald-600 group-hover:bg-emerald-100"
+                                }`}
+                            >
                               <FileText className="w-5 h-5" />
                             </div>
 
                             <div className="min-w-0">
-                              <div className="text-white font-semibold group-hover:text-emerald-300 transition-colors truncate">
+                              <div
+                                className={`font-semibold transition-colors truncate ${
+                                  isDark
+                                    ? "text-white group-hover:text-emerald-300"
+                                    : "text-slate-900 group-hover:text-emerald-700"
+                                }`}
+                              >
                                 {String(
                                   ev?.candidate?.fullName ?? "Entrevista",
                                 )}
                               </div>
-                              <div className="text-xs text-slate-500 mt-1">
+                              <div
+                                className={`text-xs mt-1 ${
+                                  isDark ? "text-slate-500" : "text-slate-500"
+                                }`}
+                              >
                                 {dateStr || "Fecha N/A"}
                               </div>
                             </div>
@@ -737,7 +1009,14 @@ export default function CoordinatorEvaluationDetailPage() {
 
                           {/* ✅ Acciones rápidas */}
                           <div className="flex items-center gap-2 ml-4">
-                            <div className="h-8 w-8 rounded-full border border-white/5 flex items-center justify-center group-hover:bg-emerald-500 group-hover:text-black group-hover:border-transparent transition-all">
+                            <div
+                              className={`h-8 w-8 rounded-full border flex items-center justify-center transition-all
+                                ${
+                                  isDark
+                                    ? "border-white/5 group-hover:bg-emerald-500 group-hover:text-black group-hover:border-transparent"
+                                    : "border-slate-200 bg-white text-slate-500 group-hover:bg-emerald-500 group-hover:text-white group-hover:border-emerald-500"
+                                }`}
+                            >
                               <ChevronRight className="w-4 h-4" />
                             </div>
                           </div>
@@ -746,7 +1025,13 @@ export default function CoordinatorEvaluationDetailPage() {
                     })}
 
                     {interviewsSorted.length === 0 && (
-                      <div className="text-sm text-slate-500 italic p-8 text-center border border-dashed border-white/10 rounded-2xl bg-white/[0.01]">
+                      <div
+                        className={`text-sm italic p-8 text-center border border-dashed rounded-2xl ${
+                          isDark
+                            ? "text-slate-500 border-white/10 bg-white/[0.01]"
+                            : "text-slate-500 border-slate-200 bg-slate-50"
+                        }`}
+                      >
                         No hay historial disponible.
                       </div>
                     )}
@@ -758,19 +1043,43 @@ export default function CoordinatorEvaluationDetailPage() {
             {/* --- COLUMNA DERECHA --- */}
             <div className="col-span-12 lg:col-span-5 relative">
               <div className="sticky top-6">
-                <div className="relative rounded-[32px] p-[1px] bg-gradient-to-b from-white/10 to-transparent shadow-2xl">
-                  <div className="rounded-[31px] bg-[#0E1216] backdrop-blur-xl overflow-hidden">
-                    <div className="bg-[#13181E] px-8 py-6 border-b border-white/5">
+                <div
+                  className={`relative rounded-[32px] p-[1px] shadow-2xl ${
+                    isDark
+                      ? "bg-gradient-to-b from-white/10 to-transparent"
+                      : "bg-gradient-to-b from-emerald-200/40 via-transparent to-transparent"
+                  }`}
+                >
+                  <div
+                    className={`rounded-[31px] backdrop-blur-xl overflow-hidden ${
+                      isDark ? "bg-[#0E1216]" : "bg-white"
+                    }`}
+                  >
+                    <div
+                      className={`px-8 py-6 border-b ${
+                        isDark
+                          ? "bg-[#13181E] border-white/5"
+                          : "bg-slate-50 border-slate-200"
+                      }`}
+                    >
                       <div className="flex items-center gap-3 mb-1">
                         <div className="relative flex h-3 w-3">
                           <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
                           <span className="relative inline-flex rounded-full h-3 w-3 bg-emerald-500"></span>
                         </div>
-                        <h2 className="text-lg font-bold text-white tracking-tight">
+                        <h2
+                          className={`text-lg font-bold tracking-tight ${
+                            isDark ? "text-white" : "text-slate-900"
+                          }`}
+                        >
                           Consola de Decisión
                         </h2>
                       </div>
-                      <p className="text-xs text-slate-500 font-medium ml-6">
+                      <p
+                        className={`text-xs font-medium ml-6 ${
+                          isDark ? "text-slate-500" : "text-slate-600"
+                        }`}
+                      >
                         Complete los pasos requeridos para finalizar.
                       </p>
                     </div>
@@ -783,7 +1092,14 @@ export default function CoordinatorEvaluationDetailPage() {
                             1. Veredicto Humano
                           </span>
                           {detail.decision && (
-                            <span className="text-[9px] font-black text-emerald-400 bg-emerald-900/30 px-2 py-0.5 rounded border border-emerald-500/20 tracking-wider">
+                            <span
+                              className={`text-[9px] font-black px-2 py-0.5 rounded border tracking-wider
+                                ${
+                                  isDark
+                                    ? "text-emerald-400 bg-emerald-900/30 border-emerald-500/20"
+                                    : "text-emerald-700 bg-emerald-50 border-emerald-200"
+                                }`}
+                            >
                               SELECCIONADO
                             </span>
                           )}
@@ -795,8 +1111,12 @@ export default function CoordinatorEvaluationDetailPage() {
                             className={`relative group rounded-2xl border-2 transition-all duration-300 py-4 flex flex-col items-center justify-center gap-2
                               ${
                                 String(detail.decision ?? "").includes("APROB")
-                                  ? "bg-[#062C1E] border-emerald-500 text-emerald-400 shadow-[0_0_30px_-5px_rgba(16,185,129,0.3)]"
-                                  : "bg-[#13181E] border-transparent text-slate-500 hover:border-emerald-500/30 hover:text-emerald-300 hover:bg-[#1A2026]"
+                                  ? isDark
+                                    ? "bg-[#062C1E] border-emerald-500 text-emerald-400 shadow-[0_0_30px_-5px_rgba(16,185,129,0.3)]"
+                                    : "bg-emerald-50 border-emerald-500 text-emerald-700 shadow-[0_18px_40px_rgba(16,185,129,0.25)]"
+                                  : isDark
+                                    ? "bg-[#13181E] border-transparent text-slate-500 hover:border-emerald-500/30 hover:text-emerald-300 hover:bg-[#1A2026]"
+                                    : "bg-white border-slate-200 text-slate-500 hover:border-emerald-200 hover:text-emerald-700 hover:bg-emerald-50"
                               }`}
                           >
                             <CheckCircle2
@@ -816,8 +1136,12 @@ export default function CoordinatorEvaluationDetailPage() {
                             className={`relative group rounded-2xl border-2 transition-all duration-300 py-4 flex flex-col items-center justify-center gap-2
                               ${
                                 String(detail.decision ?? "").includes("RECH")
-                                  ? "bg-[#2C0612] border-rose-500 text-rose-400 shadow-[0_0_30px_-5px_rgba(244,63,94,0.3)]"
-                                  : "bg-[#13181E] border-transparent text-slate-500 hover:border-rose-500/30 hover:text-rose-300 hover:bg-[#1A2026]"
+                                  ? isDark
+                                    ? "bg-[#2C0612] border-rose-500 text-rose-400 shadow-[0_0_30px_-5px_rgba(244,63,94,0.3)]"
+                                    : "bg-rose-50 border-rose-500 text-rose-700 shadow-[0_18px_40px_rgba(244,63,94,0.25)]"
+                                  : isDark
+                                    ? "bg-[#13181E] border-transparent text-slate-500 hover:border-rose-500/30 hover:text-rose-300 hover:bg-[#1A2026]"
+                                    : "bg-white border-slate-200 text-slate-500 hover:border-rose-200 hover:text-rose-700 hover:bg-rose-50"
                               }`}
                           >
                             <XCircle
@@ -865,8 +1189,12 @@ export default function CoordinatorEvaluationDetailPage() {
                                 className={`w-full group flex items-start gap-3 p-3.5 rounded-xl border text-left transition-all duration-200
                                   ${
                                     checked
-                                      ? "bg-emerald-500/[0.05] border-emerald-500/30"
-                                      : "bg-[#13181E] border-transparent hover:bg-[#1A2026]"
+                                      ? isDark
+                                        ? "bg-emerald-500/[0.05] border-emerald-500/30"
+                                        : "bg-emerald-50 border-emerald-200"
+                                      : isDark
+                                        ? "bg-[#13181E] border-transparent hover:bg-[#1A2026]"
+                                        : "bg-slate-50 border-slate-200 hover:bg-slate-100"
                                   }`}
                               >
                                 <div
@@ -874,7 +1202,9 @@ export default function CoordinatorEvaluationDetailPage() {
                                     ${
                                       checked
                                         ? "bg-emerald-500 border-emerald-500 shadow-[0_0_10px_rgba(16,185,129,0.4)]"
-                                        : "border-slate-600 bg-transparent group-hover:border-slate-500"
+                                        : isDark
+                                          ? "border-slate-600 bg-transparent group-hover:border-slate-500"
+                                          : "border-slate-300 bg-white group-hover:border-slate-400"
                                     }`}
                                 >
                                   {checked && (
@@ -885,8 +1215,12 @@ export default function CoordinatorEvaluationDetailPage() {
                                   <div
                                     className={`text-sm font-semibold transition-colors ${
                                       checked
-                                        ? "text-emerald-100"
-                                        : "text-slate-400 group-hover:text-slate-200"
+                                        ? isDark
+                                          ? "text-emerald-100"
+                                          : "text-emerald-800"
+                                        : isDark
+                                          ? "text-slate-400 group-hover:text-slate-200"
+                                          : "text-slate-700 group-hover:text-slate-900"
                                     }`}
                                   >
                                     {x.title}
@@ -918,7 +1252,12 @@ export default function CoordinatorEvaluationDetailPage() {
                             }
                             onBlur={detail.onDecisionCommentBlur}
                             placeholder="Escribe tu justificación profesional aquí... (Mínimo 30 caracteres)"
-                            className="relative block w-full h-36 bg-[#13181E] border border-transparent rounded-xl p-4 text-sm text-slate-200 placeholder:text-slate-600 focus:outline-none focus:bg-[#0A0C10] resize-none transition-all"
+                            className={`relative block w-full h-36 rounded-xl p-4 text-sm resize-none transition-all focus:outline-none
+                              ${
+                                isDark
+                                  ? "bg-[#13181E] border border-transparent text-slate-200 placeholder:text-slate-600 focus:bg-[#0A0C10]"
+                                  : "bg-white border border-slate-200 text-slate-800 placeholder:text-slate-400 focus:bg-slate-50"
+                              }`}
                           />
                           <div
                             className={`absolute bottom-3 right-3 text-[10px] font-mono transition-colors font-bold ${
@@ -935,7 +1274,13 @@ export default function CoordinatorEvaluationDetailPage() {
                       {/* Alertas */}
                       {!detail.canSubmitDecision &&
                         (detail.missingReasons?.length ?? 0) > 0 && (
-                          <div className="rounded-xl bg-amber-900/10 border border-amber-500/20 p-4">
+                          <div
+                            className={`rounded-xl border p-4 ${
+                              isDark
+                                ? "bg-amber-900/10 border-amber-500/20"
+                                : "bg-amber-50 border-amber-200"
+                            }`}
+                          >
                             <div className="flex items-center gap-2 text-amber-500 mb-2">
                               <Info className="w-4 h-4" />
                               <span className="text-[10px] font-bold uppercase tracking-wider">
@@ -962,11 +1307,13 @@ export default function CoordinatorEvaluationDetailPage() {
                         <button
                           onClick={detail.submitDecisionToAdmin}
                           disabled={!detail.canSubmitDecision}
-                          className={`w-full py-4 rounded-xl font-bold text-sm tracking-widest uppercase transition-all duration-300 flex items-center justify-center gap-3 group
+                          className={`w-full py-4 rounded-xl font-bold text-sm tracking-widest uppercase transition-all duration-300 flex items-center justify-center gap-3 group border
                             ${
                               detail.canSubmitDecision
-                                ? "bg-gradient-to-r from-emerald-600 to-teal-600 text-white shadow-[0_0_30px_-5px_rgba(16,185,129,0.5)] hover:shadow-[0_0_40px_-5px_rgba(16,185,129,0.7)] hover:scale-[1.02]"
-                                : "bg-[#1A2026] text-slate-600 cursor-not-allowed border border-white/5"
+                                ? "bg-gradient-to-r from-emerald-600 to-teal-600 text-white border-transparent shadow-[0_0_30px_-5px_rgba(16,185,129,0.5)] hover:shadow-[0_0_40px_-5px_rgba(16,185,129,0.7)] hover:scale-[1.02]"
+                                : isDark
+                                  ? "bg-[#1A2026] text-slate-600 cursor-not-allowed border-white/5"
+                                  : "bg-slate-100 text-slate-400 cursor-not-allowed border-slate-200"
                             }`}
                         >
                           {detail.canSubmitDecision

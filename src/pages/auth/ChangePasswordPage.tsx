@@ -2,6 +2,7 @@
 import React, { useMemo, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
+import { useTheme } from "../../context/ThemeContext";
 import { authService } from "../../services/authService";
 import {
   Lock,
@@ -20,6 +21,8 @@ const ChangePasswordPage: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation() as any;
   const { user, logout, updateUser } = useAuth();
+  const { theme } = useTheme();
+  const isDark = theme === "dark";
 
   const email = useMemo(() => {
     return location?.state?.email || user?.email || "";
@@ -113,10 +116,19 @@ const ChangePasswordPage: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-[#020202] flex items-center justify-center p-4 relative overflow-hidden font-sans">
+    <div
+      className={[
+        "min-h-screen flex items-center justify-center p-4 relative overflow-hidden font-sans",
+        isDark ? "bg-[#020202]" : "bg-gray-50",
+      ].join(" ")}
+    >
       {/* --- BACKGROUND FX --- */}
-      <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-emerald-500/10 blur-[120px] rounded-full pointer-events-none"></div>
-      <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-blue-500/5 blur-[120px] rounded-full pointer-events-none"></div>
+      {isDark && (
+        <>
+          <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-emerald-500/10 blur-[120px] rounded-full pointer-events-none"></div>
+          <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-blue-500/5 blur-[120px] rounded-full pointer-events-none"></div>
+        </>
+      )}
 
       {/* --- MAIN CARD --- */}
       <div className="w-full max-w-md relative z-10 animate-in fade-in zoom-in duration-500">

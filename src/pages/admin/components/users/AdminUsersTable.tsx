@@ -2,6 +2,7 @@
 import React from "react";
 import type { AdminUser, ResetPasswordResult } from "../../adminTypes";
 import AdminUserRowActions from "./AdminUserRowActions";
+import { useTheme } from "../../../../context/ThemeContext";
 
 type Props = {
   users: AdminUser[];
@@ -60,20 +61,69 @@ const AdminUsersTable: React.FC<Props> = ({
   onResetPassword,
   onViewSecurity,
 }) => {
-  if (!users?.length) {
+  const { theme } = useTheme();
+  const isDark = theme === "dark";
+
+  const pageSize = 10;
+  const [page, setPage] = React.useState(1);
+
+  React.useEffect(() => {
+    setPage(1);
+  }, [users?.length]);
+
+  const total = users?.length ?? 0;
+  const totalPages = Math.max(1, Math.ceil(total / pageSize));
+  const safePage = Math.min(Math.max(1, page), totalPages);
+
+  const from = total === 0 ? 0 : (safePage - 1) * pageSize + 1;
+  const to = Math.min(safePage * pageSize, total);
+
+  const pageItems = React.useMemo(() => {
+    if (!users?.length) return [];
+    const start = (safePage - 1) * pageSize;
+    return users.slice(start, start + pageSize);
+  }, [users, safePage, pageSize]);
+
+  if (!total) {
     return (
-      <div className="flex items-center justify-center py-12 text-gray-500 text-sm border border-white/10 rounded-2xl bg-[#090909]">
+      <div
+        className={[
+          "flex items-center justify-center py-12 text-sm rounded-2xl border",
+          isDark
+            ? "text-gray-500 border-white/10 bg-[#090909]"
+            : "text-slate-500 border-slate-200 bg-slate-50",
+        ].join(" ")}
+      >
         No hay usuarios para los filtros actuales.
       </div>
     );
   }
 
   return (
-    <div className="border border-white/10 rounded-2xl overflow-hidden bg-[#090909]">
-      <div className="max-h-[520px] overflow-y-auto">
+    <div
+      className={[
+        "rounded-2xl overflow-hidden border",
+        isDark
+          ? "border-white/10 bg-[#090909]"
+          : "border-slate-200 bg-white shadow-sm",
+      ].join(" ")}
+    >
+      <div className="overflow-x-auto">
         <table className="w-full text-sm">
-          <thead className="sticky top-0 bg-[#0B0B0B] border-b border-white/10 z-10">
-            <tr className="text-left text-[11px] uppercase tracking-widest text-gray-500">
+          <thead
+            className={[
+              "sticky top-0 z-10 border-b",
+              isDark
+                ? "bg-[#0B0B0B] border-white/10"
+                : "bg-slate-50 border-slate-200",
+            ].join(" ")}
+          >
+            <tr
+              className={[
+                "text-left text-[11px] uppercase tracking-widest",
+                isDark ? "text-gray-500" : "text-slate-500",
+              ].join(" ")}
+            >
               <th className="px-4 py-3">Usuario</th>
               <th className="px-4 py-3">Rol</th>
               <th className="px-4 py-3">Estado</th>
@@ -83,24 +133,54 @@ const AdminUsersTable: React.FC<Props> = ({
             </tr>
           </thead>
 
-          <tbody className="divide-y divide-white/5">
-            {users.map((u) => {
+          <tbody
+            className={
+              isDark ? "divide-y divide-white/5" : "divide-y divide-slate-100"
+            }
+          >
+            {pageItems.map((u) => {
               const createdLabel = fmtDate(u.createdAt);
               const statusCls = statusBadge(u.status);
               const roleCls = roleBadge(u.role);
 
               return (
-                <tr key={u.id} className="hover:bg-white/[0.03]">
+                <tr
+                  key={u.id}
+                  className={
+                    isDark
+                      ? "hover:bg-white/[0.03]"
+                      : "hover:bg-emerald-50/40"
+                  }
+                >
                   {/* Usuario */}
                   <td className="px-4 py-3">
                     <div className="min-w-0">
-                      <p className="font-semibold text-white truncate">
+                      <p
+                        className={[
+                          "font-semibold truncate",
+                          isDark ? "text-white" : "text-slate-900",
+                        ].join(" ")}
+                      >
                         {u.name} {u.lastName}
                       </p>
-                      <p className="text-[12px] text-gray-500 truncate">{u.email}</p>
+                      <p
+                        className={[
+                          "text-[12px] truncate",
+                          isDark ? "text-gray-500" : "text-slate-700",
+                        ].join(" ")}
+                      >
+                        {u.email}
+                      </p>
 
                       {u.mustChangePassword && (
-                        <span className="mt-1 inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-widest bg-yellow-500/10 text-yellow-200 border border-yellow-500/20">
+                        <span
+                          className={[
+                            "mt-1 inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-widest border",
+                            isDark
+                              ? "bg-yellow-500/10 text-yellow-200 border-yellow-500/20"
+                              : "bg-amber-50 text-amber-700 border-amber-200",
+                          ].join(" ")}
+                        >
                           Debe cambiar contraseña
                         </span>
                       )}
@@ -127,10 +207,24 @@ const AdminUsersTable: React.FC<Props> = ({
                   </td>
 
                   {/* Cédula */}
-                  <td className="px-4 py-3 text-gray-300">{u.cedula ?? "—"}</td>
+                  <td
+                    className={[
+                      "px-4 py-3",
+                      isDark ? "text-gray-300" : "text-slate-800",
+                    ].join(" ")}
+                  >
+                    {u.cedula ?? "—"}
+                  </td>
 
                   {/* Creado */}
-                  <td className="px-4 py-3 text-gray-400">{createdLabel}</td>
+                  <td
+                    className={[
+                      "px-4 py-3",
+                      isDark ? "text-gray-400" : "text-slate-500",
+                    ].join(" ")}
+                  >
+                    {createdLabel}
+                  </td>
 
                   {/* Acciones */}
                   <td className="px-4 py-3">
@@ -149,6 +243,99 @@ const AdminUsersTable: React.FC<Props> = ({
             })}
           </tbody>
         </table>
+      </div>
+
+      {/* Paginación inferior */}
+      <div
+        className={[
+          "flex flex-col md:flex-row items-center justify-between gap-3 px-4 py-3 border-t",
+          isDark
+            ? "border-white/10 bg-[#0B0B0B]"
+            : "border-slate-200 bg-slate-50",
+        ].join(" ")}
+      >
+        <p
+          className={[
+            "text-[11px]",
+            isDark ? "text-gray-500" : "text-slate-500",
+          ].join(" ")}
+        >
+          Mostrando{" "}
+          <span
+            className={[
+              "font-semibold",
+              isDark ? "text-gray-200" : "text-slate-800",
+            ].join(" ")}
+          >
+            {from}
+          </span>
+          {" – "}
+          <span
+            className={[
+              "font-semibold",
+              isDark ? "text-gray-200" : "text-slate-800",
+            ].join(" ")}
+          >
+            {to}
+          </span>{" "}
+          de{" "}
+          <span
+            className={[
+              "font-semibold",
+              isDark ? "text-gray-200" : "text-slate-800",
+            ].join(" ")}
+          >
+            {total}
+          </span>{" "}
+          usuarios
+        </p>
+
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={() => setPage((p) => Math.max(1, p - 1))}
+            disabled={safePage <= 1}
+            className={[
+              "h-8 px-3 rounded-xl border text-[11px] font-bold uppercase tracking-widest flex items-center gap-2 transition-colors",
+              safePage <= 1
+                ? isDark
+                  ? "bg-white/5 border-white/10 text-neutral-600 cursor-not-allowed"
+                  : "bg-white border-slate-200 text-slate-300 cursor-not-allowed"
+                : isDark
+                  ? "bg-white/5 border-white/10 text-neutral-200 hover:bg-white/10"
+                  : "bg-white border-slate-200 text-slate-700 hover:bg-slate-50",
+            ].join(" ")}
+          >
+            Anterior
+          </button>
+
+          <span
+            className={[
+              "text-[11px]",
+              isDark ? "text-gray-400" : "text-slate-500",
+            ].join(" ")}
+          >
+            {safePage} / {totalPages}
+          </span>
+
+          <button
+            type="button"
+            onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+            disabled={safePage >= totalPages}
+            className={[
+              "h-8 px-3 rounded-xl border text-[11px] font-bold uppercase tracking-widest flex items-center gap-2 transition-colors",
+              safePage >= totalPages
+                ? isDark
+                  ? "bg-white/5 border-white/10 text-neutral-600 cursor-not-allowed"
+                  : "bg-white border-slate-200 text-slate-300 cursor-not-allowed"
+                : isDark
+                  ? "bg-white/5 border-white/10 text-neutral-200 hover:bg-white/10"
+                  : "bg-white border-slate-200 text-slate-700 hover:bg-slate-50",
+            ].join(" ")}
+          >
+            Siguiente
+          </button>
+        </div>
       </div>
     </div>
   );

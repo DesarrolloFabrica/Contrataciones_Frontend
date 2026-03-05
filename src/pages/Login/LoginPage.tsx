@@ -3,6 +3,7 @@ import React, { useMemo, useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 
 import { useAuth } from "../../context/AuthContext";
+import { useTheme } from "../../context/ThemeContext";
 
 import { Eye, EyeOff, AlertCircle, Loader2 } from "lucide-react";
 
@@ -20,6 +21,8 @@ const inputBase =
 
 const LoginPage: React.FC = () => {
   const { login } = useAuth();
+  const { theme } = useTheme();
+  const isDark = theme === "dark";
   const navigate = useNavigate();
   const location = useLocation() as any;
 
@@ -87,7 +90,12 @@ const LoginPage: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen w-full bg-black">
+    <div
+      className={[
+        "min-h-screen w-full",
+        isDark ? "bg-black" : "bg-gray-50",
+      ].join(" ")}
+    >
       <div className="relative grid h-screen grid-cols-1 lg:grid-cols-[30%_70%]">
         {/* Panel izquierdo */}
         <div className="relative z-10 bg-white text-gray-900 lg:border-r lg:border-gray-100 lg:shadow-[8px_0_30px_rgba(0,0,0,0.08)]">

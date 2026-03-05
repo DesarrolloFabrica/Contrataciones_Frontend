@@ -26,6 +26,7 @@ import { uploadTeacherReport } from "../services/teachersService";
 import { auditAppend } from "../services/auditService";
 import { actorFromUser } from "../services/auditActor";
 import { useAuth } from "../context/AuthContext";
+import { useTheme } from "../context/ThemeContext";
 
 // =========================================================
 // ✅ HELPERS VISUALES
@@ -100,29 +101,68 @@ const StatCard: React.FC<{
   value: React.ReactNode;
   icon: React.ReactNode;
   sub?: string;
-}> = ({ label, value, icon, sub }) => (
-  <div className="relative overflow-hidden group p-5 bg-[#0A0A0A] border border-white/5 rounded-2xl hover:border-white/10 transition-all duration-300">
-    <div className="absolute top-0 right-0 p-4 opacity-20 group-hover:opacity-40 transition-opacity grayscale group-hover:grayscale-0">
-      {icon}
-    </div>
-    <div className="flex flex-col relative z-10">
-      <span className="text-[10px] font-bold text-neutral-500 uppercase tracking-widest mb-2 flex items-center gap-2">
-        {icon} {label}
-      </span>
-      <div className="text-2xl font-bold text-white tracking-tight">
-        {value}
+}> = ({ label, value, icon, sub }) => {
+  const { theme } = useTheme();
+  const isDark = theme === "dark";
+
+  return (
+    <div
+      className={[
+        "relative overflow-hidden group p-5 rounded-2xl transition-all duration-300 border",
+        isDark
+          ? "bg-[#0A0A0A] border-white/5 hover:border-white/10"
+          : "bg-white border-slate-200 hover:border-emerald-200 shadow-[0_12px_35px_rgba(15,23,42,0.08)]",
+      ].join(" ")}
+    >
+      <div className="absolute top-0 right-0 p-4 opacity-20 group-hover:opacity-40 transition-opacity grayscale group-hover:grayscale-0">
+        {icon}
       </div>
-      {sub && (
-        <div className="mt-1 text-xs font-medium text-neutral-500">{sub}</div>
-      )}
+      <div className="flex flex-col relative z-10">
+        <span
+          className={[
+            "text-[10px] font-bold uppercase tracking-widest mb-2 flex items-center gap-2",
+            isDark ? "text-neutral-500" : "text-slate-500",
+          ].join(" ")}
+        >
+          {icon} {label}
+        </span>
+        <div
+          className={[
+            "text-2xl font-bold tracking-tight",
+            isDark ? "text-white" : "text-slate-900",
+          ].join(" ")}
+        >
+          {value}
+        </div>
+        {sub && (
+          <div
+            className={[
+              "mt-1 text-xs font-medium",
+              isDark ? "text-neutral-500" : "text-slate-500",
+            ].join(" ")}
+          >
+            {sub}
+          </div>
+        )}
+      </div>
     </div>
-  </div>
-);
+  );
+};
 
 const DimensionCard: React.FC<{ cat: any }> = ({ cat }) => {
   const styles = getScoreDetails(cat.score);
+  const { theme } = useTheme();
+  const isDark = theme === "dark";
+
   return (
-    <div className="group relative p-6 bg-[#0A0A0A] border border-white/5 rounded-2xl hover:border-white/10 transition-all duration-300 overflow-hidden">
+    <div
+      className={[
+        "group relative p-6 rounded-2xl transition-all duration-300 overflow-hidden border",
+        isDark
+          ? "bg-[#0A0A0A] border-white/5 hover:border-white/10"
+          : "bg-white border-slate-200 hover:border-emerald-200 shadow-[0_14px_40px_rgba(15,23,42,0.08)]",
+      ].join(" ")}
+    >
       {/* accent line */}
       <div
         className={`absolute top-0 left-0 w-1 h-full ${styles.bg.replace(
@@ -133,10 +173,20 @@ const DimensionCard: React.FC<{ cat: any }> = ({ cat }) => {
 
       <div className="flex justify-between items-start mb-4">
         <div>
-          <h4 className="font-bold text-neutral-200 text-sm tracking-wide">
+          <h4
+            className={[
+              "font-bold text-sm tracking-wide",
+              isDark ? "text-neutral-200" : "text-slate-900",
+            ].join(" ")}
+          >
             {cat.category}
           </h4>
-          <span className="text-[10px] text-neutral-500 uppercase font-mono mt-1 block">
+          <span
+            className={[
+              "text-[10px] uppercase font-mono mt-1 block",
+              isDark ? "text-neutral-500" : "text-slate-500",
+            ].join(" ")}
+          >
             Análisis Vectorial
           </span>
         </div>
@@ -150,31 +200,59 @@ const DimensionCard: React.FC<{ cat: any }> = ({ cat }) => {
       </div>
 
       <div className="space-y-4">
-        <p className="text-xs text-neutral-400 leading-relaxed border-l border-white/5 pl-3">
+        <p
+          className={`text-xs leading-relaxed border-l pl-3 ${
+            isDark
+              ? "text-neutral-400 border-white/5"
+              : "text-slate-600 border-slate-200"
+          }`}
+        >
           {cat.reporteAnalitico}
         </p>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-3 pt-2">
-          <div className="bg-white/[0.02] p-3 rounded-lg border border-white/5">
+          <div
+            className={[
+              "p-3 rounded-lg border",
+              isDark
+                ? "bg-white/[0.02] border-white/5"
+                : "bg-emerald-50 border-emerald-100",
+            ].join(" ")}
+          >
             <div className="flex items-center gap-1.5 mb-2">
               <TrendingUp className="w-3 h-3 text-emerald-400" />
               <span className="text-[10px] font-bold text-emerald-400/80 uppercase">
                 Fortaleza
               </span>
             </div>
-            <p className="text-[11px] text-neutral-500 leading-snug">
+            <p
+              className={`text-[11px] leading-snug ${
+                isDark ? "text-neutral-500" : "text-emerald-900"
+              }`}
+            >
               {cat.oportunidades}
             </p>
           </div>
 
-          <div className="bg-white/[0.02] p-3 rounded-lg border border-white/5">
+          <div
+            className={[
+              "p-3 rounded-lg border",
+              isDark
+                ? "bg-white/[0.02] border-white/5"
+                : "bg-amber-50 border-amber-100",
+            ].join(" ")}
+          >
             <div className="flex items-center gap-1.5 mb-2">
               <AlertOctagon className="w-3 h-3 text-amber-400" />
               <span className="text-[10px] font-bold text-amber-400/80 uppercase">
                 A mejorar
               </span>
             </div>
-            <p className="text-[11px] text-neutral-500 leading-snug">
+            <p
+              className={`text-[11px] leading-snug ${
+                isDark ? "text-neutral-500" : "text-amber-900"
+              }`}
+            >
               {cat.recomendaciones}
             </p>
           </div>
@@ -218,6 +296,8 @@ const AnalysisResults: React.FC<AnalysisResultsProps> = ({
   const [isDownloading, setIsDownloading] = useState(false);
   const [decisionExpanded, setDecisionExpanded] = useState(false);
   const { user } = useAuth();
+  const { theme } = useTheme();
+  const isDark = theme === "dark";
 
   const [verdictExpanded, setVerdictExpanded] = useState(false);
 
@@ -311,10 +391,24 @@ const AnalysisResults: React.FC<AnalysisResultsProps> = ({
   };
 
   return (
-    <div className="w-full min-h-screen bg-[#020202] text-neutral-200 font-sans selection:bg-emerald-500/30 selection:text-emerald-200 pb-20">
+    <div
+      className={[
+        "w-full min-h-screen font-sans pb-20",
+        isDark
+          ? "bg-[#020202] text-neutral-200 selection:bg-emerald-500/30 selection:text-emerald-200"
+          : "bg-slate-50 text-slate-900 selection:bg-emerald-200/60 selection:text-slate-900",
+      ].join(" ")}
+    >
       {/* 1. TOP BAR (Sticky & Premium) */}
       <div className="sticky top-0 z-50">
-        <div className="bg-[#020202]/70 backdrop-blur-2xl border-b border-white/10">
+        <div
+          className={[
+            "backdrop-blur-2xl border-b",
+            isDark
+              ? "bg-[#020202]/70 border-white/10"
+              : "bg-white/80 border-slate-200",
+          ].join(" ")}
+        >
           <div className="h-[1px] w-full bg-gradient-to-r from-transparent via-emerald-500/20 to-transparent" />
 
           <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between gap-4">
@@ -336,11 +430,22 @@ const AnalysisResults: React.FC<AnalysisResultsProps> = ({
               </div>
 
               <div className="flex items-center gap-2 min-w-0">
-                <span className="hidden sm:inline-flex items-center gap-2 rounded-full px-3 py-1 text-[11px] font-extrabold uppercase tracking-widest border border-white/10 bg-white/[0.03] text-neutral-300">
+                <span
+                  className={[
+                    "hidden sm:inline-flex items-center gap-2 rounded-full px-3 py-1 text-[11px] font-extrabold uppercase tracking-widest border",
+                    isDark
+                      ? "border-white/10 bg-white/[0.03] text-neutral-300"
+                      : "border-emerald-100 bg-emerald-50 text-emerald-700",
+                  ].join(" ")}
+                >
                   AI Análisis Completo
                 </span>
 
-                <span className="text-[11px] font-bold uppercase tracking-widest text-neutral-500">
+                <span
+                  className={`text-[11px] font-bold uppercase tracking-widest ${
+                    isDark ? "text-neutral-500" : "text-slate-500"
+                  }`}
+                >
                   <span className="text-neutral-400">•</span>{" "}
                   {new Date().getFullYear()}
                 </span>
@@ -352,9 +457,12 @@ const AnalysisResults: React.FC<AnalysisResultsProps> = ({
               {showReset && isLeader && (
                 <button
                   onClick={onReset}
-                  className="inline-flex items-center justify-center rounded-full px-4 py-2 text-[11px] font-extrabold uppercase tracking-widest
-                             border border-white/10 bg-white/[0.02] text-neutral-300
-                             hover:bg-white/[0.05] hover:text-white transition"
+                  className={[
+                    "inline-flex items-center justify-center rounded-full px-4 py-2 text-[11px] font-extrabold uppercase tracking-widest border transition",
+                    isDark
+                      ? "border-white/10 bg-white/[0.02] text-neutral-300 hover:bg-white/[0.05] hover:text-white"
+                      : "border-slate-200 bg-white text-slate-700 hover:bg-slate-50",
+                  ].join(" ")}
                 >
                   {resetLabel}
                 </button>
@@ -364,8 +472,8 @@ const AnalysisResults: React.FC<AnalysisResultsProps> = ({
                 onClick={handleDownloadPDF}
                 disabled={isDownloading}
                 className="group relative inline-flex items-center gap-2 rounded-full px-5 py-2 text-[11px] font-extrabold uppercase tracking-widest
-                           border border-emerald-500/25 bg-emerald-500/10 text-emerald-200
-                           hover:bg-emerald-500/15 hover:border-emerald-400/40 transition
+                           border border-emerald-500/25 bg-gradient-to-r from-emerald-500/15 to-cyan-500/15 text-emerald-200
+                           hover:from-emerald-500/25 hover:to-cyan-500/25 hover:border-emerald-400/40 transition
                            disabled:opacity-50 disabled:cursor-not-allowed overflow-hidden"
               >
                 <div className="pointer-events-none absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity">
@@ -373,11 +481,11 @@ const AnalysisResults: React.FC<AnalysisResultsProps> = ({
                 </div>
 
                 {isDownloading ? (
-                  <span className="text-emerald-200/90">Procesando…</span>
+                  <span className="text-emerald-400/90">Procesando…</span>
                 ) : (
                   <>
-                    <Download className="w-4 h-4" />
-                    <span>Exportar reporte</span>
+                    <Download className="w-4 h-4 text-emerald-400/90" />
+                    <span className="text-emerald-400/90">Exportar reporte</span>
                   </>
                 )}
               </button>
@@ -394,11 +502,22 @@ const AnalysisResults: React.FC<AnalysisResultsProps> = ({
         {/* 2. HEADER HERO */}
         <div className="relative">
           {/* ✅ Menos gap y mejor balance */}
-          <div className="grid grid-cols-1 lg:grid-cols-[1fr_420px] gap-6 items-start pb-8 border-b border-white/5">
+          <div
+            className={[
+              "grid grid-cols-1 lg:grid-cols-[1fr_420px] gap-6 items-start pb-8 border-b",
+              isDark ? "border-white/5" : "border-slate-200",
+            ].join(" ")}
+          >
             {/* Left */}
             <div className="space-y-3 min-w-0">
               <div className="flex flex-wrap items-center gap-3">
-                <span className="px-2 py-1 rounded text-[10px] font-bold uppercase tracking-wider bg-white/5 text-neutral-400 border border-white/10">
+                <span
+                  className={`px-2 py-1 rounded text-[10px] font-bold uppercase tracking-wider border ${
+                    isDark
+                      ? "bg-white/5 text-neutral-400 border-white/10"
+                      : "bg-emerald-50 text-emerald-700 border-emerald-100"
+                  }`}
+                >
                   Candidato
                 </span>
                 {evaluationId && (
@@ -409,11 +528,19 @@ const AnalysisResults: React.FC<AnalysisResultsProps> = ({
               </div>
 
               {/* ✅ Nombre controlado (no gigante) */}
-              <h1 className="text-3xl sm:text-4xl md:text-5xl font-black text-white tracking-tight leading-[1.02] break-words">
+              <h1
+                className={`text-3xl sm:text-4xl md:text-5xl font-black tracking-tight leading-[1.02] break-words ${
+                  isDark ? "text-white" : "text-slate-900"
+                }`}
+              >
                 {interviewData.candidateName}
               </h1>
 
-              <div className="flex flex-wrap gap-x-6 gap-y-2 text-sm text-neutral-400 font-medium">
+              <div
+                className={`flex flex-wrap gap-x-6 gap-y-2 text-sm font-medium ${
+                  isDark ? "text-neutral-400" : "text-slate-600"
+                }`}
+              >
                 {interviewData.program && (
                   <div className="flex items-center gap-2">
                     <GraduationCap className="w-4 h-4 text-emerald-500" />
@@ -431,7 +558,14 @@ const AnalysisResults: React.FC<AnalysisResultsProps> = ({
 
             {/* Right: Decision card (neutral, con acento) */}
             <div className="relative w-full">
-              <div className="group relative overflow-hidden rounded-[22px] border border-white/10 bg-white/[0.02] backdrop-blur-xl shadow-[0_20px_60px_-35px_rgba(0,0,0,0.9)] hover:border-white/15 transition">
+              <div
+                className={[
+                  "group relative overflow-hidden rounded-[22px] backdrop-blur-xl shadow-[0_20px_60px_-35px_rgba(0,0,0,0.5)] border transition",
+                  isDark
+                    ? "border-white/10 bg-white/[0.02] hover:border-white/15"
+                    : "border-slate-200 bg-white hover:border-emerald-200",
+                ].join(" ")}
+              >
                 {/* accent line */}
                 <div
                   className="h-[2px] w-full opacity-60 group-hover:opacity-95 transition-opacity"
@@ -441,7 +575,11 @@ const AnalysisResults: React.FC<AnalysisResultsProps> = ({
                 <div className="px-6 py-5">
                   {/* Header row */}
                   <div className="flex items-center justify-between gap-3">
-                    <p className="text-[10px] font-extrabold uppercase tracking-[0.22em] text-white/55">
+                    <p
+                      className={`text-[10px] font-extrabold uppercase tracking-[0.22em] ${
+                        isDark ? "text-white/55" : "text-slate-500"
+                      }`}
+                    >
                       Decisión IA
                     </p>
 
@@ -494,7 +632,9 @@ const AnalysisResults: React.FC<AnalysisResultsProps> = ({
                     {/* text */}
                     <div className="min-w-0 flex-1">
                       <p
-                        className={`text-sm font-extrabold text-white/90 leading-6 ${
+                        className={`text-sm font-extrabold leading-6 ${
+                          isDark ? "text-white/90" : "text-slate-900"
+                        } ${
                           verdictExpanded ? "" : "line-clamp-3"
                         }`}
                       >
@@ -503,7 +643,11 @@ const AnalysisResults: React.FC<AnalysisResultsProps> = ({
 
                       {/* footer row aligned */}
                       <div className="mt-3 flex items-center justify-between gap-3">
-                        <p className="text-xs text-white/45 leading-relaxed">
+                        <p
+                          className={`text-xs leading-relaxed ${
+                            isDark ? "text-white/45" : "text-slate-500"
+                          }`}
+                        >
                           {verdictKind === "REJECTED"
                             ? "Recomendación: no continuar el proceso. Requiere mejoras antes de una nueva evaluación."
                             : verdictKind === "APPROVED"
@@ -514,9 +658,12 @@ const AnalysisResults: React.FC<AnalysisResultsProps> = ({
                         <button
                           type="button"
                           onClick={() => setVerdictExpanded((v) => !v)}
-                          className="shrink-0 rounded-full px-4 py-2 text-[11px] font-extrabold uppercase tracking-widest
-                                      border border-white/15 bg-white/[0.03] text-white/80
-                                      hover:bg-white/[0.06] hover:text-white transition"
+                          className={`shrink-0 rounded-full px-4 py-2 text-[11px] font-extrabold uppercase tracking-widest border transition
+                                      ${
+                                        isDark
+                                          ? "border-white/15 bg-white/[0.03] text-white/80 hover:bg-white/[0.06] hover:text-white"
+                                          : "border-slate-200 bg-slate-50 text-slate-700 hover:bg-slate-100"
+                                      }`}
                           aria-expanded={verdictExpanded}
                         >
                           {verdictExpanded ? "Ver menos" : "Ver más"}
@@ -575,9 +722,22 @@ const AnalysisResults: React.FC<AnalysisResultsProps> = ({
         <div className="grid lg:grid-cols-12 gap-8">
           {/* LEFT */}
           <div className="lg:col-span-4 space-y-6">
-            <div className="bg-[#0A0A0A] border border-white/5 rounded-3xl p-8 flex flex-col items-center relative overflow-hidden">
-              <div className="absolute inset-0 bg-gradient-to-b from-white/5 to-transparent pointer-events-none" />
-              <h3 className="text-xs font-bold text-neutral-400 uppercase tracking-widest mb-6 relative z-10">
+            <div
+              className={[
+                "rounded-3xl p-8 flex flex-col items-center relative overflow-hidden border",
+                isDark
+                  ? "bg-[#0A0A0A] border-white/5"
+                  : "bg-white border-slate-200 shadow-[0_18px_50px_rgba(15,23,42,0.12)]",
+              ].join(" ")}
+            >
+              {isDark && (
+                <div className="absolute inset-0 bg-gradient-to-b from-white/5 to-transparent pointer-events-none" />
+              )}
+              <h3
+                className={`text-xs font-bold uppercase tracking-widest mb-6 relative z-10 ${
+                  isDark ? "text-neutral-400" : "text-slate-600"
+                }`}
+              >
                 Ajuste al Perfil
               </h3>
               <div className="relative z-10 scale-110">
@@ -591,12 +751,29 @@ const AnalysisResults: React.FC<AnalysisResultsProps> = ({
               </div>
             </div>
 
-            <div className="bg-[#0A0A0A] border border-white/5 rounded-3xl p-6">
+            <div
+              className={[
+                "rounded-3xl p-6 border",
+                isDark
+                  ? "bg-[#0A0A0A] border-white/5"
+                  : "bg-white border-slate-200 shadow-[0_18px_50px_rgba(15,23,42,0.12)]",
+              ].join(" ")}
+            >
               <div className="flex items-center gap-3 mb-4">
-                <div className="p-2 rounded-lg bg-amber-500/10 text-amber-500">
+                <div
+                  className={`p-2 rounded-lg ${
+                    isDark
+                      ? "bg-amber-500/10 text-amber-500"
+                      : "bg-amber-50 text-amber-600"
+                  }`}
+                >
                   <AlertTriangle className="w-4 h-4" />
                 </div>
-                <h3 className="text-sm font-bold text-white">
+                <h3
+                  className={`text-sm font-bold ${
+                    isDark ? "text-white" : "text-slate-900"
+                  }`}
+                >
                   Alertas & Mitigación
                 </h3>
               </div>
@@ -606,12 +783,20 @@ const AnalysisResults: React.FC<AnalysisResultsProps> = ({
                   {result.mitigationRecommendations.map((rec, i) => (
                     <div
                       key={i}
-                      className="flex gap-3 items-start bg-white/[0.02] p-3 rounded-xl border border-white/5"
+                      className={`flex gap-3 items-start p-3 rounded-xl border ${
+                        isDark
+                          ? "bg-white/[0.02] border-white/5"
+                          : "bg-slate-50 border-slate-200"
+                      }`}
                     >
                       <span className="flex-shrink-0 w-5 h-5 rounded-full bg-amber-500/20 text-amber-500 text-[10px] font-bold flex items-center justify-center mt-0.5">
                         {i + 1}
                       </span>
-                      <p className="text-xs text-neutral-400 leading-relaxed">
+                      <p
+                        className={`text-xs leading-relaxed ${
+                          isDark ? "text-neutral-400" : "text-slate-600"
+                        }`}
+                      >
                         {rec}
                       </p>
                     </div>
@@ -619,8 +804,16 @@ const AnalysisResults: React.FC<AnalysisResultsProps> = ({
                 </div>
               ) : (
                 <div className="text-center py-4">
-                  <CheckCircle2 className="w-8 h-8 text-neutral-700 mx-auto mb-2" />
-                  <p className="text-xs text-neutral-500">
+                  <CheckCircle2
+                    className={`w-8 h-8 mx-auto mb-2 ${
+                      isDark ? "text-neutral-700" : "text-emerald-500"
+                    }`}
+                  />
+                  <p
+                    className={`text-xs ${
+                      isDark ? "text-neutral-500" : "text-slate-600"
+                    }`}
+                  >
                     Sin riesgos críticos detectados.
                   </p>
                 </div>
@@ -630,8 +823,17 @@ const AnalysisResults: React.FC<AnalysisResultsProps> = ({
 
           {/* RIGHT */}
           <div className="lg:col-span-8 space-y-8">
-            <div className="bg-gradient-to-br from-[#0F0F0F] to-[#050505] border border-white/5 rounded-3xl p-8 relative overflow-hidden">
-              <div className="absolute top-0 right-0 p-32 bg-emerald-500/5 blur-[80px] rounded-full pointer-events-none" />
+            <div
+              className={[
+                "rounded-3xl p-8 relative overflow-hidden border",
+                isDark
+                  ? "bg-gradient-to-br from-[#0F0F0F] to-[#050505] border-white/5"
+                  : "bg-white border-slate-200 shadow-[0_18px_50px_rgba(15,23,42,0.12)]",
+              ].join(" ")}
+            >
+              {isDark && (
+                <div className="absolute top-0 right-0 p-32 bg-emerald-500/5 blur-[80px] rounded-full pointer-events-none" />
+              )}
 
               <div className="flex items-center gap-2 mb-6 text-emerald-400 relative z-10">
                 <Sparkles className="w-4 h-4" />
@@ -640,8 +842,12 @@ const AnalysisResults: React.FC<AnalysisResultsProps> = ({
                 </h3>
               </div>
 
-              <div className="prose prose-invert prose-sm max-w-none relative z-10">
-                <p className="text-neutral-300 text-sm leading-7 font-light text-justify">
+              <div className="prose prose-sm max-w-none relative z-10">
+                <p
+                  className={`text-sm leading-7 font-light text-justify ${
+                    isDark ? "text-neutral-300" : "text-slate-700"
+                  }`}
+                >
                   {result.executiveSummary}
                 </p>
               </div>
@@ -649,11 +855,19 @@ const AnalysisResults: React.FC<AnalysisResultsProps> = ({
 
             <div>
               <div className="flex items-center justify-between mb-6">
-                <h3 className="text-sm font-bold text-white flex items-center gap-2">
+                <h3
+                  className={`text-sm font-bold flex items-center gap-2 ${
+                    isDark ? "text-white" : "text-slate-900"
+                  }`}
+                >
                   <Target className="w-4 h-4 text-neutral-500" />
                   Análisis Dimensional
                 </h3>
-                <span className="text-[10px] font-mono text-neutral-600">
+                <span
+                  className={`text-[10px] font-mono ${
+                    isDark ? "text-neutral-600" : "text-slate-500"
+                  }`}
+                >
                   5 DIMENSIONES ANALIZADAS
                 </span>
               </div>

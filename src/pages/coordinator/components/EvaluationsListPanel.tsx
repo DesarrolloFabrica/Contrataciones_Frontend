@@ -5,6 +5,7 @@ import { useNavigate } from "react-router-dom";
 
 import TeacherEvaluationItem from "../../../components/TeacherEvaluationItem";
 import type { DecisionFilter, LocalDecision, CandidateGroup } from "../types";
+import { useTheme } from "../../../context/ThemeContext";
 
 type ProgramOption = { id: string; name: string };
 
@@ -134,6 +135,8 @@ const EvaluationsListPanel: React.FC<Props> = ({
   schoolHint,
 }) => {
   const navigate = useNavigate();
+  const { theme } = useTheme();
+  const isDark = theme === "dark";
 
   /**
    * Estado del candidato:
@@ -243,43 +246,85 @@ const EvaluationsListPanel: React.FC<Props> = ({
   // -----------------------------
   // ✅ PREMIUM UI TOKENS (local)
   // -----------------------------
-  const shellClass =
-    "relative overflow-hidden rounded-[28px] border border-white/10 bg-[#0B0F14]/70 backdrop-blur-xl shadow-[0_24px_80px_-70px_rgba(16,185,129,0.18)]";
+  const shellClass = [
+    "relative overflow-hidden rounded-[28px] backdrop-blur-xl",
+    isDark
+      ? "border border-white/10 bg-[#0B0F14]/70 shadow-[0_24px_80px_-70px_rgba(16,185,129,0.18)]"
+      : "border border-slate-200 bg-white shadow-[0_18px_60px_rgba(15,23,42,0.08)]",
+  ].join(" ");
 
   const shellAmbient = (
     <>
-      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_14%_0%,rgba(16,185,129,0.10),transparent_55%)]" />
-      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_90%_16%,rgba(34,211,238,0.08),transparent_58%)]" />
-      <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(to_bottom,rgba(255,255,255,0.03),transparent_30%,rgba(255,255,255,0.01))]" />
+      {isDark && (
+        <>
+          <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_14%_0%,rgba(16,185,129,0.10),transparent_55%)]" />
+          <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_90%_16%,rgba(34,211,238,0.08),transparent_58%)]" />
+          <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(to_bottom,rgba(255,255,255,0.03),transparent_30%,rgba(255,255,255,0.01))]" />
+        </>
+      )}
     </>
   );
 
   const content = (
-    <div className="relative flex flex-col rounded-[24px] border border-white/5 bg-[#0A0C10] shadow-2xl overflow-hidden">
+    <div
+      className={`relative flex flex-col rounded-[24px] border overflow-hidden ${
+        isDark
+          ? "border-white/5 bg-[#0A0C10] shadow-2xl"
+          : "border-slate-200 bg-white shadow-[0_18px_60px_rgba(15,23,42,0.04)]"
+      }`}
+    >
       {/* Ambient */}
-      <div className="pointer-events-none absolute top-0 right-0 h-64 w-64 rounded-full bg-emerald-500/5 blur-[80px]" />
-      <div className="pointer-events-none absolute bottom-0 left-0 h-64 w-64 rounded-full bg-blue-500/5 blur-[80px]" />
-      <div className="pointer-events-none absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-[0.03]" />
+      {isDark && (
+        <>
+          <div className="pointer-events-none absolute top-0 right-0 h-64 w-64 rounded-full bg-emerald-500/5 blur-[80px]" />
+          <div className="pointer-events-none absolute bottom-0 left-0 h-64 w-64 rounded-full bg-blue-500/5 blur-[80px]" />
+          <div className="pointer-events-none absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-[0.03]" />
+        </>
+      )}
 
       <div className="relative p-6 md:p-8 flex flex-col">
         {/* Header (Standalone) */}
         {variant === "standalone" && (
           <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-6 mb-8">
             <div className="flex gap-4">
-              <div className="shrink-0 grid h-12 w-12 place-items-center rounded-2xl border border-emerald-500/20 bg-emerald-500/10 shadow-[0_0_15px_rgba(16,185,129,0.15)]">
-                <FileText className="w-6 h-6 text-emerald-400" />
+              <div
+                className={`shrink-0 grid h-12 w-12 place-items-center rounded-2xl border shadow-[0_0_15px_rgba(16,185,129,0.15)] ${
+                  isDark
+                    ? "border-emerald-500/20 bg-emerald-500/10"
+                    : "border-emerald-100 bg-emerald-50 shadow-[0_8px_30px_rgba(16,185,129,0.25)]"
+                }`}
+              >
+                <FileText
+                  className={`w-6 h-6 ${
+                    isDark ? "text-emerald-400" : "text-emerald-600"
+                  }`}
+                />
               </div>
               <div>
-                <h3 className="text-xl font-bold text-white tracking-tight">
+                <h3
+                  className={`text-xl font-bold tracking-tight ${
+                    isDark ? "text-white" : "text-slate-900"
+                  }`}
+                >
                   Historial de Evaluaciones
                 </h3>
-                <p className="mt-1 text-sm text-slate-400">
+                <p
+                  className={`mt-1 text-sm ${
+                    isDark ? "text-slate-400" : "text-slate-600"
+                  }`}
+                >
                   Gestión y consulta de registros académicos.
                 </p>
               </div>
             </div>
 
-            <div className="inline-flex items-center gap-2 rounded-xl border border-white/10 bg-white/[0.03] px-3 py-1.5 text-xs font-medium text-slate-400">
+            <div
+              className={`inline-flex items-center gap-2 rounded-xl border px-3 py-1.5 text-xs font-medium ${
+                isDark
+                  ? "border-white/10 bg-white/[0.03] text-slate-400"
+                  : "border-slate-200 bg-slate-50 text-slate-600"
+              }`}
+            >
               <Filter className="w-3.5 h-3.5" />
               <span>Filtros avanzados</span>
             </div>
@@ -290,7 +335,11 @@ const EvaluationsListPanel: React.FC<Props> = ({
         <div className="grid grid-cols-1 md:grid-cols-2 gap-5 mb-6">
           {/* Escuela */}
           <div className="space-y-2 group">
-            <label className="text-[10px] font-bold uppercase tracking-widest text-slate-500 flex items-center gap-2 group-focus-within:text-emerald-400 transition-colors">
+            <label
+              className={`text-[10px] font-bold uppercase tracking-widest flex items-center gap-2 transition-colors group-focus-within:text-emerald-500 ${
+                isDark ? "text-slate-500" : "text-slate-600"
+              }`}
+            >
               Escuela / Coordinación
               {lockedSchool && <Lock className="w-3 h-3 text-emerald-500" />}
             </label>
@@ -300,12 +349,15 @@ const EvaluationsListPanel: React.FC<Props> = ({
                 value={schoolFilter}
                 onChange={(e) => setSchoolFilter(e.target.value)}
                 disabled={!!lockedSchool}
-                className={`w-full appearance-none rounded-xl border bg-[#15191E] px-4 py-3 text-sm font-medium outline-none transition-all
-                  ${
-                    lockedSchool
-                      ? "border-white/5 text-slate-500 cursor-not-allowed bg-black/20"
-                      : "border-white/10 text-slate-200 hover:border-white/20 focus:border-emerald-500/50 focus:bg-[#1A1F26]"
-                  }`}
+                className={`w-full appearance-none rounded-xl border px-4 py-3 text-sm font-medium outline-none transition-all ${
+                  isDark
+                    ? lockedSchool
+                      ? "bg-black/20 border-white/5 text-slate-500 cursor-not-allowed"
+                      : "bg-[#15191E] border-white/10 text-slate-200 hover:border-white/20 focus:border-emerald-500/50 focus:bg-[#1A1F26]"
+                    : lockedSchool
+                      ? "bg-slate-100 border-slate-200 text-slate-400 cursor-not-allowed"
+                      : "bg-white border-slate-200 text-slate-800 hover:border-emerald-300 focus:border-emerald-500/70 shadow-sm"
+                }`}
               >
                 <option value="">Selecciona una escuela…</option>
                 {schoolOptions.map((s) => (
@@ -314,7 +366,11 @@ const EvaluationsListPanel: React.FC<Props> = ({
                   </option>
                 ))}
               </select>
-              <div className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-slate-500">
+              <div
+                className={`pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 ${
+                  isDark ? "text-slate-500" : "text-slate-400"
+                }`}
+              >
                 <svg
                   width="10"
                   height="6"
@@ -331,13 +387,23 @@ const EvaluationsListPanel: React.FC<Props> = ({
             </div>
 
             {schoolHint && (
-              <p className="text-[11px] text-emerald-400/80 pl-1">{schoolHint}</p>
+              <p
+                className={`text-[11px] pl-1 ${
+                  isDark ? "text-emerald-400/80" : "text-emerald-700"
+                }`}
+              >
+                {schoolHint}
+              </p>
             )}
           </div>
 
           {/* Programa */}
           <div className="space-y-2 group">
-            <label className="text-[10px] font-bold uppercase tracking-widest text-slate-500 group-focus-within:text-emerald-400 transition-colors">
+            <label
+              className={`text-[10px] font-bold uppercase tracking-widest transition-colors group-focus-within:text-emerald-500 ${
+                isDark ? "text-slate-500" : "text-slate-600"
+              }`}
+            >
               Programa Académico
             </label>
 
@@ -346,12 +412,15 @@ const EvaluationsListPanel: React.FC<Props> = ({
                 value={programFilter}
                 onChange={(e) => setProgramFilter(e.target.value)}
                 disabled={!schoolFilter}
-                className={`w-full appearance-none rounded-xl border bg-[#15191E] px-4 py-3 text-sm font-medium outline-none transition-all
-                  ${
-                    !schoolFilter
-                      ? "border-white/5 text-slate-600 cursor-not-allowed bg-black/20"
-                      : "border-white/10 text-slate-200 hover:border-white/20 focus:border-emerald-500/50 focus:bg-[#1A1F26]"
-                  }`}
+                className={`w-full appearance-none rounded-xl border px-4 py-3 text-sm font-medium outline-none transition-all ${
+                  isDark
+                    ? !schoolFilter
+                      ? "bg-black/20 border-white/5 text-slate-600 cursor-not-allowed"
+                      : "bg-[#15191E] border-white/10 text-slate-200 hover:border-white/20 focus:border-emerald-500/50 focus:bg-[#1A1F26]"
+                    : !schoolFilter
+                      ? "bg-slate-100 border-slate-200 text-slate-400 cursor-not-allowed"
+                      : "bg-white border-slate-200 text-slate-800 hover:border-emerald-300 focus:border-emerald-500/70 shadow-sm"
+                }`}
               >
                 <option value="">
                   {schoolFilter ? "Selecciona un programa…" : "Primero elige escuela…"}
@@ -362,7 +431,11 @@ const EvaluationsListPanel: React.FC<Props> = ({
                   </option>
                 ))}
               </select>
-              <div className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-slate-500">
+              <div
+                className={`pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 ${
+                  isDark ? "text-slate-500" : "text-slate-400"
+                }`}
+              >
                 <svg
                   width="10"
                   height="6"
@@ -391,26 +464,41 @@ const EvaluationsListPanel: React.FC<Props> = ({
         </div>
 
         {/* Search & Status */}
-        <div className="flex flex-col gap-4 mb-6 border-b border-white/5 pb-6">
+        <div
+          className={`flex flex-col gap-4 mb-6 border-b pb-6 ${
+            isDark ? "border-white/5" : "border-slate-200"
+          }`}
+        >
           <div className="relative group">
-            <Search className="w-4 h-4 text-slate-500 absolute left-4 top-1/2 -translate-y-1/2 transition-colors group-focus-within:text-emerald-400" />
+            <Search
+              className={`w-4 h-4 absolute left-4 top-1/2 -translate-y-1/2 transition-colors group-focus-within:text-emerald-400 ${
+                isDark ? "text-slate-500" : "text-slate-400"
+              }`}
+            />
             <input
               type="text"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               placeholder="Buscar candidato por nombre..."
               disabled={mustChooseScope}
-              className={`w-full rounded-xl border bg-[#15191E] pl-11 pr-4 py-2.5 text-sm outline-none transition-all
-                ${
-                  mustChooseScope
-                    ? "border-white/5 text-slate-600 cursor-not-allowed"
-                    : "border-white/10 text-white placeholder-slate-600 hover:border-white/20 focus:border-emerald-500/50 focus:bg-[#1A1F26]"
-                }`}
+              className={`w-full rounded-xl border pl-11 pr-4 py-2.5 text-sm outline-none transition-all ${
+                isDark
+                  ? mustChooseScope
+                    ? "bg-[#15191E] border-white/5 text-slate-600 cursor-not-allowed"
+                    : "bg-[#15191E] border-white/10 text-white placeholder-slate-600 hover:border-white/20 focus:border-emerald-500/50 focus:bg-[#1A1F26]"
+                  : mustChooseScope
+                    ? "bg-slate-100 border-slate-200 text-slate-400 cursor-not-allowed"
+                    : "bg-white border-slate-200 text-slate-800 placeholder-slate-400 hover:border-emerald-300 focus:border-emerald-500/70 shadow-sm"
+              }`}
             />
           </div>
 
           <div className="flex items-center gap-3 overflow-x-auto pb-1 scrollbar-hide">
-            <span className="text-[10px] font-bold uppercase tracking-widest text-slate-600 shrink-0">
+            <span
+              className={`text-[10px] font-bold uppercase tracking-widest shrink-0 ${
+                isDark ? "text-slate-600" : "text-slate-500"
+              }`}
+            >
               Estado:
             </span>
 
@@ -419,19 +507,25 @@ const EvaluationsListPanel: React.FC<Props> = ({
                 const active = decisionFilter === opt;
                 const disabled = mustChooseScope;
 
-                let activeClass = "bg-white text-black";
+                let activeClass = isDark
+                  ? "bg-white text-black"
+                  : "bg-slate-900 text-white";
                 if (opt === "ALL")
-                  activeClass =
-                    "bg-slate-200 text-slate-900 shadow-[0_0_10px_rgba(255,255,255,0.3)]";
+                  activeClass = isDark
+                    ? "bg-slate-200 text-slate-900 shadow-[0_0_10px_rgba(255,255,255,0.3)]"
+                    : "bg-slate-900 text-white shadow-[0_18px_40px_rgba(15,23,42,0.35)]";
                 if (opt === "PENDIENTE")
-                  activeClass =
-                    "bg-amber-500/10 text-amber-400 border border-amber-500/20 shadow-[0_0_10px_rgba(245,158,11,0.15)]";
+                  activeClass = isDark
+                    ? "bg-amber-500/10 text-amber-400 border border-amber-500/20 shadow-[0_0_10px_rgba(245,158,11,0.15)]"
+                    : "bg-amber-50 text-amber-700 border border-amber-200 shadow-[0_10px_30px_rgba(251,191,36,0.35)]";
                 if (opt === "APROBADO")
-                  activeClass =
-                    "bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 shadow-[0_0_10px_rgba(16,185,129,0.15)]";
+                  activeClass = isDark
+                    ? "bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 shadow-[0_0_10px_rgba(16,185,129,0.15)]"
+                    : "bg-emerald-50 text-emerald-700 border border-emerald-200 shadow-[0_10px_30px_rgba(16,185,129,0.35)]";
                 if (opt === "RECHAZADO")
-                  activeClass =
-                    "bg-red-500/10 text-red-400 border border-red-500/20 shadow-[0_0_10px_rgba(239,68,68,0.15)]";
+                  activeClass = isDark
+                    ? "bg-red-500/10 text-red-400 border border-red-500/20 shadow-[0_0_10px_rgba(239,68,68,0.15)]"
+                    : "bg-rose-50 text-rose-700 border border-rose-200 shadow-[0_10px_30px_rgba(248,113,113,0.35)]";
 
                 return (
                   <button
@@ -441,11 +535,17 @@ const EvaluationsListPanel: React.FC<Props> = ({
                     disabled={disabled}
                     className={`
                       rounded-lg px-3 py-1.5 text-[11px] font-bold uppercase tracking-wider transition-all duration-200
-                      ${disabled ? "opacity-40 cursor-not-allowed border border-transparent text-slate-600" : ""}
+                      ${
+                        disabled
+                          ? "opacity-40 cursor-not-allowed border border-transparent text-slate-600"
+                          : ""
+                      }
                       ${!disabled && active ? activeClass : ""}
                       ${
                         !disabled && !active
-                          ? "bg-white/5 text-slate-400 border border-transparent hover:bg-white/10 hover:text-white"
+                          ? isDark
+                            ? "bg-white/5 text-slate-400 border border-transparent hover:bg-white/10 hover:text-white"
+                            : "bg-slate-100 text-slate-600 border border-slate-200 hover:bg-slate-200 hover:text-slate-900"
                           : ""
                       }
                     `}
@@ -461,17 +561,45 @@ const EvaluationsListPanel: React.FC<Props> = ({
         {/* Results */}
         <div className="space-y-4 min-h-[200px]">
           {mustChooseScope && (
-            <div className="flex h-40 flex-col items-center justify-center rounded-2xl border border-dashed border-white/10 bg-white/[0.02]">
-              <div className="text-slate-600 mb-2">
+            <div
+              className={`flex h-40 flex-col items-center justify-center rounded-2xl border border-dashed ${
+                isDark
+                  ? "border-white/10 bg-white/[0.02]"
+                  : "border-slate-200 bg-slate-50"
+              }`}
+            >
+              <div
+                className={`mb-2 ${
+                  isDark ? "text-slate-600" : "text-slate-500"
+                }`}
+              >
                 <Filter className="w-6 h-6 opacity-40" />
               </div>
-              <p className="text-sm text-slate-500">Configura los filtros arriba.</p>
+              <p
+                className={`text-sm ${
+                  isDark ? "text-slate-500" : "text-slate-600"
+                }`}
+              >
+                Configura los filtros arriba.
+              </p>
             </div>
           )}
 
           {!mustChooseScope && visibleGroups.length === 0 && (
-            <div className="flex h-40 flex-col items-center justify-center rounded-2xl border border-dashed border-white/10 bg-white/[0.02]">
-              <p className="text-sm text-slate-500">No se encontraron resultados.</p>
+            <div
+              className={`flex h-40 flex-col items-center justify-center rounded-2xl border border-dashed ${
+                isDark
+                  ? "border-white/10 bg-white/[0.02]"
+                  : "border-slate-200 bg-slate-50"
+              }`}
+            >
+              <p
+                className={`text-sm ${
+                  isDark ? "text-slate-500" : "text-slate-600"
+                }`}
+              >
+                No se encontraron resultados.
+              </p>
             </div>
           )}
 
@@ -483,7 +611,11 @@ const EvaluationsListPanel: React.FC<Props> = ({
               return (
                 <div
                   key={g.key}
-                  className="group relative rounded-2xl border border-white/5 bg-[#15191E] p-1 transition-all duration-300 hover:border-emerald-500/30 hover:shadow-[0_4px_20px_-12px_rgba(16,185,129,0.2)]"
+                  className={`group relative rounded-2xl border p-1 transition-all duration-300 ${
+                    isDark
+                      ? "border-white/5 bg-[#15191E] hover:border-emerald-500/30 hover:shadow-[0_4px_20px_-12px_rgba(16,185,129,0.2)]"
+                      : "border-slate-200 bg-white hover:border-emerald-300 hover:shadow-[0_18px_50px_rgba(15,23,42,0.12)]"
+                  }`}
                 >
                   <div className="flex flex-col">
                     <div className="p-1">
@@ -495,10 +627,26 @@ const EvaluationsListPanel: React.FC<Props> = ({
                       />
                     </div>
 
-                    <div className="mt-1 flex items-center justify-between rounded-xl bg-black/20 px-4 py-3">
+                    <div
+                      className={`mt-1 flex items-center justify-between rounded-xl px-4 py-3 ${
+                        isDark ? "bg-black/20" : "bg-slate-50"
+                      }`}
+                    >
                       <div className="flex items-center gap-2 text-xs">
-                        <span className="text-slate-500 font-medium">Entrevistas realizadas:</span>
-                        <span className="flex h-5 min-w-[1.25rem] items-center justify-center rounded bg-white/10 px-1.5 font-mono text-white">
+                        <span
+                          className={`font-medium ${
+                            isDark ? "text-slate-500" : "text-slate-600"
+                          }`}
+                        >
+                          Entrevistas realizadas:
+                        </span>
+                        <span
+                          className={`flex h-5 min-w-[1.25rem] items-center justify-center rounded px-1.5 font-mono ${
+                            isDark
+                              ? "bg-white/10 text-white"
+                              : "bg-white text-slate-900 border border-slate-200"
+                          }`}
+                        >
                           {g.interviews.length}
                         </span>
                       </div>
@@ -510,10 +658,18 @@ const EvaluationsListPanel: React.FC<Props> = ({
                             `/coordinator/evaluations/${encodeURIComponent(ev.id)}?tab=decision`
                           )
                         }
-                        className="flex items-center gap-2 text-[11px] font-bold uppercase tracking-wider text-emerald-400 transition-transform group-hover:translate-x-[-4px]"
+                        className={`flex items-center gap-2 text-[11px] font-bold uppercase tracking-wider transition-transform group-hover:translate-x-[-4px] ${
+                          isDark ? "text-emerald-400" : "text-emerald-700"
+                        }`}
                       >
                         Ver Detalle
-                        <div className="grid h-6 w-6 place-items-center rounded-full border border-emerald-500/30 bg-emerald-500/10 transition-colors group-hover:bg-emerald-500 group-hover:text-black">
+                        <div
+                          className={`grid h-6 w-6 place-items-center rounded-full border transition-colors ${
+                            isDark
+                              ? "border-emerald-500/30 bg-emerald-500/10 group-hover:bg-emerald-500 group-hover:text-black"
+                              : "border-emerald-200 bg-emerald-50 group-hover:bg-emerald-500 group-hover:text-white"
+                          }`}
+                        >
                           <svg
                             width="12"
                             height="12"
@@ -539,12 +695,30 @@ const EvaluationsListPanel: React.FC<Props> = ({
         {/* Pagination */}
         {!mustChooseScope && totalPages > 1 && (
           <div className="mt-8 flex items-center justify-between gap-4">
-            <div className="text-xs text-slate-500">
-              Mostrando <span className="text-white">{start + 1}</span> –{" "}
-              <span className="text-white">{end}</span> de{" "}
-              <span className="text-white">{total}</span>
-              <span className="text-slate-600"> • </span>
-              <span className="text-slate-400">5 por página</span>
+            <div
+              className={`text-xs ${
+                isDark ? "text-slate-500" : "text-slate-600"
+              }`}
+            >
+              Mostrando{" "}
+              <span className={isDark ? "text-white" : "text-slate-900"}>
+                {start + 1}
+              </span>{" "}
+              –{" "}
+              <span className={isDark ? "text-white" : "text-slate-900"}>
+                {end}
+              </span>{" "}
+              de{" "}
+              <span className={isDark ? "text-white" : "text-slate-900"}>
+                {total}
+              </span>
+              <span className={isDark ? "text-slate-600" : "text-slate-400"}>
+                {" "}
+                •{" "}
+              </span>
+              <span className={isDark ? "text-slate-400" : "text-slate-500"}>
+                5 por página
+              </span>
             </div>
 
             <div className="flex items-center gap-2">
@@ -554,8 +728,12 @@ const EvaluationsListPanel: React.FC<Props> = ({
                 disabled={safePage <= 1}
                 className={`grid h-8 w-8 place-items-center rounded-xl border transition ${
                   safePage <= 1
-                    ? "border-transparent text-slate-700 cursor-not-allowed"
-                    : "border-white/10 bg-[#15191E] text-slate-300 hover:bg-white/5 hover:text-white"
+                    ? isDark
+                      ? "border-transparent text-slate-700 cursor-not-allowed"
+                      : "border-transparent text-slate-300 cursor-not-allowed"
+                    : isDark
+                      ? "border-white/10 bg-[#15191E] text-slate-300 hover:bg-white/5 hover:text-white"
+                      : "border-slate-200 bg-white text-slate-700 hover:bg-slate-50 hover:border-emerald-300 hover:text-emerald-700 shadow-sm"
                 }`}
                 aria-label="Anterior"
               >
@@ -577,7 +755,12 @@ const EvaluationsListPanel: React.FC<Props> = ({
                 {pagerItems.map((it, idx) => {
                   if (it === "…") {
                     return (
-                      <span key={`dots-${idx}`} className="px-2 text-xs text-slate-600">
+                      <span
+                        key={`dots-${idx}`}
+                        className={`px-2 text-xs ${
+                          isDark ? "text-slate-600" : "text-slate-500"
+                        }`}
+                      >
                         …
                       </span>
                     );
@@ -592,9 +775,15 @@ const EvaluationsListPanel: React.FC<Props> = ({
                       onClick={() => setPage(p)}
                       className={`
                         h-8 min-w-[2rem] rounded-xl text-xs font-bold transition-all
-                        ${isActive
-                          ? "bg-emerald-500 text-black shadow-[0_0_15px_rgba(16,185,129,0.3)] scale-[1.06]"
-                          : "text-slate-500 hover:text-slate-300 hover:bg-white/5"}
+                        ${
+                          isActive
+                            ? isDark
+                              ? "bg-emerald-500 text-black shadow-[0_0_15px_rgba(16,185,129,0.3)] scale-[1.06]"
+                              : "bg-emerald-500 text-white shadow-[0_0_15px_rgba(16,185,129,0.5)] scale-[1.06]"
+                            : isDark
+                              ? "text-slate-500 hover:text-slate-300 hover:bg-white/5"
+                              : "text-slate-500 bg-white border border-slate-200 hover:text-emerald-700 hover:border-emerald-300 hover:bg-emerald-50"
+                        }
                       `}
                       aria-current={isActive ? "page" : undefined}
                     >
@@ -610,8 +799,12 @@ const EvaluationsListPanel: React.FC<Props> = ({
                 disabled={safePage >= totalPages}
                 className={`grid h-8 w-8 place-items-center rounded-xl border transition ${
                   safePage >= totalPages
-                    ? "border-transparent text-slate-700 cursor-not-allowed"
-                    : "border-white/10 bg-[#15191E] text-slate-300 hover:bg-white/5 hover:text-white"
+                    ? isDark
+                      ? "border-transparent text-slate-700 cursor-not-allowed"
+                      : "border-transparent text-slate-300 cursor-not-allowed"
+                    : isDark
+                      ? "border-white/10 bg-[#15191E] text-slate-300 hover:bg-white/5 hover:text-white"
+                      : "border-slate-200 bg-white text-slate-700 hover:bg-slate-50 hover:border-emerald-300 hover:text-emerald-700 shadow-sm"
                 }`}
                 aria-label="Siguiente"
               >

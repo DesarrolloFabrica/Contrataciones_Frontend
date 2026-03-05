@@ -8,6 +8,7 @@ import { listProgramsBySchool, listSchools, ProgramOption, SchoolOption } from "
 import AdminStatusBars from "./AdminStatusBars";
 import AdminScoreCard from "./AdminScoreCard";
 import AdminEvaluationsSeriesChart from "./AdminEvaluationsSeriesChart";
+import { useTheme } from "../../../../context/ThemeContext";
 
 type Props = {
   scope: {
@@ -103,6 +104,8 @@ function MonthDropdown({ value, onChange }: { value: number; onChange: (m: numbe
   const [open, setOpen] = useState(false);
   const btnRef = useRef<HTMLButtonElement | null>(null);
   const popRef = useRef<HTMLDivElement | null>(null);
+  const { theme } = useTheme();
+  const isDark = theme === "dark";
 
   useOutsideClose(open, [btnRef as any, popRef as any], () => setOpen(false));
 
@@ -112,8 +115,12 @@ function MonthDropdown({ value, onChange }: { value: number; onChange: (m: numbe
         ref={btnRef}
         type="button"
         onClick={() => setOpen((v) => !v)}
-        className="px-3 py-2 rounded-xl bg-white/5 border border-white/10 text-xs
-                   hover:bg-white/10 transition min-w-[140px] text-left"
+        className={[
+          "px-3 py-2 rounded-xl text-xs transition min-w-[140px] text-left border",
+          isDark
+            ? "bg-white/5 border-white/10 hover:bg-white/10 text-neutral-200"
+            : "bg-white border-slate-200 hover:bg-slate-100 text-slate-800 shadow-sm",
+        ].join(" ")}
         title="Cambiar mes"
       >
         {MONTHS[value]}
@@ -122,9 +129,12 @@ function MonthDropdown({ value, onChange }: { value: number; onChange: (m: numbe
       {open && (
         <div
           ref={popRef}
-          className="absolute left-0 top-full mt-2 z-[250] w-[220px] max-h-[240px] overflow-auto
-                     rounded-2xl border border-white/10 bg-[#0b0d0c]
-                     shadow-[0_30px_120px_rgba(0,0,0,0.8)] p-1"
+          className={[
+            "absolute left-0 top-full mt-2 z-[250] w-[220px] max-h-[240px] overflow-auto rounded-2xl border p-1",
+            isDark
+              ? "border-white/10 bg-[#0b0d0c] shadow-[0_30px_120px_rgba(0,0,0,0.8)]"
+              : "border-slate-200 bg-white shadow-[0_24px_80px_rgba(15,23,42,0.25)]",
+          ].join(" ")}
         >
           {MONTHS.map((m, idx) => {
             const active = idx === value;
@@ -137,10 +147,14 @@ function MonthDropdown({ value, onChange }: { value: number; onChange: (m: numbe
                   setOpen(false);
                 }}
                 className={[
-                  "w-full text-left px-3 py-2 rounded-xl text-xs transition",
+                  "w-full text-left px-3 py-2 rounded-xl text-xs transition border",
                   active
-                    ? "bg-emerald-500/20 border border-emerald-500/30 text-white"
-                    : "bg-transparent hover:bg-white/10 text-neutral-200",
+                    ? isDark
+                      ? "bg-emerald-500/20 border-emerald-500/30 text-white"
+                      : "bg-emerald-50 border-emerald-200 text-emerald-800"
+                    : isDark
+                      ? "bg-transparent border-transparent hover:bg-white/10 text-neutral-200"
+                      : "bg-transparent border-transparent hover:bg-slate-100 text-slate-700",
                 ].join(" ")}
               >
                 {m}
@@ -157,6 +171,8 @@ function DatePicker({ label, value, onChange, min, max }: DatePickerProps) {
   const [open, setOpen] = useState(false);
   const btnRef = useRef<HTMLButtonElement | null>(null);
   const popRef = useRef<HTMLDivElement | null>(null);
+  const { theme } = useTheme();
+  const isDark = theme === "dark";
 
   useOutsideClose(open, [btnRef as any, popRef as any], () => setOpen(false));
 
@@ -205,7 +221,12 @@ function DatePicker({ label, value, onChange, min, max }: DatePickerProps) {
   return (
     <div className="relative">
       <div className="flex flex-col gap-1">
-        <label className="text-[11px] uppercase tracking-widest text-neutral-500 font-bold">
+        <label
+          className={[
+            "text-[11px] uppercase tracking-widest font-bold",
+            isDark ? "text-neutral-500" : "text-slate-500",
+          ].join(" ")}
+        >
           {label}
         </label>
 
@@ -213,23 +234,43 @@ function DatePicker({ label, value, onChange, min, max }: DatePickerProps) {
           ref={btnRef}
           type="button"
           onClick={() => setOpen((v) => !v)}
-          className="w-[260px] px-3 py-2 rounded-xl bg-white/5 border border-white/10 text-xs text-left
-                     hover:bg-white/10 transition flex items-center justify-between gap-3"
+          className={[
+            "w-[260px] px-3 py-2 rounded-xl text-xs text-left transition flex items-center justify-between gap-3 border",
+            isDark
+              ? "bg-white/5 border-white/10 hover:bg-white/10 text-neutral-200"
+              : "bg-white border-slate-200 hover:bg-slate-100 text-slate-800 shadow-sm",
+          ].join(" ")}
         >
           <span className="truncate">{formatLabel(value)}</span>
-          <Calendar className="w-4 h-4 text-neutral-400 shrink-0" />
+          <Calendar
+            className={[
+              "w-4 h-4 shrink-0",
+              isDark ? "text-neutral-400" : "text-slate-400",
+            ].join(" ")}
+          />
         </button>
       </div>
 
       {open && (
         <div
           ref={popRef}
-          className="absolute z-[200] mt-2 w-[360px] rounded-2xl border border-white/10 bg-[#0b0d0c]/95 shadow-[0_30px_120px_rgba(0,0,0,0.8)] p-3">
+          className={[
+            "absolute z-[200] mt-2 w-[360px] rounded-2xl border p-3",
+            isDark
+              ? "border-white/10 bg-[#0b0d0c]/95 shadow-[0_30px_120px_rgba(0,0,0,0.8)]"
+              : "border-slate-200 bg-white shadow-[0_24px_80px_rgba(15,23,42,0.25)]",
+          ].join(" ")}
+        >
           <div className="flex items-center justify-between gap-2">
             <button
               type="button"
               onClick={goPrevMonth}
-              className="p-2 rounded-xl border border-white/10 bg-white/5 hover:bg-white/10 transition"
+              className={[
+                "p-2 rounded-xl border transition",
+                isDark
+                  ? "border-white/10 bg-white/5 hover:bg-white/10"
+                  : "border-slate-200 bg-white hover:bg-slate-100",
+              ].join(" ")}
               title="Mes anterior"
             >
               <ChevronLeft className="w-4 h-4" />
@@ -243,7 +284,12 @@ function DatePicker({ label, value, onChange, min, max }: DatePickerProps) {
                   const n = Number(e.target.value.replace(/\D/g, "")) || new Date().getFullYear();
                   setViewYear(Math.max(1900, Math.min(2100, n)));
                 }}
-                className="w-[92px] px-3 py-2 rounded-xl bg-white/5 border border-white/10 text-xs"
+                className={[
+                  "w-[92px] px-3 py-2 rounded-xl text-xs border outline-none",
+                  isDark
+                    ? "bg-white/5 border-white/10 text-neutral-200"
+                    : "bg-white border-slate-200 text-slate-900 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-200",
+                ].join(" ")}
                 inputMode="numeric"
               />
             </div>
@@ -251,14 +297,24 @@ function DatePicker({ label, value, onChange, min, max }: DatePickerProps) {
             <button
               type="button"
               onClick={goNextMonth}
-              className="p-2 rounded-xl border border-white/10 bg-white/5 hover:bg-white/10 transition"
+              className={[
+                "p-2 rounded-xl border transition",
+                isDark
+                  ? "border-white/10 bg-white/5 hover:bg-white/10"
+                  : "border-slate-200 bg-white hover:bg-slate-100",
+              ].join(" ")}
               title="Mes siguiente"
             >
               <ChevronRight className="w-4 h-4" />
             </button>
           </div>
 
-          <div className="grid grid-cols-7 gap-1 mt-3 text-[11px] uppercase tracking-widest text-neutral-500 font-bold">
+          <div
+            className={[
+              "grid grid-cols-7 gap-1 mt-3 text-[11px] uppercase tracking-widest font-bold",
+              isDark ? "text-neutral-500" : "text-slate-500",
+            ].join(" ")}
+          >
             {WEEKDAYS.map((d) => (
               <div key={d} className="text-center py-1">
                 {d}
@@ -282,15 +338,21 @@ function DatePicker({ label, value, onChange, min, max }: DatePickerProps) {
                   disabled={c.disabled}
                   onClick={() => onPick(c.ymd)}
                   className={[
-                    // ✅ tamaño fijo, cuadrado, centrado (no se corta)
                     "h-10 w-10 flex items-center justify-center",
                     "rounded-xl text-xs font-bold border transition select-none",
-                    // ✅ evita que el texto empuje / recorte
                     "leading-none",
                     c.disabled
-                      ? "border-white/5 text-neutral-700 bg-white/2 cursor-not-allowed"
-                      : "border-white/10 bg-white/5 hover:bg-white/10 text-neutral-200",
-                    isSelected ? "bg-emerald-500/20 border-emerald-500/30 text-white" : "",
+                      ? isDark
+                        ? "border-white/5 text-neutral-700 bg-white/5 cursor-not-allowed"
+                        : "border-slate-100 text-slate-300 bg-slate-50 cursor-not-allowed"
+                      : isDark
+                        ? "border-white/10 bg-white/5 hover:bg-white/10 text-neutral-200"
+                        : "border-slate-200 bg-white hover:bg-emerald-50 text-slate-800",
+                    isSelected
+                      ? isDark
+                        ? "bg-emerald-500/20 border-emerald-500/30 text-white"
+                        : "bg-emerald-600 border-emerald-500 text-white shadow-[0_8px_20px_rgba(16,185,129,0.35)]"
+                      : "",
                   ].join(" ")}
                 >
                   {c.day}
@@ -303,8 +365,12 @@ function DatePicker({ label, value, onChange, min, max }: DatePickerProps) {
             <button
               type="button"
               onClick={() => onPick(toYmd(new Date()))}
-              className="px-3 py-2 rounded-xl border border-white/10 bg-white/5 text-xs font-bold
-                         uppercase tracking-widest hover:bg-white/10 transition"
+              className={[
+                "px-3 py-2 rounded-xl border text-xs font-bold uppercase tracking-widest transition",
+                isDark
+                  ? "border-white/10 bg-white/5 hover:bg-white/10 text-neutral-100"
+                  : "border-emerald-500 bg-emerald-600 hover:bg-emerald-500 text-white shadow-[0_8px_20px_rgba(16,185,129,0.35)]",
+              ].join(" ")}
             >
               Hoy
             </button>
@@ -312,8 +378,12 @@ function DatePicker({ label, value, onChange, min, max }: DatePickerProps) {
             <button
               type="button"
               onClick={() => setOpen(false)}
-              className="px-3 py-2 rounded-xl border border-white/10 bg-white/5 text-xs font-bold
-                         uppercase tracking-widest hover:bg-white/10 transition"
+              className={[
+                "px-3 py-2 rounded-xl border text-xs font-bold uppercase tracking-widest transition",
+                isDark
+                  ? "border-white/10 bg-white/5 hover:bg-white/10 text-neutral-100"
+                  : "border-slate-200 bg-white hover:bg-slate-100 text-slate-700",
+              ].join(" ")}
             >
               Cerrar
             </button>
@@ -350,6 +420,8 @@ function Dropdown({
   const [open, setOpen] = useState(false);
   const btnRef = useRef<HTMLButtonElement | null>(null);
   const popRef = useRef<HTMLDivElement | null>(null);
+  const { theme } = useTheme();
+  const isDark = theme === "dark";
 
   useOutsideClose(open, [btnRef as any, popRef as any], () => setOpen(false));
 
@@ -363,7 +435,12 @@ function Dropdown({
   return (
     <div className="relative">
       <div className="flex flex-col gap-1">
-        <label className="text-[11px] uppercase tracking-widest text-neutral-500 font-bold">
+        <label
+          className={[
+            "text-[11px] uppercase tracking-widest font-bold",
+            isDark ? "text-neutral-500" : "text-slate-500",
+          ].join(" ")}
+        >
           {label}
         </label>
 
@@ -375,14 +452,23 @@ function Dropdown({
           className={[
             "w-[260px] px-3 py-2 rounded-xl border text-xs text-left transition flex items-center justify-between gap-3",
             isDisabled
-              ? "bg-white/2 border-white/5 text-neutral-600 cursor-not-allowed"
-              : "bg-white/5 border-white/10 text-neutral-200 hover:bg-white/10",
+              ? isDark
+                ? "bg-white/5 border-white/5 text-neutral-600 cursor-not-allowed"
+                : "bg-slate-50 border-slate-200 text-slate-300 cursor-not-allowed"
+              : isDark
+                ? "bg-white/5 border-white/10 text-neutral-200 hover:bg-white/10"
+                : "bg-white border-slate-200 text-slate-800 hover:bg-slate-100 shadow-sm",
           ].join(" ")}
         >
           <span className="truncate">
             {valueLabel || placeholder}
           </span>
-          <span className="text-neutral-500 text-[11px]">
+          <span
+            className={[
+              "text-[11px]",
+              isDark ? "text-neutral-500" : "text-slate-400",
+            ].join(" ")}
+          >
             {loading ? "..." : "▾"}
           </span>
         </button>
@@ -391,9 +477,12 @@ function Dropdown({
       {open && !isDisabled && (
         <div
           ref={popRef}
-          className="absolute left-0 top-full mt-2 z-[220] w-[320px] max-h-[280px] overflow-auto
-                     rounded-2xl border border-white/10 bg-[#0b0d0c]
-                     shadow-[0_30px_120px_rgba(0,0,0,0.8)] p-1"
+          className={[
+            "absolute left-0 top-full mt-2 z-[220] w-[320px] max-h-[280px] overflow-auto rounded-2xl border p-1",
+            isDark
+              ? "border-white/10 bg-[#0b0d0c] shadow-[0_30px_120px_rgba(0,0,0,0.8)]"
+              : "border-slate-200 bg-white shadow-[0_24px_80px_rgba(15,23,42,0.25)]",
+          ].join(" ")}
         >
           {allowClear && (
             <button
@@ -403,10 +492,14 @@ function Dropdown({
                 setOpen(false);
               }}
               className={[
-                "w-full text-left px-3 py-2 rounded-xl text-xs transition",
+                "w-full text-left px-3 py-2 rounded-xl text-xs transition border",
                 !valueId
-                  ? "bg-emerald-500/20 border border-emerald-500/30 text-white"
-                  : "hover:bg-white/10 text-neutral-200",
+                  ? isDark
+                    ? "bg-emerald-500/20 border-emerald-500/30 text-white"
+                    : "bg-emerald-50 border-emerald-200 text-emerald-800"
+                  : isDark
+                    ? "bg-transparent border-transparent hover:bg-white/10 text-neutral-200"
+                    : "bg-transparent border-transparent hover:bg-slate-100 text-slate-700",
               ].join(" ")}
             >
               {clearLabel}
@@ -424,10 +517,14 @@ function Dropdown({
                   setOpen(false);
                 }}
                 className={[
-                  "w-full text-left px-3 py-2 rounded-xl text-xs transition",
+                  "w-full text-left px-3 py-2 rounded-xl text-xs transition border",
                   active
-                    ? "bg-emerald-500/20 border border-emerald-500/30 text-white"
-                    : "hover:bg-white/10 text-neutral-200",
+                    ? isDark
+                      ? "bg-emerald-500/20 border-emerald-500/30 text-white"
+                      : "bg-emerald-50 border-emerald-200 text-emerald-800"
+                    : isDark
+                      ? "bg-transparent border-transparent hover:bg-white/10 text-neutral-200"
+                      : "bg-transparent border-transparent hover:bg-slate-100 text-slate-700",
                 ].join(" ")}
               >
                 {o.name}
@@ -436,7 +533,12 @@ function Dropdown({
           })}
 
           {options.length === 0 && (
-            <div className="px-3 py-3 text-xs text-neutral-500">
+            <div
+              className={[
+                "px-3 py-3 text-xs",
+                isDark ? "text-neutral-500" : "text-slate-500",
+              ].join(" ")}
+            >
               {placeholder}
             </div>
           )}
@@ -447,6 +549,8 @@ function Dropdown({
 }
 
 const AdminDashboardPanel: React.FC<Props> = ({ scope }) => {
+  const { theme } = useTheme();
+  const isDark = theme === "dark";
   // Fechas
   const [fromDate, setFromDate] = useState(() => toYmd(startOfMonth(new Date())));
   const [toDate, setToDate] = useState(() => toYmd(new Date()));
@@ -543,6 +647,40 @@ const AdminDashboardPanel: React.FC<Props> = ({ scope }) => {
     [programs]
   );
 
+  const schoolNameById = useMemo(() => {
+    const m = new Map<string, string>();
+    for (const s of schools ?? []) {
+      if (s?.id) m.set(String(s.id), String(s.name ?? ""));
+    }
+    return m;
+  }, [schools]);
+
+  const programNameById = useMemo(() => {
+    const m = new Map<string, string>();
+    for (const p of programs ?? []) {
+      if (p?.id) m.set(String(p.id), String(p.name ?? ""));
+    }
+    return m;
+  }, [programs]);
+
+  const periodLabel = useMemo(() => {
+    if (!safeFrom || !safeTo) return "";
+    if (safeFrom === safeTo) {
+      return `Día: ${formatLabel(safeFrom)}`;
+    }
+    return `Periodo: ${formatLabel(safeFrom)} · ${formatLabel(safeTo)}`;
+  }, [safeFrom, safeTo]);
+
+  const scopeLabel = useMemo(() => {
+    const schoolLabel = schoolId ? schoolNameById.get(String(schoolId)) ?? "Escuela seleccionada" : "Todas las escuelas";
+    const programLabel = programId
+      ? programNameById.get(String(programId)) ?? "Programa seleccionado"
+      : schoolId
+      ? "Todos los programas"
+      : "Todos los programas";
+    return `${schoolLabel} · ${programLabel}`;
+  }, [schoolId, programId, schoolNameById, programNameById]);
+
   const { data, loading, error } = useAdminDashboard({
     orgId: scope.orgId ?? null,
     schoolId: schoolId ?? null,
@@ -551,25 +689,90 @@ const AdminDashboardPanel: React.FC<Props> = ({ scope }) => {
     to: toIso,
   });
 
-const acceptancePct = useMemo(() => {
-  const r = data?.kpis?.acceptanceRate ?? 0;
-  return Math.round(r * 1000) / 10; // 1 decimal
-}, [data?.kpis?.acceptanceRate]);
+  const acceptancePct = useMemo(() => {
+    const r = data?.kpis?.acceptanceRate ?? 0;
+    return Math.round(r * 1000) / 10; // 1 decimal
+  }, [data?.kpis?.acceptanceRate]);
 
-const rejectionPct = useMemo(() => {
-  const approved = Number(data?.kpis?.approved ?? 0);
-  const rejected = Number(data?.kpis?.rejected ?? 0);
-  const decided = approved + rejected;
+  const rejectionPct = useMemo(() => {
+    const approved = Number(data?.kpis?.approved ?? 0);
+    const rejected = Number(data?.kpis?.rejected ?? 0);
+    const decided = approved + rejected;
 
-  if (decided <= 0) return 0;
-  const rate = rejected / decided;
-  return Math.round(rate * 1000) / 10; // 1 decimal
-}, [data?.kpis?.approved, data?.kpis?.rejected]);
+    if (decided <= 0) return 0;
+    const rate = rejected / decided;
+    return Math.round(rate * 1000) / 10; // 1 decimal
+  }, [data?.kpis?.approved, data?.kpis?.rejected]);
 
   return (
     <div className="space-y-6">
+      {/* Encabezado contextual del dashboard */}
+      <div
+        className={[
+          "rounded-3xl border px-5 py-4 flex flex-col md:flex-row md:items-center md:justify-between gap-4",
+          isDark
+            ? "border-white/10 bg-black/40"
+            : "border-slate-200 bg-white shadow-[0_18px_50px_rgba(15,23,42,0.10)]",
+        ].join(" ")}
+      >
+        <div>
+          <p
+            className={[
+              "text-[11px] uppercase tracking-[0.22em] font-bold",
+              isDark ? "text-neutral-500" : "text-emerald-600",
+            ].join(" ")}
+          >
+            Dashboard global
+          </p>
+          <p
+            className={[
+              "text-sm font-semibold mt-1",
+              isDark ? "text-neutral-200" : "text-slate-900",
+            ].join(" ")}
+          >
+            Visión ejecutiva del funnel de candidatos y evaluaciones.
+          </p>
+          <p
+            className={[
+              "text-xs mt-1",
+              isDark ? "text-neutral-500" : "text-slate-600",
+            ].join(" ")}
+          >
+            {periodLabel}
+          </p>
+          <p
+            className={[
+              "text-[10px] mt-1",
+              isDark ? "text-neutral-600" : "text-slate-500",
+            ].join(" ")}
+          >
+            Esta sección de dashboard sigue en evolución; algunas métricas y visualizaciones pueden cambiar.
+          </p>
+        </div>
+
+        <div className="flex flex-wrap gap-2 text-[10px] uppercase tracking-widest">
+          <span
+            className={[
+              "px-3 py-1 rounded-full border",
+              isDark
+                ? "bg-white/5 border-white/10 text-neutral-200"
+                : "bg-emerald-50 border-emerald-100 text-emerald-700",
+            ].join(" ")}
+          >
+            {scopeLabel}
+          </span>
+        </div>
+      </div>
+
       {/* filtros */}
-      <div className="flex flex-wrap items-end gap-4">
+      <div
+        className={[
+          "rounded-3xl border px-5 py-4 flex flex-wrap items-end gap-4",
+          isDark
+            ? "border-white/10 bg-[#050708]/80"
+            : "border-slate-200 bg-slate-50 shadow-[0_18px_50px_rgba(15,23,42,0.08)]",
+        ].join(" ")}
+      >
         <DatePicker label="Desde" value={safeFrom} max={safeTo} onChange={setFromDate} />
         <DatePicker label="Hasta" value={safeTo} min={safeFrom} onChange={setToDate} />
 
@@ -599,20 +802,44 @@ const rejectionPct = useMemo(() => {
       </div>
 
       {scopeError && (
-        <div className="p-4 rounded-2xl border border-red-500/15 bg-red-500/5 text-red-300 text-sm">
+        <div
+          className={[
+            "p-4 rounded-2xl border text-sm",
+            isDark
+              ? "border-red-500/15 bg-red-500/5 text-red-300"
+              : "border-red-200 bg-red-50 text-red-700",
+          ].join(" ")}
+        >
           {scopeError}
         </div>
       )}
 
       {loading && (
-        <div className="flex items-center gap-3 text-neutral-400">
-          <Loader2 className="w-5 h-5 animate-spin text-emerald-400" />
+        <div
+          className={[
+            "flex items-center gap-3",
+            isDark ? "text-neutral-400" : "text-slate-600",
+          ].join(" ")}
+        >
+          <Loader2
+            className={[
+              "w-5 h-5 animate-spin",
+              isDark ? "text-emerald-400" : "text-emerald-600",
+            ].join(" ")}
+          />
           <span className="text-sm">Cargando dashboard…</span>
         </div>
       )}
 
       {!loading && error && (
-        <div className="p-5 rounded-2xl border border-red-500/15 bg-red-500/5 text-red-300 flex items-center gap-3">
+        <div
+          className={[
+            "p-5 rounded-2xl border flex items-center gap-3",
+            isDark
+              ? "border-red-500/15 bg-red-500/5 text-red-300"
+              : "border-red-200 bg-red-50 text-red-700",
+          ].join(" ")}
+        >
           <AlertCircle className="w-5 h-5" />
           <span className="text-sm">{error}</span>
         </div>
@@ -620,31 +847,107 @@ const rejectionPct = useMemo(() => {
       {!loading && !error && data && (
         <>
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-          <div className="rounded-2xl border border-white/10 bg-white/5 p-5">
-            <div className="text-[11px] uppercase tracking-widest text-neutral-500 font-bold">
+          <div
+            className={[
+              "rounded-2xl border p-5",
+              isDark
+                ? "border-white/10 bg-white/5"
+                : "border-slate-200 bg-white shadow-sm",
+            ].join(" ")}
+          >
+            <div
+              className={[
+                "text-[11px] uppercase tracking-widest font-bold",
+                isDark ? "text-neutral-500" : "text-slate-500",
+              ].join(" ")}
+            >
               Total candidatos
             </div>
-            <div className="mt-2 text-3xl font-black">{data.kpis.totalCandidates}</div>
+            <div
+              className={[
+                "mt-2 text-3xl font-black",
+                isDark ? "text-white" : "text-slate-900",
+              ].join(" ")}
+            >
+              {data.kpis.totalCandidates}
+            </div>
           </div>
 
-          <div className="rounded-2xl border border-white/10 bg-white/5 p-5">
-            <div className="text-[11px] uppercase tracking-widest text-neutral-500 font-bold">
+          <div
+            className={[
+              "rounded-2xl border p-5",
+              isDark
+                ? "border-white/10 bg-white/5"
+                : "border-slate-200 bg-white shadow-sm",
+            ].join(" ")}
+          >
+            <div
+              className={[
+                "text-[11px] uppercase tracking-widest font-bold",
+                isDark ? "text-neutral-500" : "text-slate-500",
+              ].join(" ")}
+            >
               Total evaluaciones
             </div>
-            <div className="mt-2 text-3xl font-black">{data.kpis.totalEvaluations}</div>
+            <div
+              className={[
+                "mt-2 text-3xl font-black",
+                isDark ? "text-white" : "text-slate-900",
+              ].join(" ")}
+            >
+              {data.kpis.totalEvaluations}
+            </div>
           </div>
 
-          <div className="rounded-2xl border border-white/10 bg-white/5 p-5">
-            <div className="text-[11px] uppercase tracking-widest text-neutral-500 font-bold">
+          <div
+            className={[
+              "rounded-2xl border p-5",
+              isDark
+                ? "border-white/10 bg-white/5"
+                : "border-slate-200 bg-white shadow-sm",
+            ].join(" ")}
+          >
+            <div
+              className={[
+                "text-[11px] uppercase tracking-widest font-bold",
+                isDark ? "text-neutral-500" : "text-slate-500",
+              ].join(" ")}
+            >
               % tasa aceptación
             </div>
-            <div className="mt-2 text-3xl font-black">{acceptancePct}%</div>
+            <div
+              className={[
+                "mt-2 text-3xl font-black",
+                isDark ? "text-white" : "text-emerald-700",
+              ].join(" ")}
+            >
+              {acceptancePct}%
+            </div>
           </div>
-          <div className="rounded-2xl border border-white/10 bg-white/5 p-5">
-          <div className="text-[11px] uppercase tracking-widest text-neutral-500 font-bold">
+          <div
+            className={[
+              "rounded-2xl border p-5",
+              isDark
+                ? "border-white/10 bg-white/5"
+                : "border-slate-200 bg-white shadow-sm",
+            ].join(" ")}
+          >
+          <div
+            className={[
+              "text-[11px] uppercase tracking-widest font-bold",
+              isDark ? "text-neutral-500" : "text-slate-500",
+            ].join(" ")}
+          >
             % tasa rechazo
           </div>
-          <div className="mt-2 text-3xl font-black">{rejectionPct}%</div>
+          <div
+            className={[
+              "mt-2 text-3xl font-black",
+              isDark ? "text-white" : "text-rose-700",
+            ].join(" ")}
+          >
+            {rejectionPct}%
+          </div>
         </div>
 
         </div>
