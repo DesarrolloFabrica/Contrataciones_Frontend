@@ -226,6 +226,18 @@ export default function CoordinatorEvaluationDetailPage() {
     return Number.isFinite(v) ? Math.round(v * 10) / 10 : 0;
   }, [analysis]);
 
+  const coordinatorApiStatus = String(
+    summary?.coordinatorDecisionStatus ?? "",
+  ).toUpperCase();
+  const isAlreadyEvaluated =
+    coordinatorApiStatus === "APPROVED" || coordinatorApiStatus === "REJECTED";
+  const evaluatedVerdictLabel =
+    coordinatorApiStatus === "APPROVED"
+      ? "APROBADO"
+      : coordinatorApiStatus === "REJECTED"
+        ? "RECHAZADO"
+        : "PENDIENTE";
+
   const risk = useMemo(
     () => String(analysis?.overallRiskLevel ?? ""),
     [analysis],
@@ -1072,19 +1084,42 @@ export default function CoordinatorEvaluationDetailPage() {
                             isDark ? "text-white" : "text-slate-900"
                           }`}
                         >
-                          Consola de Decisión
+                          {isAlreadyEvaluated
+                            ? "Evaluación Cerrada"
+                            : "Consola de Decisión"}
                         </h2>
                       </div>
-                      <p
-                        className={`text-xs font-medium ml-6 ${
-                          isDark ? "text-slate-500" : "text-slate-600"
-                        }`}
-                      >
+                      <p className="text-xs text-slate-500 font-medium ml-6">
                         Complete los pasos requeridos para finalizar.
                       </p>
                     </div>
 
-                    <div className="p-8 space-y-8">
+                    {isAlreadyEvaluated ? (
+                      <div className="p-8">
+                        <div className="rounded-2xl border border-emerald-500/20 bg-emerald-500/10 p-5">
+                          <div className="text-[10px] font-black uppercase tracking-[0.2em] text-emerald-300 mb-2">
+                            Ya evaluado
+                          </div>
+                          <p className="text-sm text-emerald-100 leading-relaxed">
+                            Esta evaluación ya fue registrada con veredicto{" "}
+                            <span className="font-bold">
+                              {evaluatedVerdictLabel}
+                            </span>{" "}
+                            y no puede volver a ser enviada.
+                          </p>
+                          {summary?.coordinatorDecisionAt && (
+                            <p className="text-[11px] text-emerald-200/80 mt-3">
+                              Fecha de registro:{" "}
+                              {String(summary.coordinatorDecisionAt).slice(
+                                0,
+                                19,
+                              )}
+                            </p>
+                          )}
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="p-8 space-y-8">
                       {/* PASO 1 */}
                       <div className="space-y-4">
                         <div className="flex items-center justify-between">
@@ -1307,19 +1342,19 @@ export default function CoordinatorEvaluationDetailPage() {
                         <button
                           onClick={detail.submitDecisionToAdmin}
                           disabled={!detail.canSubmitDecision}
-                          className={`w-full py-4 rounded-xl font-bold text-sm tracking-widest uppercase transition-all duration-300 flex items-center justify-center gap-3 group border
+                          className={`w-full py-4 rounded-xl font-bold text-sm tracking-widest uppercase transition-all duration-300 flex items-center justify-center gap-3 group
                             ${
                               detail.canSubmitDecision
-                                ? "bg-gradient-to-r from-emerald-600 to-teal-600 text-white border-transparent shadow-[0_0_30px_-5px_rgba(16,185,129,0.5)] hover:shadow-[0_0_40px_-5px_rgba(16,185,129,0.7)] hover:scale-[1.02]"
-                                : isDark
-                                  ? "bg-[#1A2026] text-slate-600 cursor-not-allowed border-white/5"
-                                  : "bg-slate-100 text-slate-400 cursor-not-allowed border-slate-200"
+                                ? "bg-gradient-to-r from-emerald-600 to-teal-600 text-white shadow-[0_0_30px_-5px_rgba(16,185,129,0.5)] hover:shadow-[0_0_40px_-5px_rgba(16,185,129,0.7)] hover:scale-[1.02]"
+                                : "bg-[#1A2026] text-slate-600 cursor-not-allowed border border-white/5"
                             }`}
                         >
-                          {detail.canSubmitDecision
+                          {detail.submittingDecision
+                            ? "Enviando..."
+                            : detail.canSubmitDecision
                             ? "Finalizar Evaluación"
                             : "Formulario Incompleto"}
-                          {detail.canSubmitDecision && (
+                          {detail.canSubmitDecision && !detail.submittingDecision && (
                             <ArrowLeft className="w-4 h-4 rotate-180 group-hover:translate-x-1 transition-transform" />
                           )}
                         </button>
@@ -1329,6 +1364,7 @@ export default function CoordinatorEvaluationDetailPage() {
                         </p>
                       </div>
                     </div>
+                    )}
                   </div>
                 </div>
                 {/* Fin Panel */}

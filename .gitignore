@@ -13,6 +13,6 @@ yarn-error.log*
 .env.*
 !.env.example
 .env*
-.env.production
+!.env.production
 # otros
 metadata.json

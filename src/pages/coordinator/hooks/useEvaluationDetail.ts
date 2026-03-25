@@ -9,7 +9,10 @@ import type {
   DecisionStatusApi,
 } from "../../../types";
 
-import { getTeacherEvaluationById } from "../../../services/teachersService";
+import {
+  getTeacherEvaluationById,
+  updateCoordinatorDecision,
+} from "../../../services/teachersService";
 import { generateAnalysisPdfFromData } from "../../../services/pdfReport";
 import { auditAppend } from "../../../services/auditService";
 import { actorFromUser } from "../../../services/auditActor";
@@ -66,6 +69,7 @@ export const useEvaluationDetail = ({
 
   const [decision, setDecision] = useState<LocalDecision>("PENDIENTE");
   const [decisionComment, setDecisionComment] = useState("");
+  const [submittingDecision, setSubmittingDecision] = useState(false);
 
   // ✅ NOTAS por evaluación (persisten por id)
   const [notesByEval, setNotesByEval] = useState<CoordinatorNotesByEval>({});
@@ -298,22 +302,60 @@ export const useEvaluationDetail = ({
   const submitDecisionToAdmin = useCallback(async () => {
     if (!selectedId) return;
     if (!canSubmitDecision) return;
+    if (submittingDecision) return;
 
-    auditAppend({
-      type: "COORDINATOR_DECISION_SUBMITTED",
-      actor,
-      evaluationId: selectedId,
-      metadata: {
-        status: decision,
+    const status =
+      decision === "APROBADO"
+        ? "APPROVED"
+        : decision === "RECHAZADO"
+          ? "REJECTED"
+          : "PENDING";
+
+    try {
+      setSubmittingDecision(true);
+
+      await updateCoordinatorDecision(selectedId, {
+        status,
+        comment: String(decisionComment ?? "").trim() || undefined,
+        notesBrief: effectiveNote,
         criteria: currentNotes.criteria as any,
-        noteLen: effectiveNoteLen,
-        source: "coordinator-submit",
-      },
-    });
+      });
 
-    bumpAudit();
-    alert("✅ Decisión enviada al administrador.");
-  }, [actor, bumpAudit, canSubmitDecision, currentNotes.criteria, decision, effectiveNoteLen, selectedId]);
+      auditAppend({
+        type: "COORDINATOR_DECISION_SUBMITTED",
+        actor,
+        evaluationId: selectedId,
+        metadata: {
+          status: decision,
+          criteria: currentNotes.criteria as any,
+          noteLen: effectiveNoteLen,
+          source: "coordinator-submit",
+        },
+      });
+
+      bumpAudit();
+      alert("✅ Decisión enviada al administrador.");
+    } catch (err: any) {
+      const message =
+        err?.response?.data?.message ??
+        err?.message ??
+        "No se pudo enviar la decisión al administrador.";
+      alert(`❌ ${message}`);
+    } finally {
+      setSubmittingDecision(false);
+    }
+  }, [
+    actor,
+    bumpAudit,
+    canSubmitDecision,
+    currentNotes.criteria,
+    decision,
+    decisionComment,
+    effectiveNote,
+    effectiveNoteLen,
+    selectedId,
+    submittingDecision,
+  ]);
 
   return {
     selectedId,
@@ -333,6 +375,7 @@ export const useEvaluationDetail = ({
 
     // ✅ validación + submit
     canSubmitDecision,
+    submittingDecision,
     missingReasons,
     submitDecisionToAdmin,
 
