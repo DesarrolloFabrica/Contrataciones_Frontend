@@ -69,6 +69,10 @@ export interface AdminUser {
   email: string;
   cedula?: string | null;
 
+  // Opcional: algunos flujos (coordinador -> líder) heredan una escuela específica.
+  // Se mantiene opcional para compatibilidad con usuarios admin globales.
+  schoolId?: string | null;
+
   role: AdminUserRole;
   status: AdminUserStatus;
 

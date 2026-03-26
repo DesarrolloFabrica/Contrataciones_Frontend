@@ -1,4 +1,13 @@
 import React, { useMemo } from "react";
+import { 
+  Brain, 
+  Users, 
+  ArrowDownToLine, 
+  ArrowUpToLine, 
+  Activity, 
+  Target,
+  AlertCircle
+} from "lucide-react";
 import { useTheme } from "../../../../context/ThemeContext";
 
 type Props = {
@@ -23,113 +32,253 @@ export default function AdminScoreCard({ avg, median, min, max, count }: Props) 
   const main = useMemo(() => fmt(avg, 1), [avg]);
   const show = (count ?? 0) > 0;
 
+  const range = useMemo(() => {
+    if (!show) return null;
+    if (min === null || max === null) return null;
+    const minV = Number(min);
+    const maxV = Number(max);
+    if (!Number.isFinite(minV) || !Number.isFinite(maxV)) return null;
+    const span = maxV - minV;
+    return span === 0 ? { minV, maxV, span: 1 } : { minV, maxV, span };
+  }, [show, min, max]);
+
+  const medianPct = useMemo(() => {
+    if (!range) return null;
+    if (median === null) return null;
+    const v = Number(median);
+    if (!Number.isFinite(v)) return null;
+    return ((v - range.minV) / range.span) * 100;
+  }, [median, range]);
+
+  const avgPct = useMemo(() => {
+    if (!range) return null;
+    if (avg === null) return null;
+    const v = Number(avg);
+    if (!Number.isFinite(v)) return null;
+    return ((v - range.minV) / range.span) * 100;
+  }, [avg, range]);
+
   return (
     <div
       className={[
-        "rounded-3xl border p-5",
+        "relative flex h-full min-h-[380px] w-full min-w-0 flex-col overflow-hidden rounded-[24px] border p-6 transition-all duration-500",
         isDark
-          ? "border-white/10 bg-white/5"
-          : "border-slate-200 bg-white shadow-sm",
+          ? "border-white/[0.04] bg-[#0c0c0e] hover:border-white/[0.08]"
+          : "border-slate-200/60 bg-white hover:border-slate-300 hover:shadow-xl hover:shadow-slate-200/20",
       ].join(" ")}
     >
-      <div className="flex items-start justify-between gap-4">
-        <div>
-          <div
+      {/* Header Minimalista */}
+      <div className="flex items-start justify-between mb-6">
+        <div className="flex flex-col gap-1">
+          <h3
             className={[
-              "text-[11px] uppercase tracking-widest font-bold",
+              "text-sm font-semibold uppercase tracking-widest",
+              isDark ? "text-neutral-300" : "text-slate-800",
+            ].join(" ")}
+          >
+            AI Suitability Score
+          </h3>
+          <p
+            className={[
+              "text-[13px]",
               isDark ? "text-neutral-500" : "text-slate-500",
             ].join(" ")}
           >
-            Score (AI Teaching Suitability)
-          </div>
+            Evaluaciones analizadas
+          </p>
+        </div>
+
+        <div className="flex items-center gap-4">
+          {/* N Badge Estilo Técnico */}
           <div
             className={[
-              "text-xs mt-1",
-              isDark ? "text-neutral-400" : "text-slate-600",
+              "flex items-center gap-1.5 px-3 py-1 rounded-full border text-xs font-semibold",
+              isDark
+                ? "bg-white/[0.02] border-white/10 text-neutral-400"
+                : "bg-slate-50 border-slate-200 text-slate-500",
             ].join(" ")}
           >
-            Solo evaluaciones con score ≠ null
+            <Users className="w-3.5 h-3.5 opacity-70" />
+            <span>n={count ?? 0}</span>
+          </div>
+          {/* Ícono de fondo */}
+          <div className={isDark ? "text-neutral-800" : "text-slate-200"}>
+            <Brain strokeWidth={1.5} className="w-6 h-6" />
           </div>
         </div>
+      </div>
 
-        <div
-          className={[
-            "text-[11px] uppercase tracking-widest font-bold",
-            isDark ? "text-neutral-500" : "text-slate-500",
-          ].join(" ")}
-        >
-          n={count ?? 0}
+      {show ? (
+        <div className="flex min-h-0 flex-1 flex-col justify-between">
+          
+          {/* Main Score Center */}
+          <div className="relative flex flex-col items-center justify-center py-6">
+            {/* Resplandor radial de fondo */}
+            {isDark && (
+              <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-32 h-32 bg-cyan-500/10 rounded-full blur-[50px] pointer-events-none" />
+            )}
+            
+            <span
+              className={[
+                "text-6xl md:text-7xl font-black tracking-tighter relative z-10",
+                isDark
+                  ? "text-transparent bg-clip-text bg-gradient-to-br from-emerald-400 to-cyan-400"
+                  : "text-emerald-700",
+              ].join(" ")}
+            >
+              {main}
+            </span>
+            <span
+              className={[
+                "text-[10px] uppercase tracking-[0.25em] font-bold mt-2 relative z-10",
+                isDark ? "text-emerald-500/70" : "text-emerald-600/80",
+              ].join(" ")}
+            >
+              Promedio General
+            </span>
+          </div>
+
+          {/* Range bar (min->max) */}
+          {range && medianPct !== null && avgPct !== null && (
+            <div className="mt-2 mb-6 px-2">
+              <div
+                className={[
+                  "relative h-1.5 rounded-full overflow-hidden border",
+                  isDark ? "bg-neutral-900 border-white/5" : "bg-slate-100 border-slate-200/50",
+                ].join(" ")}
+              >
+                {/* Gradient Fill (track) */}
+                <div
+                  className={[
+                    "absolute inset-0 opacity-40",
+                    isDark
+                      ? "bg-gradient-to-r from-emerald-500/50 to-cyan-500/50"
+                      : "bg-gradient-to-r from-emerald-400/50 to-cyan-400/50",
+                  ].join(" ")}
+                />
+
+                {/* Mediana: Vertical Marker (Línea) */}
+                <div
+                  className={[
+                    "absolute top-0 bottom-0 w-[2px] -translate-x-1/2 rounded-full",
+                    isDark ? "bg-white/80" : "bg-slate-400",
+                  ].join(" ")}
+                  style={{ left: `${Math.max(0, Math.min(100, medianPct))}%` }}
+                  title={`Mediana: ${fmt(median, 2)}`}
+                />
+              </div>
+
+              {/* Promedio: Dot Marker (Nodo iluminado flotando sobre la barra) */}
+              <div className="relative w-full h-0">
+                <div
+                  className={[
+                    "absolute -top-[5px] -translate-x-1/2 w-3.5 h-3.5 rounded-full border-[2.5px] transition-all",
+                    isDark
+                      ? "bg-[#0c0c0e] border-cyan-400 shadow-[0_0_10px_rgba(34,211,238,0.4)]"
+                      : "bg-white border-cyan-500 shadow-sm",
+                  ].join(" ")}
+                  style={{ left: `${Math.max(0, Math.min(100, avgPct))}%` }}
+                  title={`Promedio: ${fmt(avg, 2)}`}
+                />
+              </div>
+
+              {/* Range Legend */}
+              <div className="mt-4 flex items-center justify-between">
+                <div className="flex flex-col items-start gap-0.5">
+                  <span className={["text-[10px] uppercase tracking-widest font-bold", isDark ? "text-neutral-600" : "text-slate-400"].join(" ")}>Mín</span>
+                  <span className={["text-xs font-semibold", isDark ? "text-neutral-400" : "text-slate-600"].join(" ")}>{fmt(range.minV, 1)}</span>
+                </div>
+                
+                <div className="flex gap-5">
+                  <div className="flex items-center gap-1.5">
+                    <span className={["w-1 h-2.5 rounded-full", isDark ? "bg-white/60" : "bg-slate-400"].join(" ")} />
+                    <span className={["text-[9px] uppercase tracking-widest font-bold", isDark ? "text-neutral-500" : "text-slate-500"].join(" ")}>Mediana</span>
+                  </div>
+                  <div className="flex items-center gap-1.5">
+                    <span className={["w-2 h-2 rounded-full border-[1.5px]", isDark ? "border-cyan-400 bg-transparent" : "border-cyan-500 bg-white"].join(" ")} />
+                    <span className={["text-[9px] uppercase tracking-widest font-bold", isDark ? "text-neutral-500" : "text-slate-500"].join(" ")}>Avg</span>
+                  </div>
+                </div>
+
+                <div className="flex flex-col items-end gap-0.5">
+                  <span className={["text-[10px] uppercase tracking-widest font-bold", isDark ? "text-neutral-600" : "text-slate-400"].join(" ")}>Máx</span>
+                  <span className={["text-xs font-semibold", isDark ? "text-neutral-400" : "text-slate-600"].join(" ")}>{fmt(range.maxV, 1)}</span>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Stats Grid Subordinado */}
+          <div className={["grid grid-cols-2 gap-3 pt-6 border-t", isDark ? "border-white/[0.04]" : "border-slate-100"].join(" ")}>
+            <Stat icon={Activity} label="Promedio" value={fmt(avg, 2)} />
+            <Stat icon={Target} label="Mediana" value={fmt(median, 2)} />
+            <Stat icon={ArrowDownToLine} label="Mínimo" value={fmt(min, 2)} />
+            <Stat icon={ArrowUpToLine} label="Máximo" value={fmt(max, 2)} />
+          </div>
         </div>
-      </div>
-
-      {/* “pill” principal como tu boceto */}
-      <div
-        className={[
-          "mt-5 rounded-2xl border px-6 py-6 flex items-center justify-center",
-          isDark
-            ? "border-emerald-500/20 bg-emerald-500/20"
-            : "border-emerald-200 bg-emerald-50",
-        ].join(" ")}
-      >
+      ) : (
+        /* Empty State Elegante */
         <div
           className={[
-            "text-4xl font-black",
-            isDark ? "text-emerald-50" : "text-emerald-700",
+            "mt-4 flex flex-1 flex-col items-center justify-center p-8 rounded-2xl border border-dashed",
+            isDark ? "border-white/5 bg-white/[0.02]" : "border-slate-200 bg-slate-50",
           ].join(" ")}
         >
-          {show ? main : "—"}
-        </div>
-      </div>
-
-      <div className="mt-5 grid grid-cols-2 gap-3">
-        <Stat label="Promedio" value={show ? fmt(avg, 2) : "—"} />
-        <Stat label="Mediana" value={show ? fmt(median, 2) : "—"} />
-        <Stat label="Mín" value={show ? fmt(min, 2) : "—"} />
-        <Stat label="Máx" value={show ? fmt(max, 2) : "—"} />
-      </div>
-
-      {!show && (
-        <div
-          className={[
-            "mt-4 text-xs",
-            isDark ? "text-neutral-500" : "text-slate-500",
-          ].join(" ")}
-        >
-          No hay evaluaciones con score en el rango/filters seleccionados.
+          <AlertCircle
+            className={["w-8 h-8 mb-3 opacity-40", isDark ? "text-neutral-500" : "text-slate-400"].join(" ")}
+          />
+          <p
+            className={["text-sm font-medium text-center", isDark ? "text-neutral-500" : "text-slate-500"].join(" ")}
+          >
+            No hay evaluaciones con score en el rango seleccionado.
+          </p>
         </div>
       )}
     </div>
   );
 }
 
-function Stat({ label, value }: { label: string; value: string }) {
+// Componente Stat refinado para encajar sin robar protagonismo
+function Stat({ label, value, icon: Icon }: { label: string; value: string; icon: React.ElementType }) {
   const { theme } = useTheme();
   const isDark = theme === "dark";
 
   return (
     <div
       className={[
-        "rounded-2xl border p-3",
+        "rounded-[16px] border p-3 transition-colors flex items-center justify-between group",
         isDark
-          ? "border-white/10 bg-black/20"
-          : "border-slate-200 bg-slate-50",
+          ? "border-white/[0.03] bg-white/[0.01] hover:bg-white/[0.03] hover:border-white/[0.08]"
+          : "border-slate-100 bg-slate-50 hover:bg-white hover:border-slate-200",
       ].join(" ")}
     >
-      <div
-        className={[
-          "text-[11px] uppercase tracking-widest font-bold",
-          isDark ? "text-neutral-500" : "text-slate-500",
-        ].join(" ")}
-      >
-        {label}
+      <div className="flex flex-col gap-0.5">
+        <div
+          className={[
+            "text-[9px] uppercase tracking-widest font-semibold flex items-center gap-1.5",
+            isDark ? "text-neutral-500" : "text-slate-400",
+          ].join(" ")}
+        >
+          {label}
+        </div>
+        <div
+          className={[
+            "text-lg font-bold tracking-tight",
+            isDark ? "text-neutral-200" : "text-slate-800",
+          ].join(" ")}
+        >
+          {value}
+        </div>
       </div>
       <div
         className={[
-          "mt-1 text-xl font-extrabold",
-          isDark ? "text-neutral-100" : "text-slate-900",
+          "p-1.5 rounded-xl transition-colors opacity-60 group-hover:opacity-100",
+          isDark
+            ? "text-neutral-400 group-hover:text-cyan-400 bg-transparent group-hover:bg-cyan-500/10"
+            : "text-slate-400 group-hover:text-cyan-600 bg-transparent group-hover:bg-cyan-50",
         ].join(" ")}
       >
-        {value}
+        <Icon className="w-4 h-4" />
       </div>
     </div>
   );

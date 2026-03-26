@@ -6,6 +6,10 @@ export const mapFormToInterviewData = (detail: any): InterviewData => {
   return {
     candidateName: form.candidate.fullName,
     age: form.candidate.age ? String(form.candidate.age) : "",
+    documentNumber:
+      form.candidate.documentNumber ??
+      form.candidate.document_number ??
+      form.candidate.document ?? "",
     school: form.candidate.schoolName,
     program: form.candidate.programName,
     careerSummary: form.candidate.careerSummary,

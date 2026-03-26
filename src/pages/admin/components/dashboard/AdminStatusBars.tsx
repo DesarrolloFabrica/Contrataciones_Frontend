@@ -1,4 +1,4 @@
-import React, { useMemo } from "react";
+import React, { useMemo, useState } from "react";
 import {
   BarChart,
   Bar,
@@ -18,124 +18,197 @@ type Props = {
   noEval: number;
 };
 
-type Row = { key: string; label: string; value: number; color: string };
+type Row = { key: string; label: string; value: number; color: string; colorEnd: string };
 
 export default function AdminStatusBars({ approved, rejected, pending, noEval }: Props) {
   const { theme } = useTheme();
   const isDark = theme === "dark";
 
+  const [hoveredKey, setHoveredKey] = useState<string | null>(null);
+
   const rows: Row[] = useMemo(
     () => [
-      { key: "APPROVED", label: "Aprobados", value: Number(approved ?? 0), color: "#f8b4b4" }, // rosado
-      { key: "REJECTED", label: "Rechazados", value: Number(rejected ?? 0), color: "#f59e0b" }, // naranja
-      { key: "PENDING", label: "Pendientes", value: Number(pending ?? 0), color: "#fde68a" }, // amarillo
-      { key: "NO_EVAL", label: "Sin evaluar", value: Number(noEval ?? 0), color: "#86efac" }, // verde
+      {
+        key: "APPROVED",
+        label: "Aprobados",
+        value: Number(approved ?? 0),
+        color: isDark ? "#10b981" : "#10b981", // Neon Emerald
+        colorEnd: isDark ? "#047857" : "#047857",
+      },
+      {
+        key: "REJECTED",
+        label: "Rechazados",
+        value: Number(rejected ?? 0),
+        color: isDark ? "#f43f5e" : "#e11d48", // Neon Rose
+        colorEnd: isDark ? "#9f1239" : "#be123c",
+      },
+      {
+        key: "PENDING",
+        label: "Pendientes",
+        value: Number(pending ?? 0),
+        color: isDark ? "#facc15" : "#f59e0b", // Neon Yellow/Amber
+        colorEnd: isDark ? "#a16207" : "#b45309",
+      },
+      {
+        key: "NO_EVAL",
+        label: "Sin evaluar",
+        value: Number(noEval ?? 0),
+        color: isDark ? "#22d3ee" : "#06b6d4", // Neon Cyan
+        colorEnd: isDark ? "#0e7490" : "#0891b2",
+      },
     ],
-    [approved, rejected, pending, noEval]
+    [approved, rejected, pending, noEval, isDark]
   );
 
   const maxVal = Math.max(1, ...rows.map((r) => r.value));
 
+  // Tooltip estilo "Glassmorphism Premium"
+  const CustomTooltip = ({ active, payload, label }: any) => {
+    if (active && payload && payload.length) {
+      const data = payload[0].payload;
+      return (
+        <div
+          className={[
+            "px-4 py-3 rounded-2xl border backdrop-blur-xl shadow-2xl transition-all duration-200",
+            isDark
+              ? "bg-[#0a0a0a]/80 border-white/10 text-white shadow-black/50"
+              : "bg-white/90 border-slate-200/60 text-slate-900 shadow-slate-300/50",
+          ].join(" ")}
+        >
+          <div className="flex flex-col gap-1.5">
+            <span className="text-[11px] uppercase tracking-wider font-semibold opacity-60">
+              {label}
+            </span>
+            <div className="flex items-center gap-2.5">
+              {/* Indicador de color con un sutil resplandor (glow) */}
+              <div className="relative flex items-center justify-center">
+                <div
+                  className="absolute w-3 h-3 rounded-full opacity-40 blur-[4px]"
+                  style={{ backgroundColor: data.color }}
+                />
+                <div
+                  className="relative w-2 h-2 rounded-full border border-white/20"
+                  style={{ backgroundColor: data.color }}
+                />
+              </div>
+              <p className="text-xl font-bold tracking-tight leading-none">
+                {payload[0].value}
+                <span className="text-xs font-medium ml-1.5 opacity-50 tracking-normal">
+                  candidatos
+                </span>
+              </p>
+            </div>
+          </div>
+        </div>
+      );
+    }
+    return null;
+  };
+
   return (
     <div
       className={[
-        "rounded-3xl border p-5",
+        "relative w-full overflow-hidden rounded-[24px] border p-6 transition-all duration-500",
         isDark
-          ? "border-white/10 bg-white/5"
-          : "border-slate-200 bg-white shadow-sm",
+          // Fondos ultra oscuros inspirados en las referencias
+          ? "border-white/[0.04] bg-[#0c0c0e] hover:border-white/[0.08]"
+          : "border-slate-200/60 bg-white hover:border-slate-300 hover:shadow-xl hover:shadow-slate-200/20",
       ].join(" ")}
     >
-      <div className="flex items-center justify-between gap-3">
-        <div>
-          <div
+      {/* Encabezado limpio y minimalista */}
+      <div className="flex items-center justify-between mb-8">
+        <div className="flex flex-col gap-1">
+          <h3
             className={[
-              "text-[11px] uppercase tracking-widest font-bold",
+              "text-sm font-semibold uppercase tracking-widest",
+              isDark ? "text-neutral-300" : "text-slate-800",
+            ].join(" ")}
+          >
+            Estado de Candidatos
+          </h3>
+          <p
+            className={[
+              "text-[13px]",
               isDark ? "text-neutral-500" : "text-slate-500",
             ].join(" ")}
           >
-            Candidatos por estado
-          </div>
-          <div
-            className={[
-              "text-xs mt-1",
-              isDark ? "text-neutral-400" : "text-slate-600",
-            ].join(" ")}
-          >
-            Aprobados · Rechazados · Pendientes · Sin evaluar
-          </div>
+            Distribución del proceso de selección por estado
+          </p>
         </div>
       </div>
 
-      <div className="mt-4 h-[260px]">
+      <div className="h-[250px] w-full mt-2">
         <ResponsiveContainer width="100%" height="100%">
-          <BarChart data={rows} margin={{ top: 10, right: 12, left: 0, bottom: 10 }}>
+          <BarChart data={rows} margin={{ top: 10, right: 10, left: -25, bottom: 0 }}>
+            <defs>
+              {rows.map((r) => (
+                <linearGradient id={`grad-${r.key}`} x1="0" y1="0" x2="0" y2="1" key={r.key}>
+                  <stop offset="0%" stopColor={r.color} stopOpacity={1} />
+                  <stop offset="100%" stopColor={r.colorEnd} stopOpacity={0.4} />
+                </linearGradient>
+              ))}
+            </defs>
+
+            {/* Cuadrícula sólida ultra tenue en lugar de punteada para un look más moderno */}
             <CartesianGrid
-              strokeDasharray="3 3"
+              strokeDasharray="0"
               vertical={false}
-              stroke={isDark ? "rgba(255,255,255,0.15)" : "rgba(15,23,42,0.10)"}
+              stroke={isDark ? "rgba(255,255,255,0.03)" : "rgba(15,23,42,0.04)"}
             />
+            
             <XAxis
               dataKey="label"
               tick={{
-                fill: isDark ? "rgba(255,255,255,0.75)" : "rgba(15,23,42,0.80)",
+                fill: isDark ? "#737373" : "#64748b",
                 fontSize: 12,
+                fontWeight: 500,
               }}
-              axisLine={{
-                stroke: isDark
-                  ? "rgba(255,255,255,0.12)"
-                  : "rgba(148,163,184,0.6)",
-              }}
+              axisLine={false}
               tickLine={false}
+              tickMargin={16}
             />
+            
             <YAxis
               domain={[0, Math.ceil(maxVal * 1.15)]}
               tick={{
-                fill: isDark ? "rgba(255,255,255,0.45)" : "rgba(100,116,139,1)",
-                fontSize: 12,
+                fill: isDark ? "#525252" : "#94a3b8",
+                fontSize: 11,
               }}
-              axisLine={{
-                stroke: isDark
-                  ? "rgba(255,255,255,0.12)"
-                  : "rgba(148,163,184,0.6)",
-              }}
+              axisLine={false}
               tickLine={false}
               allowDecimals={false}
+              tickMargin={12}
             />
+            
             <Tooltip
               cursor={{
-                fill: isDark
-                  ? "rgba(255,255,255,0.04)"
-                  : "rgba(16,185,129,0.06)",
+                // Cursor redondeado y ultra sutil
+                fill: isDark ? "rgba(255,255,255,0.03)" : "rgba(15,23,42,0.02)",
+                rx: 8,
+                ry: 8,
               }}
-              contentStyle={{
-                background: isDark
-                  ? "rgba(11,13,12,0.95)"
-                  : "rgba(255,255,255,0.98)",
-                border: isDark
-                  ? "1px solid rgba(255,255,255,0.10)"
-                  : "1px solid rgba(148,163,184,0.4)",
-                borderRadius: 14,
-                color: isDark
-                  ? "rgba(255,255,255,0.9)"
-                  : "rgba(15,23,42,0.9)",
-                fontSize: 12,
-              }}
-              labelStyle={{
-                color: isDark
-                  ? "rgba(255,255,255,0.9)"
-                  : "rgba(15,23,42,0.9)",
-              }}
-              itemStyle={{
-                color: isDark
-                  ? "rgba(255,255,255,0.9)"
-                  : "rgba(15,23,42,0.9)",
-              }}
-              formatter={(v: any) => [Number(v), "Candidatos"]}
+              content={<CustomTooltip />}
+              offset={20}
             />
 
-            <Bar dataKey="value" radius={[14, 14, 14, 14]} barSize={42}>
+            {/* Barras más esbeltas (barSize 36) con esquinas redondeadas suaves */}
+            <Bar 
+              dataKey="value" 
+              radius={[6, 6, 0, 0]} 
+              barSize={36} 
+              animationDuration={1500}
+              animationEasing="ease-out"
+            >
               {rows.map((r) => (
-                <Cell key={r.key} fill={r.color} />
+                <Cell
+                  key={r.key}
+                  fill={`url(#grad-${r.key})`}
+                  // Dimming extremo para enfocar la barra activa
+                  opacity={hoveredKey && hoveredKey !== r.key ? 0.2 : 1}
+                  className="transition-all duration-300 ease-in-out cursor-pointer"
+                  onMouseEnter={() => setHoveredKey(r.key)}
+                  onMouseLeave={() => setHoveredKey(null)}
+                />
               ))}
             </Bar>
           </BarChart>
