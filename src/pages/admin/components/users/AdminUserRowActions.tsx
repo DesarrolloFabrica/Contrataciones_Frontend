@@ -131,7 +131,7 @@ const AdminUserRowActions: React.FC<Props> = ({
       {
         id: "security",
         label: "Estado y seguridad",
-        icon: <ShieldCheck className="w-4 h-4 text-emerald-300" />,
+        icon: <ShieldCheck className="w-4 h-4 text-cyan-300" />,
         onClick: handleViewSecurity,
         disabled: busy !== null,
       },
@@ -354,7 +354,7 @@ const AdminUserRowActions: React.FC<Props> = ({
                         ? "bg-white/5 text-neutral-500 border border-white/10 cursor-not-allowed"
                         : isActive
                         ? "bg-rose-600 hover:bg-rose-500 text-white"
-                        : "bg-emerald-600 hover:bg-emerald-500 text-white"
+                        : "bg-cyan-600 hover:bg-cyan-500 text-white"
                     }`}
                   >
                     {busy === "toggle"
@@ -413,10 +413,10 @@ const AdminUserRowActions: React.FC<Props> = ({
                   </div>
 
                   {resetResult.temporaryPassword ? (
-                    <div className="rounded-2xl border border-emerald-500/20 bg-emerald-500/10 p-4">
+                    <div className="rounded-2xl border border-cyan-500/20 bg-cyan-500/10 p-4">
                       <div className="flex items-start justify-between gap-3">
                         <div className="min-w-0">
-                          <p className="text-[11px] uppercase tracking-widest text-emerald-300 font-bold flex items-center gap-2">
+                          <p className="text-[11px] uppercase tracking-widest text-cyan-300 font-bold flex items-center gap-2">
                             <CheckCircle2 className="w-4 h-4" />
                             Generada correctamente
                           </p>

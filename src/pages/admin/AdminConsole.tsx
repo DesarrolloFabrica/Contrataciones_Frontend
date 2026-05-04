@@ -8,6 +8,7 @@ import AdminKpiGrid from "./components/evaluations/AdminKpiGrid";
 import AdminEvaluationsPanel from "./components/evaluations/AdminEvaluationsPanel";
 import AdminDetailPanel from "./components/evaluations/AdminDetailPanel";
 import AdminUsersPanel from "./components/users/AdminUsersPanel";
+import AnimatedBackground from "../../components/AnimatedBackground";
 
 // temporal
 import AdminAuditTimelinePreview from "./components/audit/AdminAuditTimelinePreview";
@@ -343,14 +344,7 @@ const AdminConsole: React.FC = () => {
         isDark ? "bg-[#020202] text-white" : "bg-gray-50 text-gray-900",
       ].join(" ")}
     >
-      {/* Ambient bg */}
-      {isDark && (
-        <div className="fixed inset-0 pointer-events-none">
-          <div className="absolute top-[-10%] left-[-5%] w-[600px] h-[600px] bg-emerald-500/5 rounded-full blur-[150px]" />
-          <div className="absolute bottom-[-10%] right-[-5%] w-[600px] h-[600px] bg-cyan-600/5 rounded-full blur-[150px]" />
-          <div className="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.02)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.02)_1px,transparent_1px)] bg-[size:40px_40px] opacity-20 [mask-image:radial-gradient(ellipse_80%_80%_at_50%_50%_at_50%_50%,#000_70%,transparent_100%)]" />
-        </div>
-      )}
+      <AnimatedBackground />
 
       <div className="relative z-10 mx-auto px-4 md:px-12 py-6 md:py-8">
         {/* Header + Tabs fijos en la parte superior (sin bloque opaco delante del fondo) */}

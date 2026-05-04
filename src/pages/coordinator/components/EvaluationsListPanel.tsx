@@ -276,7 +276,7 @@ const EvaluationsListPanel: React.FC<Props> = ({
       {/* Ambient */}
       {isDark && (
         <>
-          <div className="pointer-events-none absolute top-0 right-0 h-64 w-64 rounded-full bg-emerald-500/5 blur-[80px]" />
+          <div className="pointer-events-none absolute top-0 right-0 h-64 w-64 rounded-full bg-cyan-500/5 blur-[80px]" />
           <div className="pointer-events-none absolute bottom-0 left-0 h-64 w-64 rounded-full bg-blue-500/5 blur-[80px]" />
           <div className="pointer-events-none absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-[0.03]" />
         </>
@@ -288,46 +288,47 @@ const EvaluationsListPanel: React.FC<Props> = ({
           <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-6 mb-8">
             <div className="flex gap-4">
               <div
-                className={`shrink-0 grid h-12 w-12 place-items-center rounded-2xl border shadow-[0_0_15px_rgba(16,185,129,0.15)] ${
+                className={`shrink-0 grid h-14 w-14 place-items-center rounded-2xl border transition-all duration-300 ${
                   isDark
-                    ? "border-emerald-500/20 bg-emerald-500/10"
-                    : "border-emerald-100 bg-emerald-50 shadow-[0_8px_30px_rgba(16,185,129,0.25)]"
+                    ? "border-cyan-500/25 bg-gradient-to-br from-cyan-500/15 to-cyan-500/5 shadow-[0_0_20px_rgba(34,211,238,0.1)]"
+                    : "border-cyan-200 bg-gradient-to-br from-cyan-50 to-cyan-100/50 shadow-sm"
                 }`}
               >
                 <FileText
                   className={`w-6 h-6 ${
-                    isDark ? "text-emerald-400" : "text-emerald-600"
+                    isDark ? "text-cyan-400" : "text-cyan-600"
                   }`}
                 />
               </div>
               <div>
                 <h3
-                  className={`text-xl font-bold tracking-tight ${
+                  className={`text-2xl font-bold tracking-tight ${
                     isDark ? "text-white" : "text-slate-900"
                   }`}
                 >
-                  Historial de Evaluaciones
+                  Bandeja de candidatos
                 </h3>
                 <p
-                  className={`mt-1 text-sm ${
-                    isDark ? "text-slate-400" : "text-slate-600"
+                  className={`mt-1.5 text-sm ${
+                    isDark ? "text-slate-400" : "text-slate-500"
                   }`}
                 >
-                  Gestión y consulta de registros académicos.
+                  Gestion y consulta de evaluaciones docentes.
                 </p>
               </div>
             </div>
 
-            <div
-              className={`inline-flex items-center gap-2 rounded-xl border px-3 py-1.5 text-xs font-medium ${
+            <button
+              type="button"
+              className={`inline-flex items-center gap-2 rounded-full border px-4 py-2 text-xs font-semibold transition-all duration-300 cursor-pointer ${
                 isDark
-                  ? "border-white/10 bg-white/[0.03] text-slate-400"
-                  : "border-slate-200 bg-slate-50 text-slate-600"
+                  ? "border-white/10 bg-white/5 text-slate-300 hover:bg-white/10 hover:text-white hover:border-white/20 hover:shadow-[0_0_15px_rgba(255,255,255,0.05)]"
+                  : "border-slate-200 bg-slate-50 text-slate-600 hover:bg-slate-100 hover:text-slate-900 hover:border-slate-300 shadow-sm"
               }`}
             >
               <Filter className="w-3.5 h-3.5" />
               <span>Filtros avanzados</span>
-            </div>
+            </button>
           </div>
         )}
 
@@ -336,12 +337,12 @@ const EvaluationsListPanel: React.FC<Props> = ({
           {/* Escuela */}
           <div className="space-y-2 group">
             <label
-              className={`text-[10px] font-bold uppercase tracking-widest flex items-center gap-2 transition-colors group-focus-within:text-emerald-500 ${
+              className={`text-[10px] font-bold uppercase tracking-widest flex items-center gap-2 transition-colors group-focus-within:text-cyan-500 ${
                 isDark ? "text-slate-500" : "text-slate-600"
               }`}
             >
               Escuela / Coordinación
-              {lockedSchool && <Lock className="w-3 h-3 text-emerald-500" />}
+              {lockedSchool && <Lock className="w-3 h-3 text-cyan-500" />}
             </label>
 
             <div className="relative">
@@ -349,14 +350,14 @@ const EvaluationsListPanel: React.FC<Props> = ({
                 value={schoolFilter}
                 onChange={(e) => setSchoolFilter(e.target.value)}
                 disabled={!!lockedSchool}
-                className={`w-full appearance-none rounded-xl border px-4 py-3 text-sm font-medium outline-none transition-all ${
+                className={`w-full appearance-none rounded-2xl border px-4 py-3.5 text-sm font-medium outline-none transition-all duration-300 ${
                   isDark
                     ? lockedSchool
                       ? "bg-black/20 border-white/5 text-slate-500 cursor-not-allowed"
-                      : "bg-[#15191E] border-white/10 text-slate-200 hover:border-white/20 focus:border-emerald-500/50 focus:bg-[#1A1F26]"
+                      : "bg-[#15191E]/80 border-white/10 text-slate-200 hover:border-white/20 focus:border-cyan-500/50 focus:bg-[#1A1F26] focus:shadow-[0_0_15px_rgba(6,182,212,0.08)]"
                     : lockedSchool
                       ? "bg-slate-100 border-slate-200 text-slate-400 cursor-not-allowed"
-                      : "bg-white border-slate-200 text-slate-800 hover:border-emerald-300 focus:border-emerald-500/70 shadow-sm"
+                      : "bg-white border-slate-200 text-slate-800 hover:border-cyan-300 focus:border-cyan-500/70 focus:shadow-[0_8px_25px_-5px_rgba(6,182,212,0.12)] shadow-sm"
                 }`}
               >
                 <option value="">Selecciona una escuela…</option>
@@ -389,7 +390,7 @@ const EvaluationsListPanel: React.FC<Props> = ({
             {schoolHint && (
               <p
                 className={`text-[11px] pl-1 ${
-                  isDark ? "text-emerald-400/80" : "text-emerald-700"
+                  isDark ? "text-cyan-400/80" : "text-cyan-700"
                 }`}
               >
                 {schoolHint}
@@ -400,7 +401,7 @@ const EvaluationsListPanel: React.FC<Props> = ({
           {/* Programa */}
           <div className="space-y-2 group">
             <label
-              className={`text-[10px] font-bold uppercase tracking-widest transition-colors group-focus-within:text-emerald-500 ${
+              className={`text-[10px] font-bold uppercase tracking-widest transition-colors group-focus-within:text-cyan-500 ${
                 isDark ? "text-slate-500" : "text-slate-600"
               }`}
             >
@@ -412,14 +413,14 @@ const EvaluationsListPanel: React.FC<Props> = ({
                 value={programFilter}
                 onChange={(e) => setProgramFilter(e.target.value)}
                 disabled={!schoolFilter}
-                className={`w-full appearance-none rounded-xl border px-4 py-3 text-sm font-medium outline-none transition-all ${
+                className={`w-full appearance-none rounded-2xl border px-4 py-3.5 text-sm font-medium outline-none transition-all duration-300 ${
                   isDark
                     ? !schoolFilter
                       ? "bg-black/20 border-white/5 text-slate-600 cursor-not-allowed"
-                      : "bg-[#15191E] border-white/10 text-slate-200 hover:border-white/20 focus:border-emerald-500/50 focus:bg-[#1A1F26]"
+                      : "bg-[#15191E]/80 border-white/10 text-slate-200 hover:border-white/20 focus:border-cyan-500/50 focus:bg-[#1A1F26] focus:shadow-[0_0_15px_rgba(6,182,212,0.08)]"
                     : !schoolFilter
                       ? "bg-slate-100 border-slate-200 text-slate-400 cursor-not-allowed"
-                      : "bg-white border-slate-200 text-slate-800 hover:border-emerald-300 focus:border-emerald-500/70 shadow-sm"
+                      : "bg-white border-slate-200 text-slate-800 hover:border-cyan-300 focus:border-cyan-500/70 focus:shadow-[0_8px_25px_-5px_rgba(6,182,212,0.12)] shadow-sm"
                 }`}
               >
                 <option value="">
@@ -453,11 +454,12 @@ const EvaluationsListPanel: React.FC<Props> = ({
           </div>
 
           {mustChooseScope && (
-            <div className="md:col-span-2 rounded-xl border border-amber-500/10 bg-amber-500/5 px-4 py-3 flex items-center gap-3">
-              <div className="h-1.5 w-1.5 rounded-full bg-amber-500 animate-pulse" />
-              <p className="text-xs text-amber-200/80">
-                Para ver el historial, es necesario seleccionar <b className="text-amber-100">Escuela</b> y{" "}
-                <b className="text-amber-100">Programa</b>.
+            <div className="md:col-span-2 rounded-2xl border border-amber-500/15 bg-amber-500/[0.03] px-5 py-4 flex items-center gap-4">
+              <div className="h-2 w-2 rounded-full bg-amber-500 animate-pulse" />
+              <p className={`text-xs ${isDark ? "text-amber-200/70" : "text-amber-800/80"}`}>
+                Para ver el historial, es necesario seleccionar{" "}
+                <b className={isDark ? "text-amber-100" : "text-amber-900"}>Escuela</b> y{" "}
+                <b className={isDark ? "text-amber-100" : "text-amber-900"}>Programa</b>.
               </p>
             </div>
           )}
@@ -465,13 +467,13 @@ const EvaluationsListPanel: React.FC<Props> = ({
 
         {/* Search & Status */}
         <div
-          className={`flex flex-col gap-4 mb-6 border-b pb-6 ${
-            isDark ? "border-white/5" : "border-slate-200"
+          className={`flex flex-col gap-5 mb-8 pb-8 border-b ${
+            isDark ? "border-white/10" : "border-slate-200/60"
           }`}
         >
           <div className="relative group">
             <Search
-              className={`w-4 h-4 absolute left-4 top-1/2 -translate-y-1/2 transition-colors group-focus-within:text-emerald-400 ${
+              className={`w-5 h-5 absolute left-4 top-1/2 -translate-y-1/2 transition-colors group-focus-within:text-cyan-400 ${
                 isDark ? "text-slate-500" : "text-slate-400"
               }`}
             />
@@ -479,16 +481,16 @@ const EvaluationsListPanel: React.FC<Props> = ({
               type="text"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              placeholder="Buscar candidato por nombre..."
+              placeholder="Buscar candidato por nombre, escuela o programa..."
               disabled={mustChooseScope}
-              className={`w-full rounded-xl border pl-11 pr-4 py-2.5 text-sm outline-none transition-all ${
+              className={`w-full rounded-2xl border pl-12 pr-4 py-3.5 text-sm outline-none transition-all duration-300 ${
                 isDark
                   ? mustChooseScope
-                    ? "bg-[#15191E] border-white/5 text-slate-600 cursor-not-allowed"
-                    : "bg-[#15191E] border-white/10 text-white placeholder-slate-600 hover:border-white/20 focus:border-emerald-500/50 focus:bg-[#1A1F26]"
+                    ? "bg-black/40 border-white/5 text-slate-600 cursor-not-allowed"
+                    : "bg-[#15191E]/80 border-white/10 text-white placeholder-slate-500 hover:border-white/20 focus:border-cyan-500/50 focus:bg-[#1A1F26] focus:shadow-[0_0_15px_rgba(6,182,212,0.1)]"
                   : mustChooseScope
                     ? "bg-slate-100 border-slate-200 text-slate-400 cursor-not-allowed"
-                    : "bg-white border-slate-200 text-slate-800 placeholder-slate-400 hover:border-emerald-300 focus:border-emerald-500/70 shadow-sm"
+                    : "bg-white border-slate-200 text-slate-800 placeholder-slate-400 hover:border-cyan-300 focus:border-cyan-500/70 focus:shadow-[0_8px_25px_-5px_rgba(6,182,212,0.15)] shadow-sm"
               }`}
             />
           </div>
@@ -520,8 +522,8 @@ const EvaluationsListPanel: React.FC<Props> = ({
                     : "bg-amber-50 text-amber-700 border border-amber-200 shadow-[0_10px_30px_rgba(251,191,36,0.35)]";
                 if (opt === "APROBADO")
                   activeClass = isDark
-                    ? "bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 shadow-[0_0_10px_rgba(16,185,129,0.15)]"
-                    : "bg-emerald-50 text-emerald-700 border border-emerald-200 shadow-[0_10px_30px_rgba(16,185,129,0.35)]";
+                    ? "bg-cyan-500/10 text-cyan-400 border border-cyan-500/25 shadow-[0_0_10px_rgba(6,182,212,0.15)]"
+                    : "bg-cyan-50 text-cyan-700 border border-cyan-200 shadow-[0_10px_30px_rgba(6,182,212,0.35)]";
                 if (opt === "RECHAZADO")
                   activeClass = isDark
                     ? "bg-red-500/10 text-red-400 border border-red-500/20 shadow-[0_0_10px_rgba(239,68,68,0.15)]"
@@ -534,7 +536,7 @@ const EvaluationsListPanel: React.FC<Props> = ({
                     onClick={() => !disabled && setDecisionFilter(opt)}
                     disabled={disabled}
                     className={`
-                      rounded-lg px-3 py-1.5 text-[11px] font-bold uppercase tracking-wider transition-all duration-200
+                      rounded-full px-4 py-1.5 text-[11px] font-bold uppercase tracking-wider transition-all duration-300
                       ${
                         disabled
                           ? "opacity-40 cursor-not-allowed border border-transparent text-slate-600"
@@ -562,21 +564,21 @@ const EvaluationsListPanel: React.FC<Props> = ({
         <div className="space-y-4 min-h-[200px]">
           {mustChooseScope && (
             <div
-              className={`flex h-40 flex-col items-center justify-center rounded-2xl border border-dashed ${
+              className={`flex h-48 flex-col items-center justify-center rounded-3xl border border-dashed ${
                 isDark
                   ? "border-white/10 bg-white/[0.02]"
-                  : "border-slate-200 bg-slate-50"
+                  : "border-slate-200 bg-slate-50/50"
               }`}
             >
               <div
-                className={`mb-2 ${
-                  isDark ? "text-slate-600" : "text-slate-500"
+                className={`mb-3 ${
+                  isDark ? "text-slate-600" : "text-slate-400"
                 }`}
               >
-                <Filter className="w-6 h-6 opacity-40" />
+                <Filter className="w-8 h-8 opacity-40" />
               </div>
               <p
-                className={`text-sm ${
+                className={`text-sm font-medium ${
                   isDark ? "text-slate-500" : "text-slate-600"
                 }`}
               >
@@ -587,14 +589,14 @@ const EvaluationsListPanel: React.FC<Props> = ({
 
           {!mustChooseScope && visibleGroups.length === 0 && (
             <div
-              className={`flex h-40 flex-col items-center justify-center rounded-2xl border border-dashed ${
+              className={`flex h-48 flex-col items-center justify-center rounded-3xl border border-dashed ${
                 isDark
                   ? "border-white/10 bg-white/[0.02]"
-                  : "border-slate-200 bg-slate-50"
+                  : "border-slate-200 bg-slate-50/50"
               }`}
             >
               <p
-                className={`text-sm ${
+                className={`text-sm font-medium ${
                   isDark ? "text-slate-500" : "text-slate-600"
                 }`}
               >
@@ -608,86 +610,73 @@ const EvaluationsListPanel: React.FC<Props> = ({
               const ev = g.latest;
               const candidateDecision = getCandidateDecision(g);
 
-              return (
-                <div
-                  key={g.key}
-                  className={`group relative rounded-2xl border p-1 transition-all duration-300 ${
-                    isDark
-                      ? "border-white/5 bg-[#15191E] hover:border-emerald-500/30 hover:shadow-[0_4px_20px_-12px_rgba(16,185,129,0.2)]"
-                      : "border-slate-200 bg-white hover:border-emerald-300 hover:shadow-[0_18px_50px_rgba(15,23,42,0.12)]"
-                  }`}
-                >
-                  <div className="flex flex-col">
-                    <div className="p-1">
-                      <TeacherEvaluationItem
-                        evaluation={ev}
-                        selected={selectedId === ev.id}
-                        onClick={() => {}}
-                        decisionStatus={candidateDecision}
-                      />
-                    </div>
-
-                    <div
-                      className={`mt-1 flex items-center justify-between rounded-xl px-4 py-3 ${
-                        isDark ? "bg-black/20" : "bg-slate-50"
+              const cardFooter = (
+                <>
+                  <div className="flex items-center gap-3 text-xs">
+                    <span
+                      className={`font-medium ${
+                        isDark ? "text-slate-500" : "text-slate-600"
                       }`}
                     >
-                      <div className="flex items-center gap-2 text-xs">
-                        <span
-                          className={`font-medium ${
-                            isDark ? "text-slate-500" : "text-slate-600"
-                          }`}
-                        >
-                          Entrevistas realizadas:
-                        </span>
-                        <span
-                          className={`flex h-5 min-w-[1.25rem] items-center justify-center rounded px-1.5 font-mono ${
-                            isDark
-                              ? "bg-white/10 text-white"
-                              : "bg-white text-slate-900 border border-slate-200"
-                          }`}
-                        >
-                          {g.interviews.length}
-                        </span>
-                      </div>
-
-                      <button
-                        type="button"
-                        onClick={() =>
-                          navigate(
-                            `/coordinator/evaluations/${encodeURIComponent(ev.id)}?tab=decision`
-                          )
-                        }
-                        className={`flex items-center gap-2 text-[11px] font-bold uppercase tracking-wider transition-transform group-hover:translate-x-[-4px] ${
-                          isDark ? "text-emerald-400" : "text-emerald-700"
-                        }`}
-                      >
-                        Ver Detalle
-                        <div
-                          className={`grid h-6 w-6 place-items-center rounded-full border transition-colors ${
-                            isDark
-                              ? "border-emerald-500/30 bg-emerald-500/10 group-hover:bg-emerald-500 group-hover:text-black"
-                              : "border-emerald-200 bg-emerald-50 group-hover:bg-emerald-500 group-hover:text-white"
-                          }`}
-                        >
-                          <svg
-                            width="12"
-                            height="12"
-                            viewBox="0 0 24 24"
-                            fill="none"
-                            stroke="currentColor"
-                            strokeWidth="3"
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                          >
-                            <path d="M5 12h14" />
-                            <path d="M12 5l7 7-7 7" />
-                          </svg>
-                        </div>
-                      </button>
-                    </div>
+                      Entrevistas:
+                    </span>
+                    <span
+                      className={`flex h-6 min-w-[1.5rem] items-center justify-center rounded-full px-2 font-mono text-xs ${
+                        isDark
+                          ? "bg-cyan-500/10 text-cyan-400 border border-cyan-500/20"
+                          : "bg-cyan-50 text-cyan-700 border border-cyan-200"
+                      }`}
+                    >
+                      {g.interviews.length}
+                    </span>
                   </div>
-                </div>
+
+                  <button
+                    type="button"
+                    onClick={() =>
+                      navigate(
+                        `/coordinator/evaluations/${encodeURIComponent(ev.id)}?tab=decision`
+                      )
+                    }
+                    className={`flex items-center gap-2 text-[11px] font-bold uppercase tracking-wider transition-all duration-300 group-hover:gap-3 ${
+                      isDark ? "text-cyan-400 hover:text-cyan-300" : "text-cyan-700 hover:text-cyan-600"
+                    }`}
+                  >
+                    Ver Detalle
+                    <div
+                      className={`grid h-6 w-6 place-items-center rounded-full border transition-all duration-300 ${
+                        isDark
+                          ? "border-cyan-500/30 bg-cyan-500/10 group-hover:bg-cyan-500 group-hover:text-black"
+                          : "border-cyan-200 bg-cyan-50 group-hover:bg-cyan-500 group-hover:text-white"
+                      }`}
+                    >
+                      <svg
+                        width="12"
+                        height="12"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="3"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      >
+                        <path d="M5 12h14" />
+                        <path d="M12 5l7 7-7 7" />
+                      </svg>
+                    </div>
+                  </button>
+                </>
+              );
+
+              return (
+                <TeacherEvaluationItem
+                  key={g.key}
+                  evaluation={ev}
+                  selected={selectedId === ev.id}
+                  onClick={() => {}}
+                  decisionStatus={candidateDecision}
+                  footer={cardFooter}
+                />
               );
             })}
         </div>
@@ -701,15 +690,15 @@ const EvaluationsListPanel: React.FC<Props> = ({
               }`}
             >
               Mostrando{" "}
-              <span className={isDark ? "text-white" : "text-slate-900"}>
+              <span className={`font-semibold ${isDark ? "text-white" : "text-slate-900"}`}>
                 {start + 1}
               </span>{" "}
               –{" "}
-              <span className={isDark ? "text-white" : "text-slate-900"}>
+              <span className={`font-semibold ${isDark ? "text-white" : "text-slate-900"}`}>
                 {end}
               </span>{" "}
               de{" "}
-              <span className={isDark ? "text-white" : "text-slate-900"}>
+              <span className={`font-semibold ${isDark ? "text-white" : "text-slate-900"}`}>
                 {total}
               </span>
               <span className={isDark ? "text-slate-600" : "text-slate-400"}>
@@ -726,14 +715,14 @@ const EvaluationsListPanel: React.FC<Props> = ({
                 type="button"
                 onClick={() => setPage((p) => Math.max(1, p - 1))}
                 disabled={safePage <= 1}
-                className={`grid h-8 w-8 place-items-center rounded-xl border transition ${
+                className={`grid h-9 w-9 place-items-center rounded-full border transition-all duration-300 ${
                   safePage <= 1
                     ? isDark
                       ? "border-transparent text-slate-700 cursor-not-allowed"
                       : "border-transparent text-slate-300 cursor-not-allowed"
                     : isDark
-                      ? "border-white/10 bg-[#15191E] text-slate-300 hover:bg-white/5 hover:text-white"
-                      : "border-slate-200 bg-white text-slate-700 hover:bg-slate-50 hover:border-emerald-300 hover:text-emerald-700 shadow-sm"
+                      ? "border-white/10 bg-white/5 text-slate-300 hover:bg-white/10 hover:text-white hover:border-white/20"
+                      : "border-slate-200 bg-white text-slate-700 hover:bg-slate-50 hover:border-cyan-300 hover:text-cyan-700 shadow-sm"
                 }`}
                 aria-label="Anterior"
               >
@@ -757,7 +746,7 @@ const EvaluationsListPanel: React.FC<Props> = ({
                     return (
                       <span
                         key={`dots-${idx}`}
-                        className={`px-2 text-xs ${
+                        className={`px-1 text-xs ${
                           isDark ? "text-slate-600" : "text-slate-500"
                         }`}
                       >
@@ -774,15 +763,15 @@ const EvaluationsListPanel: React.FC<Props> = ({
                       type="button"
                       onClick={() => setPage(p)}
                       className={`
-                        h-8 min-w-[2rem] rounded-xl text-xs font-bold transition-all
+                        h-9 min-w-[2.25rem] rounded-full text-xs font-bold transition-all duration-300
                         ${
                           isActive
                             ? isDark
-                              ? "bg-emerald-500 text-black shadow-[0_0_15px_rgba(16,185,129,0.3)] scale-[1.06]"
-                              : "bg-emerald-500 text-white shadow-[0_0_15px_rgba(16,185,129,0.5)] scale-[1.06]"
+                              ? "bg-cyan-500 text-black shadow-[0_0_20px_rgba(6,182,212,0.35)] scale-110"
+                              : "bg-cyan-500 text-white shadow-[0_0_20px_rgba(6,182,212,0.45)] scale-110"
                             : isDark
                               ? "text-slate-500 hover:text-slate-300 hover:bg-white/5"
-                              : "text-slate-500 bg-white border border-slate-200 hover:text-emerald-700 hover:border-emerald-300 hover:bg-emerald-50"
+                              : "text-slate-500 bg-white border border-slate-200 hover:text-cyan-700 hover:border-cyan-300 hover:bg-cyan-50 shadow-sm"
                         }
                       `}
                       aria-current={isActive ? "page" : undefined}
@@ -797,14 +786,14 @@ const EvaluationsListPanel: React.FC<Props> = ({
                 type="button"
                 onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
                 disabled={safePage >= totalPages}
-                className={`grid h-8 w-8 place-items-center rounded-xl border transition ${
+                className={`grid h-9 w-9 place-items-center rounded-full border transition-all duration-300 ${
                   safePage >= totalPages
                     ? isDark
                       ? "border-transparent text-slate-700 cursor-not-allowed"
                       : "border-transparent text-slate-300 cursor-not-allowed"
                     : isDark
-                      ? "border-white/10 bg-[#15191E] text-slate-300 hover:bg-white/5 hover:text-white"
-                      : "border-slate-200 bg-white text-slate-700 hover:bg-slate-50 hover:border-emerald-300 hover:text-emerald-700 shadow-sm"
+                      ? "border-white/10 bg-white/5 text-slate-300 hover:bg-white/10 hover:text-white hover:border-white/20"
+                      : "border-slate-200 bg-white text-slate-700 hover:bg-slate-50 hover:border-cyan-300 hover:text-cyan-700 shadow-sm"
                 }`}
                 aria-label="Siguiente"
               >

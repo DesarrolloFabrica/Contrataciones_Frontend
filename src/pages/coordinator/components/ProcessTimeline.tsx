@@ -13,9 +13,9 @@ const statusConfig = (
   switch (status) {
     case "completed":
       return {
-        dot: isDark ? "bg-emerald-400" : "bg-emerald-500",
-        line: isDark ? "bg-emerald-500/30" : "bg-emerald-200",
-        text: isDark ? "text-emerald-300" : "text-emerald-700",
+        dot: isDark ? "bg-cyan-400" : "bg-cyan-500",
+        line: isDark ? "bg-cyan-500/30" : "bg-cyan-200",
+        text: isDark ? "text-cyan-300" : "text-cyan-700",
       };
     case "pending":
       return {

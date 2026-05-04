@@ -28,7 +28,7 @@ export const LeaderFlowHelpModal: React.FC<LeaderFlowHelpModalProps> = ({
       >
         <div
           className={[
-            "absolute inset-x-0 -top-px h-px bg-gradient-to-r from-transparent via-emerald-500/40 to-transparent",
+            "absolute inset-x-0 -top-px h-px bg-gradient-to-r from-transparent via-cyan-500/40 to-transparent",
             !isDark ? "opacity-70" : "",
           ].join(" ")}
         />
@@ -40,8 +40,8 @@ export const LeaderFlowHelpModal: React.FC<LeaderFlowHelpModalProps> = ({
                 className={[
                   "inline-flex items-center gap-2 px-3 py-1 rounded-full border text-[11px] font-bold uppercase tracking-[0.18em]",
                   isDark
-                    ? "bg-emerald-500/10 border-emerald-500/30 text-emerald-200"
-                    : "bg-emerald-50 border-emerald-400/40 text-emerald-700",
+                    ? "bg-cyan-500/10 border-cyan-500/30 text-cyan-200"
+                    : "bg-cyan-50 border-cyan-400/40 text-cyan-700",
                 ].join(" ")}
               >
                 <Sparkles className="w-3.5 h-3.5" />
@@ -184,7 +184,7 @@ export const LeaderFlowHelpModal: React.FC<LeaderFlowHelpModalProps> = ({
                 isDark ? "text-neutral-500" : "text-slate-500"
               }`}
             >
-              <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
+              <CheckCircle2 className="w-3.5 h-3.5 text-cyan-400" />
               <span>
                 Recuerda: la IA es un apoyo, la decisión siempre es humana.
               </span>
@@ -193,7 +193,7 @@ export const LeaderFlowHelpModal: React.FC<LeaderFlowHelpModalProps> = ({
             <button
               type="button"
               onClick={onClose}
-              className="px-6 py-2.5 rounded-xl bg-gradient-to-r from-emerald-500 to-emerald-400 text-white text-[11px] font-bold uppercase tracking-[0.22em] hover:brightness-110 transition"
+              className="px-6 py-2.5 rounded-xl bg-gradient-to-r from-cyan-500 to-cyan-400 text-white text-[11px] font-bold uppercase tracking-[0.22em] hover:brightness-110 transition"
             >
               Entendido, continuar
             </button>

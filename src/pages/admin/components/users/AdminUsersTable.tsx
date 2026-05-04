@@ -149,7 +149,7 @@ const AdminUsersTable: React.FC<Props> = ({
                   className={
                     isDark
                       ? "hover:bg-white/[0.03]"
-                      : "hover:bg-emerald-50/40"
+                      : "hover:bg-cyan-50/40"
                   }
                 >
                   {/* Usuario */}

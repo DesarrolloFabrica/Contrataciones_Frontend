@@ -35,7 +35,7 @@ export const InterviewFormActions: React.FC<InterviewFormActionsProps> = ({
               ? isDark
                 ? "bg-white/5 text-white/40 border border-white/15 cursor-not-allowed shadow-none"
                 : "bg-slate-100 text-slate-400 border border-slate-200 cursor-not-allowed shadow-none"
-              : "bg-gradient-to-r from-emerald-400 via-emerald-300 to-cyan-400 text-black hover:brightness-110 shadow-[0_12px_30px_rgba(45,212,191,0.35)]"
+               : "bg-gradient-to-r from-cyan-400 via-cyan-300 to-blue-400 text-black hover:brightness-110 shadow-[0_12px_30px_rgba(6,182,212,0.35)]"
           }`}
       >
         Ejecutar Análisis IA

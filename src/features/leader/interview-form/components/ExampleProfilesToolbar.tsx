@@ -6,18 +6,20 @@ interface ExampleProfilesToolbarProps {
   onLoadApproved: () => void;
   onLoadMedium: () => void;
   onLoadRejected: () => void;
+  sticky?: boolean;
 }
 
 export const ExampleProfilesToolbar: React.FC<ExampleProfilesToolbarProps> = ({
   onLoadApproved,
   onLoadMedium,
   onLoadRejected,
+  sticky = true,
 }) => {
   const { theme } = useTheme();
   const isDark = theme === "dark";
 
   return (
-    <div className="sticky top-4 z-50 flex justify-center">
+    <div className={`${sticky ? "sticky top-4 z-50" : ""} flex justify-center`}>
       <div
         className={[
           "backdrop-blur-xl p-1.5 rounded-2xl border flex flex-wrap justify-center gap-1",
@@ -29,7 +31,7 @@ export const ExampleProfilesToolbar: React.FC<ExampleProfilesToolbarProps> = ({
         <button
           type="button"
           onClick={onLoadApproved}
-          className="group flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold uppercase tracking-wide text-gray-500 hover:text-emerald-500 hover:bg-emerald-500/10 transition-all"
+          className="group flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold uppercase tracking-wide text-gray-500 hover:text-cyan-500 hover:bg-cyan-500/10 transition-all"
         >
           <CheckCircle2 className="w-4 h-4 transition-transform group-hover:scale-110" />
           <span className="hidden sm:inline">Perfil Aprobado</span>

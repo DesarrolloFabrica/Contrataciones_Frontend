@@ -69,13 +69,12 @@ function getIaBadge(verdict: string, isDark: boolean) {
     v.includes("recomend") || v.includes("apto") || v.includes("idóneo");
 
   if (isRecommended) {
-    // si viene “Recomendación fuerte…” o “altamente recomendada…”
     const isStrong =
       v.includes("fuerte") || v.includes("altamente") || v.includes("excepcional");
     return {
       cls: isDark
-        ? "bg-emerald-500/10 text-emerald-300 border-emerald-500/30"
-        : "bg-emerald-50 text-emerald-700 border-emerald-200",
+        ? "bg-cyan-500/10 text-cyan-300 border-cyan-500/30"
+        : "bg-cyan-50 text-cyan-700 border-cyan-200",
       short: isStrong ? "Recomendación fuerte" : "Recomendado",
       full: full || "Recomendado",
     };
@@ -96,8 +95,8 @@ function getDecisionBadge(decisionStatus: LocalDecision | undefined, isDark: boo
   if (decisionStatus === "APROBADO") {
     return {
       cls: isDark
-        ? "bg-emerald-600/15 text-emerald-300 border-emerald-500/40"
-        : "bg-emerald-50 text-emerald-700 border-emerald-200",
+        ? "bg-cyan-600/15 text-cyan-300 border-cyan-500/40"
+        : "bg-cyan-50 text-cyan-700 border-cyan-200",
       label: "Aprobado coordinación",
     };
   }
@@ -150,6 +149,9 @@ const TeacherEvaluationItem: React.FC<TeacherEvaluationItemProps> = ({
   );
 
   const score = Math.round(evaluation.aiTeachingSuitabilityScore || 0);
+  const scoreColor = score >= 70 ? "text-cyan-400" : score >= 50 ? "text-amber-400" : "text-rose-400";
+  const scoreBg = score >= 70 ? "bg-cyan-500" : score >= 50 ? "bg-amber-500" : "bg-rose-500";
+  const scoreWidth = `${score}%`;
   const clickableCls = onClick ? "cursor-pointer" : "cursor-default";
 
   const name = evaluation.candidate?.fullName ?? "Candidato sin nombre";
@@ -170,25 +172,25 @@ const TeacherEvaluationItem: React.FC<TeacherEvaluationItemProps> = ({
         }
       }}
       className={[
-        "w-full text-left px-4 py-3 rounded-2xl border transition-all duration-200",
+        "w-full text-left px-5 py-4 rounded-2xl border transition-all duration-300",
         "flex flex-col gap-3",
-        "focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/30 focus-visible:ring-offset-0",
+        "focus:outline-none focus-visible:ring-2 focus-visible:ring-cyan-500/30 focus-visible:ring-offset-0",
         selected
           ? isDark
-            ? "border-emerald-500/60 bg-emerald-500/5"
-            : "border-emerald-400 bg-emerald-50 shadow-[0_18px_40px_rgba(16,185,129,0.25)]"
+            ? "border-cyan-500/60 bg-cyan-500/5 shadow-[0_0_30px_-10px_rgba(6,182,212,0.2)]"
+            : "border-cyan-400 bg-cyan-50 shadow-[0_18px_40px_rgba(6,182,212,0.25)]"
           : isDark
-            ? "border-white/5 bg-[#090909] hover:border-emerald-500/35 hover:bg-white/[0.02]"
-            : "border-slate-200 bg-slate-50 hover:border-emerald-300 hover:bg-white hover:shadow-[0_18px_50px_rgba(15,23,42,0.10)]",
+            ? "border-white/[0.06] bg-[#0D1117]/80 hover:border-white/10 hover:bg-[#111820] hover:shadow-lg"
+            : "border-slate-200 bg-white hover:border-slate-300 hover:shadow-[0_18px_50px_rgba(15,23,42,0.08)]",
         clickableCls,
       ].join(" ")}
     >
       {/* HEADER */}
       <div className="flex items-start justify-between gap-4">
         {/* LEFT */}
-        <div className="min-w-0 space-y-1">
+        <div className="min-w-0 space-y-1.5">
           <p
-            className={`text-sm font-semibold truncate ${
+            className={`text-sm font-bold tracking-tight truncate ${
               isDark ? "text-white" : "text-slate-900"
             }`}
           >
@@ -197,8 +199,8 @@ const TeacherEvaluationItem: React.FC<TeacherEvaluationItemProps> = ({
 
           {/* 👇 “Sin veredicto / estado IA corto” va abajo del nombre */}
           <div
-            className={`text-[11px] ${
-              isDark ? "text-white/55" : "text-slate-500"
+            className={`text-[11px] font-medium ${
+              isDark ? "text-white/60" : "text-slate-500"
             }`}
           >
             {ia.short}
@@ -206,14 +208,14 @@ const TeacherEvaluationItem: React.FC<TeacherEvaluationItemProps> = ({
 
           <div
             className={`text-[11px] flex flex-wrap items-center gap-2 ${
-              isDark ? "text-gray-500" : "text-slate-500"
+              isDark ? "text-gray-400" : "text-slate-500"
             }`}
           >
             {school && <span className="truncate max-w-[220px]">{school}</span>}
             {school && program && (
               <span
-                className={`w-1 h-1 rounded-full ${
-                  isDark ? "bg-gray-600" : "bg-slate-400"
+                className={`w-1 h-1 rounded-full opacity-60 ${
+                  isDark ? "bg-gray-500" : "bg-slate-400"
                 }`}
               />
             )}
@@ -236,8 +238,7 @@ const TeacherEvaluationItem: React.FC<TeacherEvaluationItemProps> = ({
         </div>
 
         {/* RIGHT */}
-        <div className="text-right flex flex-col items-end gap-2 shrink-0 min-w-[140px]">
-          {/* ✅ IA pill arriba, pero CORTA; texto largo queda en tooltip */}
+        <div className="text-right flex flex-col items-end gap-3 shrink-0 min-w-[140px]">
           <div
             title={ia.full}
             className={`${pillBase} ${ia.cls} normal-case max-w-[220px] truncate`}
@@ -245,10 +246,17 @@ const TeacherEvaluationItem: React.FC<TeacherEvaluationItemProps> = ({
             {ia.short}
           </div>
 
-          <div className="text-xs font-semibold">
-            <span className="text-neutral-400">Score </span>
-            <span className="text-emerald-400">{score}</span>
-            <span className="text-neutral-500">/100</span>
+          <div className={`flex flex-col items-end gap-1.5 w-full`}>
+            <div className="flex items-baseline gap-1">
+              <span className={`text-xl font-bold ${scoreColor}`}>{score}</span>
+              <span className={`text-[10px] font-medium ${isDark ? "text-slate-500" : "text-slate-400"}`}>/100</span>
+            </div>
+            <div className={`w-full h-1.5 rounded-full overflow-hidden ${isDark ? "bg-white/10" : "bg-slate-200"}`}>
+              <div
+                className={`h-full rounded-full transition-all duration-1000 ease-out ${scoreBg}`}
+                style={{ width: scoreWidth }}
+              />
+            </div>
           </div>
         </div>
       </div>
@@ -257,7 +265,7 @@ const TeacherEvaluationItem: React.FC<TeacherEvaluationItemProps> = ({
       {footer && (
         <div
           className={`pt-3 border-t flex items-center justify-between gap-3 ${
-            isDark ? "border-white/10" : "border-slate-200"
+            isDark ? "border-white/[0.06]" : "border-slate-200/80"
           }`}
         >
           {footer}

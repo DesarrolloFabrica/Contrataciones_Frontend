@@ -33,15 +33,15 @@ export const CandidateLookupPanel: React.FC<CandidateLookupPanelProps> = ({
         <div
           className={`rounded-2xl overflow-hidden border ${
             isDark
-              ? "border-emerald-500/25 bg-[#061015]"
-              : "border-emerald-200 bg-white shadow-[0_10px_30px_rgba(15,23,42,0.12)]"
+              ? "border-cyan-500/25 bg-[#061015]"
+              : "border-cyan-200 bg-white shadow-[0_10px_30px_rgba(15,23,42,0.12)]"
           }`}
         >
           <div
             className={`px-4 py-3 border-b text-[11px] font-extrabold uppercase tracking-[0.22em] ${
               isDark
-                ? "border-white/10 text-emerald-200/80"
-                : "border-emerald-100 text-emerald-700"
+                ? "border-white/10 text-cyan-200/80"
+                : "border-cyan-100 text-cyan-700"
             }`}
           >
             Coincidencias por cédula
@@ -60,7 +60,7 @@ export const CandidateLookupPanel: React.FC<CandidateLookupPanelProps> = ({
                 className={`w-full text-left px-4 py-3 transition ${
                   isDark
                     ? "hover:bg-white/[0.04]"
-                    : "hover:bg-emerald-50/60"
+                    : "hover:bg-cyan-50/60"
                 }`}
               >
                 <div className="flex items-center justify-between gap-3">
@@ -87,8 +87,8 @@ export const CandidateLookupPanel: React.FC<CandidateLookupPanelProps> = ({
                   <div
                     className={`text-[11px] font-extrabold uppercase tracking-[0.18em] ${
                       isDark
-                        ? "text-emerald-300/80"
-                        : "text-emerald-600"
+                        ? "text-cyan-300/80"
+                        : "text-cyan-600"
                     }`}
                   >
                     Seleccionar
@@ -101,7 +101,7 @@ export const CandidateLookupPanel: React.FC<CandidateLookupPanelProps> = ({
       )}
 
       {selectedCandidateId && (
-        <div className="rounded-xl border border-emerald-500/20 bg-emerald-500/10 px-4 py-2 text-[11px] font-bold uppercase tracking-[0.22em] text-emerald-600/80">
+        <div className="rounded-xl border border-cyan-500/20 bg-cyan-500/10 px-4 py-2 text-[11px] font-bold uppercase tracking-[0.22em] text-cyan-600/80">
           Candidato seleccionado
         </div>
       )}

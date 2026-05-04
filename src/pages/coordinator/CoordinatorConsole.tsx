@@ -9,8 +9,6 @@ import {
   UserCheck,
   LogOut,
   TrendingUp,
-  ArrowRight,
-  Search,
   Sparkles,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
@@ -25,6 +23,7 @@ import { useCoordinatorEvaluations } from "./hooks/useCoordinatorEvaluations";
 import EvaluationsListPanel from "./components/EvaluationsListPanel";
 import CoordinatorUsersPanel from "./components/users/CoordinatorUsersPanel";
 import { CoordinatorKpiStrip } from "./components/CoordinatorKpiStrip";
+import AnimatedBackground from "../../components/AnimatedBackground";
 
 import type { CandidateGroup } from "./types";
 import { getCandidateKey } from "./utils/candidateKey";
@@ -209,8 +208,8 @@ function getIaVerdictShort(verdict: string) {
       v.includes("altamente") ||
       v.includes("excepcional");
     return {
-      short: strong ? "Recomendación fuerte" : "Recomendado",
-      cls: "border-emerald-400/25 bg-emerald-400/10 text-emerald-100",
+      short: strong ? "Recomendacion fuerte" : "Recomendado",
+      cls: "border-cyan-400/25 bg-cyan-400/10 text-cyan-100",
       full: full || "Recomendado",
     };
   }
@@ -570,27 +569,23 @@ const CoordinatorConsole: React.FC = () => {
     return unique;
   }, [evals.evaluations, userSchoolId]);
 
-  // Paginación TOP
+  // Prioridad - pagination
+  const TOP_PAGE_SIZE = 6;
   const [topPage, setTopPage] = useState(1);
-  const TOP_PAGE_SIZE_OPTIONS = [6, 10, 12] as const;
-  const [topPageSize, setTopPageSize] =
-    useState<(typeof TOP_PAGE_SIZE_OPTIONS)[number]>(6);
+  const topTotal = topRecommended.length;
+  const topTotalPages = Math.max(1, Math.ceil(topTotal / TOP_PAGE_SIZE));
+  const safeTopPage = Math.min(topPage, topTotalPages);
+  const topStart = (safeTopPage - 1) * TOP_PAGE_SIZE;
+  const topEnd = Math.min(topStart + TOP_PAGE_SIZE, topTotal);
+  const topPageItems = useMemo(
+    () => topRecommended.slice(topStart, topEnd),
+    [topRecommended, topStart, topEnd],
+  );
 
   useEffect(() => {
     setTopPage(1);
   }, [topRecommended.length]);
 
-  const topTotal = topRecommended.length;
-  const topTotalPages = Math.max(1, Math.ceil(topTotal / topPageSize));
-  const safeTopPage = Math.min(topPage, topTotalPages);
-
-  const topStart = (safeTopPage - 1) * topPageSize;
-  const topEnd = Math.min(topStart + topPageSize, topTotal);
-
-  const topPageItems = useMemo(
-    () => topRecommended.slice(topStart, topEnd),
-    [topRecommended, topStart, topEnd],
-  );
 
   // UI states
   const showLoading = evals.loading;
@@ -601,34 +596,25 @@ const CoordinatorConsole: React.FC = () => {
     <div
       className={[
         "min-h-screen w-full font-sans relative overflow-x-hidden",
-        isDark ? "bg-[#020202] text-gray-200" : "bg-gray-50 text-gray-900",
+        isDark ? "bg-[#060A12] text-slate-200" : "bg-[#F4F7FC] text-slate-900",
       ].join(" ")}
     >
-      {/* blobs fondo */}
-      {isDark && (
-        <div className="fixed top-0 left-0 w-full h-full overflow-hidden pointer-events-none z-0">
-          <div
-            className="absolute top-[-10%] left-[10%] w-[500px] h-[500px] bg-emerald-500/6 rounded-full blur-[140px] mix-blend-screen animate-pulse"
-            style={{ Animation, animationDuration: "9s" } as any}
-          />
-          <div className="absolute bottom-[5%] right-[0%] w-[600px] h-[600px] bg-cyan-500/5 rounded-full blur-[160px] mix-blend-screen" />
-        </div>
-      )}
+      <AnimatedBackground />
 
-      <div className="relative z-10 max-w-7xl mx-auto px-6 py-14 space-y-10">
+      <div className="relative z-10 max-w-[1380px] mx-auto px-6 py-8 md:py-12 space-y-8">
         {/* HEADER */}
-        <header className="space-y-6">
+        <header className="space-y-5">
           <div className="flex items-center justify-between gap-4">
             <div
               className={[
-                "inline-flex items-center gap-2.5 px-5 py-2 rounded-full border text-xs font-bold uppercase tracking-widest backdrop-blur-md",
+                "inline-flex items-center gap-2.5 px-4 py-1.5 rounded-full border text-[10px] font-bold uppercase tracking-[0.2em] backdrop-blur-md",
                 isDark
-                  ? "border-emerald-500/20 bg-emerald-500/5 text-emerald-400 shadow-[0_0_20px_-5px_rgba(16,185,129,0.4)]"
-                  : "border-[#00B894]/25 bg-[#E6FFF7] text-[#006B57] shadow-[0_0_18px_rgba(0,184,148,0.20)]",
+                  ? "border-cyan-500/20 bg-cyan-500/5 text-cyan-400"
+                  : "border-cyan-200 bg-cyan-50 text-cyan-700",
               ].join(" ")}
             >
-              <ShieldAlert className="w-4 h-4" />
-              <span>Consola de Coordinación</span>
+              <ShieldAlert className="w-3.5 h-3.5" />
+              <span>Consola de Coordinacion</span>
             </div>
 
             {/* Tabs principales */}
@@ -637,24 +623,18 @@ const CoordinatorConsole: React.FC = () => {
                 type="button"
                 onClick={() => setMainTab("evaluations")}
                 className={[
-                  "px-4 py-2 rounded-xl text-[11px] uppercase tracking-widest border transition inline-flex items-center gap-2",
+                  "px-4 py-2 rounded-xl text-[11px] font-bold uppercase tracking-[0.16em] border transition-all duration-200 inline-flex items-center gap-2",
                   mainTab === "evaluations"
                     ? isDark
-                      ? "border-emerald-500/30 text-emerald-300 bg-emerald-500/10"
-                      : "border-[#00B894]/40 bg-[#00B894] text-white shadow-[0_8px_22px_rgba(0,184,148,0.45)]"
+                      ? "border-cyan-500/30 text-cyan-300 bg-cyan-500/10 shadow-[0_0_16px_-4px_rgba(6,182,212,0.2)]"
+                      : "border-cyan-400/40 bg-cyan-500 text-white shadow-[0_8px_22px_rgba(6,182,212,0.3)]"
                     : isDark
-                      ? "border-white/10 text-gray-400 hover:border-white/20"
+                      ? "border-white/[0.08] text-slate-400 hover:border-white/20 hover:text-white hover:bg-white/[0.04]"
                       : "border-slate-200 text-slate-500 hover:border-slate-300 hover:bg-slate-50",
                 ].join(" ")}
                 title="Ver evaluaciones"
               >
-                <FileText
-                  className={`w-4 h-4 ${
-                    mainTab === "evaluations" && !isDark
-                      ? "text-white"
-                      : ""
-                  }`}
-                />
+                <FileText className="w-4 h-4" />
                 Evaluaciones
               </button>
 
@@ -662,22 +642,18 @@ const CoordinatorConsole: React.FC = () => {
                 type="button"
                 onClick={() => setMainTab("users")}
                 className={[
-                  "px-4 py-2 rounded-xl text-[11px] uppercase tracking-widest border transition inline-flex items-center gap-2",
+                  "px-4 py-2 rounded-xl text-[11px] font-bold uppercase tracking-[0.16em] border transition-all duration-200 inline-flex items-center gap-2",
                   mainTab === "users"
                     ? isDark
-                      ? "border-emerald-500/30 text-emerald-300 bg-emerald-500/10"
-                      : "border-[#00B894]/40 bg-[#00B894] text-white shadow-[0_8px_22px_rgba(0,184,148,0.45)]"
+                      ? "border-cyan-500/30 text-cyan-300 bg-cyan-500/10 shadow-[0_0_16px_-4px_rgba(6,182,212,0.2)]"
+                      : "border-cyan-400/40 bg-cyan-500 text-white shadow-[0_8px_22px_rgba(6,182,212,0.3)]"
                     : isDark
-                      ? "border-white/10 text-gray-400 hover:border-white/20"
+                      ? "border-white/[0.08] text-slate-400 hover:border-white/20 hover:text-white hover:bg-white/[0.04]"
                       : "border-slate-200 text-slate-500 hover:border-slate-300 hover:bg-slate-50",
                 ].join(" ")}
-                title="Gestionar líderes de mi escuela"
+                title="Gestionar lideres de mi escuela"
               >
-                <UserCheck
-                  className={`w-4 h-4 ${
-                    mainTab === "users" && !isDark ? "text-white" : ""
-                  }`}
-                />
+                <UserCheck className="w-4 h-4" />
                 Usuarios
               </button>
 
@@ -687,640 +663,346 @@ const CoordinatorConsole: React.FC = () => {
                 type="button"
                 onClick={handleLogout}
                 className={[
-                  "px-4 py-2 rounded-xl text-[11px] uppercase tracking-widest border transition inline-flex items-center gap-2",
+                  "px-4 py-2 rounded-xl text-[11px] font-bold uppercase tracking-[0.16em] border transition-all duration-200 inline-flex items-center gap-2",
                   isDark
-                    ? "border-white/10 text-gray-400 hover:border-rose-500/40 hover:text-rose-400"
-                    : "border-slate-200 bg-white text-slate-600 hover:border-rose-400 hover:text-rose-500 hover:bg-rose-50",
+                    ? "border-white/[0.08] text-slate-400 hover:border-rose-500/30 hover:text-rose-400 hover:bg-rose-500/5"
+                    : "border-slate-200 bg-white text-slate-600 hover:border-rose-300 hover:text-rose-500 hover:bg-rose-50",
                 ].join(" ")}
-                title="Cerrar sesión"
+                title="Cerrar sesion"
               >
                 <LogOut className="w-4 h-4" />
-                Cerrar sesión
+                Cerrar sesion
               </button>
             </div>
           </div>
 
-          <div className="space-y-3 max-w-4xl">
-            <h2
-              className={`text-3xl md:text-5xl font-black tracking-tighter leading-[1.05] ${
-                isDark ? "text-white" : "text-slate-900"
+          {/* Hero */}
+          <div className="flex items-center gap-4 max-w-2xl">
+            <div
+              className={`shrink-0 w-9 h-9 rounded-xl flex items-center justify-center ${
+                isDark
+                  ? "bg-gradient-to-br from-cyan-500/15 to-blue-500/10 border border-cyan-500/20"
+                  : "bg-gradient-to-br from-cyan-50 to-blue-50 border border-cyan-200"
               }`}
             >
-              Panel de Coordinación{" "}
-              <span className="text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 to-cyan-400">
-                (Revisión & Aprobación)
-              </span>
-            </h2>
-
-            <p
-              className={`text-sm md:text-base font-light leading-relaxed ${
-                isDark ? "text-gray-400" : "text-slate-600"
-              }`}
-            >
-              Diseñado para tomar decisiones rápido: <b>Top recomendados</b>{" "}
-              arriba y el <b>detalle siempre en una nueva pantalla</b>.
-            </p>
+              <ShieldAlert className={`w-4 h-4 ${isDark ? "text-cyan-400" : "text-cyan-600"}`} />
+            </div>
+            <div className="space-y-0.5">
+              <h2
+                className={`text-xl md:text-2xl font-black tracking-tight leading-tight ${
+                  isDark ? "text-white" : "text-slate-900"
+                }`}
+              >
+                Bandeja de{" "}
+                <span className="text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-blue-400">
+                  Revision
+                </span>
+              </h2>
+              <p
+                className={`text-sm max-w-lg leading-relaxed ${
+                  isDark ? "text-slate-400" : "text-slate-500"
+                }`}
+              >
+                Evalua candidatos, valida riesgos y toma decisiones con trazabilidad.
+              </p>
+            </div>
           </div>
         </header>
 
         {/* ESTADO CARGA / ERROR */}
         {showLoading && (
-          <div className="flex flex-col items-center justify-center py-20 text-gray-400 gap-3">
-            <Loader2 className="w-8 h-8 animate-spin" />
-            <p className="text-sm">Cargando historial de evaluaciones…</p>
+          <div className="flex flex-col items-center justify-center py-20 gap-3">
+            <Loader2 className={`w-8 h-8 animate-spin ${isDark ? "text-cyan-400" : "text-cyan-500"}`} />
+            <p className={`text-sm ${isDark ? "text-slate-400" : "text-slate-500"}`}>Cargando historial...</p>
           </div>
         )}
 
         {showError && (
-          <div className="flex flex-col items-center justify-center py-16 text-red-400 gap-3">
-            <AlertCircle className="w-8 h-8" />
-            <p className="text-sm text-center max-w-md">{evals.error}</p>
+          <div className="flex flex-col items-center justify-center py-16 gap-2">
+            <div className={`p-3 rounded-xl ${isDark ? "bg-rose-500/10" : "bg-rose-50"}`}>
+              <AlertCircle className="w-6 h-6 text-rose-500" />
+            </div>
+            <p className={`text-sm text-center max-w-md ${isDark ? "text-slate-400" : "text-slate-600"}`}>{evals.error}</p>
           </div>
         )}
 
         {!showLoading && !showError && (
           <>
             {mainTab === "evaluations" && (
-              <section className="grid grid-cols-12 gap-6">
-                {/* COLUMNA PRINCIPAL */}
-                <div className="col-span-12 xl:col-span-8 space-y-6">
+              <section className="space-y-6">
+                  {/* KPI Strip - Full Width */}
                   <CoordinatorKpiStrip
                     total={metrics.total}
                     avgScore={metrics.avgScore}
                     isScoped={!!userSchoolId}
                   />
 
-                  {/* TOP RECOMENDADOS (Premium Emerald Layout) */}
-                  <div
-                    className={[
-                      "relative overflow-hidden rounded-[24px] border shadow-2xl",
-                      isDark
-                        ? "border-white/5 bg-[#0A0C10]"
-                        : "border-slate-200 bg-white shadow-[0_20px_60px_rgba(15,23,42,0.16)]",
-                    ].join(" ")}
-                  >
-                    {/* Ambient Background Glows */}
-                    {isDark && (
-                      <>
-                        <div className="pointer-events-none absolute top-0 right-0 -mt-24 -mr-24 h-96 w-96 rounded-full bg-emerald-500/5 blur-[100px]" />
-                        <div className="pointer-events-none absolute bottom-0 left-0 -mb-24 -ml-24 h-80 w-80 rounded-full bg-cyan-500/5 blur-[80px]" />
-                        <div className="pointer-events-none absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-[0.03]" />
-                      </>
-                    )}
-
-                    <div className="relative p-8">
-                      {/* --- Header Section --- */}
-                      <div className="flex flex-col gap-6 sm:flex-row sm:items-start sm:justify-between mb-8">
-                        <div className="flex gap-5">
-                          {/* Icon Box */}
-                          <div
-                            className={[
-                              "shrink-0 grid h-12 w-12 place-items-center rounded-2xl border shadow-[0_0_15px_rgba(16,185,129,0.15)]",
-                              isDark
-                                ? "border-emerald-500/20 bg-emerald-500/10"
-                                : "border-emerald-100 bg-emerald-50",
-                            ].join(" ")}
-                          >
-                            <TrendingUp
-                              className={`h-6 w-6 ${
-                                isDark ? "text-emerald-400" : "text-emerald-600"
-                              }`}
-                            />
-                          </div>
-
-                          <div className="min-w-0 pt-1">
-                            <h3
-                              className={`text-xl font-bold tracking-tight leading-tight ${
-                                isDark ? "text-white" : "text-slate-900"
-                              }`}
-                            >
-                              Top Recomendados
-                            </h3>
-                            <p
-                              className={`mt-1.5 text-sm font-medium ${
-                                isDark ? "text-slate-400" : "text-slate-600"
-                              }`}
-                            >
-                              Ranking automático por probabilidad de éxito.
-                            </p>
-                            <div
-                              className={`mt-2 flex items-center gap-2 text-xs ${
-                                isDark ? "text-slate-500" : "text-slate-500"
-                              }`}
-                            >
-                              <div
-                                className={`h-1.5 w-1.5 rounded-full ${userSchoolId ? "bg-amber-500" : "bg-emerald-500"}`}
-                              />
-                              <span>
-                                {userSchoolId
-                                  ? "Filtro activo: Tu escuela"
-                                  : "Global: Todas las escuelas"}
-                              </span>
-                            </div>
-                          </div>
-                        </div>
-
-                        <button
-                          type="button"
-                          onClick={() =>
-                            document
-                              .getElementById("evaluaciones-registradas")
-                              ?.scrollIntoView({
-                                behavior: "smooth",
-                                block: "start",
-                              })
-                          }
-                          className={[
-                            "group flex items-center gap-2 rounded-xl px-4 py-2.5 text-xs font-semibold uppercase tracking-wider transition-all active:scale-95 border",
-                            isDark
-                              ? "border-white/5 bg-white/[0.02] text-slate-400 hover:border-emerald-500/20 hover:bg-emerald-500/5 hover:text-emerald-400"
-                              : "border-slate-200 bg-white text-slate-600 hover:border-emerald-300 hover:bg-emerald-50 hover:text-emerald-700 shadow-sm",
-                          ].join(" ")}
-                        >
-                          Ver Historial
-                          <ArrowRight className="h-3.5 w-3.5 transition-transform group-hover:translate-x-1" />
-                        </button>
-                      </div>
-
-                      {/* --- Grid de Tarjetas --- */}
-                      <div className="grid gap-4 md:grid-cols-2">
-                        {topRecommended.length === 0 ? (
-                          <div
-                            className={`col-span-2 flex flex-col items-center justify-center rounded-2xl border border-dashed p-12 text-center ${
-                              isDark
-                                ? "border-white/10 bg-white/[0.02]"
-                                : "border-slate-200 bg-slate-50"
-                            }`}
-                          >
-                            <div className="text-slate-500 mb-2">
-                              <TrendingUp className="h-8 w-8 opacity-30" />
-                            </div>
-                            <p
-                              className={`text-sm font-medium ${
-                                isDark ? "text-slate-500" : "text-slate-600"
-                              }`}
-                            >
-                              Aún no hay suficientes datos para generar el
-                              ranking.
-                            </p>
-                          </div>
-                        ) : (
-                          topPageItems.map((c, idx) => {
-                            const rank = topStart + idx + 1;
-                            const score = Number.isFinite(Number(c.score))
-                              ? Math.max(0, Math.min(100, Number(c.score)))
-                              : 0;
-
-                            // Definición de colores basada en Score (Estilo Neon/Dark)
-                            const isHigh = score >= 85;
-                            const isMed = score >= 70 && score < 85;
-
-                            let toneColor = isDark
-                              ? "text-slate-400"
-                              : "text-slate-500"; // Default
-                            let toneBg = "bg-slate-500";
-                            let borderHighlight = isDark
-                              ? "group-hover:border-white/10"
-                              : "group-hover:border-emerald-200";
-
-                            if (isHigh) {
-                              toneColor = isDark
-                                ? "text-emerald-400"
-                                : "text-emerald-600";
-                              toneBg = "bg-emerald-500";
-                              borderHighlight =
-                                "group-hover:border-emerald-500/30 group-hover:shadow-[0_4px_20px_-10px_rgba(16,185,129,0.3)]";
-                            } else if (isMed) {
-                              toneColor = isDark
-                                ? "text-cyan-400"
-                                : "text-cyan-600";
-                              toneBg = "bg-cyan-500";
-                              borderHighlight =
-                                "group-hover:border-cyan-500/30 group-hover:shadow-[0_4px_20px_-10px_rgba(34,211,238,0.3)]";
-                            } else if (score >= 55) {
-                              toneColor = isDark
-                                ? "text-indigo-400"
-                                : "text-indigo-600";
-                              toneBg = "bg-indigo-500";
-                              borderHighlight =
-                                "group-hover:border-indigo-500/30";
-                            }
-
-                            return (
-                              <button
-                                key={c.id}
-                                onClick={() =>
-                                  navigate(
-                                    `/coordinator/evaluations/${encodeURIComponent(c.id)}/report`,
-                                  )
-                                }
-                                className={`group relative flex flex-col justify-between overflow-hidden rounded-2xl border p-5 text-left transition-all duration-300 hover:-translate-y-1 ${borderHighlight} ${
-                                  isDark
-                                    ? "border-white/5 bg-[#15191E]"
-                                    : "border-slate-200 bg-white shadow-[0_10px_30px_rgba(15,23,42,0.08)]"
-                                }`}
-                              >
-                                <div className="flex w-full items-start justify-between gap-4">
-                                  {/* Left Info */}
-                                  <div className="min-w-0 flex-1">
-                                    <div className="flex items-center gap-2 mb-1">
-                                      <span
-                                        className={`flex h-5 min-w-[1.25rem] items-center justify-center rounded px-1.5 text-[10px] font-bold font-mono ${toneColor} ${
-                                          isDark
-                                            ? "bg-white/5"
-                                            : "bg-slate-50 border border-slate-200"
-                                        }`}
-                                      >
-                                        #{rank}
-                                      </span>
-                                      {c.program && (
-                                        <span className="truncate text-[10px] font-medium uppercase tracking-wider text-slate-500">
-                                          {c.program}
-                                        </span>
-                                      )}
-                                    </div>
-
-                                    <h4
-                                      className={`truncate text-base font-bold group-hover:text-emerald-400 ${
-                                        isDark ? "text-white" : "text-slate-900"
-                                      }`}
-                                    >
-                                      {c.name}
-                                    </h4>
-
-                                    <div
-                                      className={`mt-1 text-xs truncate ${
-                                        isDark
-                                          ? "text-slate-500"
-                                          : "text-slate-500"
-                                      }`}
-                                    >
-                                      {c.school || "Sin escuela registrada"}
-                                    </div>
-                                  </div>
-
-                                  {/* Right / Verdict Pill */}
-                                  <div className="shrink-0 text-right">
-                                    <div
-                                      title={c.verdictFull || "Sin veredicto"}
-                                      className={`inline-flex items-center rounded-lg border px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider ${
-                                        isHigh
-                                          ? isDark
-                                            ? "border-emerald-500/20 bg-emerald-500/10 text-emerald-400"
-                                            : "border-emerald-200 bg-emerald-50 text-emerald-700"
-                                          : isMed
-                                            ? isDark
-                                              ? "border-cyan-500/20 bg-cyan-500/10 text-cyan-400"
-                                              : "border-cyan-200 bg-cyan-50 text-cyan-700"
-                                            : isDark
-                                              ? "border-white/10 bg-white/5 text-slate-400"
-                                              : "border-slate-200 bg-slate-50 text-slate-600"
-                                      }`}
-                                    >
-                                      {c.verdictShort === "Sin veredicto"
-                                        ? "Pendiente"
-                                        : c.verdictShort}
-                                    </div>
-                                  </div>
-                                </div>
-
-                                {/* Score Bar Section */}
-                                <div className="mt-5">
-                                  <div className="flex items-end justify-between text-[11px] font-medium mb-1.5">
-                                    <span className="text-slate-500">
-                                      Score de ajuste
-                                    </span>
-                                    <div className="flex items-baseline gap-0.5">
-                                      <span
-                                        className={`text-sm font-bold ${toneColor}`}
-                                      >
-                                        {Math.round(score)}
-                                      </span>
-                                      <span className="text-slate-600">
-                                        /100
-                                      </span>
-                                    </div>
-                                  </div>
-
-                                  <div className="h-1.5 w-full overflow-hidden rounded-full bg-black/40">
-                                    <div
-                                      className={`h-full rounded-full transition-all duration-500 ease-out ${toneBg} ${isHigh ? "shadow-[0_0_10px_rgba(16,185,129,0.4)]" : ""}`}
-                                      style={{ width: `${score}%` }}
-                                    />
-                                  </div>
-                                </div>
-                              </button>
-                            );
-                          })
+                  {/* 3-Panel Dashboard Grid */}
+                  <div className="grid grid-cols-12 gap-5 items-start">
+                    {/* PANEL 1: Prioridad de revision (Compact Sidebar) */}
+                    <div className="col-span-12 lg:col-span-4 xl:col-span-3">
+                      <div
+                        className={[
+                          "relative overflow-hidden rounded-2xl border transition-all duration-300 flex flex-col",
+                          isDark
+                            ? "border-white/[0.06] bg-gradient-to-b from-white/[0.02] to-transparent"
+                            : "border-slate-200 bg-white shadow-[0_4px_20px_-6px_rgba(15,23,42,0.06)]",
+                        ].join(" ")}
+                      >
+                        {isDark && (
+                          <div className="pointer-events-none absolute top-0 right-0 -mt-20 -mr-20 h-72 w-72 rounded-full bg-cyan-500/5 blur-[80px]" />
                         )}
-                      </div>
 
-                      {/* --- Footer / Pagination --- */}
-                      {topTotal > 0 && (
-                        <div
-                          className={`mt-8 border-t pt-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between ${
-                            isDark ? "border-white/5" : "border-slate-200"
-                          }`}
-                        >
-                          <div
-                            className={`text-xs font-medium ${
-                              isDark ? "text-slate-500" : "text-slate-600"
-                            }`}
-                          >
-                            Mostrando{" "}
-                            <span
-                              className={isDark ? "text-white" : "text-slate-900"}
+                        <div className="relative p-5 flex flex-col">
+                          {/* Header */}
+                          <div className="flex items-center gap-3 mb-4">
+                            <div
+                              className={[
+                                "shrink-0 w-8 h-8 rounded-lg flex items-center justify-center border",
+                                isDark
+                                  ? "border-cyan-500/25 bg-cyan-500/10"
+                                  : "border-cyan-200 bg-cyan-50",
+                              ].join(" ")}
                             >
-                              {topStart + 1}
-                            </span>{" "}
-                            –{" "}
-                            <span
-                              className={isDark ? "text-white" : "text-slate-900"}
-                            >
-                              {topEnd}
-                            </span>{" "}
-                            de{" "}
-                            <span
-                              className={isDark ? "text-white" : "text-slate-900"}
-                            >
-                              {topTotal}
-                            </span>
+                              <TrendingUp className={`w-4 h-4 ${isDark ? "text-cyan-400" : "text-cyan-600"}`} />
+                            </div>
+                            <div className="min-w-0">
+                              <h3 className={`text-xs font-bold tracking-tight truncate ${isDark ? "text-white" : "text-slate-900"}`}>
+                                Prioridad
+                              </h3>
+                              <p className={`text-[10px] truncate ${isDark ? "text-slate-500" : "text-slate-400"}`}>
+                                Ranking por score
+                              </p>
+                            </div>
                           </div>
 
-                          <div className="flex flex-wrap items-center gap-3">
-                            {/* Page Size Selector */}
-                            <div className="relative group/select">
-                              <select
-                                value={topPageSize}
-                                onChange={(e) => {
-                                  setTopPageSize(Number(e.target.value) as any);
-                                  setTopPage(1);
-                                }}
-                                className={`appearance-none cursor-pointer rounded-xl pl-3 pr-8 py-2 text-xs font-medium outline-none transition border ${
-                                  isDark
-                                    ? "border-white/10 bg-[#15191E] text-slate-300 hover:border-white/20 focus:border-emerald-500/50"
-                                    : "border-slate-200 bg-white text-slate-700 hover:border-slate-300 focus:border-emerald-500/60 shadow-sm"
-                                }`}
-                              >
-                                {TOP_PAGE_SIZE_OPTIONS.map((n) => (
-                                  <option key={n} value={n}>
-                                    {n} / pág
-                                  </option>
-                                ))}
-                              </select>
-                              {/* Custom Arrow */}
+                          {/* Card list */}
+                          <div className="space-y-2.5">
+                            {topPageItems.length === 0 ? (
                               <div
-                                className={`pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 ${
-                                  isDark ? "text-slate-500" : "text-slate-400"
+                                className={`flex flex-col items-center justify-center rounded-xl border border-dashed p-8 text-center ${
+                                  isDark
+                                    ? "border-white/10 bg-white/[0.02]"
+                                    : "border-slate-200 bg-slate-50"
                                 }`}
                               >
-                                <svg
-                                  width="10"
-                                  height="6"
-                                  viewBox="0 0 10 6"
-                                  fill="none"
-                                  xmlns="http://www.w3.org/2000/svg"
+                                <div className="text-slate-500 mb-2">
+                                  <TrendingUp className="h-6 w-6 opacity-30" />
+                                </div>
+                                <p className={`text-xs font-medium ${isDark ? "text-slate-500" : "text-slate-600"}`}>
+                                  Sin datos suficientes.
+                                </p>
+                              </div>
+                            ) : (
+                              topPageItems.map((c) => {
+                                const rank = topStart + topPageItems.indexOf(c) + 1;
+                                const score = Number.isFinite(Number(c.score))
+                                  ? Math.max(0, Math.min(100, Number(c.score)))
+                                  : 0;
+
+                                const isHigh = score >= 85;
+                                const isMed = score >= 70 && score < 85;
+
+                                let toneColor = isDark ? "text-slate-400" : "text-slate-500";
+                                let toneBg = "bg-slate-500";
+
+                                if (isHigh) {
+                                  toneColor = isDark ? "text-cyan-400" : "text-cyan-600";
+                                  toneBg = "bg-cyan-500";
+                                } else if (isMed) {
+                                  toneColor = isDark ? "text-blue-400" : "text-blue-600";
+                                  toneBg = "bg-blue-500";
+                                }
+
+                                return (
+                                  <button
+                                    key={c.id}
+                                    type="button"
+                                    onClick={() =>
+                                      navigate(
+                                        `/coordinator/evaluations/${encodeURIComponent(c.id)}/report`,
+                                      )
+                                    }
+                                    className={`group w-full flex items-center gap-3 rounded-xl border p-3 text-left transition-all duration-200 hover:-translate-y-0.5 ${
+                                      isDark
+                                        ? "border-white/5 bg-[#15191E] hover:border-cyan-500/30 hover:shadow-[0_4px_15px_-5px_rgba(6,182,212,0.2)]"
+                                        : "border-slate-200 bg-white hover:border-cyan-300 hover:shadow-[0_8px_25px_-8px_rgba(15,23,42,0.1)]"
+                                    }`}
+                                  >
+                                    <span
+                                      className={`shrink-0 flex h-7 w-7 items-center justify-center rounded-lg text-[10px] font-bold font-mono ${toneColor} ${
+                                        isDark ? "bg-white/5" : "bg-slate-50 border border-slate-200"
+                                      }`}
+                                    >
+                                      #{rank}
+                                    </span>
+
+                                    <div className="min-w-0 flex-1">
+                                      <p className={`text-xs font-bold truncate group-hover:text-emerald-400 ${isDark ? "text-white" : "text-slate-900"}`}>
+                                        {c.name}
+                                      </p>
+                                      <div className="flex items-center gap-2 mt-1">
+                                        <div className={`h-1.5 flex-1 rounded-full overflow-hidden ${isDark ? "bg-white/10" : "bg-slate-100"}`}>
+                                          <div
+                                            className={`h-full rounded-full ${toneBg} ${isHigh ? "shadow-[0_0_8px_rgba(16,185,129,0.3)]" : ""}`}
+                                            style={{ width: `${score}%` }}
+                                          />
+                                        </div>
+                                        <span className={`text-[10px] font-bold shrink-0 ${toneColor}`}>
+                                          {Math.round(score)}
+                                        </span>
+                                      </div>
+                                    </div>
+
+                                    <span
+                                      className={`shrink-0 rounded-md border px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wider ${
+                                        isHigh
+                                          ? isDark ? "border-cyan-500/25 bg-cyan-500/10 text-cyan-300" : "border-cyan-200 bg-cyan-50 text-cyan-700"
+                                          : isMed
+                                            ? isDark ? "border-blue-500/25 bg-blue-500/10 text-blue-300" : "border-blue-200 bg-blue-50 text-blue-700"
+                                            : isDark ? "border-white/10 bg-white/5 text-slate-400" : "border-slate-200 bg-slate-50 text-slate-600"
+                                      }`}
+                                    >
+                                      {c.verdictShort === "Sin veredicto" ? "Pend." : c.verdictShort?.slice(0, 8)}
+                                    </span>
+                                  </button>
+                                );
+                              })
+                            )}
+                          </div>
+
+                          {/* Pagination */}
+                          {topTotal > TOP_PAGE_SIZE && (
+                            <div
+                              className={`mt-4 pt-3 border-t flex items-center justify-between ${
+                                isDark ? "border-white/5" : "border-slate-200"
+                              }`}
+                            >
+                              <span className={`text-[10px] ${isDark ? "text-slate-500" : "text-slate-400"}`}>
+                                {topStart + 1}–{topEnd} de {topTotal}
+                              </span>
+                              <div className="flex items-center gap-1">
+                                <button
+                                  type="button"
+                                  onClick={() => setTopPage((p) => Math.max(1, p - 1))}
+                                  disabled={safeTopPage <= 1}
+                                  className={`grid h-6 w-6 place-items-center rounded-md border text-[10px] transition ${
+                                    safeTopPage <= 1
+                                      ? isDark ? "border-transparent text-slate-700 cursor-not-allowed" : "border-transparent text-slate-300 cursor-not-allowed"
+                                      : isDark ? "border-white/10 bg-white/5 text-slate-300 hover:bg-white/10" : "border-slate-200 bg-white text-slate-600 hover:bg-slate-50"
+                                  }`}
                                 >
-                                  <path
-                                    d="M1 1L5 5L9 1"
-                                    stroke="currentColor"
-                                    strokeWidth="1.5"
-                                    strokeLinecap="round"
-                                    strokeLinejoin="round"
-                                  />
-                                </svg>
+                                  ‹
+                                </button>
+                                <span className={`text-[10px] font-medium min-w-[2rem] text-center ${isDark ? "text-slate-400" : "text-slate-500"}`}>
+                                  {safeTopPage}/{topTotalPages}
+                                </span>
+                                <button
+                                  type="button"
+                                  onClick={() => setTopPage((p) => Math.min(topTotalPages, p + 1))}
+                                  disabled={safeTopPage >= topTotalPages}
+                                  className={`grid h-6 w-6 place-items-center rounded-md border text-[10px] transition ${
+                                    safeTopPage >= topTotalPages
+                                      ? isDark ? "border-transparent text-slate-700 cursor-not-allowed" : "border-transparent text-slate-300 cursor-not-allowed"
+                                      : isDark ? "border-white/10 bg-white/5 text-slate-300 hover:bg-white/10" : "border-slate-200 bg-white text-slate-600 hover:bg-slate-50"
+                                  }`}
+                                >
+                                  ›
+                                </button>
                               </div>
                             </div>
+                          )}
+                        </div>
+                      </div>
+                    </div>
 
-                            <div
-                              className={`h-4 w-px mx-1 ${
-                                isDark ? "bg-white/10" : "bg-slate-200"
-                              }`}
-                            />
+                    {/* PANEL 2: Bandeja de candidatos (Main Content) */}
+                    <div className="col-span-12 lg:col-span-8 xl:col-span-6">
+                      <div id="evaluaciones-registradas" className="scroll-mt-28">
+                        <EvaluationsListPanel
+                          schoolFilter={schoolFilter}
+                          setSchoolFilter={setSchoolFilter}
+                          programFilter={programFilter}
+                          setProgramFilter={setProgramFilter}
+                          schoolOptions={schoolOptions}
+                          programOptions={programOptions}
+                          mustChooseScope={mustChooseScope}
+                          groupedCandidates={groupedCandidates}
+                          selectedId={null}
+                          search={String(evals.search ?? "")}
+                          setSearch={(v) => evals.setSearch(String(v ?? ""))}
+                          decisionFilter={evals.decisionFilter}
+                          setDecisionFilter={evals.setDecisionFilter}
+                          localDecisions={evals.localDecisions}
+                          lockedSchool={!!userSchoolId}
+                          schoolHint={
+                            scopeLoading
+                              ? "Cargando programas de tu escuela…"
+                              : userSchoolId
+                                ? "Escuela asignada por tu usuario."
+                                : undefined
+                          }
+                        />
+                      </div>
+                    </div>
 
-                            {/* Navigation Buttons */}
-                            <div className="flex items-center gap-1">
-                              <button
-                                type="button"
-                                onClick={() =>
-                                  setTopPage((p) => Math.max(1, p - 1))
-                                }
-                                disabled={safeTopPage <= 1}
-                                className={`grid h-8 w-8 place-items-center rounded-xl border transition ${
-                                  safeTopPage <= 1
-                                    ? isDark
-                                      ? "border-transparent text-slate-700 cursor-not-allowed"
-                                      : "border-transparent text-slate-300 cursor-not-allowed"
-                                    : isDark
-                                      ? "border-white/10 bg-[#15191E] text-slate-300 hover:bg-white/5 hover:text-white"
-                                      : "border-slate-200 bg-white text-slate-700 hover:bg-slate-50 hover:border-emerald-300 hover:text-emerald-700 shadow-sm"
-                                }`}
-                              >
-                                <svg
-                                  width="16"
-                                  height="16"
-                                  viewBox="0 0 24 24"
-                                  fill="none"
-                                  stroke="currentColor"
-                                  strokeWidth="2"
-                                  strokeLinecap="round"
-                                  strokeLinejoin="round"
-                                >
-                                  <path d="M15 18l-6-6 6-6" />
-                                </svg>
-                              </button>
+                    {/* PANEL 3: Guia rapida (Compact Sidebar) */}
+                    <aside className="col-span-12 xl:col-span-3">
+                      <div
+                        className={`relative overflow-hidden rounded-2xl border p-5 ${
+                          isDark
+                            ? "border-white/[0.06] bg-gradient-to-b from-white/[0.02] to-transparent"
+                            : "border-slate-200 bg-white shadow-[0_4px_20px_-6px_rgba(15,23,42,0.06)]"
+                        }`}
+                      >
+                        {isDark && (
+                          <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_85%_0%,rgba(6,182,212,0.06),transparent_55%)]" />
+                        )}
+                        <div className="relative">
+                          <div
+                            className={`inline-flex items-center gap-2 rounded-full border px-3 py-1 text-[10px] font-bold uppercase tracking-[0.16em] ${
+                              isDark
+                                ? "border-white/[0.08] bg-white/[0.03] text-slate-300"
+                                : "border-cyan-100 bg-cyan-50 text-cyan-700"
+                            }`}
+                          >
+                            <Sparkles className={`h-3.5 w-3.5 ${isDark ? "text-cyan-400" : "text-cyan-600"}`} />
+                            Guia
+                          </div>
 
-                              <span
-                                className={`min-w-[3rem] text-center text-xs font-medium ${
-                                  isDark ? "text-slate-400" : "text-slate-500"
-                                }`}
-                              >
-                                {safeTopPage} / {topTotalPages}
-                              </span>
+                          <div className={`mt-3 text-xs font-semibold ${isDark ? "text-white" : "text-slate-900"}`}>
+                            Flujo recomendado
+                          </div>
 
-                              <button
-                                type="button"
-                                onClick={() =>
-                                  setTopPage((p) =>
-                                    Math.min(topTotalPages, p + 1),
-                                  )
-                                }
-                                disabled={safeTopPage >= topTotalPages}
-                                className={`grid h-8 w-8 place-items-center rounded-xl border transition ${
-                                  safeTopPage >= topTotalPages
-                                    ? isDark
-                                      ? "border-transparent text-slate-700 cursor-not-allowed"
-                                      : "border-transparent text-slate-300 cursor-not-allowed"
-                                    : isDark
-                                      ? "border-white/10 bg-[#15191E] text-slate-300 hover:bg-white/5 hover:text-white"
-                                      : "border-slate-200 bg-white text-slate-700 hover:bg-slate-50 hover:border-emerald-300 hover:text-emerald-700 shadow-sm"
-                                }`}
-                              >
-                                <svg
-                                  width="16"
-                                  height="16"
-                                  viewBox="0 0 24 24"
-                                  fill="none"
-                                  stroke="currentColor"
-                                  strokeWidth="2"
-                                  strokeLinecap="round"
-                                  strokeLinejoin="round"
-                                >
-                                  <path d="M9 18l6-6-6-6" />
-                                </svg>
-                              </button>
-                            </div>
+                          <ul className={`mt-3 space-y-3 text-[11px] leading-relaxed ${isDark ? "text-slate-400" : "text-slate-500"}`}>
+                            <li className="flex gap-2.5">
+                              <span className={`shrink-0 flex h-5 w-5 items-center justify-center rounded-md text-[9px] font-bold ${isDark ? "bg-cyan-500/10 text-cyan-400" : "bg-cyan-100 text-cyan-700"}`}>1</span>
+                              <span>Revisa <b className={isDark ? "text-white" : "text-slate-800"}>Prioridad</b> para decisiones rapidas.</span>
+                            </li>
+                            <li className="flex gap-2.5">
+                              <span className={`shrink-0 flex h-5 w-5 items-center justify-center rounded-md text-[9px] font-bold ${isDark ? "bg-cyan-500/10 text-cyan-400" : "bg-cyan-100 text-cyan-700"}`}>2</span>
+                              <span>En <b className={isDark ? "text-white" : "text-slate-800"}>Bandeja</b>, filtra por programa.</span>
+                            </li>
+                            <li className="flex gap-2.5">
+                              <span className={`shrink-0 flex h-5 w-5 items-center justify-center rounded-md text-[9px] font-bold ${isDark ? "bg-cyan-500/10 text-cyan-400" : "bg-cyan-100 text-cyan-700"}`}>3</span>
+                              <span>Abre detalle: apruebas/rechazas y exportas PDF.</span>
+                            </li>
+                          </ul>
+
+                          <div
+                            className={`mt-4 rounded-xl border p-3 text-[10px] leading-relaxed ${
+                              isDark
+                                ? "border-white/[0.06] bg-white/[0.02] text-slate-500"
+                                : "border-slate-200 bg-slate-50 text-slate-500"
+                            }`}
+                          >
+                            Tip: usa <b className={isDark ? "text-slate-300" : "text-slate-700"}>Comparativa</b> solo cuando haya 2+ entrevistas.
                           </div>
                         </div>
-                      )}
-                    </div>
-                  </div>
-
-                  {/* HISTORIAL + FILTROS (Premium wrapper) */}
-                  <div id="evaluaciones-registradas" className="scroll-mt-28">
-                    <EvaluationsListPanel
-                      schoolFilter={schoolFilter}
-                      setSchoolFilter={setSchoolFilter}
-                      programFilter={programFilter}
-                      setProgramFilter={setProgramFilter}
-                      schoolOptions={schoolOptions}
-                      programOptions={programOptions}
-                      mustChooseScope={mustChooseScope}
-                      groupedCandidates={groupedCandidates}
-                      selectedId={null}
-                      search={String(evals.search ?? "")}
-                      setSearch={(v) => evals.setSearch(String(v ?? ""))}
-                      decisionFilter={evals.decisionFilter}
-                      setDecisionFilter={evals.setDecisionFilter}
-                      localDecisions={evals.localDecisions}
-                      lockedSchool={!!userSchoolId}
-                      schoolHint={
-                        scopeLoading
-                          ? "Cargando programas de tu escuela…"
-                          : userSchoolId
-                            ? "Escuela asignada por tu usuario."
-                            : undefined
-                      }
-                    />
-                  </div>
-                </div>
-
-                {/* COLUMNA DERECHA (premium) */}
-                <aside className="col-span-12 xl:col-span-4 space-y-6">
-                  <div
-                    className={`relative overflow-hidden rounded-[28px] border backdrop-blur-xl p-6 ${
-                      isDark
-                        ? "border-white/10 bg-[#0B0F14]/70 shadow-[0_24px_90px_-70px_rgba(34,211,238,0.20)]"
-                        : "border-slate-200 bg-white shadow-[0_18px_60px_rgba(15,23,42,0.08)]"
-                    }`}
-                  >
-                    {isDark && (
-                      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_85%_0%,rgba(34,211,238,0.08),transparent_55%)]" />
-                    )}
-                    <div className="relative">
-                      <div
-                        className={`inline-flex items-center gap-2 rounded-full border px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.22em] ${
-                          isDark
-                            ? "border-white/10 bg-white/[0.04] text-white/70"
-                            : "border-emerald-100 bg-emerald-50 text-emerald-700"
-                        }`}
-                      >
-                        <Sparkles
-                          className={`h-3.5 w-3.5 ${
-                            isDark ? "text-cyan-200" : "text-emerald-500"
-                          }`}
-                        />
-                        Guía rápida
                       </div>
-
-                      <div
-                        className={`mt-3 text-sm font-semibold ${
-                          isDark ? "text-white/90" : "text-slate-900"
-                        }`}
-                      >
-                        Flujo recomendado
-                      </div>
-
-                      <ul
-                        className={`mt-3 space-y-2 text-xs leading-relaxed ${
-                          isDark ? "text-white/60" : "text-slate-600"
-                        }`}
-                      >
-                        <li className="flex gap-2">
-                          <span
-                            className={
-                              isDark ? "text-cyan-200" : "text-emerald-500"
-                            }
-                          >
-                            1)
-                          </span>
-                          <span>
-                            Revisa{" "}
-                            <b
-                              className={
-                                isDark ? "text-white/80" : "text-emerald-700"
-                              }
-                            >
-                              Top recomendados
-                            </b>{" "}
-                            para decisiones rápidas.
-                          </span>
-                        </li>
-                        <li className="flex gap-2">
-                          <span
-                            className={
-                              isDark ? "text-cyan-200" : "text-emerald-500"
-                            }
-                          >
-                            2)
-                          </span>
-                          <span>
-                            En{" "}
-                            <b
-                              className={
-                                isDark ? "text-white/80" : "text-emerald-700"
-                              }
-                            >
-                              Historial
-                            </b>
-                            , filtra por programa y usa búsqueda.
-                          </span>
-                        </li>
-                        <li className="flex gap-2">
-                          <span
-                            className={
-                              isDark ? "text-cyan-200" : "text-emerald-500"
-                            }
-                          >
-                            3)
-                          </span>
-                          <span>
-                            Abre detalle: apruebas/rechazas y exportas PDF.
-                          </span>
-                        </li>
-                      </ul>
-
-                      <div
-                        className={`mt-5 rounded-2xl border p-4 text-[11px] ${
-                          isDark
-                            ? "border-white/10 bg-white/[0.03] text-white/55"
-                            : "border-slate-200 bg-slate-50 text-slate-600"
-                        }`}
-                      >
-                        Tip: en desktop, usa{" "}
-                        <b
-                          className={
-                            isDark ? "text-white/75" : "text-emerald-700"
-                          }
-                        >
-                          Comparativa
-                        </b>{" "}
-                        solo cuando haya 2+ entrevistas.
-                      </div>
-                    </div>
+                    </aside>
                   </div>
-                </aside>
-              </section>
+                </section>
             )}
 
             {mainTab === "users" && <CoordinatorUsersPanel />}

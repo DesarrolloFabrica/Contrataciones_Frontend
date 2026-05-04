@@ -4,6 +4,8 @@ import type { TeacherCandidateSearchItemDto } from "../../../services/teachersSe
 export interface InterviewFormProps {
   onSubmit: (data: InterviewData) => void;
   onStepChange?: (step: number) => void;
+  examplePreset?: "approved" | "medium" | "rejected" | null;
+  onExampleApplied?: () => void;
 }
 
 export interface HiringContextDraft {

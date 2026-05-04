@@ -110,7 +110,7 @@ const ModalHeader = ({
             isDark ? "text-white" : "text-slate-900",
           ].join(" ")}
         >
-            {isEdit ? <UserRound className="w-5 h-5 text-emerald-500" /> : <Sparkles className="w-5 h-5 text-emerald-500" />}
+            {isEdit ? <UserRound className="w-5 h-5 text-cyan-500" /> : <Sparkles className="w-5 h-5 text-cyan-500" />}
             {title}
         </h3>
         <p
@@ -148,7 +148,7 @@ const ModalHeader = ({
         <div
           className={`h-1 flex-1 rounded-full transition-all duration-500 ${
             step === "FORM" || step === "REVIEW" || step === "SUCCESS"
-              ? "bg-emerald-500"
+              ? "bg-cyan-500"
               : isDark
                 ? "bg-white/10"
                 : "bg-slate-200"
@@ -157,7 +157,7 @@ const ModalHeader = ({
         <div
           className={`h-1 flex-1 rounded-full transition-all duration-500 ${
             step === "REVIEW" || step === "SUCCESS"
-              ? "bg-emerald-500"
+              ? "bg-cyan-500"
               : isDark
                 ? "bg-white/10"
                 : "bg-slate-200"
@@ -166,7 +166,7 @@ const ModalHeader = ({
         <div
           className={`h-1 flex-1 rounded-full transition-all duration-500 ${
             step === "SUCCESS"
-              ? "bg-emerald-500"
+              ? "bg-cyan-500"
               : isDark
                 ? "bg-white/10"
                 : "bg-slate-200"
@@ -194,7 +194,7 @@ const Field = ({
 }) => (
   <div className="group space-y-2">
     <div className="flex items-end justify-between">
-      <label className="text-xs font-medium text-zinc-400 group-focus-within:text-emerald-400 transition-colors flex items-center gap-1.5">
+      <label className="text-xs font-medium text-zinc-400 group-focus-within:text-cyan-400 transition-colors flex items-center gap-1.5">
         {Icon && <Icon className="w-3.5 h-3.5 opacity-70" />}
         {label} {required && <span className="text-rose-400">*</span>}
       </label>
@@ -219,8 +219,8 @@ const Input: React.FC<React.InputHTMLAttributes<HTMLInputElement>> = (props) => 
       className={[
         "w-full rounded-lg px-3.5 py-2.5 text-sm outline-none transition-all duration-200",
         isDark
-          ? "bg-zinc-900/50 border border-white/10 hover:border-white/20 text-zinc-100 placeholder:text-zinc-600 focus:border-emerald-500/50 focus:ring-4 focus:ring-emerald-500/10"
-          : "bg-white border border-slate-200 hover:border-slate-300 text-slate-900 placeholder:text-slate-400 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-200",
+          ? "bg-zinc-900/50 border border-white/10 hover:border-white/20 text-zinc-100 placeholder:text-zinc-600 focus:border-cyan-500/50 focus:ring-4 focus:ring-cyan-500/10"
+          : "bg-white border border-slate-200 hover:border-slate-300 text-slate-900 placeholder:text-slate-400 focus:border-cyan-500 focus:ring-2 focus:ring-cyan-200",
         props.className,
       ]
         .filter(Boolean)
@@ -513,15 +513,15 @@ const AdminUserFormModal: React.FC<Props> = ({
                   className={[
                     "rounded-2xl p-5 flex gap-4 items-start border",
                     isDark
-                      ? "bg-emerald-500/5 border-emerald-500/20"
-                      : "bg-emerald-50 border-emerald-200",
+                      ? "bg-cyan-500/5 border-cyan-500/20"
+                      : "bg-cyan-50 border-cyan-200",
                   ].join(" ")}
                 >
-                    <div className="p-2 bg-emerald-500/10 rounded-full shrink-0">
+                    <div className="p-2 bg-cyan-500/10 rounded-full shrink-0">
                         <CheckCircle2
                           className={[
                             "w-5 h-5",
-                            isDark ? "text-emerald-400" : "text-emerald-600",
+                            isDark ? "text-cyan-400" : "text-cyan-600",
                           ].join(" ")}
                         />
                     </div>
@@ -529,7 +529,7 @@ const AdminUserFormModal: React.FC<Props> = ({
                         <h4
                           className={[
                             "text-sm font-semibold",
-                            isDark ? "text-emerald-100" : "text-emerald-800",
+                            isDark ? "text-cyan-100" : "text-cyan-800",
                           ].join(" ")}
                         >
                           Usuario registrado
@@ -538,8 +538,8 @@ const AdminUserFormModal: React.FC<Props> = ({
                           className={[
                             "text-xs mt-1 leading-relaxed",
                             isDark
-                              ? "text-emerald-200/60"
-                              : "text-emerald-700",
+                              ? "text-cyan-200/60"
+                              : "text-cyan-700",
                           ].join(" ")}
                         >
                             El usuario ya se encuentra activo. Si se generaron credenciales temporales, 
@@ -668,8 +668,8 @@ const AdminUserFormModal: React.FC<Props> = ({
                               className={[
                                 "w-5 h-5",
                                 isDark
-                                  ? "text-emerald-400"
-                                  : "text-emerald-600",
+                                  ? "text-cyan-400"
+                                  : "text-cyan-600",
                               ].join(" ")}
                             />
                         </div>
@@ -710,7 +710,7 @@ const AdminUserFormModal: React.FC<Props> = ({
                                 "px-2 py-0.5 rounded-full border text-xs",
                                 isDark
                                   ? "bg-white/5 border-white/10 text-zinc-100"
-                                  : "bg-emerald-50 border-emerald-200 text-emerald-700",
+                                  : "bg-cyan-50 border-cyan-200 text-cyan-700",
                               ].join(" ")}
                             >
                               {roleLabel(role)}
@@ -749,8 +749,8 @@ const AdminUserFormModal: React.FC<Props> = ({
                             className={[
                               "w-full appearance-none rounded-lg px-3.5 py-2.5 text-sm outline-none transition-all",
                               isDark
-                                ? "bg-zinc-900/50 border border-white/10 text-zinc-100 focus:border-emerald-500/50 focus:ring-4 focus:ring-emerald-500/10"
-                                : "bg-white border border-slate-200 text-slate-900 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-200",
+                                ? "bg-zinc-900/50 border border-white/10 text-zinc-100 focus:border-cyan-500/50 focus:ring-4 focus:ring-cyan-500/10"
+                                : "bg-white border border-slate-200 text-slate-900 focus:border-cyan-500 focus:ring-2 focus:ring-cyan-200",
                             ].join(" ")}
                         >
                             <option value="COORDINATOR">{roleLabel("COORDINATOR")}</option>
@@ -779,7 +779,7 @@ const AdminUserFormModal: React.FC<Props> = ({
                             <button
                                 type="button"
                                 onClick={applySuggestedEmail}
-                                className="text-[10px] font-medium px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500/20 transition-colors flex items-center gap-1.5"
+                                className="text-[10px] font-medium px-2 py-0.5 rounded bg-cyan-500/10 text-cyan-400 hover:bg-cyan-500/20 transition-colors flex items-center gap-1.5"
                             >
                                 <Wand2 className="w-3 h-3" />
                                 Sugerir
@@ -809,8 +809,8 @@ const AdminUserFormModal: React.FC<Props> = ({
                                   "w-full appearance-none rounded-lg px-3.5 py-2.5 text-sm outline-none transition-all",
                                   role === "ADMIN" ? "opacity-50 cursor-not-allowed" : "",
                                   isDark
-                                    ? "bg-zinc-900/50 border border-white/10 text-zinc-100 focus:border-emerald-500/50 focus:ring-4 focus:ring-emerald-500/10"
-                                    : "bg-white border border-slate-200 text-slate-900 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-200",
+                                    ? "bg-zinc-900/50 border border-white/10 text-zinc-100 focus:border-cyan-500/50 focus:ring-4 focus:ring-cyan-500/10"
+                                    : "bg-white border border-slate-200 text-slate-900 focus:border-cyan-500 focus:ring-2 focus:ring-cyan-200",
                                 ]
                                   .filter(Boolean)
                                   .join(" ")}
@@ -840,7 +840,7 @@ const AdminUserFormModal: React.FC<Props> = ({
                             type="checkbox"
                             checked={mustChangePassword}
                             onChange={(e) => setMustChangePassword(e.target.checked)}
-                            className="mt-0.5 rounded border-white/20 bg-zinc-900 text-emerald-500 focus:ring-emerald-500/40"
+                            className="mt-0.5 rounded border-white/20 bg-zinc-900 text-cyan-500 focus:ring-cyan-500/40"
                         />
                         <div className="space-y-0.5">
                             <span
@@ -876,7 +876,7 @@ const AdminUserFormModal: React.FC<Props> = ({
                                     type="checkbox"
                                     checked={generatePassword}
                                     onChange={(e) => setGeneratePassword(e.target.checked)}
-                                    className="rounded-sm border-white/20 bg-zinc-900 text-emerald-500 focus:ring-0 w-3.5 h-3.5"
+                                    className="rounded-sm border-white/20 bg-zinc-900 text-cyan-500 focus:ring-0 w-3.5 h-3.5"
                                 />
                                 <span className="text-xs text-zinc-400 group-hover:text-zinc-200 transition-colors">Generar automáticamente</span>
                             </label>
@@ -985,7 +985,7 @@ const AdminUserFormModal: React.FC<Props> = ({
                                 ? isDark
                                   ? "bg-zinc-800 text-zinc-500 cursor-not-allowed border border-transparent"
                                   : "bg-slate-200 text-slate-400 cursor-not-allowed border border-transparent"
-                                : "bg-emerald-600 hover:bg-emerald-500 text-white shadow-emerald-900/20 border border-emerald-500/50"
+                                : "bg-cyan-600 hover:bg-cyan-500 text-white shadow-cyan-900/20 border border-cyan-500/50"
                         }`}
                     >
                         {saving && <Loader2 className="w-3.5 h-3.5 animate-spin" />}

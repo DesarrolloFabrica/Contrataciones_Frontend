@@ -1,6 +1,7 @@
 // src/pages/leader/LeaderConsole.tsx
 import React, { useState, useCallback, useEffect, useMemo } from "react";
 import { useLocation } from "react-router-dom";
+import { AlertCircle, CheckCircle2, FlaskConical, XCircle } from "lucide-react";
 // Types & Services
 import type {
   InterviewData,
@@ -34,10 +35,12 @@ import { LeaderHero } from "../../features/leader/components/LeaderHero";
 import { LeaderModeHeader } from "../../features/leader/components/LeaderModeHeader";
 import { LeaderQuickGuideCard } from "../../features/leader/components/LeaderQuickGuideCard";
 import { toBackendTeacherForm, mapFormToInterviewData } from "../../features/leader/utils/leaderMappers";
+import AnimatedBackground from "../../components/AnimatedBackground";
 
 const ORG_ID = import.meta.env.VITE_ORG_ID ?? "ORG_DEFAULT";
 
 type ViewMode = "analyze" | "history";
+type ExamplePreset = "approved" | "medium" | "rejected" | null;
 
 const LeaderConsole: React.FC = () => {
   const [mode, setMode] = useState<ViewMode>("analyze");
@@ -53,6 +56,7 @@ const LeaderConsole: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [isFlowHelpOpen, setIsFlowHelpOpen] = useState(false);
   const [wizardStep, setWizardStep] = useState<number>(1);
+  const [examplePreset, setExamplePreset] = useState<ExamplePreset>(null);
 
   const handleFormSubmit = useCallback(
     async (data: InterviewData) => {
@@ -282,12 +286,7 @@ const LeaderConsole: React.FC = () => {
       />
 
       <main className="flex-1 relative z-10 w-full">
-        {isDark && (
-          <div className="fixed inset-0 pointer-events-none">
-            <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[900px] h-[500px] bg-gradient-to-b from-cyan-500/5 via-transparent to-transparent blur-[150px] rounded-full" />
-            <div className="absolute inset-0 [background:linear-gradient(rgba(255,255,255,0.015)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.015)_1px,transparent_1px)] bg-[size:60px_60px] [mask-image:radial-gradient(ellipse_70%_60%_at_50%_20%,#000_50%,transparent_100%)]" />
-          </div>
-        )}
+        <AnimatedBackground />
 
         <div className="max-w-7xl mx-auto px-4 md:px-8 py-6 md:py-8 relative z-10">
           {mode === "analyze" && (
@@ -300,6 +299,8 @@ const LeaderConsole: React.FC = () => {
                     <InterviewForm
                       onSubmit={handleFormSubmit}
                       onStepChange={setWizardStep}
+                      examplePreset={examplePreset}
+                      onExampleApplied={() => setExamplePreset(null)}
                     />
                   </div>
 
@@ -308,6 +309,72 @@ const LeaderConsole: React.FC = () => {
                       currentStep={wizardStep}
                       onOpenFlowHelp={() => setIsFlowHelpOpen(true)}
                     />
+                    <div
+                      className={`rounded-2xl border p-4 space-y-3 ${
+                        isDark
+                          ? "bg-gradient-to-b from-[#080D16] to-[#0A1018] border-white/[0.06]"
+                          : "bg-white border-slate-200/80 shadow-[0_4px_24px_-8px_rgba(15,23,42,0.06)]"
+                      }`}
+                    >
+                      <div className="flex items-center gap-2">
+                        <div
+                          className={`h-8 w-8 rounded-lg flex items-center justify-center ${
+                            isDark
+                              ? "bg-cyan-500/10 border border-cyan-500/20"
+                              : "bg-cyan-50 border border-cyan-200"
+                          }`}
+                        >
+                          <FlaskConical className={`h-4 w-4 ${isDark ? "text-cyan-400" : "text-cyan-600"}`} />
+                        </div>
+                        <div>
+                          <p className={`text-[11px] font-bold uppercase tracking-[0.16em] ${isDark ? "text-white" : "text-slate-900"}`}>
+                            Datos de ejemplo
+                          </p>
+                          <p className={`text-[10px] ${isDark ? "text-slate-500" : "text-slate-500"}`}>
+                            Carga casos de prueba sin editar el formulario completo.
+                          </p>
+                        </div>
+                      </div>
+
+                      <div className="space-y-2">
+                        <button
+                          type="button"
+                          onClick={() => setExamplePreset("approved")}
+                          className={`w-full flex items-center gap-2 rounded-xl border px-3 py-2 text-[11px] font-semibold transition ${
+                            isDark
+                              ? "border-white/10 text-slate-200 hover:bg-emerald-500/10 hover:border-emerald-400/30"
+                              : "border-slate-200 text-slate-700 hover:bg-emerald-50 hover:border-emerald-200"
+                          }`}
+                        >
+                          <CheckCircle2 className="h-4 w-4 text-emerald-400" />
+                          Perfil aprobado
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setExamplePreset("medium")}
+                          className={`w-full flex items-center gap-2 rounded-xl border px-3 py-2 text-[11px] font-semibold transition ${
+                            isDark
+                              ? "border-white/10 text-slate-200 hover:bg-amber-500/10 hover:border-amber-400/30"
+                              : "border-slate-200 text-slate-700 hover:bg-amber-50 hover:border-amber-200"
+                          }`}
+                        >
+                          <AlertCircle className="h-4 w-4 text-amber-400" />
+                          Perfil medio
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setExamplePreset("rejected")}
+                          className={`w-full flex items-center gap-2 rounded-xl border px-3 py-2 text-[11px] font-semibold transition ${
+                            isDark
+                              ? "border-white/10 text-slate-200 hover:bg-rose-500/10 hover:border-rose-400/30"
+                              : "border-slate-200 text-slate-700 hover:bg-rose-50 hover:border-rose-200"
+                          }`}
+                        >
+                          <XCircle className="h-4 w-4 text-rose-400" />
+                          Perfil rechazado
+                        </button>
+                      </div>
+                    </div>
                   </aside>
                 </div>
               )}
@@ -326,7 +393,7 @@ const LeaderConsole: React.FC = () => {
               )}
 
               {analysisResult && interviewData && !error && (
-                <div className="animate-[slideUp_400ms_ease-out] max-w-5xl mx-auto">
+                <div className="animate-[slideUp_400ms_ease-out] w-full">
                   <AnalysisResults
                     result={analysisResult}
                     interviewData={interviewData}

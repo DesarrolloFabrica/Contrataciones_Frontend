@@ -86,12 +86,12 @@ const CoordinatorUsersPanel: React.FC = () => {
               "w-10 h-10 rounded-2xl flex items-center justify-center",
               isDark
                 ? "bg-white/5 border border-white/10"
-                : "bg-emerald-50 border border-emerald-100",
+                : "bg-cyan-50 border border-cyan-100",
             ].join(" ")}
           >
             <Users
               className={`w-5 h-5 ${
-                isDark ? "text-emerald-400" : "text-emerald-600"
+                isDark ? "text-cyan-400" : "text-cyan-600"
               }`}
             />
           </div>
@@ -124,7 +124,7 @@ const CoordinatorUsersPanel: React.FC = () => {
           className={[
             "px-4 py-2 rounded-xl font-bold text-xs uppercase tracking-widest shadow-md transition-colors",
             hasSchool
-              ? "bg-emerald-600 hover:bg-emerald-500 text-white"
+              ? "bg-cyan-600 hover:bg-cyan-500 text-white shadow-cyan-900/20"
               : isDark
                 ? "bg-white/5 text-white/30 border border-white/10 cursor-not-allowed"
                 : "bg-slate-100 text-slate-400 border border-slate-200 cursor-not-allowed",
@@ -153,7 +153,7 @@ const CoordinatorUsersPanel: React.FC = () => {
         <div className="flex flex-col items-center justify-center py-16 gap-3">
           <Loader2
             className={`w-8 h-8 animate-spin ${
-              isDark ? "text-emerald-500" : "text-emerald-600"
+              isDark ? "text-cyan-400" : "text-cyan-600"
             }`}
           />
           <p
@@ -220,7 +220,7 @@ const CoordinatorUsersPanel: React.FC = () => {
             <button
               type="button"
               onClick={openCreate}
-              className="px-3 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold uppercase tracking-widest"
+              className="px-3 py-2 rounded-xl bg-cyan-600 hover:bg-cyan-500 text-white text-xs font-bold uppercase tracking-widest shadow-cyan-900/20 transition-colors"
             >
               Crear líder
             </button>

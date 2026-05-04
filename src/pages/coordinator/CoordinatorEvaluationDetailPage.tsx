@@ -41,12 +41,12 @@ const GlassCard = ({
 
   return (
     <div
-      className={`relative overflow-hidden rounded-[24px] border backdrop-blur-xl transition-all duration-300
+      className={`relative overflow-hidden rounded-2xl border backdrop-blur-xl transition-all duration-300
       ${
         glowing
           ? isDark
-            ? "bg-[#0A1014]/80 border-emerald-500/20 shadow-[0_0_40px_-10px_rgba(16,185,129,0.1)]"
-            : "bg-emerald-50 border-emerald-200 shadow-[0_18px_50px_rgba(16,185,129,0.20)]"
+            ? "bg-[#0A1014]/80 border-cyan-500/20 shadow-[0_0_40px_-10px_rgba(6,182,212,0.1)]"
+            : "bg-cyan-50 border-cyan-200 shadow-[0_18px_50px_rgba(6,182,212,0.20)]"
           : isDark
             ? "bg-[#0A0C10]/60 border-white/[0.06] shadow-2xl"
             : "bg-white border-slate-200 shadow-[0_18px_50px_rgba(15,23,42,0.10)]"
@@ -72,8 +72,8 @@ function StatusBadge({ status }: { status?: string }) {
       ${
         isApproved
           ? isDark
-            ? "bg-emerald-500/10 border-emerald-500/20 text-emerald-400 shadow-[0_0_15px_-3px_rgba(16,185,129,0.2)]"
-            : "bg-emerald-50 border-emerald-200 text-emerald-700 shadow-[0_0_15px_-3px_rgba(16,185,129,0.25)]"
+            ? "bg-cyan-500/10 border-cyan-500/25 text-cyan-400 shadow-[0_0_15px_-3px_rgba(6,182,212,0.2)]"
+            : "bg-cyan-50 border-cyan-200 text-cyan-700 shadow-[0_0_15px_-3px_rgba(6,182,212,0.25)]"
           : isRejected
             ? isDark
               ? "bg-rose-500/10 border-rose-500/20 text-rose-400 shadow-[0_0_15px_-3px_rgba(244,63,94,0.2)]"
@@ -279,17 +279,16 @@ export default function CoordinatorEvaluationDetailPage() {
 
   // Background sofisticado
   const BackgroundEffects = () => (
-    <div className="fixed inset-0 pointer-events-none overflow-hidden -z-10 bg-[#020408]">
-      <div className="absolute top-[-20%] left-[-10%] w-[800px] h-[800px] bg-emerald-900/10 rounded-full blur-[120px] mix-blend-screen opacity-40" />
-      <div className="absolute bottom-[-10%] right-[-10%] w-[600px] h-[600px] bg-teal-900/10 rounded-full blur-[100px] mix-blend-screen opacity-30" />
-      <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-[0.03]" />
+    <div className="fixed inset-0 pointer-events-none overflow-hidden -z-10 bg-[#060A12]">
+      <div className="absolute top-[-20%] left-[-10%] w-[800px] h-[800px] bg-cyan-900/10 rounded-full blur-[120px] mix-blend-screen opacity-40" />
+      <div className="absolute bottom-[-10%] right-[-10%] w-[600px] h-[600px] bg-blue-900/10 rounded-full blur-[100px] mix-blend-screen opacity-30" />
     </div>
   );
 
   return (
     <div
-      className={`min-h-screen w-full font-sans selection:bg-emerald-500/30 ${
-        isDark ? "bg-[#020408] text-slate-200" : "bg-gray-50 text-gray-900"
+      className={`min-h-screen w-full font-sans selection:bg-cyan-500/30 ${
+        isDark ? "bg-[#060A12] text-slate-200" : "bg-[#F4F7FC] text-slate-900"
       }`}
     >
       {isDark && <BackgroundEffects />}
@@ -301,20 +300,20 @@ export default function CoordinatorEvaluationDetailPage() {
             onClick={() => navigate("/coordinator")}
             className={`group flex items-center gap-3 text-sm font-medium transition-colors pl-1 ${
               isDark
-                ? "text-slate-400 hover:text-emerald-400"
-                : "text-slate-600 hover:text-emerald-700"
+                ? "text-slate-400 hover:text-cyan-400"
+                : "text-slate-600 hover:text-cyan-700"
             }`}
           >
             <div
-              className={`flex items-center justify-center w-8 h-8 rounded-full border transition-all ${
+              className={`flex items-center justify-center w-8 h-8 rounded-xl border transition-all ${
                 isDark
-                  ? "bg-white/5 border-white/5 group-hover:border-emerald-500/30 group-hover:bg-emerald-500/10"
-                  : "bg-white border-slate-200 group-hover:border-emerald-300 group-hover:bg-emerald-50 shadow-sm"
+                  ? "bg-white/[0.03] border-white/[0.06] group-hover:border-cyan-500/25 group-hover:bg-cyan-500/5"
+                  : "bg-white border-slate-200 group-hover:border-cyan-300 group-hover:bg-cyan-50 shadow-sm"
               }`}
             >
               <ArrowLeft className="w-4 h-4" />
             </div>
-            <span className="tracking-wide">Volver al Dashboard</span>
+            <span className="tracking-wide">Volver a la Bandeja</span>
           </button>
 
           <div className="flex items-center gap-4">
@@ -337,8 +336,8 @@ export default function CoordinatorEvaluationDetailPage() {
                 ${
                   canExport
                     ? isDark
-                      ? "bg-[#0F161A] border-emerald-500/30 text-emerald-400 hover:bg-emerald-500 hover:text-[#020408] hover:border-transparent hover:shadow-[0_0_20px_rgba(16,185,129,0.4)]"
-                      : "bg-emerald-500 border-emerald-500 text-white hover:bg-emerald-600 hover:shadow-[0_18px_40px_rgba(16,185,129,0.45)]"
+                      ? "bg-[#0A0D14] border-cyan-500/30 text-cyan-400 hover:bg-cyan-500 hover:text-black hover:border-transparent hover:shadow-[0_0_20px_rgba(6,182,212,0.4)]"
+                      : "bg-cyan-500 border-cyan-500 text-white hover:bg-cyan-600 hover:shadow-[0_18px_40px_rgba(6,182,212,0.45)]"
                     : isDark
                       ? "bg-white/[0.02] border-white/5 text-white/10 cursor-not-allowed"
                       : "bg-slate-100 border-slate-200 text-slate-400 cursor-not-allowed"
@@ -353,11 +352,11 @@ export default function CoordinatorEvaluationDetailPage() {
         {loading ? (
           <div className="h-[60vh] flex flex-col items-center justify-center space-y-6">
             <div className="relative w-16 h-16">
-              <div className="absolute inset-0 rounded-full border-2 border-emerald-500/20"></div>
-              <div className="absolute inset-0 rounded-full border-t-2 border-emerald-500 animate-spin"></div>
+              <div className="absolute inset-0 rounded-full border-2 border-cyan-500/20"></div>
+              <div className="absolute inset-0 rounded-full border-t-2 border-cyan-500 animate-spin"></div>
             </div>
-            <p className="text-sm font-medium text-emerald-500/50 animate-pulse tracking-widest uppercase">
-              Cargando Análisis...
+            <p className="text-sm font-medium text-cyan-500/50 animate-pulse tracking-widest uppercase">
+              Cargando Analisis...
             </p>
           </div>
         ) : !selected ? (
@@ -415,20 +414,20 @@ export default function CoordinatorEvaluationDetailPage() {
                     className={`pb-3 text-sm font-semibold tracking-wide transition-colors relative ${
                       activeTab === "details"
                         ? isDark
-                          ? "text-emerald-400"
-                          : "text-emerald-600"
+                          ? "text-cyan-400"
+                          : "text-cyan-600"
                         : isDark
                           ? "text-slate-500 hover:text-slate-300"
                           : "text-slate-500 hover:text-slate-700"
                     }`}
                   >
-                    Análisis Inteligente
+                    Analisis Inteligente
                     {activeTab === "details" && (
                       <div
-                        className={`absolute bottom-0 left-0 w-full h-0.5 bg-emerald-500 ${
+                        className={`absolute bottom-0 left-0 w-full h-0.5 bg-cyan-500 ${
                           isDark
-                            ? "shadow-[0_0_12px_#10b981]"
-                            : "shadow-[0_0_8px_rgba(16,185,129,0.6)]"
+                            ? "shadow-[0_0_12px_#06b6d4]"
+                            : "shadow-[0_0_8px_rgba(6,182,212,0.6)]"
                         }`}
                       />
                     )}
@@ -439,8 +438,8 @@ export default function CoordinatorEvaluationDetailPage() {
                     className={`pb-3 text-sm font-semibold tracking-wide transition-colors relative ${
                       activeTab === "interviews"
                         ? isDark
-                          ? "text-emerald-400"
-                          : "text-emerald-600"
+                          ? "text-cyan-400"
+                          : "text-cyan-600"
                         : isDark
                           ? "text-slate-500 hover:text-slate-300"
                           : "text-slate-500 hover:text-slate-700"
@@ -449,10 +448,10 @@ export default function CoordinatorEvaluationDetailPage() {
                     Historial Entrevistas
                     {activeTab === "interviews" && (
                       <div
-                        className={`absolute bottom-0 left-0 w-full h-0.5 bg-emerald-500 ${
+                        className={`absolute bottom-0 left-0 w-full h-0.5 bg-cyan-500 ${
                           isDark
-                            ? "shadow-[0_0_12px_#10b981]"
-                            : "shadow-[0_0_8px_rgba(16,185,129,0.6)]"
+                            ? "shadow-[0_0_12px_#06b6d4]"
+                            : "shadow-[0_0_8px_rgba(6,182,212,0.6)]"
                         }`}
                       />
                     )}

@@ -47,75 +47,75 @@ export const CandidateDecisionPanel: React.FC<CandidateDecisionPanelProps> = ({
 
   if (isAlreadyEvaluated) {
     return (
+    <div
+      className={`relative rounded-2xl p-[1px] shadow-2xl ${
+        isDark
+          ? "bg-gradient-to-b from-white/10 to-transparent"
+          : "bg-gradient-to-b from-cyan-200/40 via-transparent to-transparent"
+      }`}
+    >
       <div
-        className={`relative rounded-[32px] p-[1px] shadow-2xl ${
-          isDark
-            ? "bg-gradient-to-b from-white/10 to-transparent"
-            : "bg-gradient-to-b from-emerald-200/40 via-transparent to-transparent"
+        className={`rounded-2xl overflow-hidden ${
+          isDark ? "bg-[#0E1216]" : "bg-white"
         }`}
       >
-        <div
-          className={`rounded-[31px] backdrop-blur-xl overflow-hidden ${
-            isDark ? "bg-[#0E1216]" : "bg-white"
-          }`}
-        >
-          <div className="p-8">
-            <div className="rounded-2xl border border-emerald-500/20 bg-emerald-500/10 p-5">
-              <div className="text-[10px] font-black uppercase tracking-[0.2em] text-emerald-300 mb-2">
-                Ya evaluado
-              </div>
-              <p className="text-sm text-emerald-100 leading-relaxed">
-                Esta evaluación ya fue registrada con veredicto{" "}
-                <span className="font-bold">{evaluatedVerdictLabel}</span>{" "}
-                y no puede volver a ser enviada.
-              </p>
-              {coordinatorDecisionAt && (
-                <p className="text-[11px] text-emerald-200/80 mt-3">
-                  Fecha de registro:{" "}
-                  {String(coordinatorDecisionAt).slice(0, 19)}
-                </p>
-              )}
+        <div className="p-8">
+          <div className="rounded-xl border border-cyan-500/20 bg-cyan-500/10 p-5">
+            <div className="text-[10px] font-black uppercase tracking-[0.2em] text-cyan-300 mb-2">
+              Ya evaluado
             </div>
+            <p className="text-sm text-cyan-100 leading-relaxed">
+              Esta evaluacion ya fue registrada con veredicto{" "}
+              <span className="font-bold">{evaluatedVerdictLabel}</span>{" "}
+              y no puede volver a ser enviada.
+            </p>
+            {coordinatorDecisionAt && (
+              <p className="text-[11px] text-cyan-200/80 mt-3">
+                Fecha de registro:{" "}
+                {String(coordinatorDecisionAt).slice(0, 19)}
+              </p>
+            )}
           </div>
         </div>
       </div>
+    </div>
     );
   }
 
   return (
     <div
-      className={`relative rounded-[32px] p-[1px] shadow-2xl ${
+      className={`relative rounded-2xl p-[1px] shadow-2xl ${
         isDark
           ? "bg-gradient-to-b from-white/10 to-transparent"
-          : "bg-gradient-to-b from-emerald-200/40 via-transparent to-transparent"
+          : "bg-gradient-to-b from-cyan-200/40 via-transparent to-transparent"
       }`}
     >
       <div
-        className={`rounded-[31px] backdrop-blur-xl overflow-hidden ${
+        className={`rounded-2xl overflow-hidden ${
           isDark ? "bg-[#0E1216]" : "bg-white"
         }`}
       >
         <div
-          className={`px-8 py-6 border-b ${
+          className={`px-8 py-5 border-b ${
             isDark
-              ? "bg-[#13181E] border-white/5"
+              ? "bg-[#0A0D12] border-white/[0.06]"
               : "bg-slate-50 border-slate-200"
           }`}
         >
           <div className="flex items-center gap-3 mb-1">
-            <div className="relative flex h-3 w-3">
-              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
-              <span className="relative inline-flex rounded-full h-3 w-3 bg-emerald-500" />
+            <div className="relative flex h-2.5 w-2.5">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-cyan-400 opacity-75" />
+              <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-cyan-500" />
             </div>
             <h2
-              className={`text-lg font-bold tracking-tight ${
+              className={`text-sm font-bold tracking-tight ${
                 isDark ? "text-white" : "text-slate-900"
               }`}
             >
-              Consola de Decisión
+              Decision del coordinador
             </h2>
           </div>
-          <p className="text-xs text-slate-500 font-medium ml-6">
+          <p className={`text-[11px] font-medium ml-5 ${isDark ? "text-slate-500" : "text-slate-400"}`}>
             Complete los pasos requeridos para finalizar.
           </p>
         </div>

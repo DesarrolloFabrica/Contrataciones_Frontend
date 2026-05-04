@@ -1,6 +1,7 @@
 import React from "react";
 import { Sparkles, ListChecks, FileText, Info, CheckCircle2 } from "lucide-react";
 import { useTheme } from "../../../context/ThemeContext";
+import videoFondo from "../../../assets/videos/Op2_1.mp4";
 
 interface LeaderIntroPanelProps {
   currentStep: 1 | 2 | 3;
@@ -19,15 +20,39 @@ export const LeaderIntroPanel: React.FC<LeaderIntroPanelProps> = ({
   return (
     <section
       className={[
-        "relative overflow-hidden rounded-3xl backdrop-blur-2xl",
+        "relative overflow-hidden rounded-3xl",
         isDark
-          ? "border border-white/10 bg-[#050505]/90 shadow-[0_24px_80px_rgba(0,0,0,0.85)]"
-          : "border border-slate-200 bg-white shadow-[0_18px_60px_rgba(15,23,42,0.10)]",
+          ? "border border-white/10 shadow-[0_24px_80px_rgba(0,0,0,0.85)]"
+          : "border border-slate-200 shadow-[0_18px_60px_rgba(15,23,42,0.10)]",
       ].join(" ")}
     >
+      {/* Video Background */}
+      <div className="absolute inset-0 overflow-hidden pointer-events-none">
+        <video
+          autoPlay
+          loop
+          muted
+          playsInline
+          className={`absolute inset-0 w-full h-full object-cover ${
+            isDark ? "opacity-30" : "opacity-25"
+          }`}
+          style={{ filter: "saturate(1.3)" }}
+        >
+          <source src={videoFondo} type="video/mp4" />
+        </video>
+        {/* Overlay to blend video with background */}
+        <div
+          className={`absolute inset-0 ${
+            isDark
+              ? "bg-gradient-to-b from-[#050505]/70 via-[#050505]/50 to-[#050505]/80"
+              : "bg-gradient-to-b from-white/60 via-white/40 to-white/70"
+          }`}
+        />
+      </div>
+
       {isDark && (
         <div className="absolute inset-0 pointer-events-none">
-          <div className="absolute -top-32 right-0 w-80 h-80 rounded-full blur-[90px] bg-emerald-500/12" />
+          <div className="absolute -top-32 right-0 w-80 h-80 rounded-full blur-[90px] bg-cyan-500/12" />
           <div className="absolute -bottom-40 left-10 w-72 h-72 rounded-full blur-[100px] bg-cyan-500/8" />
         </div>
       )}
@@ -39,8 +64,8 @@ export const LeaderIntroPanel: React.FC<LeaderIntroPanelProps> = ({
               className={[
                 "inline-flex items-center gap-2 px-3 py-1 rounded-full border text-[11px] font-bold uppercase tracking-[0.18em]",
                 isDark
-                  ? "border-emerald-500/25 bg-emerald-500/10 text-emerald-200"
-                  : "border-emerald-400/30 bg-emerald-50 text-emerald-700",
+                  ? "border-cyan-500/25 bg-cyan-500/10 text-cyan-200"
+                  : "border-cyan-400/30 bg-cyan-50 text-cyan-700",
               ].join(" ")}
             >
               <Sparkles className="w-3.5 h-3.5" />
@@ -102,7 +127,7 @@ export const LeaderIntroPanel: React.FC<LeaderIntroPanelProps> = ({
           >
             <div className="flex items-center justify-between mb-4 gap-2">
               <div className="flex items-center gap-2">
-                <div className="p-2 rounded-xl bg-emerald-500/15 text-emerald-300 flex items-center justify-center">
+                <div className="p-2 rounded-xl bg-cyan-500/15 text-cyan-300 flex items-center justify-center">
                   <ListChecks className="w-4 h-4" />
                 </div>
                 <div>
@@ -156,16 +181,16 @@ export const LeaderIntroPanel: React.FC<LeaderIntroPanelProps> = ({
                     className="flex items-start gap-3 relative"
                   >
                     {step.id !== 3 && (
-                      <div className="absolute left-3 top-6 bottom-[-6px] w-px bg-gradient-to-b from-emerald-500/40 via-emerald-500/10 to-transparent pointer-events-none" />
+                      <div className="absolute left-3 top-6 bottom-[-6px] w-px bg-gradient-to-b from-cyan-500/40 via-cyan-500/10 to-transparent pointer-events-none" />
                     )}
 
                     <div
                       className={`flex-shrink-0 w-6 h-6 rounded-full border flex items-center justify-center text-[11px] font-bold
                         ${
                           isDone
-                            ? "border-emerald-400 bg-emerald-500/20 text-emerald-100"
+                            ? "border-cyan-400 bg-cyan-500/20 text-cyan-100"
                             : isActive
-                            ? "border-emerald-400/70 bg-emerald-500/10 text-emerald-200"
+                            ? "border-cyan-400/70 bg-cyan-500/10 text-cyan-200"
                             : isDark
                             ? "border-white/15 bg-black/40 text-neutral-400"
                             : "border-slate-200 bg-slate-50 text-slate-500"
@@ -207,7 +232,7 @@ export const LeaderIntroPanel: React.FC<LeaderIntroPanelProps> = ({
               "relative p-5 rounded-2xl border",
               isDark
                 ? "bg-gradient-to-br from-[#050b07] via-[#050505] to-[#040812] border-white/10"
-                : "bg-gradient-to-br from-white via-slate-50 to-emerald-50/30 border-slate-200 shadow-[0_14px_40px_rgba(15,23,42,0.08)]",
+                : "bg-gradient-to-br from-white via-slate-50 to-cyan-50/30 border-slate-200 shadow-[0_14px_40px_rgba(15,23,42,0.08)]",
             ].join(" ")}
           >
             <div className="flex items-center gap-2 mb-4">

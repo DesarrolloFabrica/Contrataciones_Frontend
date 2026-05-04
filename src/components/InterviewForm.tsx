@@ -35,8 +35,6 @@ import type {
   CandidateDocumentsDraft,
 } from "../features/leader/interview-form/types";
 
-import { InterviewFormHeader } from "../features/leader/interview-form/components/InterviewFormHeader";
-import { ExampleProfilesToolbar } from "../features/leader/interview-form/components/ExampleProfilesToolbar";
 import { IdentitySection } from "../features/leader/interview-form/components/IdentitySection";
 import { AvailabilitySection } from "../features/leader/interview-form/components/AvailabilitySection";
 import { PedagogySection } from "../features/leader/interview-form/components/PedagogySection";
@@ -56,7 +54,12 @@ import { useLeaderSchoolPrograms } from "../features/leader/interview-form/hooks
 import { useCandidateLookup } from "../features/leader/interview-form/hooks/useCandidateLookup";
 import { useCedulaValidation } from "../features/leader/interview-form/hooks/useCedulaValidation";
 
-const InterviewForm: React.FC<InterviewFormProps> = ({ onSubmit, onStepChange }) => {
+const InterviewForm: React.FC<InterviewFormProps> = ({
+  onSubmit,
+  onStepChange,
+  examplePreset = null,
+  onExampleApplied,
+}) => {
   const { user } = useAuth();
   const { theme } = useTheme();
   const isDark = theme === "dark";
@@ -347,6 +350,21 @@ const InterviewForm: React.FC<InterviewFormProps> = ({ onSubmit, onStepChange })
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
+  useEffect(() => {
+    if (!examplePreset) return;
+
+    if (examplePreset === "approved") {
+      loadExample(approvedExample);
+    } else if (examplePreset === "medium") {
+      loadExample(mediumExample);
+    } else {
+      loadExample(rejectedExample);
+    }
+
+    onExampleApplied?.();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [examplePreset]);
+
   const resetForm = () => {
     resetSearch();
 
@@ -456,14 +474,6 @@ const InterviewForm: React.FC<InterviewFormProps> = ({ onSubmit, onStepChange })
   return (
     <div className="w-full">
       <div className="relative z-10 space-y-8">
-        <InterviewFormHeader />
-
-        <ExampleProfilesToolbar
-          onLoadApproved={() => loadExample(approvedExample)}
-          onLoadMedium={() => loadExample(mediumExample)}
-          onLoadRejected={() => loadExample(rejectedExample)}
-        />
-
         <form onSubmit={handleSubmit} className="space-y-6">
           <InterviewWizardShell
             currentStep={currentStep}

@@ -70,7 +70,7 @@ export const IdentitySection: React.FC<IdentitySectionProps> = ({
                 name="documentNumber"
                 placeholder="Ej. 1030123456"
                 className={`rounded-xl px-4 py-3 outline-none ${
-                  isDark ? "w-full bg-[#07090B] border border-white/[0.10] text-gray-200 text-sm rounded-xl px-4 py-3.5 outline-none transition-all duration-300 placeholder:text-gray-500 focus:bg-[#0F1216] focus:border-emerald-500/25 focus:ring-1 focus:ring-emerald-500/20 focus:shadow-[0_0_18px_-10px_rgba(16,185,129,0.14)] hover:border-white/[0.14] hover:bg-[#0C0F12]" : "w-full bg-white border border-slate-200 text-slate-900 text-sm rounded-xl px-4 py-3.5 outline-none transition-all duration-200 placeholder:text-slate-400 focus:bg-white focus:border-emerald-500/60 focus:ring-1 focus:ring-emerald-500/30 focus:shadow-[0_0_0_1px_rgba(16,185,129,0.20)] hover:border-slate-300"
+                  isDark ? "w-full bg-[#07090B] border border-white/[0.10] text-gray-200 text-sm rounded-xl px-4 py-3.5 outline-none transition-all duration-300 placeholder:text-gray-500 focus:bg-[#0F1216] focus:border-cyan-500/25 focus:ring-1 focus:ring-cyan-500/20 focus:shadow-[0_0_18px_-10px_rgba(6,182,212,0.14)] hover:border-white/[0.14] hover:bg-[#0C0F12]" : "w-full bg-white border border-slate-200 text-slate-900 text-sm rounded-xl px-4 py-3.5 outline-none transition-all duration-200 placeholder:text-slate-400 focus:bg-white focus:border-cyan-500/60 focus:ring-1 focus:ring-cyan-500/30 focus:shadow-[0_0_0_1px_rgba(6,182,212,0.20)] hover:border-slate-300"
                 }`}
               />
 
@@ -208,7 +208,7 @@ export const IdentitySection: React.FC<IdentitySectionProps> = ({
                 type="button"
                 onClick={onCreateCandidate}
                 disabled={isCreatingCandidate}
-                className="px-4 py-2 rounded-xl border border-emerald-500/35 bg-emerald-500/10 text-emerald-200 text-[11px] font-extrabold uppercase tracking-[0.22em] hover:bg-emerald-500/15 transition disabled:opacity-60 disabled:cursor-wait"
+                className="px-4 py-2 rounded-xl border border-cyan-500/35 bg-cyan-500/10 text-cyan-200 text-[11px] font-extrabold uppercase tracking-[0.22em] hover:bg-cyan-500/15 transition disabled:opacity-60 disabled:cursor-wait"
               >
                 {isCreatingCandidate ? "Creando..." : "Crear candidato"}
               </button>
