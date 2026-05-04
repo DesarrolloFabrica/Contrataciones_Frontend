@@ -5,17 +5,11 @@ import {
   FileText,
   CheckCircle2,
   XCircle,
-  Info,
   ChevronRight,
-  ShieldCheck,
-  User,
-  GraduationCap,
-  Activity,
-  Zap,
-  Sparkles,
-  Scale,
   Loader2,
   AlertTriangle,
+  Activity,
+  Sparkles,
 } from "lucide-react";
 
 import { useAuth } from "../../context/AuthContext";
@@ -25,6 +19,11 @@ import { useEvaluationDetail } from "./hooks/useEvaluationDetail";
 import { getTeacherEvaluationById } from "../../services/teachersService";
 import { compareInterviewsWithGemini } from "../../services/geminiService";
 import { useTheme } from "../../context/ThemeContext";
+import { EvaluationSummaryCard } from "./components/EvaluationSummaryCard";
+import { ProcessTimeline } from "./components/ProcessTimeline";
+import { CandidateDecisionPanel } from "./components/CandidateDecisionPanel";
+import { EvaluationComparisonPreview } from "./components/EvaluationComparisonPreview";
+import { buildTimelineEvents } from "./utils/coordinatorTimeline";
 
 // --- COMPONENTES UI DE ALTA GAMA ---
 
@@ -58,72 +57,7 @@ const GlassCard = ({
   );
 };
 
-const SectionLabel = ({ icon: Icon, label }: { icon?: any; label: string }) => {
-  const { theme } = useTheme();
-  const isDark = theme === "dark";
 
-  return (
-    <div className="flex items-center gap-2 mb-3">
-      {Icon && (
-        <Icon
-          className={`w-3.5 h-3.5 ${
-            isDark ? "text-emerald-500" : "text-emerald-600"
-          }`}
-        />
-      )}
-      <span
-        className={`text-[10px] font-bold uppercase tracking-[0.2em] ${
-          isDark ? "text-slate-400" : "text-slate-500"
-        }`}
-      >
-        {label}
-      </span>
-    </div>
-  );
-};
-
-function RiskBadge({ risk }: { risk: string }) {
-  const r = (risk ?? "").toLowerCase();
-  const { theme } = useTheme();
-  const isDark = theme === "dark";
-
-  let style = isDark
-    ? "bg-slate-500/10 text-slate-400 border-slate-500/20"
-    : "bg-slate-100 text-slate-700 border-slate-300";
-
-  if (r.includes("alto"))
-    style =
-      isDark
-        ? "bg-rose-500/10 text-rose-300 border-rose-500/20 shadow-[0_0_10px_rgba(244,63,94,0.1)]"
-        : "bg-rose-50 text-rose-700 border-rose-200 shadow-[0_0_10px_rgba(244,63,94,0.15)]";
-  if (r.includes("medio"))
-    style =
-      isDark
-        ? "bg-amber-500/10 text-amber-300 border-amber-500/20 shadow-[0_0_10px_rgba(245,158,11,0.1)]"
-        : "bg-amber-50 text-amber-700 border-amber-200 shadow-[0_0_10px_rgba(245,158,11,0.15)]";
-  if (r.includes("bajo"))
-    style =
-      isDark
-        ? "bg-emerald-500/10 text-emerald-300 border-emerald-500/20 shadow-[0_0_10px_rgba(16,185,129,0.1)]"
-        : "bg-emerald-50 text-emerald-700 border-emerald-200 shadow-[0_0_10px_rgba(16,185,129,0.15)]";
-
-  return (
-    <span
-      className={`inline-flex items-center gap-2 px-3 py-1 rounded-full border text-[11px] font-semibold tracking-wide uppercase transition-all ${style}`}
-    >
-      <span
-        className={`w-1.5 h-1.5 rounded-full ${
-          r.includes("alto")
-            ? "bg-rose-500"
-            : r.includes("medio")
-              ? "bg-amber-500"
-              : "bg-emerald-500"
-        }`}
-      />
-      {risk || "N/A"}
-    </span>
-  );
-}
 
 function StatusBadge({ status }: { status?: string }) {
   const s = (status ?? "").toUpperCase();
@@ -159,11 +93,6 @@ function StatusBadge({ status }: { status?: string }) {
       {isApproved ? "APROBADO" : isRejected ? "RECHAZADO" : "PENDIENTE"}
     </div>
   );
-}
-
-// Helper: contar criterios
-function countChecked(criteria: Record<string, boolean> | null | undefined) {
-  return Object.values(criteria ?? {}).filter(Boolean).length;
 }
 
 // Helper: tiempo seguro
@@ -253,31 +182,6 @@ export default function CoordinatorEvaluationDetailPage() {
 
   const loading = detail.loadingDetail;
   const canExport = !!selected && !loading;
-
-  const CRITERIA_ITEMS = [
-    {
-      key: "documentationComplete",
-      title: "Documentación Verificada",
-      desc: "Soportes y certificados validados.",
-    },
-    {
-      key: "profileAligned",
-      title: "Alineación de Perfil",
-      desc: "Cumple requisitos académicos.",
-    },
-    {
-      key: "risksControlled",
-      title: "Control de Riesgos",
-      desc: "Sin banderas rojas críticas.",
-    },
-    {
-      key: "communicationClarity",
-      title: "Claridad Comunicativa",
-      desc: "Desempeño coherente.",
-    },
-  ];
-
-  const criteriaChecked = countChecked(detail.criteria as any);
 
   // Entrevistas del candidato (ordenadas desc por fecha)
   const interviewsSorted = useMemo(() => {
@@ -466,168 +370,38 @@ export default function CoordinatorEvaluationDetailPage() {
           <div className="grid grid-cols-12 gap-8 items-start">
             {/* --- COLUMNA IZQUIERDA --- */}
             <div className="col-span-12 lg:col-span-7 space-y-6">
-              {/* Tarjeta Principal del Candidato */}
-              <div className="relative group">
+              <EvaluationSummaryCard
+                candidateName={candidateName}
+                program={program}
+                school={school}
+                score={score}
+                risk={risk}
+                verdict={verdict}
+                coordinatorDecisionStatus={
+                  summary?.coordinatorDecisionStatus ?? null
+                }
+                adminDecisionStatus={summary?.adminDecisionStatus ?? null}
+              />
+
+              {/* Timeline del proceso */}
+              {summary && (
                 <div
-                  className={`absolute -inset-0.5 rounded-[32px] blur opacity-50 group-hover:opacity-100 transition duration-500 ${
+                  className={`rounded-2xl border p-5 ${
                     isDark
-                      ? "bg-gradient-to-r from-emerald-500/20 to-teal-500/20"
-                      : "bg-gradient-to-r from-emerald-300/40 to-cyan-300/30"
-                  }`}
-                />
-                <div
-                  className={`relative rounded-[30px] border p-8 shadow-2xl ${
-                    isDark
-                      ? "bg-[#080A0E] border-white/10"
-                      : "bg-white border-slate-200 shadow-[0_24px_70px_rgba(15,23,42,0.12)]"
+                      ? "bg-white/[0.02] border-white/10"
+                      : "bg-slate-50 border-slate-200"
                   }`}
                 >
-                  <div className="flex flex-col md:flex-row gap-6 md:items-start justify-between">
-                    <div>
-                      <div
-                        className={`flex items-center gap-2 mb-3 ${
-                          isDark ? "text-emerald-500" : "text-emerald-600"
-                        }`}
-                      >
-                        <User className="w-4 h-4" />
-                        <span className="text-[10px] font-bold tracking-[0.2em] uppercase">
-                          Perfil del Candidato
-                        </span>
-                      </div>
-                      <h1
-                        className={`text-4xl font-black tracking-tight mb-4 drop-shadow-md ${
-                          isDark ? "text-white" : "text-slate-900"
-                        }`}
-                      >
-                        {candidateName}
-                      </h1>
-                      <div className="flex flex-wrap items-center gap-3">
-                        {program && (
-                          <div
-                            className={`flex items-center gap-2 px-4 py-1.5 rounded-full text-sm font-medium border ${
-                              isDark
-                                ? "bg-emerald-500/5 border-emerald-500/10 text-emerald-200/80"
-                                : "bg-emerald-50 border-emerald-200 text-emerald-700"
-                            }`}
-                          >
-                            <GraduationCap className="w-4 h-4 opacity-70" />
-                            {program}
-                          </div>
-                        )}
-                        {school && (
-                          <span
-                            className={`text-lg ${
-                              isDark ? "text-slate-600" : "text-slate-400"
-                            }`}
-                          >
-                            •
-                          </span>
-                        )}
-                        {school && (
-                          <span
-                            className={`font-medium ${
-                              isDark ? "text-slate-400" : "text-slate-600"
-                            }`}
-                          >
-                            {school}
-                          </span>
-                        )}
-                      </div>
-                    </div>
-
-                    <div className="flex flex-col items-end gap-2">
-                      <div className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">
-                        ID Evaluación
-                      </div>
-                      <div
-                        className={`font-mono text-[11px] px-3 py-1.5 rounded-lg border ${
-                          isDark
-                            ? "text-slate-400 bg-white/[0.03] border-white/5"
-                            : "text-slate-700 bg-slate-50 border-slate-200"
-                        }`}
-                      >
-                        {id}
-                      </div>
-                    </div>
-                  </div>
+                  <h3
+                    className={`text-xs font-bold uppercase tracking-widest mb-4 ${
+                      isDark ? "text-slate-400" : "text-slate-600"
+                    }`}
+                  >
+                    Trazabilidad del proceso
+                  </h3>
+                  <ProcessTimeline events={buildTimelineEvents(summary)} />
                 </div>
-              </div>
-
-              {/* Grid de KPIs */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-                {/* Score Card */}
-                <GlassCard className="p-7 flex flex-col justify-between h-full group hover:border-emerald-500/30 transition-colors">
-                  <div className="flex justify-between items-start mb-2">
-                    <SectionLabel icon={Zap} label="Score Global" />
-                    <div className="px-2 py-0.5 rounded text-[9px] font-bold bg-white/5 border border-white/10 text-slate-400">
-                      IA CALCULATED
-                    </div>
-                  </div>
-
-                  <div className="relative pt-2">
-                    <div className="flex items-baseline gap-1">
-                      <span
-                        className={`text-6xl font-black tracking-tighter ${
-                          score >= 70
-                            ? "text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 to-teal-300"
-                            : "text-slate-200"
-                        }`}
-                      >
-                        {score}
-                      </span>
-                      <span className="text-lg font-medium text-slate-500">
-                        /100
-                      </span>
-                    </div>
-                  </div>
-
-                  <div className="mt-6">
-                    <div className="flex justify-between text-[10px] text-slate-500 font-bold tracking-wider mb-2">
-                      <span>BAJO</span>
-                      <span>ALTO</span>
-                    </div>
-                    <div className="h-2 w-full bg-[#15191E] rounded-full overflow-hidden border border-white/5">
-                      <div
-                        className={`h-full rounded-full shadow-[0_0_15px_rgba(16,185,129,0.5)] bg-gradient-to-r ${
-                          score >= 80
-                            ? "from-emerald-600 via-emerald-400 to-teal-300"
-                            : score >= 50
-                              ? "from-amber-600 to-amber-400"
-                              : "from-rose-600 to-rose-400"
-                        }`}
-                        style={{
-                          width: `${score}%`,
-                          transition: "width 1.5s ease-out",
-                        }}
-                      />
-                    </div>
-                  </div>
-                </GlassCard>
-
-                {/* Riesgo Card */}
-                <GlassCard className="p-7 flex flex-col h-full hover:border-white/10">
-                  <SectionLabel
-                    icon={ShieldCheck}
-                    label="Diagnóstico de Riesgo"
-                  />
-                  <div className="flex-1 flex flex-col justify-center gap-4">
-                    <div>
-                      <RiskBadge risk={risk} />
-                    </div>
-                    <p className="text-sm text-slate-400 leading-relaxed border-l-2 border-white/5 pl-3">
-                      {risk.toLowerCase().includes("alto") ? (
-                        <span className="text-rose-200">
-                          Se han detectado anomalías que requieren una revisión
-                          manual exhaustiva antes de proceder con la
-                          contratación.
-                        </span>
-                      ) : (
-                        "El perfil se encuentra dentro de los parámetros de seguridad y confiabilidad esperados."
-                      )}
-                    </p>
-                  </div>
-                </GlassCard>
-              </div>
+              )}
 
               {/* Tabs de Detalle */}
               <div className="pt-2">
@@ -740,104 +514,14 @@ export default function CoordinatorEvaluationDetailPage() {
 
                 {activeTab === "interviews" && (
                   <div className="space-y-3 animate-in fade-in slide-in-from-right-4 duration-300">
-                    {/* ✅ Compare Bar (Premium) */}
-                    {interviewsSorted.length >= 2 && (
-                      <div
-                        className={`relative overflow-hidden rounded-2xl border backdrop-blur-xl ${
-                          isDark
-                            ? "border-white/10 bg-white/[0.03]"
-                            : "border-emerald-100 bg-white shadow-[0_18px_40px_rgba(15,23,42,0.08)]"
-                        }`}
-                      >
-                        <div
-                          className={`absolute inset-0 bg-gradient-to-r from-emerald-500/10 via-teal-500/5 to-transparent ${
-                            !isDark ? "opacity-70" : ""
-                          }`}
-                        />
-                        <div className="relative p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4">
-                          <div className="flex-1 min-w-0">
-                            <div
-                              className={`flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.22em] ${
-                                isDark ? "text-slate-400" : "text-slate-500"
-                              }`}
-                            >
-                              <Sparkles
-                                className={`w-3.5 h-3.5 ${
-                                  isDark ? "text-emerald-400" : "text-emerald-600"
-                                }`}
-                              />
-                              Comparación IA entre entrevistas
-                            </div>
-                            <div
-                              className={`mt-1 text-sm ${
-                                isDark ? "text-slate-300" : "text-slate-700"
-                              }`}
-                            >
-                              Compara la entrevista actual vs la más reciente
-                              del historial.
-                            </div>
-                          </div>
-
-                          <div className="flex items-center gap-3">
-                            <div className="hidden sm:flex items-center gap-2 text-[11px] text-slate-400">
-                              <span
-                                className={`px-2.5 py-1 rounded-full border ${
-                                  isDark
-                                    ? "border-white/10 bg-white/[0.02]"
-                                    : "border-slate-200 bg-slate-50"
-                                }`}
-                              >
-                                {interviewsSorted.length} entrevistas
-                              </span>
-                              <span
-                                className={`px-2.5 py-1 rounded-full border ${
-                                  isDark
-                                    ? "border-white/10 bg-white/[0.02]"
-                                    : "border-slate-200 bg-slate-50"
-                                }`}
-                              >
-                                {compareWithId
-                                  ? "Listo para comparar"
-                                  : "Sin pareja"}
-                              </span>
-                            </div>
-
-                            <button
-                              type="button"
-                              onClick={runCompareInline}
-                              disabled={!canCompareInline || compareLoading}
-                              className={`inline-flex items-center justify-center gap-2 rounded-xl px-4 py-2 text-xs font-black uppercase tracking-wider border transition-all
-                      ${
-                        canCompareInline && !compareLoading
-                          ? isDark
-                            ? "border-emerald-500/25 bg-emerald-500/10 text-emerald-300 hover:bg-emerald-500 hover:text-[#020408] hover:border-transparent shadow-[0_0_18px_rgba(16,185,129,0.18)]"
-                            : "border-emerald-500 bg-emerald-500 text-white hover:bg-emerald-600 shadow-[0_10px_25px_rgba(16,185,129,0.35)]"
-                          : isDark
-                            ? "border-white/10 bg-white/[0.02] text-white/25 cursor-not-allowed"
-                            : "border-slate-200 bg-slate-100 text-slate-400 cursor-not-allowed"
-                      }`}
-                              title={
-                                canCompareInline
-                                  ? "Comparar con IA"
-                                  : "Necesitas al menos 2 entrevistas"
-                              }
-                            >
-                              {compareLoading ? (
-                                <>
-                                  <Loader2 className="w-4 h-4 animate-spin" />
-                                  Comparando…
-                                </>
-                              ) : (
-                                <>
-                                  <Scale className="w-4 h-4" />
-                                  Comparar IA
-                                </>
-                              )}
-                            </button>
-                          </div>
-                        </div>
-                      </div>
-                    )}
+                    <EvaluationComparisonPreview
+                      interviewsCount={interviewsSorted.length}
+                      candidateName={candidateName}
+                      hasComparisonData={!!comparison}
+                      onCompare={runCompareInline}
+                      compareLoading={compareLoading}
+                      compareError={compareError}
+                    />
 
                     {/* ✅ Error Premium (compacto) */}
                     {compareError && (
@@ -1055,319 +739,23 @@ export default function CoordinatorEvaluationDetailPage() {
             {/* --- COLUMNA DERECHA --- */}
             <div className="col-span-12 lg:col-span-5 relative">
               <div className="sticky top-6">
-                <div
-                  className={`relative rounded-[32px] p-[1px] shadow-2xl ${
-                    isDark
-                      ? "bg-gradient-to-b from-white/10 to-transparent"
-                      : "bg-gradient-to-b from-emerald-200/40 via-transparent to-transparent"
-                  }`}
-                >
-                  <div
-                    className={`rounded-[31px] backdrop-blur-xl overflow-hidden ${
-                      isDark ? "bg-[#0E1216]" : "bg-white"
-                    }`}
-                  >
-                    <div
-                      className={`px-8 py-6 border-b ${
-                        isDark
-                          ? "bg-[#13181E] border-white/5"
-                          : "bg-slate-50 border-slate-200"
-                      }`}
-                    >
-                      <div className="flex items-center gap-3 mb-1">
-                        <div className="relative flex h-3 w-3">
-                          <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-                          <span className="relative inline-flex rounded-full h-3 w-3 bg-emerald-500"></span>
-                        </div>
-                        <h2
-                          className={`text-lg font-bold tracking-tight ${
-                            isDark ? "text-white" : "text-slate-900"
-                          }`}
-                        >
-                          {isAlreadyEvaluated
-                            ? "Evaluación Cerrada"
-                            : "Consola de Decisión"}
-                        </h2>
-                      </div>
-                      <p className="text-xs text-slate-500 font-medium ml-6">
-                        Complete los pasos requeridos para finalizar.
-                      </p>
-                    </div>
-
-                    {isAlreadyEvaluated ? (
-                      <div className="p-8">
-                        <div className="rounded-2xl border border-emerald-500/20 bg-emerald-500/10 p-5">
-                          <div className="text-[10px] font-black uppercase tracking-[0.2em] text-emerald-300 mb-2">
-                            Ya evaluado
-                          </div>
-                          <p className="text-sm text-emerald-100 leading-relaxed">
-                            Esta evaluación ya fue registrada con veredicto{" "}
-                            <span className="font-bold">
-                              {evaluatedVerdictLabel}
-                            </span>{" "}
-                            y no puede volver a ser enviada.
-                          </p>
-                          {summary?.coordinatorDecisionAt && (
-                            <p className="text-[11px] text-emerald-200/80 mt-3">
-                              Fecha de registro:{" "}
-                              {String(summary.coordinatorDecisionAt).slice(
-                                0,
-                                19,
-                              )}
-                            </p>
-                          )}
-                        </div>
-                      </div>
-                    ) : (
-                      <div className="p-8 space-y-8">
-                      {/* PASO 1 */}
-                      <div className="space-y-4">
-                        <div className="flex items-center justify-between">
-                          <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">
-                            1. Veredicto Humano
-                          </span>
-                          {detail.decision && (
-                            <span
-                              className={`text-[9px] font-black px-2 py-0.5 rounded border tracking-wider
-                                ${
-                                  isDark
-                                    ? "text-emerald-400 bg-emerald-900/30 border-emerald-500/20"
-                                    : "text-emerald-700 bg-emerald-50 border-emerald-200"
-                                }`}
-                            >
-                              SELECCIONADO
-                            </span>
-                          )}
-                        </div>
-
-                        <div className="grid grid-cols-2 gap-4">
-                          <button
-                            onClick={() => detail.applyDecision("APROBADO")}
-                            className={`relative group rounded-2xl border-2 transition-all duration-300 py-4 flex flex-col items-center justify-center gap-2
-                              ${
-                                String(detail.decision ?? "").includes("APROB")
-                                  ? isDark
-                                    ? "bg-[#062C1E] border-emerald-500 text-emerald-400 shadow-[0_0_30px_-5px_rgba(16,185,129,0.3)]"
-                                    : "bg-emerald-50 border-emerald-500 text-emerald-700 shadow-[0_18px_40px_rgba(16,185,129,0.25)]"
-                                  : isDark
-                                    ? "bg-[#13181E] border-transparent text-slate-500 hover:border-emerald-500/30 hover:text-emerald-300 hover:bg-[#1A2026]"
-                                    : "bg-white border-slate-200 text-slate-500 hover:border-emerald-200 hover:text-emerald-700 hover:bg-emerald-50"
-                              }`}
-                          >
-                            <CheckCircle2
-                              className={`w-6 h-6 transition-transform ${
-                                String(detail.decision ?? "").includes("APROB")
-                                  ? "scale-110"
-                                  : "group-hover:scale-110"
-                              }`}
-                            />
-                            <span className="text-xs font-bold uppercase tracking-wider">
-                              Aprobar
-                            </span>
-                          </button>
-
-                          <button
-                            onClick={() => detail.applyDecision("RECHAZADO")}
-                            className={`relative group rounded-2xl border-2 transition-all duration-300 py-4 flex flex-col items-center justify-center gap-2
-                              ${
-                                String(detail.decision ?? "").includes("RECH")
-                                  ? isDark
-                                    ? "bg-[#2C0612] border-rose-500 text-rose-400 shadow-[0_0_30px_-5px_rgba(244,63,94,0.3)]"
-                                    : "bg-rose-50 border-rose-500 text-rose-700 shadow-[0_18px_40px_rgba(244,63,94,0.25)]"
-                                  : isDark
-                                    ? "bg-[#13181E] border-transparent text-slate-500 hover:border-rose-500/30 hover:text-rose-300 hover:bg-[#1A2026]"
-                                    : "bg-white border-slate-200 text-slate-500 hover:border-rose-200 hover:text-rose-700 hover:bg-rose-50"
-                              }`}
-                          >
-                            <XCircle
-                              className={`w-6 h-6 transition-transform ${
-                                String(detail.decision ?? "").includes("RECH")
-                                  ? "scale-110"
-                                  : "group-hover:scale-110"
-                              }`}
-                            />
-                            <span className="text-xs font-bold uppercase tracking-wider">
-                              Rechazar
-                            </span>
-                          </button>
-                        </div>
-                      </div>
-
-                      {/* PASO 2 */}
-                      <div className="space-y-4">
-                        <div className="flex items-center justify-between">
-                          <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">
-                            2. Checklist de Criterios
-                          </span>
-                          <span
-                            className={`text-[10px] font-mono font-bold px-2 py-0.5 rounded border ${
-                              criteriaChecked >= 2
-                                ? "border-emerald-500/30 text-emerald-400 bg-emerald-500/10"
-                                : "border-slate-700 text-slate-500"
-                            }`}
-                          >
-                            {criteriaChecked}/{CRITERIA_ITEMS.length}
-                          </span>
-                        </div>
-
-                        <div className="space-y-2.5">
-                          {CRITERIA_ITEMS.map((x) => {
-                            const checked = !!(detail.criteria as any)?.[x.key];
-                            return (
-                              <button
-                                key={x.key}
-                                onClick={() => {
-                                  const next = { ...(detail.criteria as any) };
-                                  next[x.key] = !checked;
-                                  detail.setCriteria(next);
-                                }}
-                                className={`w-full group flex items-start gap-3 p-3.5 rounded-xl border text-left transition-all duration-200
-                                  ${
-                                    checked
-                                      ? isDark
-                                        ? "bg-emerald-500/[0.05] border-emerald-500/30"
-                                        : "bg-emerald-50 border-emerald-200"
-                                      : isDark
-                                        ? "bg-[#13181E] border-transparent hover:bg-[#1A2026]"
-                                        : "bg-slate-50 border-slate-200 hover:bg-slate-100"
-                                  }`}
-                              >
-                                <div
-                                  className={`mt-0.5 w-5 h-5 rounded border flex items-center justify-center transition-all duration-200 shadow-sm
-                                    ${
-                                      checked
-                                        ? "bg-emerald-500 border-emerald-500 shadow-[0_0_10px_rgba(16,185,129,0.4)]"
-                                        : isDark
-                                          ? "border-slate-600 bg-transparent group-hover:border-slate-500"
-                                          : "border-slate-300 bg-white group-hover:border-slate-400"
-                                    }`}
-                                >
-                                  {checked && (
-                                    <CheckCircle2 className="w-3.5 h-3.5 text-black" />
-                                  )}
-                                </div>
-                                <div>
-                                  <div
-                                    className={`text-sm font-semibold transition-colors ${
-                                      checked
-                                        ? isDark
-                                          ? "text-emerald-100"
-                                          : "text-emerald-800"
-                                        : isDark
-                                          ? "text-slate-400 group-hover:text-slate-200"
-                                          : "text-slate-700 group-hover:text-slate-900"
-                                    }`}
-                                  >
-                                    {x.title}
-                                  </div>
-                                  <div className="text-[11px] text-slate-500 leading-snug mt-0.5">
-                                    {x.desc}
-                                  </div>
-                                </div>
-                              </button>
-                            );
-                          })}
-                        </div>
-                      </div>
-
-                      {/* PASO 3 */}
-                      <div className="space-y-4">
-                        <div className="flex items-center justify-between">
-                          <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">
-                            3. Nota Oficial
-                          </span>
-                        </div>
-
-                        <div className="relative group">
-                          <div className="absolute -inset-0.5 bg-gradient-to-r from-emerald-500 to-teal-500 rounded-2xl opacity-0 group-focus-within:opacity-20 transition duration-500"></div>
-                          <textarea
-                            value={detail.decisionComment ?? ""}
-                            onChange={(e) =>
-                              detail.setDecisionComment(e.target.value)
-                            }
-                            onBlur={detail.onDecisionCommentBlur}
-                            placeholder="Escribe tu justificación profesional aquí... (Mínimo 30 caracteres)"
-                            className={`relative block w-full h-36 rounded-xl p-4 text-sm resize-none transition-all focus:outline-none
-                              ${
-                                isDark
-                                  ? "bg-[#13181E] border border-transparent text-slate-200 placeholder:text-slate-600 focus:bg-[#0A0C10]"
-                                  : "bg-white border border-slate-200 text-slate-800 placeholder:text-slate-400 focus:bg-slate-50"
-                              }`}
-                          />
-                          <div
-                            className={`absolute bottom-3 right-3 text-[10px] font-mono transition-colors font-bold ${
-                              (detail.decisionComment ?? "").length < 30
-                                ? "text-rose-500"
-                                : "text-emerald-500"
-                            }`}
-                          >
-                            {(detail.decisionComment ?? "").length} / 30
-                          </div>
-                        </div>
-                      </div>
-
-                      {/* Alertas */}
-                      {!detail.canSubmitDecision &&
-                        (detail.missingReasons?.length ?? 0) > 0 && (
-                          <div
-                            className={`rounded-xl border p-4 ${
-                              isDark
-                                ? "bg-amber-900/10 border-amber-500/20"
-                                : "bg-amber-50 border-amber-200"
-                            }`}
-                          >
-                            <div className="flex items-center gap-2 text-amber-500 mb-2">
-                              <Info className="w-4 h-4" />
-                              <span className="text-[10px] font-bold uppercase tracking-wider">
-                                Requisitos Pendientes
-                              </span>
-                            </div>
-                            <ul className="space-y-1">
-                              {detail.missingReasons.map(
-                                (r: string, i: number) => (
-                                  <li
-                                    key={i}
-                                    className="text-xs text-amber-500/80 pl-1 border-l-2 border-amber-500/30"
-                                  >
-                                    {r}
-                                  </li>
-                                ),
-                              )}
-                            </ul>
-                          </div>
-                        )}
-
-                      {/* BOTÓN PRINCIPAL */}
-                      <div className="pt-2">
-                        <button
-                          onClick={detail.submitDecisionToAdmin}
-                          disabled={!detail.canSubmitDecision}
-                          className={`w-full py-4 rounded-xl font-bold text-sm tracking-widest uppercase transition-all duration-300 flex items-center justify-center gap-3 group
-                            ${
-                              detail.canSubmitDecision
-                                ? "bg-gradient-to-r from-emerald-600 to-teal-600 text-white shadow-[0_0_30px_-5px_rgba(16,185,129,0.5)] hover:shadow-[0_0_40px_-5px_rgba(16,185,129,0.7)] hover:scale-[1.02]"
-                                : "bg-[#1A2026] text-slate-600 cursor-not-allowed border border-white/5"
-                            }`}
-                        >
-                          {detail.submittingDecision
-                            ? "Enviando..."
-                            : detail.canSubmitDecision
-                            ? "Finalizar Evaluación"
-                            : "Formulario Incompleto"}
-                          {detail.canSubmitDecision && !detail.submittingDecision && (
-                            <ArrowLeft className="w-4 h-4 rotate-180 group-hover:translate-x-1 transition-transform" />
-                          )}
-                        </button>
-                        <p className="text-center text-[10px] text-slate-600 mt-4">
-                          Esta acción es irreversible y se registrará en la
-                          Blockchain.
-                        </p>
-                      </div>
-                    </div>
-                    )}
-                  </div>
-                </div>
-                {/* Fin Panel */}
+                <CandidateDecisionPanel
+                  decision={detail.decision}
+                  onApplyDecision={detail.applyDecision}
+                  decisionComment={detail.decisionComment}
+                  setDecisionComment={detail.setDecisionComment}
+                  criteria={detail.criteria}
+                  setCriteria={detail.setCriteria}
+                  missingReasons={detail.missingReasons}
+                  canSubmitDecision={detail.canSubmitDecision}
+                  submittingDecision={detail.submittingDecision}
+                  onSubmitDecision={detail.submitDecisionToAdmin}
+                  isAlreadyEvaluated={isAlreadyEvaluated}
+                  evaluatedVerdictLabel={evaluatedVerdictLabel}
+                  coordinatorDecisionAt={
+                    summary?.coordinatorDecisionAt ?? undefined
+                  }
+                />
               </div>
             </div>
           </div>

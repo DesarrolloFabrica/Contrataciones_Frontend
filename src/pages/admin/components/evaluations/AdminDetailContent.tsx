@@ -17,6 +17,9 @@ import {
 import type { TeacherEvaluationSummary } from "../../../../types";
 import { getBucket } from "../../utils/adminSelectors";
 import { useAdminAudit } from "../../hooks/useAdminAudit";
+import AdminDecisionTraceCard from "../detail/AdminDecisionTraceCard";
+import AdminFinalDecisionPanel from "../detail/AdminFinalDecisionPanel";
+import { useAdminLocalDecision } from "../../hooks/useAdminLocalDecision";
 
 import {
   getExecutiveSummary,
@@ -386,6 +389,8 @@ export default function AdminDetailContent({
 
   const [coordUser, setCoordUser] = useState<UserBasic | null>(null);
   const [coordUserLoading, setCoordUserLoading] = useState(false);
+
+  const { status: adminDecisionStatus } = useAdminLocalDecision(selectedId);
 
   const [activeTab, setActiveTab] = useState<TabKey>("RESUMEN");
 
@@ -986,26 +991,34 @@ export default function AdminDetailContent({
                     </div>
                   </div>
                 </div>
+
+                {/* Admin final decision */}
+                <div className={["mt-6 pt-6 border-t", isDark ? "border-white/10" : "border-slate-200"].join(" ")}>
+                  <AdminFinalDecisionPanel evaluationId={selectedId} />
+                </div>
               </div>
             )}
 
             {activeTab === "TRAZABILIDAD" && (
               <div ref={refTraz} className={cardClass}>
-                <div className="flex items-center gap-2 mb-3">
-                  <Users className="w-4 h-4 text-cyan-300" />
-                  <h5 className="text-sm font-extrabold text-white uppercase tracking-[0.18em]">
-                    Trazabilidad humana
-                  </h5>
-                </div>
-
-                <p className="text-[12px] text-white/45 mb-4">
-                  Roles y responsables en el proceso.
-                </p>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <ActorCard actor={actors.leader} />
-                  <ActorCard actor={actors.coord} />
-                </div>
+                <AdminDecisionTraceCard
+                  aiScore={aiScore}
+                  aiBucket={bucket}
+                  aiRecommendation={selectedSummary?.aiFinalRecommendation ?? ""}
+                  leader={{
+                    label: "Líder (Entrevista)",
+                    name: actors.leader.name,
+                    status: null,
+                    at: actors.leader.at ?? null,
+                  }}
+                  coordinator={{
+                    label: "Coordinador",
+                    name: actors.coord.name,
+                    status: actors.coord.status,
+                    at: actors.coord.at ?? null,
+                  }}
+                  adminStatus={adminDecisionStatus}
+                />
               </div>
             )}
           </div>

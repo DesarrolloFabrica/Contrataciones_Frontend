@@ -3,6 +3,7 @@ import { InterviewData } from "../../../types";
 // helper para reconstruir InterviewData desde lo que devuelve el backend
 export const mapFormToInterviewData = (detail: any): InterviewData => {
   const form = detail.formRawData;
+  const candidate = detail.candidate ?? form?.candidate ?? {};
   return {
     candidateName: form.candidate.fullName,
     age: form.candidate.age ? String(form.candidate.age) : "",
@@ -12,6 +13,9 @@ export const mapFormToInterviewData = (detail: any): InterviewData => {
       form.candidate.document ?? "",
     school: form.candidate.schoolName,
     program: form.candidate.programName,
+    candidateId: detail.candidateId ?? candidate.id ?? null,
+    schoolId: form.candidate.schoolId ?? candidate.schoolId ?? null,
+    programId: form.candidate.programId ?? candidate.programId ?? null,
     careerSummary: form.candidate.careerSummary,
     previousExperience: form.candidate.teachingExperience,
 

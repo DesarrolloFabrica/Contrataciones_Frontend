@@ -14,6 +14,7 @@ import ProtectedRoute from "./components/ProtectedRoute";
 import CoordinatorEvaluationReport from "./pages/coordinator/CoordinatorEvaluationReport";
 import CoordinatorEvaluationDetailPage from "./pages/coordinator/CoordinatorEvaluationDetailPage";
 import ChangePasswordPage from "./pages/auth/ChangePasswordPage";
+import { AppLayout } from "./layouts";
 
 /**
  * ✅ Redirect base
@@ -56,27 +57,54 @@ const App: React.FC = () => {
 
       {/* Protegidas por rol */}
       <Route element={<ProtectedRoute allowedRoles={["leader"]} />}>
-        <Route path="/leader" element={<LeaderConsole />} />
+        <Route
+          path="/leader"
+          element={
+            <AppLayout mode="minimal">
+              <LeaderConsole />
+            </AppLayout>
+          }
+        />
       </Route>
 
       <Route element={<ProtectedRoute allowedRoles={["coordinator"]} />}>
-        <Route path="/coordinator" element={<CoordinatorConsole />} />
-
-        {/* ✅ panel de decisión (el de abajo) */}
         <Route
-          path="/coordinator/evaluations/:evaluationId"
-          element={<CoordinatorEvaluationDetailPage />}
+          path="/coordinator"
+          element={
+            <AppLayout mode="minimal">
+              <CoordinatorConsole />
+            </AppLayout>
+          }
         />
 
-        {/* ✅ IA grande (pantalla completa) */}
+        <Route
+          path="/coordinator/evaluations/:evaluationId"
+          element={
+            <AppLayout mode="minimal">
+              <CoordinatorEvaluationDetailPage />
+            </AppLayout>
+          }
+        />
+
         <Route
           path="/coordinator/evaluations/:evaluationId/report"
-          element={<CoordinatorEvaluationReport />}
+          element={
+            <AppLayout mode="minimal">
+              <CoordinatorEvaluationReport />
+            </AppLayout>
+          }
         />
       </Route>
 
       <Route element={<ProtectedRoute allowedRoles={["admin"]} />}>
-        <Route path="/admin" element={<AdminConsole />} />
+        <Route
+          path="/admin"
+          element={
+            <AppLayout mode="minimal">
+              <AdminConsole />
+            </AppLayout>
+          }
+        />
       </Route>
 
       {/* 404 */}

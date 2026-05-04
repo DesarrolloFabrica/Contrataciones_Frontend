@@ -27,6 +27,7 @@ import {
   type SchoolOption,
 } from "../../services/adminScopeService";
 import AdminDashboardPanel from "./components/dashboard/AdminDashboardPanel";
+import AdminGlobalControlPanel from "./components/control/AdminGlobalControlPanel";
 import { useTheme } from "../../context/ThemeContext";
 
 type AdminView = "EVALUATIONS" | "USERS" | "AUDIT" | "DASHBOARD";
@@ -398,14 +399,14 @@ const AdminConsole: React.FC = () => {
                 <SquareKanban className="w-4 h-4" />
                 Dashboard
               </button>
-              {/* <button
+              <button
                 type="button"
                 className={tabBtn(view === "AUDIT")}
                 onClick={() => handleSwitchView("AUDIT")}
               >
                 <ScrollText className="w-4 h-4" />
                 Auditoría
-              </button> */}
+              </button>
             </div>
           </div>
         </div>
@@ -432,6 +433,13 @@ const AdminConsole: React.FC = () => {
 
             {!admin.loading && !admin.error && (
               <>
+                <div className="mb-6">
+                  <AdminGlobalControlPanel
+                    evaluations={admin.evaluations}
+                    metrics={admin.metrics}
+                  />
+                </div>
+
                 {/* Encabezado común para métricas y sidebar */}
                 <div className="mb-4 flex items-end justify-between gap-4">
                   <div>

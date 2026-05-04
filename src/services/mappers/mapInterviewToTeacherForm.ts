@@ -13,11 +13,13 @@ export function mapInterviewToTeacherForm(data: InterviewData): TeacherForm {
 
       fullName: (data.candidateName ?? "").trim(),
       age: Number(data.age || 0),
+      schoolId: data.schoolId ?? null,
       schoolName: data.school,
+      programId: data.programId ?? null,
       programName: data.program,
       careerSummary: data.careerSummary,
       teachingExperience: data.previousExperience,
-    },
+    } as any,
 
     availability: {
       scheduleDetails: data.availabilityDetails,

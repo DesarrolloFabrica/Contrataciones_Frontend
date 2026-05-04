@@ -69,8 +69,13 @@ export default function AdminAuditGlobalPanel({
             <div className="text-white font-bold text-sm uppercase tracking-wide">
               Auditoría
             </div>
-            <div className="text-xs text-neutral-500 mt-1">
-              Cambios importantes (usuarios + decisiones). Se oculta ruido como “detalle consultado”.
+            <div className="inline-flex items-center gap-2 mt-1 flex-wrap">
+              <span className="px-2 py-0.5 rounded-md bg-amber-500/10 border border-amber-500/20 text-[10px] font-bold uppercase tracking-widest text-amber-300">
+                Mock frontend
+              </span>
+              <span className="text-xs text-neutral-500">
+                Cambios importantes (usuarios + decisiones). Se oculta ruido como "detalle consultado".
+              </span>
             </div>
           </div>
         </div>
@@ -145,13 +150,13 @@ export default function AdminAuditGlobalPanel({
         ) : errorAudit ? (
           <div className="text-sm text-rose-300 py-8 text-center">{errorAudit}</div>
         ) : relevantEvents.length === 0 ? (
-          <div className="text-sm text-neutral-500 py-10 text-center">
-            No hay eventos relevantes para este filtro.
-            <div className="text-xs text-neutral-600 mt-2">
-              Tip: prueba desactivar “Ocultando ADMIN” o cambia el filtro (Sistema / Usuarios / Evaluaciones).
+            <div className="text-sm text-neutral-500 py-10 text-center">
+              No hay eventos registrados aún.
+              <div className="text-xs text-neutral-600 mt-2">
+                Tip: prueba desactivar "Ocultando ADMIN" o cambia el filtro (Sistema / Usuarios / Evaluaciones).
+              </div>
             </div>
-          </div>
-        ) : (
+          ) : (
           <AdminAuditTimeline
             title="Historial de actividad"
             events={audit} // 👈 pasamos el bruto, timeline ya filtra con shouldShowEvent + hideAdminEvents

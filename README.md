@@ -102,9 +102,7 @@ El PDF se genera en el navegador con `jsPDF`:
 - **`VITE_API_URL`**: base URL del backend.
   - Default si no se define: `http://localhost:3001` (ver `src/services/apiClient.ts`).
   - Algunas pantallas usan fallback **`VITE_BACKEND_URL`**.
-- **`VITE_GEMINI_API_KEY`**: API key de Gemini para análisis IA (cliente).
-  - Si falta, el análisis IA se deshabilita y algunas acciones arrojarán error.
-  - **Seguridad**: al ser `VITE_*`, esta key queda expuesta al navegador.
+- ~~**`VITE_GEMINI_API_KEY`**:~~ Ya no se usa desde el frontend. La IA se delega al backend, que lee `GEMINI_API_KEY` desde sus propias variables de entorno (no expuestas al cliente).
 - **`VITE_ORG_ID`**: identificador de organización (se usa en creación de evaluaciones).
 - **`VITE_GOOGLE_CLIENT_ID`**: client id (si se integra login Google).
 - **`VITE_APP_URL`**: URL pública del frontend (útil en deploy/redirects).
@@ -130,7 +128,7 @@ copy .env.example .env.local
 Edita `.env.local` y define, mínimo:
 
 - `VITE_API_URL`
-- `VITE_GEMINI_API_KEY` (si necesitas IA en dev)
+- `VITE_API_URL` apuntando al backend local (`http://localhost:3001`)
 - `VITE_ORG_ID`
 
 ### Levantar en modo desarrollo
@@ -162,12 +160,13 @@ El `Dockerfile` hace build de Vite y sirve estáticos con `serve` en el puerto `
   - el backend valida orígenes; en dev usa `http://localhost:3000`.
   - si cambias puerto/origen, configura `CORS_ORIGIN` en backend.
 - **IA no disponible**:
-  - define `VITE_GEMINI_API_KEY`.
-  - recuerda: la key queda expuesta (diseño actual).
+  - verifica que el backend tenga `GEMINI_API_KEY` configurada.
+  - confirma que el frontend apunte a la URL correcta del backend (`VITE_API_URL`).
 
 ## Seguridad
 
-- No subas `.env.local` ni `.env.production` con secretos.
+- La API key de Gemini se usa **exclusivamente desde el backend**, nunca desde el frontend. Esto evita que quede expuesta en el bundle JS del navegador.
+- No subas `.env` ni `.env.*` con secretos.
   - Mantén solo `.env.example` versionado.
   - En despliegue, inyecta variables vía CI/Secrets del entorno.
 

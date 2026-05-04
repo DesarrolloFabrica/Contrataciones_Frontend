@@ -7,6 +7,9 @@ export interface InterviewData {
   age: string;
   school: string;
   program: string;
+  candidateId?: string | null;
+  schoolId?: string | null;
+  programId?: string | null;
   careerSummary: string;
   previousExperience: string;
   availabilityDetails: string;
