@@ -44,14 +44,19 @@ import { AiUsageSection } from "../features/leader/interview-form/components/AiU
 import { EthicsCasesSection } from "../features/leader/interview-form/components/EthicsCasesSection";
 import { HiringContextSection } from "../features/leader/interview-form/components/HiringContextSection";
 import { CandidateDocumentsSection } from "../features/leader/interview-form/components/CandidateDocumentsSection";
-import { InterviewFormActions } from "../features/leader/interview-form/components/InterviewFormActions";
+import { InterviewWizardShell } from "../features/leader/interview-form/components/InterviewWizardShell";
+import {
+  type WizardStep,
+} from "../features/leader/interview-form/components/InterviewWizardStepper";
+import { InterviewWizardNavigation } from "../features/leader/interview-form/components/InterviewWizardNavigation";
+import { InterviewReviewStep } from "../features/leader/interview-form/components/InterviewReviewStep";
 
 import { useInterviewDraft } from "../features/leader/interview-form/hooks/useInterviewDraft";
 import { useLeaderSchoolPrograms } from "../features/leader/interview-form/hooks/useLeaderSchoolPrograms";
 import { useCandidateLookup } from "../features/leader/interview-form/hooks/useCandidateLookup";
 import { useCedulaValidation } from "../features/leader/interview-form/hooks/useCedulaValidation";
 
-const InterviewForm: React.FC<InterviewFormProps> = ({ onSubmit }) => {
+const InterviewForm: React.FC<InterviewFormProps> = ({ onSubmit, onStepChange }) => {
   const { user } = useAuth();
   const { theme } = useTheme();
   const isDark = theme === "dark";
@@ -195,6 +200,11 @@ const InterviewForm: React.FC<InterviewFormProps> = ({ onSubmit }) => {
   }, [formData.documentNumber]);
 
   const [isCreatingCandidate, setIsCreatingCandidate] = useState(false);
+  const [currentStep, setCurrentStep] = useState<WizardStep>(1);
+
+  useEffect(() => {
+    onStepChange?.(currentStep);
+  }, [currentStep, onStepChange]);
 
   const handleHiringContextChange = useCallback((updated: HiringContextDraft) => {
     setHiringContext(updated);
@@ -360,26 +370,92 @@ const InterviewForm: React.FC<InterviewFormProps> = ({ onSubmit }) => {
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
+  const handleBack = useCallback(() => {
+    setCurrentStep((prev) => (prev > 1 ? ((prev - 1) as WizardStep) : prev));
+  }, []);
+
+  const handleNext = useCallback(() => {
+    setCurrentStep((prev) => (prev < 5 ? ((prev + 1) as WizardStep) : prev));
+  }, []);
+
+  const goToStep = useCallback((step: WizardStep) => {
+    setCurrentStep(step);
+  }, []);
+
+  const renderStepContent = () => {
+    if (currentStep === 1) {
+      return (
+        <HiringContextSection
+          hiringContext={hiringContext}
+          onChange={handleHiringContextChange}
+        />
+      );
+    }
+
+    if (currentStep === 2) {
+      return (
+        <CandidateDocumentsSection
+          candidateDocuments={candidateDocuments}
+          onChange={handleCandidateDocumentsChange}
+        />
+      );
+    }
+
+    if (currentStep === 3) {
+      return (
+        <IdentitySection
+          formData={formData}
+          isCedulaValid={isCedulaValid}
+          normalizedSchools={normalizedSchools}
+          availablePrograms={availablePrograms}
+          schoolsLoading={schoolsLoading}
+          isLeader={isLeader}
+          leaderSchoolId={leaderSchoolId}
+          isSearching={isSearching}
+          lookupError={lookupError}
+          candidateMatches={candidateMatches}
+          selectedCandidateId={selectedCandidateId}
+          isCreatingCandidate={isCreatingCandidate}
+          canCreateCandidate={canCreateCandidate}
+          missingScopeForCreate={missingScopeForCreate}
+          onChange={handleChange}
+          onPickCandidate={handlePickCandidate}
+          onCreateCandidate={handleCreateCandidate}
+        />
+      );
+    }
+
+    if (currentStep === 4) {
+      return (
+        <div className="space-y-6">
+          <AvailabilitySection formData={formData} onChange={handleChange} />
+          <div className={`border-t pt-6 ${isDark ? "border-white/[0.06]" : "border-slate-100"}`}>
+            <PedagogySection formData={formData} onChange={handleChange} />
+          </div>
+          <div className={`border-t pt-6 ${isDark ? "border-white/[0.06]" : "border-slate-100"}`}>
+            <AiUsageSection formData={formData} onChange={handleChange} />
+          </div>
+          <div className={`border-t pt-6 ${isDark ? "border-white/[0.06]" : "border-slate-100"}`}>
+            <EthicsCasesSection formData={formData} onChange={handleChange} />
+          </div>
+        </div>
+      );
+    }
+
+    return (
+      <InterviewReviewStep
+        formData={formData}
+        hiringContext={hiringContext}
+        candidateDocuments={candidateDocuments}
+        selectedCandidateId={selectedCandidateId}
+      />
+    );
+  };
+
 
   return (
     <div className="w-full">
-      <div className="fixed top-0 left-0 w-full h-full overflow-hidden pointer-events-none -z-10">
-        {isDark ? (
-          <>
-            <div
-              className="absolute top-[-10%] left-[10%] w-[500px] h-[500px] bg-emerald-500/5 rounded-full blur-[120px] mix-blend-screen animate-pulse"
-              style={{ animationDuration: "8s" }}
-            />
-            <div className="absolute bottom-[10%] right-[5%] w-[600px] h-[600px] bg-blue-600/5 rounded-full blur-[150px] mix-blend-screen" />
-          </>
-        ) : (
-          <>
-            <div className="absolute inset-0 bg-gradient-to-b from-white to-slate-50" />
-          </>
-        )}
-      </div>
-
-      <div className="relative z-10 max-w-7xl mx-auto px-6 py-16 space-y-16">
+      <div className="relative z-10 space-y-8">
         <InterviewFormHeader />
 
         <ExampleProfilesToolbar
@@ -388,61 +464,36 @@ const InterviewForm: React.FC<InterviewFormProps> = ({ onSubmit }) => {
           onLoadRejected={() => loadExample(rejectedExample)}
         />
 
-        <form onSubmit={handleSubmit} className="space-y-10">
-          <HiringContextSection
-            hiringContext={hiringContext}
-            onChange={handleHiringContextChange}
-          />
+        <form onSubmit={handleSubmit} className="space-y-6">
+          <InterviewWizardShell
+            currentStep={currentStep}
+            onStepClick={goToStep}
+            navigation={(
+              <InterviewWizardNavigation
+                currentStep={currentStep}
+                isCedulaValid={isCedulaValid}
+                onBack={handleBack}
+                onNext={handleNext}
+              />
+            )}
+          >
+            {renderStepContent()}
+          </InterviewWizardShell>
 
-          <CandidateDocumentsSection
-            candidateDocuments={candidateDocuments}
-            onChange={handleCandidateDocumentsChange}
-          />
-
-          <IdentitySection
-            formData={formData}
-            isCedulaValid={isCedulaValid}
-            normalizedSchools={normalizedSchools}
-            availablePrograms={availablePrograms}
-            schoolsLoading={schoolsLoading}
-            isLeader={isLeader}
-            leaderSchoolId={leaderSchoolId}
-            isSearching={isSearching}
-            lookupError={lookupError}
-            candidateMatches={candidateMatches}
-            selectedCandidateId={selectedCandidateId}
-            isCreatingCandidate={isCreatingCandidate}
-            canCreateCandidate={canCreateCandidate}
-            missingScopeForCreate={missingScopeForCreate}
-            onChange={handleChange}
-            onPickCandidate={handlePickCandidate}
-            onCreateCandidate={handleCreateCandidate}
-          />
-
-          <AvailabilitySection
-            formData={formData}
-            onChange={handleChange}
-          />
-
-          <PedagogySection
-            formData={formData}
-            onChange={handleChange}
-          />
-
-          <AiUsageSection
-            formData={formData}
-            onChange={handleChange}
-          />
-
-          <EthicsCasesSection
-            formData={formData}
-            onChange={handleChange}
-          />
-
-          <InterviewFormActions
-            isCedulaValid={isCedulaValid}
-            onReset={resetForm}
-          />
+          <div className="flex justify-center">
+            <button
+              type="button"
+              onClick={resetForm}
+              className={[
+                "rounded-full px-5 py-2 text-[11px] font-bold uppercase tracking-[0.2em] transition",
+                isDark
+                  ? "text-white/60 border border-white/15 hover:bg-white/[0.04]"
+                  : "text-slate-600 border border-slate-300 hover:bg-slate-50",
+              ].join(" ")}
+            >
+              Resetear formulario
+            </button>
+          </div>
         </form>
       </div>
     </div>

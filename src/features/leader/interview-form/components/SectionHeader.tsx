@@ -16,13 +16,13 @@ export const SectionHeader: React.FC<SectionHeaderProps> = React.memo(
     return (
       <div className="flex items-start gap-4 mb-8">
         <div className="relative group">
-          <div className="absolute inset-0 bg-emerald-500 blur-xl opacity-10 group-hover:opacity-20 transition-opacity duration-500" />
+          <div className="absolute inset-0 bg-cyan-500 blur-xl opacity-10 group-hover:opacity-20 transition-opacity duration-500" />
           <div
             className={[
-              "relative flex items-center justify-center h-12 w-12 rounded-2xl border shadow-[0_0_32px_rgba(16,185,129,0.35)]",
+              "relative flex items-center justify-center h-11 w-11 rounded-xl border transition-all duration-300",
               isDark
-                ? "bg-gradient-to-br from-emerald-500/25 via-emerald-500/12 to-transparent border-emerald-400/50 text-emerald-300"
-                : "bg-gradient-to-br from-emerald-50 via-white to-emerald-50 border-emerald-200 text-emerald-600",
+                ? "bg-gradient-to-br from-cyan-500/20 via-blue-500/10 to-transparent border-cyan-500/25 text-cyan-300 shadow-[0_0_24px_rgba(6,182,212,0.15)]"
+                : "bg-gradient-to-br from-cyan-50 via-white to-blue-50 border-cyan-200 text-cyan-600",
             ].join(" ")}
           >
             {icon}
@@ -33,17 +33,17 @@ export const SectionHeader: React.FC<SectionHeaderProps> = React.memo(
           <div className="flex items-center gap-3">
             <span
               className={[
-                "inline-flex h-7 w-7 items-center justify-center rounded-full border text-[11px] font-semibold",
+                "inline-flex h-6 w-6 items-center justify-center rounded-md border text-[10px] font-bold",
                 isDark
-                  ? "border-emerald-500/60 bg-emerald-500/10 text-emerald-200"
-                  : "border-emerald-300 bg-emerald-50 text-emerald-700",
+                  ? "border-cyan-500/30 bg-cyan-500/10 text-cyan-300"
+                  : "border-cyan-200 bg-cyan-50 text-cyan-700",
               ].join(" ")}
             >
               {step}
             </span>
             <h3
               className={[
-                "text-xl md:text-2xl font-semibold tracking-tight",
+                "text-lg md:text-xl font-bold tracking-tight",
                 isDark ? "text-white" : "text-slate-900",
               ].join(" ")}
             >
@@ -53,7 +53,7 @@ export const SectionHeader: React.FC<SectionHeaderProps> = React.memo(
           {subtitle && (
             <p
               className={`text-xs md:text-sm max-w-xl ${
-                isDark ? "text-gray-400" : "text-slate-600"
+                isDark ? "text-slate-400" : "text-slate-500"
               }`}
             >
               {subtitle}
@@ -61,8 +61,8 @@ export const SectionHeader: React.FC<SectionHeaderProps> = React.memo(
           )}
           <div
             className={[
-              "h-px w-20 mt-3 rounded-full bg-gradient-to-r from-emerald-500/60 via-emerald-400/10 to-transparent",
-              !isDark ? "opacity-70" : "",
+              "h-px w-16 mt-2 rounded-full bg-gradient-to-r from-cyan-500/50 via-cyan-400/10 to-transparent",
+              !isDark ? "opacity-60" : "",
             ].join(" ")}
           />
         </div>

@@ -103,13 +103,13 @@ export const HiringContextSection: React.FC<HiringContextSectionProps> = ({
 
       <div
         className={[
-          "rounded-2xl border px-5 py-4 text-xs leading-relaxed",
+          "rounded-xl border px-5 py-4 text-xs leading-relaxed",
           isDark
-            ? "bg-emerald-500/5 border-emerald-500/15 text-emerald-300/70"
-            : "bg-emerald-50 border-emerald-200 text-emerald-700",
+            ? "bg-cyan-500/5 border-cyan-500/15 text-cyan-300/70"
+            : "bg-cyan-50 border-cyan-200 text-cyan-700",
         ].join(" ")}
       >
-        Esta información prepara la trazabilidad del proceso y podrá conectarse
+        Esta informacion prepara la trazabilidad del proceso y podra conectarse
         al backend en una fase posterior.
       </div>
     </FormSection>

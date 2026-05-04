@@ -40,7 +40,7 @@ export const SelectInput: React.FC<SelectInputProps> = ({
           <option
             value=""
             disabled
-            className={isDark ? "text-gray-500" : "text-slate-400"}
+            className={isDark ? "text-slate-500" : "text-slate-400"}
           >
             {placeholder}
           </option>
@@ -50,7 +50,7 @@ export const SelectInput: React.FC<SelectInputProps> = ({
           <option
             key={opt.value}
             value={opt.value}
-            className={isDark ? "bg-[#1a1a1a] py-2" : "bg-white py-2"}
+            className={isDark ? "bg-[#0C1218] py-2" : "bg-white py-2"}
           >
             {opt.label}
           </option>
@@ -60,8 +60,8 @@ export const SelectInput: React.FC<SelectInputProps> = ({
       <div
         className={`absolute inset-y-0 right-0 flex items-center px-4 pointer-events-none transition-colors ${
           isDark
-            ? "text-gray-600 group-focus-within/select:text-emerald-400"
-            : "text-slate-400 group-focus-within/select:text-emerald-500"
+            ? "text-slate-500 group-focus-within/select:text-cyan-400"
+            : "text-slate-400 group-focus-within/select:text-cyan-500"
         }`}
       >
         <ChevronDown className="w-4 h-4" />

@@ -15,7 +15,9 @@ export const InterviewFormActions: React.FC<InterviewFormActionsProps> = ({
   const isDark = theme === "dark";
 
   return (
-    <div className="flex flex-col sm:flex-row items-center justify-center gap-4 pt-12 pb-10 border-t border-white/5">
+    <div className={`flex flex-col sm:flex-row items-center justify-center gap-4 ${
+      isDark ? "pt-6" : "pt-6"
+    }`}>
       <button
         type="button"
         onClick={onReset}

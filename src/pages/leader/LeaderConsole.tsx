@@ -5,6 +5,7 @@ import { useLocation } from "react-router-dom";
 import type {
   InterviewData,
   AnalysisResult,
+  TeacherForm,
   TeacherAiResult,
 } from "../../types";
 import { analyzeTeacherInterview } from "../../services/geminiService";
@@ -23,25 +24,22 @@ import { useAuth } from "../../context/AuthContext";
 import { useTheme } from "../../context/ThemeContext";
 
 // Components
-import Header from "../../components/Header";
 import InterviewForm from "../../components/InterviewForm";
 import AnalysisResults from "../../components/AnalysisResults";
 import LoadingState from "../../components/LoadingState";
 import EvaluationsHistory from "../../components/EvaluationsHistory";
-import { LeaderIntroPanel } from "../../features/leader/components/LeaderIntroPanel";
 import { LeaderFlowHelpModal } from "../../features/leader/components/LeaderFlowHelpModal";
 import { LeaderErrorState } from "../../features/leader/components/LeaderErrorState";
+import { LeaderHero } from "../../features/leader/components/LeaderHero";
+import { LeaderModeHeader } from "../../features/leader/components/LeaderModeHeader";
+import { LeaderQuickGuideCard } from "../../features/leader/components/LeaderQuickGuideCard";
 import { toBackendTeacherForm, mapFormToInterviewData } from "../../features/leader/utils/leaderMappers";
 
 const ORG_ID = import.meta.env.VITE_ORG_ID ?? "ORG_DEFAULT";
 
 type ViewMode = "analyze" | "history";
 
-// --- COMPONENTE PRINCIPAL ---
 const LeaderConsole: React.FC = () => {
-  // =========================
-  // ✅ ESTADOS PRINCIPALES
-  // =========================
   const [mode, setMode] = useState<ViewMode>("analyze");
   const { user } = useAuth();
   const { theme } = useTheme();
@@ -54,13 +52,12 @@ const LeaderConsole: React.FC = () => {
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
   const [isFlowHelpOpen, setIsFlowHelpOpen] = useState(false);
+  const [wizardStep, setWizardStep] = useState<number>(1);
 
-  // --- LOGICA DE NEGOCIO (Sin cambios) ---
   const handleFormSubmit = useCallback(
     async (data: InterviewData) => {
       const actor = actorFromUser(user);
 
-      // ✅ Validar datos obligatorios ANTES de llamar IA
       const fullName = (data.candidateName ?? "").trim();
       const schoolId = (data.schoolId ?? "").trim();
       const programId = (data.programId ?? "").trim();
@@ -81,7 +78,6 @@ const LeaderConsole: React.FC = () => {
       setEvaluationId(null);
 
       try {
-        // ✅ PASO 1: Resolver o crear candidato ANTES de llamar IA
         let candidateId: string | null = null;
         const documentNumber = (data.documentNumber ?? "").trim();
 
@@ -138,7 +134,6 @@ const LeaderConsole: React.FC = () => {
           throw new Error("No se pudo resolver ni crear el candidato. Verifica los datos.");
         }
 
-        // ✅ PASO 2: Ejecutar IA (solo si el candidato está listo)
         auditAppend({
           type: "AI_ANALYSIS_STARTED",
           actor,
@@ -162,7 +157,6 @@ const LeaderConsole: React.FC = () => {
           });
         }
 
-        // ✅ PASO 3: Guardar evaluación con candidateId garantizado
         const formFrontend: TeacherForm = mapInterviewToTeacherForm(data);
         const formBackend = toBackendTeacherForm(formFrontend);
 
@@ -181,7 +175,7 @@ const LeaderConsole: React.FC = () => {
 
         setEvaluationId(saved.id);
       } catch (err: any) {
-        console.error("❌ Error during analysis or save:", {
+        console.error("Error during analysis or save:", {
           message: err?.message,
           status: err?.response?.status,
           data: err?.response?.data,
@@ -246,7 +240,6 @@ const LeaderConsole: React.FC = () => {
     const evaluationIdFromUrl = params.get("evaluationId");
     if (!evaluationIdFromUrl) return;
     handleOpenEvaluationFromHistory(evaluationIdFromUrl);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [location.search]);
 
   const handleReset = useCallback(() => {
@@ -257,140 +250,118 @@ const LeaderConsole: React.FC = () => {
     setError(null);
   }, []);
 
-  // --- UI HELPERS ---
-  const brandFrom = "#91DC00";
-  const brandTo = "#31AB2E";
+  const handleLogout = useCallback(() => {
+    localStorage.removeItem("token");
+    localStorage.removeItem("access_token");
+    localStorage.removeItem("AUTH_TOKEN");
+    try {
+      window.location.href = "/login";
+    } catch {
+      window.location.href = "/login";
+    }
+  }, []);
 
-  // Paso actual del flujo para el panel de arriba
-  const currentStep = useMemo<1 | 2 | 3>(() => {
-    if (isLoading) return 2;
-    if (analysisResult) return 3;
-    return 1;
-  }, [isLoading, analysisResult]);
-
-  const status = useMemo(() => {
-    if (isLoading) {
-      return {
-        label: "Procesando...",
-        cls: isDark
-          ? "border-emerald-500/50 bg-emerald-500/20 text-emerald-200 animate-pulse"
-          : "border-emerald-400/50 bg-emerald-50 text-emerald-700 animate-pulse",
-      };
-    }
-    if (error) {
-      return {
-        label: "Error detectado",
-        cls: isDark
-          ? "border-red-500/50 bg-red-500/20 text-red-200"
-          : "border-red-400/40 bg-red-50 text-red-600",
-      };
-    }
-    if (analysisResult) {
-      return {
-        label: "Análisis completado",
-        cls: isDark
-          ? "border-emerald-500/50 bg-emerald-500/20 text-emerald-300 shadow-[0_0_15px_-3px_rgba(16,185,129,0.3)]"
-          : "border-emerald-400/60 bg-emerald-50 text-emerald-700 shadow-[0_0_0_1px_rgba(16,185,129,0.10)]",
-      };
-    }
-    return {
-      label: "En espera",
-      cls: isDark
-        ? "border-white/10 bg-white/5 text-white/50"
-        : "border-slate-200 bg-slate-50 text-slate-500",
-    };
-  }, [isLoading, error, analysisResult, isDark]);
+  const statusLabel = useMemo(() => {
+    if (isLoading) return "Procesando...";
+    if (error) return "Error";
+    if (analysisResult) return "Completado";
+    return "Listo";
+  }, [isLoading, error, analysisResult]);
 
   return (
     <div
-      className={[
-        "min-h-screen w-full font-sans overflow-x-hidden flex flex-col",
-        isDark ? "bg-[#020202] text-white" : "bg-gray-50 text-gray-900",
-      ].join(" ")}
+      className={`min-h-screen w-full font-sans overflow-x-hidden flex flex-col ${
+        isDark ? "bg-[#020308] text-white" : "bg-[#F4F7FC] text-slate-900"
+      }`}
     >
-
-      <Header mode={mode} onChangeMode={setMode} />
+      <LeaderModeHeader
+        mode={mode}
+        onChangeMode={setMode}
+        onLogout={handleLogout}
+        statusLabel={statusLabel}
+      />
 
       <main className="flex-1 relative z-10 w-full">
-        {/* Container principal alineado con el Header (px-6 es clave) */}
-        <div className="container mx-auto px-6 py-8">
-          
-          {/* ================= VISTA: ANALIZAR ================= */}
+        {isDark && (
+          <div className="fixed inset-0 pointer-events-none">
+            <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[900px] h-[500px] bg-gradient-to-b from-cyan-500/5 via-transparent to-transparent blur-[150px] rounded-full" />
+            <div className="absolute inset-0 [background:linear-gradient(rgba(255,255,255,0.015)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.015)_1px,transparent_1px)] bg-[size:60px_60px] [mask-image:radial-gradient(ellipse_70%_60%_at_50%_20%,#000_50%,transparent_100%)]" />
+          </div>
+        )}
+
+        <div className="max-w-7xl mx-auto px-4 md:px-8 py-6 md:py-8 relative z-10">
           {mode === "analyze" && (
-            <div className="animate-[fadeInUp_400ms_ease-out] space-y-8">
-              
-        <LeaderIntroPanel
-          currentStep={currentStep}
-          status={status}
-          onOpenFlowHelp={() => setIsFlowHelpOpen(true)}
-        />
+            <div className="space-y-6 md:space-y-8 animate-[fadeInUp_400ms_ease-out]">
+              <LeaderHero />
 
-              {/* 2. Área Principal (Formulario o Resultados) */}
-              <section className="relative">
-                {!analysisResult && !isLoading && !error && (
+              {!analysisResult && !isLoading && !error && (
+                <div className="grid grid-cols-1 lg:grid-cols-[1fr_300px] gap-6 items-start">
                   <div className="animate-[fadeIn_300ms_ease-out]">
-                    <InterviewForm onSubmit={handleFormSubmit} />
-                  </div>
-                )}
-
-                {isLoading && (
-                   <div className="py-20 flex flex-col items-center justify-center animate-[pulse_2s_infinite]">
-                     {/* Placeholder visual para loading state */}
-                     <LoadingState />
-                     <p className="mt-6 text-sm text-emerald-400/80 font-medium animate-pulse">
-                       Analizando patrones pedagógicos y éticos...
-                     </p>
-                   </div>
-                )}
-
-      {error && (
-        <LeaderErrorState error={error} onReset={handleReset} />
-      )}
-
-                {analysisResult && interviewData && !error && (
-                  <div className="animate-[slideUp_400ms_ease-out]">
-                    <AnalysisResults
-                      result={analysisResult}
-                      interviewData={interviewData}
-                      onReset={handleReset}
-                      evaluationId={evaluationId ?? undefined}
+                    <InterviewForm
+                      onSubmit={handleFormSubmit}
+                      onStepChange={setWizardStep}
                     />
                   </div>
-                )}
-              </section>
+
+                  <aside className="hidden lg:block space-y-4 sticky top-28">
+                    <LeaderQuickGuideCard
+                      currentStep={wizardStep}
+                      onOpenFlowHelp={() => setIsFlowHelpOpen(true)}
+                    />
+                  </aside>
+                </div>
+              )}
+
+              {isLoading && (
+                <div className="py-24 flex flex-col items-center justify-center">
+                  <LoadingState />
+                  <p className="mt-6 text-sm text-cyan-400/80 font-medium animate-pulse">
+                    Analizando patrones pedagógicos y éticos...
+                  </p>
+                </div>
+              )}
+
+              {error && (
+                <LeaderErrorState error={error} onReset={handleReset} />
+              )}
+
+              {analysisResult && interviewData && !error && (
+                <div className="animate-[slideUp_400ms_ease-out] max-w-5xl mx-auto">
+                  <AnalysisResults
+                    result={analysisResult}
+                    interviewData={interviewData}
+                    onReset={handleReset}
+                    evaluationId={evaluationId ?? undefined}
+                  />
+                </div>
+              )}
             </div>
           )}
 
-          {/* ================= VISTA: HISTORIAL ================= */}
           {mode === "history" && (
             <div className="animate-[fadeInUp_400ms_ease-out]">
-              <div className="relative">
-                 {/* Fondo decorativo detrás de la tabla/lista */}
-                 <div className="absolute inset-0 bg-gradient-to-b from-cyan-500/5 to-transparent blur-3xl -z-10" />         
-                 <EvaluationsHistory
-                  onBackToAnalyze={() => setMode("analyze")}
-                  onOpenEvaluation={handleOpenEvaluationFromHistory}
-                />
-              </div>
+              {isDark && (
+                <div className="absolute inset-0 bg-gradient-to-b from-cyan-500/5 to-transparent blur-3xl -z-10 pointer-events-none" />
+              )}
+              <EvaluationsHistory
+                onBackToAnalyze={() => setMode("analyze")}
+                onOpenEvaluation={handleOpenEvaluationFromHistory}
+              />
             </div>
           )}
         </div>
       </main>
 
-      {/* Modal: Guía rápida del flujo */}
       {isFlowHelpOpen && (
         <LeaderFlowHelpModal onClose={() => setIsFlowHelpOpen(false)} />
       )}
 
-
-      {/* Footer / Nota legal sutil */}
       <footer className="py-6 text-center border-t border-white/5 mt-auto">
-         <p className="text-[10px] text-white/20 uppercase tracking-widest">
-            Sistema de Evaluación Docente · CUN © {new Date().getFullYear()}
-         </p>
+        <p className="text-[10px] text-white/20 uppercase tracking-widest">
+          Sistema de Evaluación Docente · CUN © {new Date().getFullYear()}
+        </p>
       </footer>
 
-      {/* Definición de Keyframes Tailwind-friendly */}
       <style>{`
         @keyframes fadeInUp {
           from { opacity: 0; transform: translateY(20px); }
@@ -399,11 +370,6 @@ const LeaderConsole: React.FC = () => {
         @keyframes slideUp {
           from { opacity: 0; transform: translateY(40px); }
           to { opacity: 1; transform: translateY(0); }
-        }
-        @keyframes shake {
-          0%, 100% { transform: translateX(0); }
-          10%, 30%, 50%, 70%, 90% { transform: translateX(-4px); }
-          20%, 40%, 60%, 80% { transform: translateX(4px); }
         }
       `}</style>
     </div>
