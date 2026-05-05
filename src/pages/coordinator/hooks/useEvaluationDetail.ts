@@ -61,7 +61,7 @@ export const useEvaluationDetail = ({
   const [selectedId, setSelectedId] = useState<string | null>(null);
 
   const [selectedDetail, setSelectedDetail] = useState<{
-    analysis: AnalysisResult;
+    analysis: AnalysisResult | null;
     interview: InterviewData;
   } | null>(null);
 
@@ -195,7 +195,7 @@ export const useEvaluationDetail = ({
         // ✅ ojo: tu backend guarda AnalysisResult en aiRawJson.rawOutput
         // pero en tu types, TeacherAiResult.rawOutput?: AnalysisResult
         // aquí asumimos que detail.aiRawJson YA ES AnalysisResult (como venías manejándolo).
-        const analysis: AnalysisResult = detail.aiRawJson;
+        const analysis: AnalysisResult | null = detail.aiRawJson ?? null;
         const interview = mapFormToInterviewData(detail);
 
         setSelectedDetail({ analysis, interview });
@@ -209,7 +209,7 @@ export const useEvaluationDetail = ({
   );
 
   const exportPdf = useCallback(async () => {
-    if (!selectedDetail || !selectedId) return;
+    if (!selectedDetail?.analysis || !selectedId) return;
     try {
       await generateAnalysisPdfFromData(selectedDetail.analysis, selectedDetail.interview, {
         download: true,

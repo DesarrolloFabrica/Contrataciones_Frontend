@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
-import { adminMockDb } from "../utils/adminMockDb";
+import { getExecutiveSummary, updateAdminDecision } from "../../../services/teachersService";
 
 type DecisionStatus = "PENDIENTE" | "APROBADO" | "RECHAZADO";
 
@@ -42,15 +42,36 @@ export function useAdminLocalDecision(evaluationId: string | null) {
   const [decision, setDecision] = useState<StoredDecision | null>(null);
 
   useEffect(() => {
+    let alive = true;
     if (!evaluationId) {
       setDecision(null);
       return;
     }
-    setDecision(loadDecision(evaluationId));
+
+    getExecutiveSummary(evaluationId)
+      .then((summary: any) => {
+        if (!alive) return;
+        const verdict = String(summary?.adminDecision?.verdict ?? "PENDING").toUpperCase();
+        const status: DecisionStatus =
+          verdict === "APPROVED" ? "APROBADO" : verdict === "REJECTED" ? "RECHAZADO" : "PENDIENTE";
+        const note = String(summary?.adminDecision?.notes ?? "");
+        const timestamp = summary?.adminDecision?.decidedAt ?? new Date().toISOString();
+        const next: StoredDecision = { evaluationId, status, note, timestamp };
+        saveDecision(next);
+        setDecision(next);
+      })
+      .catch(() => {
+        if (!alive) return;
+        setDecision(loadDecision(evaluationId));
+      });
+
+    return () => {
+      alive = false;
+    };
   }, [evaluationId]);
 
   const setStatus = useCallback(
-    (status: DecisionStatus, note: string) => {
+    async (status: DecisionStatus, note: string) => {
       if (!evaluationId) return;
 
       const stored: StoredDecision = {
@@ -60,18 +81,11 @@ export function useAdminLocalDecision(evaluationId: string | null) {
         timestamp: new Date().toISOString(),
       };
 
+      const backendStatus =
+        status === "APROBADO" ? "APPROVED" : status === "RECHAZADO" ? "REJECTED" : "PENDING";
+      await updateAdminDecision(evaluationId, { status: backendStatus, comment: note });
       saveDecision(stored);
       setDecision(stored);
-
-      adminMockDb.logEvent({
-        entityType: "EVALUATION",
-        entityId: evaluationId,
-        action: "ADMIN_DECISION_SAVED",
-        actorUserId: "u-admin-1",
-        actorRole: "ADMIN",
-        at: new Date().toISOString(),
-        meta: { status, note },
-      });
     },
     [evaluationId]
   );

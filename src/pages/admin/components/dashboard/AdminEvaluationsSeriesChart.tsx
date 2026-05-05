@@ -93,18 +93,17 @@ export default function AdminEvaluationsSeriesChart({ points }: Props) {
   return (
     <div
       className={[
-        "relative flex h-full min-h-0 w-full min-w-0 flex-col overflow-hidden rounded-[24px] border p-6 transition-all duration-500",
+        "relative flex h-full min-h-0 w-full min-w-0 flex-col overflow-hidden rounded-xl border p-5",
         isDark
-          ? "border-white/[0.04] bg-[#0c0c0e] hover:border-white/[0.08]"
-          : "border-slate-200/60 bg-white hover:border-slate-300 hover:shadow-xl hover:shadow-slate-200/20",
+          ? "border-white/10 bg-white/[0.03]"
+          : "border-slate-200 bg-white shadow-sm",
       ].join(" ")}
     >
-      {/* Encabezado limpio y minimalista */}
-      <div className="flex items-center justify-between mb-8">
-        <div className="flex flex-col gap-1">
+      <div className="flex items-center justify-between mb-4">
+        <div className="flex flex-col gap-0.5">
           <h3
             className={[
-              "text-sm font-semibold uppercase tracking-widest",
+              "text-xs font-semibold uppercase tracking-widest",
               isDark ? "text-neutral-300" : "text-slate-800",
             ].join(" ")}
           >
@@ -112,16 +111,12 @@ export default function AdminEvaluationsSeriesChart({ points }: Props) {
           </h3>
           <p
             className={[
-              "text-[13px]",
+              "text-xs",
               isDark ? "text-neutral-500" : "text-slate-500",
             ].join(" ")}
           >
             Frecuencia de evaluaciones por fecha
           </p>
-        </div>
-        {/* Ícono sutil como marca de agua a la derecha */}
-        <div className={isDark ? "text-neutral-800" : "text-slate-200"}>
-          <Activity strokeWidth={1.5} className="w-6 h-6" />
         </div>
       </div>
 

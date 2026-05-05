@@ -139,8 +139,8 @@ function useOutsideClose(open: boolean, refs: Array<React.RefObject<HTMLElement>
           className={[
             "px-3 py-2 rounded-xl text-xs font-medium transition-all min-w-[130px] text-left border outline-none",
             isDark
-              ? "bg-white/5 border-white/10 hover:bg-white/10 hover:border-white/20 text-neutral-200 focus:border-emerald-500/50"
-              : "bg-slate-50 border-slate-200 hover:bg-white hover:border-slate-300 text-slate-800 shadow-sm focus:border-emerald-400 focus:ring-2 focus:ring-emerald-100",
+              ? "bg-white/5 border-white/10 hover:bg-white/10 hover:border-white/20 text-neutral-200 focus:border-cyan-500/50"
+              : "bg-slate-50 border-slate-200 hover:bg-white hover:border-slate-300 text-slate-800 shadow-sm focus:border-cyan-400 focus:ring-2 focus:ring-cyan-100",
           ].join(" ")}
           title="Cambiar mes"
         >
@@ -174,8 +174,8 @@ function useOutsideClose(open: boolean, refs: Array<React.RefObject<HTMLElement>
                     "w-full text-left px-3 py-2 rounded-xl text-xs transition-all flex items-center justify-between group",
                     active
                       ? isDark
-                        ? "bg-emerald-500/10 text-emerald-400 font-bold"
-                        : "bg-emerald-50 text-emerald-700 font-bold"
+                        ? "bg-cyan-500/10 text-cyan-400 font-bold"
+                        : "bg-cyan-50 text-cyan-700 font-bold"
                       : isDark
                         ? "bg-transparent hover:bg-white/10 text-neutral-300"
                         : "bg-transparent hover:bg-slate-100 text-slate-700",
@@ -246,8 +246,8 @@ function useOutsideClose(open: boolean, refs: Array<React.RefObject<HTMLElement>
   
     return (
       <div className="relative">
-        <div className="flex flex-col gap-1.5">
-          <label className={["text-[10px] uppercase tracking-widest font-bold ml-1", isDark ? "text-neutral-500" : "text-slate-500"].join(" ")}>
+        <div className="flex flex-col gap-1">
+          <label className={["text-[10px] uppercase tracking-widest font-medium", isDark ? "text-neutral-500" : "text-slate-500"].join(" ")}>
             {label}
           </label>
           <button
@@ -255,14 +255,14 @@ function useOutsideClose(open: boolean, refs: Array<React.RefObject<HTMLElement>
             type="button"
             onClick={() => setOpen((v) => !v)}
             className={[
-              "w-[240px] px-4 py-2.5 rounded-2xl text-sm font-medium text-left transition-all flex items-center justify-between gap-3 border outline-none group",
+              "h-10 px-3.5 rounded-xl text-xs font-medium text-left transition-all flex items-center justify-between gap-2 border outline-none min-w-[160px]",
               isDark
-                ? "bg-[#121514] border-white/10 hover:border-emerald-500/30 text-neutral-200 focus:border-emerald-500/50"
-                : "bg-white border-slate-200 hover:border-emerald-300 hover:shadow-md text-slate-800 shadow-sm focus:border-emerald-400 focus:ring-2 focus:ring-emerald-100",
+                ? "bg-white/[0.03] border-white/10 text-neutral-200 hover:border-white/20 focus:border-cyan-500/40"
+                : "bg-white border-slate-300 text-slate-700 hover:border-slate-400 focus:border-cyan-400 focus:ring-2 focus:ring-cyan-300/40",
             ].join(" ")}
           >
-            <div className="flex items-center gap-2.5 overflow-hidden">
-              <Calendar className={["w-4 h-4 shrink-0 transition-colors", open ? "text-emerald-500" : isDark ? "text-neutral-500 group-hover:text-emerald-400" : "text-slate-400 group-hover:text-emerald-600"].join(" ")} />
+            <div className="flex items-center gap-2 overflow-hidden">
+              <Calendar className="w-3.5 h-3.5 shrink-0 opacity-60" />
               <span className="truncate">{formatLabel(value)}</span>
             </div>
           </button>
@@ -298,8 +298,8 @@ function useOutsideClose(open: boolean, refs: Array<React.RefObject<HTMLElement>
                   className={[
                     "w-[70px] px-3 py-2 rounded-xl text-xs font-medium border outline-none text-center transition-all",
                     isDark
-                      ? "bg-white/5 border-white/10 text-neutral-200 focus:border-emerald-500/50"
-                      : "bg-slate-50 border-slate-200 text-slate-900 focus:border-emerald-400 focus:bg-white",
+                      ? "bg-white/5 border-white/10 text-neutral-200 focus:border-cyan-500/50"
+                      : "bg-slate-50 border-slate-200 text-slate-900 focus:border-cyan-400 focus:bg-white",
                   ].join(" ")}
                   inputMode="numeric"
                 />
@@ -336,11 +336,11 @@ function useOutsideClose(open: boolean, refs: Array<React.RefObject<HTMLElement>
                         ? isDark ? "text-neutral-700 cursor-not-allowed" : "text-slate-300 cursor-not-allowed"
                         : isSelected
                           ? isDark
-                            ? "bg-emerald-500 text-black shadow-[0_0_16px_rgba(16,185,129,0.4)] scale-105 z-20"
-                            : "bg-emerald-500 text-white shadow-[0_6px_16px_rgba(16,185,129,0.35)] scale-105 z-20"
+                            ? "bg-cyan-500 text-black shadow-[0_0_16px_rgba(16,185,129,0.4)] scale-105 z-20"
+                            : "bg-cyan-500 text-white shadow-[0_6px_16px_rgba(16,185,129,0.35)] scale-105 z-20"
                           : isDark
                             ? "hover:bg-white/10 text-neutral-300 hover:scale-110"
-                            : "hover:bg-emerald-50 text-slate-700 hover:text-emerald-700 hover:scale-110",
+                            : "hover:bg-cyan-50 text-slate-700 hover:text-cyan-700 hover:scale-110",
                     ].join(" ")}
                   >
                     {c.day}
@@ -353,7 +353,7 @@ function useOutsideClose(open: boolean, refs: Array<React.RefObject<HTMLElement>
               <button
                 type="button"
                 onClick={() => onPick(toYmd(new Date()))}
-                className={["px-4 py-2 rounded-xl text-xs font-bold uppercase tracking-widest transition-all hover:scale-[1.02]", isDark ? "bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500/20" : "bg-emerald-50 text-emerald-700 hover:bg-emerald-100"].join(" ")}
+                className={["px-4 py-2 rounded-xl text-xs font-bold uppercase tracking-widest transition-all hover:scale-[1.02]", isDark ? "bg-cyan-500/10 text-cyan-400 hover:bg-cyan-500/20" : "bg-cyan-50 text-cyan-700 hover:bg-cyan-100"].join(" ")}
               >
                 Hoy
               </button>
@@ -416,8 +416,8 @@ function useOutsideClose(open: boolean, refs: Array<React.RefObject<HTMLElement>
   
     return (
       <div className="relative">
-        <div className="flex flex-col gap-1.5">
-          <label className={["text-[10px] uppercase tracking-widest font-bold ml-1", isDark ? "text-neutral-500" : "text-slate-500"].join(" ")}>
+        <div className="flex flex-col gap-1">
+          <label className={["text-[10px] uppercase tracking-widest font-medium", isDark ? "text-neutral-500" : "text-slate-500"].join(" ")}>
             {label}
           </label>
           <button
@@ -426,23 +426,23 @@ function useOutsideClose(open: boolean, refs: Array<React.RefObject<HTMLElement>
             disabled={isDisabled}
             onClick={() => setOpen((v) => !v)}
             className={[
-              "w-[260px] px-4 py-2.5 rounded-2xl border text-sm font-medium text-left transition-all flex items-center justify-between gap-3 outline-none group",
+              "h-10 px-3.5 rounded-xl text-xs font-medium text-left transition-all flex items-center justify-between gap-2 border outline-none min-w-[160px]",
               isDisabled
                 ? isDark
-                  ? "bg-white/5 border-white/5 text-neutral-600 cursor-not-allowed"
+                  ? "bg-white/[0.02] border-white/5 text-neutral-600 cursor-not-allowed"
                   : "bg-slate-50 border-slate-200 text-slate-400 cursor-not-allowed"
                 : isDark
-                  ? "bg-[#121514] border-white/10 text-neutral-200 hover:border-emerald-500/30 focus:border-emerald-500/50"
-                  : "bg-white border-slate-200 text-slate-800 hover:border-emerald-300 hover:shadow-md focus:border-emerald-400 focus:ring-2 focus:ring-emerald-100",
+                  ? "bg-white/[0.03] border-white/10 text-neutral-200 hover:border-white/20 focus:border-cyan-500/40"
+                  : "bg-white border-slate-300 text-slate-700 hover:border-slate-400 focus:border-cyan-400 focus:ring-2 focus:ring-cyan-300/40",
             ].join(" ")}
           >
-            <div className="flex items-center gap-2.5 overflow-hidden">
-              {Icon && <Icon className={["w-4 h-4 shrink-0 transition-colors", open ? "text-emerald-500" : isDisabled ? (isDark ? "text-neutral-600" : "text-slate-300") : (isDark ? "text-neutral-500 group-hover:text-emerald-400" : "text-slate-400 group-hover:text-emerald-600")].join(" ")} />}
-              <span className={["truncate", !valueLabel && !isDark && !isDisabled ? "text-slate-500" : ""].join(" ")}>
+            <div className="flex items-center gap-2 overflow-hidden">
+              {Icon && <Icon className="w-3.5 h-3.5 shrink-0 opacity-60" />}
+              <span className={["truncate", !valueLabel && !isDark && !isDisabled ? "text-slate-400" : ""].join(" ")}>
                 {valueLabel || placeholder}
               </span>
             </div>
-            <ChevronRight className={["w-4 h-4 shrink-0 transition-transform", open ? "rotate-90" : "rotate-0", isDark ? "text-neutral-600" : "text-slate-400"].join(" ")} />
+            <ChevronRight className={["w-3.5 h-3.5 shrink-0 transition-transform", open ? "rotate-90" : "rotate-0", isDark ? "text-neutral-600" : "text-slate-400"].join(" ")} />
           </button>
         </div>
   
@@ -467,7 +467,7 @@ function useOutsideClose(open: boolean, refs: Array<React.RefObject<HTMLElement>
                   className={[
                     "w-full text-left px-3 py-2.5 rounded-xl text-sm transition-all flex items-center justify-between",
                     !valueId
-                      ? isDark ? "bg-emerald-500/10 text-emerald-400 font-bold" : "bg-emerald-50 text-emerald-700 font-bold"
+                      ? isDark ? "bg-cyan-500/10 text-cyan-400 font-bold" : "bg-cyan-50 text-cyan-700 font-bold"
                       : isDark ? "hover:bg-white/10 text-neutral-400" : "hover:bg-slate-50 text-slate-500",
                   ].join(" ")}
                 >
@@ -490,7 +490,7 @@ function useOutsideClose(open: boolean, refs: Array<React.RefObject<HTMLElement>
                   className={[
                     "w-full text-left px-3 py-2.5 rounded-xl text-sm transition-all flex items-center justify-between group",
                     active
-                      ? isDark ? "bg-emerald-500/10 text-emerald-400 font-bold" : "bg-emerald-50 text-emerald-700 font-bold"
+                      ? isDark ? "bg-cyan-500/10 text-cyan-400 font-bold" : "bg-cyan-50 text-cyan-700 font-bold"
                       : isDark ? "hover:bg-white/10 text-neutral-200" : "hover:bg-slate-50 text-slate-700",
                   ].join(" ")}
                 >
@@ -670,71 +670,52 @@ function useOutsideClose(open: boolean, refs: Array<React.RefObject<HTMLElement>
   
     return (
       <div className="space-y-6">
-        {/* 1. HERO CABECERA */}
-        <div
-          className={[
-            "relative overflow-hidden rounded-3xl border px-8 py-7 flex flex-col md:flex-row md:items-center md:justify-between gap-6",
-            isDark
-              ? "border-white/10 bg-[#0a0c0b]/80 backdrop-blur-xl"
-              : "border-slate-200 bg-white shadow-[0_20px_60px_rgba(15,23,42,0.06)]",
-          ].join(" ")}
-        >
-          {/* Glow Decorativo */}
-          <div className="absolute -top-24 -right-24 w-64 h-64 bg-emerald-500/10 blur-[80px] rounded-full pointer-events-none" />
-          
-          <div className="flex items-center gap-5 relative z-10">
+        {/* 1. HEADER - Simplified */}
+        <div>
+          <div className="flex items-center gap-3">
             <div className={[
-              "flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl border shadow-inner",
-              isDark ? "bg-emerald-500/10 border-emerald-500/20 text-emerald-400" : "bg-gradient-to-br from-emerald-50 to-teal-50 border-emerald-100 text-emerald-600"
+              "flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border",
+              isDark ? "bg-white/[0.05] border-white/10 text-cyan-400" : "bg-cyan-50 border-cyan-100 text-cyan-600"
             ].join(" ")}>
-              <LayoutDashboard className="h-7 w-7" />
+              <LayoutDashboard className="h-5 w-5" />
             </div>
             <div>
-              <div className="flex items-center gap-2 mb-1">
-                <Sparkles className={["w-3.5 h-3.5", isDark ? "text-emerald-500" : "text-emerald-500"].join(" ")} />
-                <p className={["text-[10px] uppercase tracking-[0.25em] font-extrabold", isDark ? "text-emerald-500" : "text-emerald-600"].join(" ")}>
-                  Centro de Comando
-                </p>
-              </div>
-              <h1 className={["text-2xl font-black tracking-tight", isDark ? "text-white" : "text-slate-900"].join(" ")}>
+              <h1 className={["text-xl font-black tracking-tight", isDark ? "text-white" : "text-slate-900"].join(" ")}>
                 Dashboard Global
               </h1>
-              <p className={["text-sm mt-1", isDark ? "text-neutral-400" : "text-slate-500"].join(" ")}>
+              <p className={["text-sm", isDark ? "text-neutral-400" : "text-slate-500"].join(" ")}>
                 Visión ejecutiva del funnel de candidatos y métricas de evaluación.
               </p>
             </div>
           </div>
-  
-          <div className="flex flex-col items-start md:items-end gap-2 relative z-10">
+          <div className="flex items-center gap-3 mt-3">
             <div className={[
-              "px-4 py-2 rounded-xl border text-xs font-semibold shadow-sm flex items-center gap-2 max-w-[300px]",
-              isDark ? "bg-black/50 border-white/10 text-neutral-300" : "bg-slate-50 border-slate-200 text-slate-700"
+              "px-3 py-1.5 rounded-lg border text-[11px] font-medium flex items-center gap-1.5",
+              isDark ? "bg-white/[0.03] border-white/10 text-neutral-400" : "bg-slate-50 border-slate-200 text-slate-600"
             ].join(" ")}>
-              <Filter className="w-3.5 h-3.5 opacity-70 shrink-0" />
-              <span className="truncate">{scopeLabel}</span>
+              <Filter className="w-3 h-3 opacity-70" />
+              <span className="truncate max-w-[240px]">{scopeLabel}</span>
             </div>
-            <p className={["text-xs font-medium", isDark ? "text-neutral-500" : "text-slate-400"].join(" ")}>
+            <span className={["text-[11px]", isDark ? "text-neutral-500" : "text-slate-400"].join(" ")}>
               {periodLabel}
-            </p>
+            </span>
           </div>
         </div>
   
-        {/* 2. PANEL DE FILTROS & CONTROLES */}
+        {/* 2. FILTERS & CONTROLS - Compact row */}
         <div
           className={[
-            "rounded-3xl border p-6 flex flex-wrap items-end gap-6 relative z-50",
+            "rounded-2xl border p-4 flex flex-wrap items-end gap-4 relative z-50",
             isDark
-              ? "border-white/10 bg-[#0a0c0b]/60 backdrop-blur-xl"
-              : "border-slate-200 bg-white/60 backdrop-blur-xl shadow-sm",
+              ? "border-white/10 bg-white/[0.03]"
+              : "border-slate-200 bg-white/80 shadow-sm",
           ].join(" ")}
         >
           <DatePicker label="Fecha Inicio" value={safeFrom} max={safeTo} onChange={setFromDate} />
           <DatePicker label="Fecha Fin" value={safeTo} min={safeFrom} onChange={setToDate} />
   
-          <div className="w-px h-12 bg-slate-200 dark:bg-white/10 hidden xl:block self-center mx-2" />
-  
           <Dropdown
-            label="Filtrar por Escuela"
+            label="Escuela"
             icon={Building2}
             valueId={schoolId}
             placeholder="Todas las escuelas"
@@ -744,7 +725,7 @@ function useOutsideClose(open: boolean, refs: Array<React.RefObject<HTMLElement>
           />
   
           <Dropdown
-            label="Filtrar por Programa"
+            label="Programa"
             icon={BookOpen}
             valueId={programId}
             placeholder={schoolId ? "Todos los programas" : "Seleccione escuela primero"}
@@ -754,78 +735,68 @@ function useOutsideClose(open: boolean, refs: Array<React.RefObject<HTMLElement>
             onChange={(id) => setProgramId(id)}
           />
   
-          {/* TABS DE VISTA Y MODO - Estilo Segmented Control */}
-          <div className="w-full mt-4 pt-6 border-t border-slate-200 dark:border-white/10 flex flex-wrap items-center justify-between gap-6">
+          {/* Section Tabs + Programs Mode */}
+          <div className="w-full flex flex-wrap items-center justify-between gap-3 pt-4 border-t border-white/10">
             
-            <div className="flex flex-col gap-2">
-              <span className={["text-[10px] uppercase tracking-widest font-bold ml-1", isDark ? "text-neutral-500" : "text-slate-400"].join(" ")}>
-                Secciones del Dashboard
-              </span>
-              <div className={["inline-flex p-1.5 rounded-2xl border", isDark ? "bg-[#121514] border-white/5" : "bg-slate-100/50 border-slate-200/50"].join(" ")}>
-                {(
-                  [
-                    { id: "ALL" as const, label: "Todas" },
-                    { id: "KPIS" as const, label: "KPIs" },
-                    { id: "STATUS" as const, label: "Estado" },
-                    { id: "SCORE" as const, label: "Score" },
-                    { id: "DECISION" as const, label: "Tiempos" },
-                  ] as const
-                ).map((t) => {
-                  const active = t.id === activeSection;
-                  return (
-                    <button
-                      key={t.id}
-                      onClick={() => scrollToSection(t.id)}
-                      className={[
-                        "px-4 py-1.5 rounded-xl text-xs font-bold transition-all duration-200 ease-out",
-                        active
-                          ? isDark
-                            ? "bg-emerald-500/20 text-emerald-400 shadow-sm"
-                            : "bg-white text-emerald-600 shadow-sm border border-slate-200/60"
-                          : isDark
-                            ? "text-neutral-400 hover:text-neutral-200 hover:bg-white/5"
-                            : "text-slate-500 hover:text-slate-800 hover:bg-slate-200/50",
-                      ].join(" ")}
-                    >
-                      {t.label}
-                    </button>
-                  );
-                })}
-              </div>
+            <div className="inline-flex p-0.5 rounded-xl border bg-white/[0.02]">
+              {(
+                [
+                  { id: "ALL" as const, label: "Todas" },
+                  { id: "KPIS" as const, label: "KPIs" },
+                  { id: "STATUS" as const, label: "Estado" },
+                  { id: "SCORE" as const, label: "Score" },
+                  { id: "DECISION" as const, label: "Tiempos" },
+                ] as const
+              ).map((t) => {
+                const active = t.id === activeSection;
+                return (
+                  <button
+                    key={t.id}
+                    onClick={() => scrollToSection(t.id)}
+                    className={[
+                      "px-3.5 py-1.5 rounded-lg text-[11px] font-semibold transition-all duration-200",
+                      active
+                        ? isDark
+                          ? "bg-white/10 text-white shadow-sm"
+                          : "bg-white text-slate-900 shadow-sm border border-slate-200"
+                        : isDark
+                          ? "text-neutral-500 hover:text-neutral-300"
+                          : "text-slate-500 hover:text-slate-700",
+                    ].join(" ")}
+                  >
+                    {t.label}
+                  </button>
+                );
+              })}
             </div>
   
-            <div className="flex flex-col gap-2">
-              <span className={["text-[10px] uppercase tracking-widest font-bold ml-1", isDark ? "text-neutral-500" : "text-slate-400"].join(" ")}>
-                Métrica de Programas Top
-              </span>
-              <div className={["inline-flex p-1.5 rounded-2xl border", isDark ? "bg-[#121514] border-white/5" : "bg-slate-100/50 border-slate-200/50"].join(" ")}>
-                {(
-                  [
-                    { id: "VOLUME" as const, label: "Por Volumen" },
-                    { id: "ACCEPTANCE" as const, label: "Por Aceptación" },
-                  ] as const
-                ).map((m) => {
-                  const active = programsMode === m.id;
-                  return (
-                    <button
-                      key={m.id}
-                      onClick={() => setProgramsMode(m.id)}
-                      className={[
-                        "px-4 py-1.5 rounded-xl text-xs font-bold transition-all duration-200",
-                        active
-                          ? isDark
-                            ? "bg-neutral-800 text-white shadow-sm"
-                            : "bg-white text-slate-800 shadow-sm border border-slate-200/60"
-                          : isDark
-                            ? "text-neutral-400 hover:text-neutral-200 hover:bg-white/5"
-                            : "text-slate-500 hover:text-slate-800 hover:bg-slate-200/50",
-                      ].join(" ")}
-                    >
-                      {m.label}
-                    </button>
-                  );
-                })}
-              </div>
+            <div className="inline-flex p-0.5 rounded-xl border bg-white/[0.02]">
+              {(
+                [
+                  { id: "VOLUME" as const, label: "Volumen" },
+                  { id: "ACCEPTANCE" as const, label: "Aceptación" },
+                ] as const
+              ).map((m) => {
+                const active = programsMode === m.id;
+                return (
+                  <button
+                    key={m.id}
+                    onClick={() => setProgramsMode(m.id)}
+                    className={[
+                      "px-3.5 py-1.5 rounded-lg text-[11px] font-semibold transition-all duration-200",
+                      active
+                        ? isDark
+                          ? "bg-white/10 text-white shadow-sm"
+                          : "bg-white text-slate-900 shadow-sm border border-slate-200"
+                        : isDark
+                          ? "text-neutral-500 hover:text-neutral-300"
+                          : "text-slate-500 hover:text-slate-700",
+                    ].join(" ")}
+                  >
+                    {m.label}
+                  </button>
+                );
+              })}
             </div>
   
           </div>
@@ -840,7 +811,7 @@ function useOutsideClose(open: boolean, refs: Array<React.RefObject<HTMLElement>
   
         {loading && (
           <div className={["flex flex-col items-center justify-center p-12 rounded-3xl border border-dashed", isDark ? "border-white/10 bg-[#0a0c0b]/50" : "border-slate-200 bg-slate-50/50"].join(" ")}>
-            <Loader2 className={["w-8 h-8 animate-spin mb-4", isDark ? "text-emerald-500" : "text-emerald-600"].join(" ")} />
+            <Loader2 className={["w-8 h-8 animate-spin mb-4", isDark ? "text-cyan-500" : "text-cyan-600"].join(" ")} />
             <span className={["text-sm font-medium tracking-wide animate-pulse", isDark ? "text-neutral-400" : "text-slate-500"].join(" ")}>
               Recopilando métricas del dashboard...
             </span>
@@ -855,7 +826,7 @@ function useOutsideClose(open: boolean, refs: Array<React.RefObject<HTMLElement>
   
         {/* Renderizado del contenido final */}
         {!loading && !error && data && (
-          <div className="mt-8">
+          <div>
             <AdminDashboardContent
               isDark={isDark}
               activeSection={activeSection}

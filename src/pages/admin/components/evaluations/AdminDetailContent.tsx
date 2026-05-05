@@ -179,8 +179,8 @@ const StatusPill = ({
     className += ` ${customClass}`;
   } else if (status === "APPROVED" || status === "RECOMENDADA") {
     className += isDark
-      ? " border-emerald-400/25 bg-emerald-500/10 text-emerald-200"
-      : " border-emerald-200 bg-emerald-50 text-emerald-700";
+      ? " border-cyan-400/25 bg-cyan-500/10 text-cyan-200"
+      : " border-cyan-200 bg-cyan-50 text-cyan-700";
   } else if (status === "REJECTED" || status === "NO_RECOMENDAR") {
     className += isDark
       ? " border-rose-400/25 bg-rose-500/10 text-rose-200"
@@ -326,7 +326,7 @@ const EmptyState = ({
           size={30}
           className={[
             "opacity-80",
-            spin ? "animate-spin text-emerald-300" : "",
+            spin ? "animate-spin text-cyan-300" : "",
             isError
               ? isDark
                 ? "text-rose-200"
@@ -569,11 +569,11 @@ export default function AdminDetailContent({
       STYLES.chipBase,
       activeTab === tab
         ? isDark
-          ? "border-emerald-400/25 bg-emerald-500/10 text-emerald-100 shadow-[0_0_22px_rgba(16,185,129,0.12)]"
-          : "border-emerald-500 bg-emerald-600 text-white shadow-[0_10px_25px_rgba(16,185,129,0.35)]"
+          ? "border-cyan-400/25 bg-cyan-500/10 text-cyan-100 shadow-[0_0_22px_rgba(16,185,129,0.12)]"
+          : "border-cyan-500 bg-cyan-600 text-white shadow-[0_10px_25px_rgba(16,185,129,0.35)]"
         : isDark
           ? "border-white/10 bg-white/5 text-white/65 hover:text-white/85 hover:bg-white/10 hover:border-white/15"
-          : "border-slate-200 bg-white text-slate-600 hover:border-emerald-300 hover:text-emerald-700 hover:bg-emerald-50",
+          : "border-slate-200 bg-white text-slate-600 hover:border-cyan-300 hover:text-cyan-700 hover:bg-cyan-50",
     ].join(" ");
 
   const schoolProgramLabel = pickCandidateSchoolProgramLabel(
@@ -622,7 +622,7 @@ export default function AdminDetailContent({
       {/* Fondo premium solo en oscuro */}
       {isDark && (
         <div className="pointer-events-none absolute inset-0">
-          <div className="absolute -top-24 -left-20 h-72 w-72 rounded-full bg-emerald-500/10 blur-3xl" />
+          <div className="absolute -top-24 -left-20 h-72 w-72 rounded-full bg-cyan-500/10 blur-3xl" />
           <div className="absolute -bottom-28 -right-16 h-80 w-80 rounded-full bg-cyan-500/10 blur-3xl" />
           <div className="absolute inset-0 bg-gradient-to-b from-white/[0.06] via-white/[0.02] to-transparent" />
           <div className="absolute inset-0 [background:radial-gradient(1200px_circle_at_15%_0%,rgba(16,185,129,0.10),transparent_55%),radial-gradient(900px_circle_at_85%_25%,rgba(34,211,238,0.08),transparent_55%)]" />
@@ -741,7 +741,7 @@ export default function AdminDetailContent({
                       ].join(" ")}
                     >
                       <div className="flex items-center gap-2 mb-2">
-                        <Sparkles className="w-4 h-4 text-emerald-300" />
+                        <Sparkles className="w-4 h-4 text-cyan-300" />
                         <p
                           className={`text-[11px] font-extrabold uppercase tracking-[0.18em] ${
                             isDark ? "text-white/70" : "text-slate-600"
@@ -773,7 +773,7 @@ export default function AdminDetailContent({
                   >
                     Score IA
                   </p>
-                  <div className="mt-2 rounded-2xl border border-emerald-400/25 bg-emerald-500/10 px-4 py-3 shadow-[0_0_28px_rgba(16,185,129,0.12)]">
+                  <div className="mt-2 rounded-2xl border border-cyan-400/25 bg-cyan-500/10 px-4 py-3 shadow-[0_0_28px_rgba(16,185,129,0.12)]">
                     <div className="flex items-baseline gap-2 justify-end">
                       <span
                         className={`text-3xl font-black ${
@@ -844,7 +844,7 @@ export default function AdminDetailContent({
             {activeTab === "RESUMEN" && (
               <div ref={refResumen} className={cardClass}>
                 <div className="flex items-center gap-2 mb-2">
-                  <FileText className="w-4 h-4 text-emerald-300" />
+                  <FileText className="w-4 h-4 text-cyan-300" />
                   <h5
                     className={`text-sm font-extrabold uppercase tracking-[0.18em] ${
                       isDark ? "text-white" : "text-slate-900"
@@ -874,8 +874,8 @@ export default function AdminDetailContent({
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-5">
                   <div className={subCardClass}>
                     <div className="flex items-center gap-2 mb-3">
-                      <CheckCircle2 className="w-4 h-4 text-emerald-300" />
-                      <p className="text-[11px] font-extrabold uppercase tracking-[0.18em] text-emerald-200/90">
+                      <CheckCircle2 className="w-4 h-4 text-cyan-300" />
+                      <p className="text-[11px] font-extrabold uppercase tracking-[0.18em] text-cyan-200/90">
                         Fortalezas
                       </p>
                     </div>
@@ -888,7 +888,7 @@ export default function AdminDetailContent({
                       >
                         {strengths.map((s, i) => (
                           <li key={i} className="flex gap-2">
-                            <span className="text-emerald-300 shrink-0">•</span>
+                            <span className="text-cyan-300 shrink-0">•</span>
                             <span>{s}</span>
                           </li>
                         ))}
@@ -943,7 +943,7 @@ export default function AdminDetailContent({
               <div ref={refDecision} className={cardClass}>
                 <div className="flex items-center justify-between gap-3 mb-4">
                   <div className="flex items-center gap-2">
-                    <Gavel className="w-4 h-4 text-emerald-300" />
+                    <Gavel className="w-4 h-4 text-cyan-300" />
                     <h5 className="text-sm font-extrabold text-white uppercase tracking-[0.18em]">
                       Decisión del coordinador
                     </h5>
@@ -1054,15 +1054,15 @@ export default function AdminDetailContent({
                 }`}
               >
                 <li className="flex gap-2">
-                  <span className="text-emerald-300">1)</span>
+                  <span className="text-cyan-300">1)</span>
                   <span>Revisa resumen y señales (fortalezas/riesgos).</span>
                 </li>
                 <li className="flex gap-2">
-                  <span className="text-emerald-300">2)</span>
+                  <span className="text-cyan-300">2)</span>
                   <span>Valida decisión del coordinador y comentario.</span>
                 </li>
                 <li className="flex gap-2">
-                  <span className="text-emerald-300">3)</span>
+                  <span className="text-cyan-300">3)</span>
                   <span>Comprueba trazabilidad (líder/coordinador).</span>
                 </li>
               </ul>
@@ -1085,7 +1085,7 @@ export default function AdminDetailContent({
                     isDark ? "text-white/55" : "text-slate-600"
                   }`}
                 >
-                  <Loader2 className="w-4 h-4 animate-spin text-emerald-300" />
+                  <Loader2 className="w-4 h-4 animate-spin text-cyan-300" />
                   Cargando auditoría…
                 </div>
               </div>

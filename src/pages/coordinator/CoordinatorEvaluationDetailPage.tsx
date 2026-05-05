@@ -181,7 +181,7 @@ export default function CoordinatorEvaluationDetailPage() {
   );
 
   const loading = detail.loadingDetail;
-  const canExport = !!selected && !loading;
+  const canExport = !!analysis && !loading;
 
   // Entrevistas del candidato (ordenadas desc por fecha)
   const interviewsSorted = useMemo(() => {

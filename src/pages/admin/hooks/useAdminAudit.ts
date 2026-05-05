@@ -1,7 +1,7 @@
 // src/pages/admin/hooks/useAdminAudit.ts
 import { useCallback, useEffect, useMemo, useState } from "react";
 import type { AdminAuditEvent, AdminAuditEntityType } from "../adminTypes";
-import { adminMockDb } from "../utils/adminMockDb";
+import { listAuditEvents } from "../../../services/auditEventsService";
 
 type Opts = {
   entityType?: AdminAuditEntityType;
@@ -80,14 +80,11 @@ export const useAdminAudit = (opts?: Opts) => {
     setErrorAudit(null);
 
     try {
-      let res: AdminAuditEvent[] = [];
-
-      if (opts?.entityId) {
-        const type = opts.entityType ?? "SYSTEM";
-        res = await adminMockDb.listAudit(type, opts.entityId);
-      } else {
-        res = await adminMockDb.listAuditGlobal(opts?.entityType);
-      }
+      const res = await listAuditEvents({
+        entityType: opts?.entityType,
+        entityId: opts?.entityId,
+        limit: 500,
+      });
 
       const sNeed =
         opts?.schoolName && !isAllToken(opts.schoolName) ? norm(opts.schoolName) : null;

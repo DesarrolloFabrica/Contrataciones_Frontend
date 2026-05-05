@@ -25,7 +25,7 @@ interface TeacherEvaluationItemProps {
 }
 
 const pillBase =
-  "inline-flex items-center px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-widest border";
+  "inline-flex items-center px-2 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-widest border";
 
 function getIaBadge(verdict: string, isDark: boolean) {
   const full = (verdict ?? "").trim();
@@ -172,8 +172,8 @@ const TeacherEvaluationItem: React.FC<TeacherEvaluationItemProps> = ({
         }
       }}
       className={[
-        "w-full text-left px-5 py-4 rounded-2xl border transition-all duration-300",
-        "flex flex-col gap-3",
+        "w-full text-left px-4 py-3 rounded-2xl border transition-all duration-300",
+        "flex flex-col gap-2.5",
         "focus:outline-none focus-visible:ring-2 focus-visible:ring-cyan-500/30 focus-visible:ring-offset-0",
         selected
           ? isDark
@@ -186,11 +186,11 @@ const TeacherEvaluationItem: React.FC<TeacherEvaluationItemProps> = ({
       ].join(" ")}
     >
       {/* HEADER */}
-      <div className="flex items-start justify-between gap-4">
+      <div className="flex items-start justify-between gap-3">
         {/* LEFT */}
-        <div className="min-w-0 space-y-1.5">
+        <div className="min-w-0 space-y-1">
           <p
-            className={`text-sm font-bold tracking-tight truncate ${
+            className={`text-[13px] font-bold tracking-tight truncate ${
               isDark ? "text-white" : "text-slate-900"
             }`}
           >
@@ -199,7 +199,7 @@ const TeacherEvaluationItem: React.FC<TeacherEvaluationItemProps> = ({
 
           {/* 👇 “Sin veredicto / estado IA corto” va abajo del nombre */}
           <div
-            className={`text-[11px] font-medium ${
+            className={`text-[10px] font-medium ${
               isDark ? "text-white/60" : "text-slate-500"
             }`}
           >
@@ -207,11 +207,11 @@ const TeacherEvaluationItem: React.FC<TeacherEvaluationItemProps> = ({
           </div>
 
           <div
-            className={`text-[11px] flex flex-wrap items-center gap-2 ${
+            className={`text-[10px] flex flex-wrap items-center gap-1.5 ${
               isDark ? "text-gray-400" : "text-slate-500"
             }`}
           >
-            {school && <span className="truncate max-w-[220px]">{school}</span>}
+            {school && <span className="truncate max-w-[180px]">{school}</span>}
             {school && program && (
               <span
                 className={`w-1 h-1 rounded-full opacity-60 ${
@@ -219,11 +219,11 @@ const TeacherEvaluationItem: React.FC<TeacherEvaluationItemProps> = ({
                 }`}
               />
             )}
-            {program && <span className="truncate max-w-[260px]">{program}</span>}
+            {program && <span className="truncate max-w-[220px]">{program}</span>}
           </div>
 
           <p
-            className={`text-[11px] ${
+            className={`text-[10px] ${
               isDark ? "text-neutral-600" : "text-slate-500"
             }`}
           >
@@ -231,24 +231,24 @@ const TeacherEvaluationItem: React.FC<TeacherEvaluationItemProps> = ({
           </p>
 
           {decision && (
-            <div className={`${pillBase} ${decision.cls} normal-case mt-2`}>
+            <div className={`${pillBase} ${decision.cls} normal-case mt-1.5`}>
               {decision.label}
             </div>
           )}
         </div>
 
         {/* RIGHT */}
-        <div className="text-right flex flex-col items-end gap-3 shrink-0 min-w-[140px]">
+        <div className="text-right flex flex-col items-end gap-2 shrink-0 min-w-[120px]">
           <div
             title={ia.full}
-            className={`${pillBase} ${ia.cls} normal-case max-w-[220px] truncate`}
+            className={`${pillBase} ${ia.cls} normal-case max-w-[180px] truncate`}
           >
             {ia.short}
           </div>
 
-          <div className={`flex flex-col items-end gap-1.5 w-full`}>
+          <div className={`flex flex-col items-end gap-1 w-full`}>
             <div className="flex items-baseline gap-1">
-              <span className={`text-xl font-bold ${scoreColor}`}>{score}</span>
+              <span className={`text-lg font-bold ${scoreColor}`}>{score}</span>
               <span className={`text-[10px] font-medium ${isDark ? "text-slate-500" : "text-slate-400"}`}>/100</span>
             </div>
             <div className={`w-full h-1.5 rounded-full overflow-hidden ${isDark ? "bg-white/10" : "bg-slate-200"}`}>
@@ -264,7 +264,7 @@ const TeacherEvaluationItem: React.FC<TeacherEvaluationItemProps> = ({
       {/* FOOTER */}
       {footer && (
         <div
-          className={`pt-3 border-t flex items-center justify-between gap-3 ${
+          className={`pt-2 border-t flex items-center justify-between gap-2 ${
             isDark ? "border-white/[0.06]" : "border-slate-200/80"
           }`}
         >

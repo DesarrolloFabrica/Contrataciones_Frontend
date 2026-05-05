@@ -29,6 +29,7 @@ import type { CandidateGroup } from "./types";
 import { getCandidateKey } from "./utils/candidateKey";
 import api from "../../services/apiClient";
 import ThemeToggle from "../../components/ThemeToggle";
+import { UserHeaderProfile } from "../../components/UserHeaderProfile";
 
 // -------------------- API BASE --------------------
 const API_BASE =
@@ -656,6 +657,8 @@ const CoordinatorConsole: React.FC = () => {
                 <UserCheck className="w-4 h-4" />
                 Usuarios
               </button>
+
+              <UserHeaderProfile />
 
               <ThemeToggle />
 

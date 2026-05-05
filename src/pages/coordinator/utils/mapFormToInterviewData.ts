@@ -2,37 +2,46 @@ import { InterviewData } from "../../../types";
 
 // helper para reconstruir InterviewData desde lo que devuelve el backend
 export const mapFormToInterviewData = (detail: any): InterviewData => {
-  const form = detail.formRawData;
-  const candidate = detail.candidate ?? form?.candidate ?? {};
+  const form = detail?.formRawData ?? {};
+  const candidate = detail?.candidate ?? form?.candidate ?? {};
+  const formCandidate = form?.candidate ?? {};
+  const availability = form?.availability ?? {};
+  const classroomManagement = form?.classroomManagement ?? {};
+  const aiAttitude = form?.aiAttitude ?? {};
+  const coherenceCommitment = form?.coherenceCommitment ?? {};
+
   return {
-    candidateName: form.candidate.fullName,
-    age: form.candidate.age ? String(form.candidate.age) : "",
+    candidateName: formCandidate.fullName ?? candidate.fullName ?? "",
+    age: formCandidate.age ? String(formCandidate.age) : "",
     documentNumber:
-      form.candidate.documentNumber ??
-      form.candidate.document_number ??
-      form.candidate.document ?? "",
-    school: form.candidate.schoolName,
-    program: form.candidate.programName,
+      formCandidate.documentNumber ??
+      formCandidate.document_number ??
+      formCandidate.document ??
+      candidate.documentNumber ??
+      candidate.document_number ??
+      "",
+    school: formCandidate.schoolName ?? candidate.school?.name ?? "",
+    program: formCandidate.programName ?? candidate.program?.name ?? "",
     candidateId: detail.candidateId ?? candidate.id ?? null,
-    schoolId: form.candidate.schoolId ?? candidate.schoolId ?? null,
-    programId: form.candidate.programId ?? candidate.programId ?? null,
-    careerSummary: form.candidate.careerSummary,
-    previousExperience: form.candidate.teachingExperience,
+    schoolId: formCandidate.schoolId ?? candidate.schoolId ?? null,
+    programId: formCandidate.programId ?? candidate.programId ?? null,
+    careerSummary: formCandidate.careerSummary ?? "",
+    previousExperience: formCandidate.teachingExperience ?? "",
 
-    availabilityDetails: form.availability.scheduleDetails,
-    acceptsCommittees: form.availability.acceptsCommittees,
-    otherJobs: form.availability.otherJobsImpact,
+    availabilityDetails: availability.scheduleDetails ?? "",
+    acceptsCommittees: availability.acceptsCommittees ?? "",
+    otherJobs: availability.otherJobsImpact ?? "",
 
-    evaluationMethodology: form.classroomManagement.evaluationMethodology,
-    failureRatePlan: form.classroomManagement.planIfHalfFail,
-    apatheticStudentPlan: form.classroomManagement.handleApatheticStudent,
+    evaluationMethodology: classroomManagement.evaluationMethodology ?? "",
+    failureRatePlan: classroomManagement.planIfHalfFail ?? "",
+    apatheticStudentPlan: classroomManagement.handleApatheticStudent ?? "",
 
-    aiToolsUsage: form.aiAttitude.usesAiHow,
-    ethicalAiMeasures: form.aiAttitude.ethicalUseMeasures,
-    aiPlagiarismPrevention: form.aiAttitude.handleAiPlagiarism,
+    aiToolsUsage: aiAttitude.usesAiHow ?? "",
+    ethicalAiMeasures: aiAttitude.ethicalUseMeasures ?? "",
+    aiPlagiarismPrevention: aiAttitude.handleAiPlagiarism ?? "",
 
-    scenario29: form.coherenceCommitment.caseStudent2_9,
-    scenarioCoverage: form.coherenceCommitment.emergencyProtocol,
-    scenarioFeedback: form.coherenceCommitment.handleNegativeFeedback,
+    scenario29: coherenceCommitment.caseStudent2_9 ?? "",
+    scenarioCoverage: coherenceCommitment.emergencyProtocol ?? "",
+    scenarioFeedback: coherenceCommitment.handleNegativeFeedback ?? "",
   };
 };

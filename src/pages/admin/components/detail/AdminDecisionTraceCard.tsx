@@ -33,7 +33,7 @@ const stepBase =
 function StepIcon({ status }: { status?: string | null }) {
   const s = (status ?? "").toUpperCase();
   if (s === "APROBADO")
-    return <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0 mt-0.5" />;
+    return <CheckCircle2 className="w-4 h-4 text-cyan-400 shrink-0 mt-0.5" />;
   if (s === "RECHAZADO" || s === "NO_RECOMENDAR")
     return <AlertCircle className="w-4 h-4 text-rose-400 shrink-0 mt-0.5" />;
   return <Clock className="w-4 h-4 text-amber-400 shrink-0 mt-0.5" />;
@@ -42,7 +42,7 @@ function StepIcon({ status }: { status?: string | null }) {
 function StatusBadge({ status }: { status?: string | null }) {
   const s = (status ?? "").toUpperCase();
   let cls = "bg-white/5 text-neutral-300 border-white/10";
-  if (s === "APROBADO") cls = "bg-emerald-500/10 text-emerald-300 border-emerald-500/30";
+  if (s === "APROBADO") cls = "bg-cyan-500/10 text-cyan-300 border-cyan-500/30";
   else if (s === "RECHAZADO") cls = "bg-rose-500/10 text-rose-300 border-rose-500/30";
   else if (s === "NO_RECOMENDAR") cls = "bg-rose-500/10 text-rose-300 border-rose-500/30";
   else if (s === "PRECAUCION") cls = "bg-yellow-500/10 text-yellow-200 border-yellow-500/30";
@@ -75,7 +75,7 @@ export default function AdminDecisionTraceCard({
   return (
     <div className="space-y-1">
       <div className="flex items-center gap-2 mb-3">
-        <Gavel className="w-4 h-4 text-emerald-300" />
+        <Gavel className="w-4 h-4 text-cyan-300" />
         <h5 className={`text-sm font-extrabold uppercase tracking-[0.18em] ${isDark ? "text-white" : "text-slate-900"}`}>
           Trazabilidad completa
         </h5>

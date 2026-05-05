@@ -67,7 +67,7 @@ export default function AdminFinalDecisionPanel({ evaluationId }: Props) {
   return (
     <div className={cardCls}>
       <div className="flex items-center gap-2 mb-3">
-        <Gavel className="w-4 h-4 text-emerald-300" />
+        <Gavel className="w-4 h-4 text-cyan-300" />
         <h5 className={`text-sm font-extrabold uppercase tracking-[0.18em] ${isDark ? "text-white" : "text-slate-900"}`}>
           Decisión final Admin
         </h5>
@@ -95,8 +95,8 @@ export default function AdminFinalDecisionPanel({ evaluationId }: Props) {
         <div className="mt-2 flex items-center gap-3">
           {status === "APROBADO" && (
             <>
-              <CheckCircle2 className="w-5 h-5 text-emerald-400" />
-              <span className={`text-sm font-bold ${isDark ? "text-emerald-200" : "text-emerald-700"}`}>
+              <CheckCircle2 className="w-5 h-5 text-cyan-400" />
+              <span className={`text-sm font-bold ${isDark ? "text-cyan-200" : "text-cyan-700"}`}>
                 Aprobado
               </span>
             </>
@@ -135,8 +135,8 @@ export default function AdminFinalDecisionPanel({ evaluationId }: Props) {
           rows={3}
           className={`w-full rounded-xl border px-3 py-2.5 text-sm resize-none outline-none transition-colors ${
             isDark
-              ? "bg-black/30 border-white/10 text-white placeholder:text-neutral-600 focus:border-emerald-500/50"
-              : "bg-white border-slate-200 text-slate-900 placeholder:text-slate-400 focus:border-emerald-500"
+              ? "bg-black/30 border-white/10 text-white placeholder:text-neutral-600 focus:border-cyan-500/50"
+              : "bg-white border-slate-200 text-slate-900 placeholder:text-slate-400 focus:border-cyan-500"
           }`}
         />
       </div>
@@ -149,10 +149,10 @@ export default function AdminFinalDecisionPanel({ evaluationId }: Props) {
           onClick={handleApprove}
           className={`${pillBase} ${
             status === "APROBADO"
-              ? "border-emerald-400/40 bg-emerald-600/30 text-emerald-200 cursor-default"
+              ? "border-cyan-400/40 bg-cyan-600/30 text-cyan-200 cursor-default"
               : isDark
-                ? "border-emerald-500/30 bg-emerald-500/15 text-emerald-100 hover:bg-emerald-500/25"
-                : "border-emerald-500 bg-emerald-600 text-white hover:bg-emerald-500 shadow-sm"
+                ? "border-cyan-500/30 bg-cyan-500/15 text-cyan-100 hover:bg-cyan-500/25"
+                : "border-cyan-500 bg-cyan-600 text-white hover:bg-cyan-500 shadow-sm"
           } disabled:opacity-40`}
         >
           <CheckCircle2 className="w-4 h-4" />

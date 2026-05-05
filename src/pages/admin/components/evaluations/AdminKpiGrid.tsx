@@ -1,6 +1,6 @@
 // src/pages/admin/components/evaluations/AdminKpiGrid.tsx
-import React from "react";
-import { Activity, AlertCircle, FileText, TrendingUp } from "lucide-react";
+import React, { useMemo } from "react";
+import { AlertCircle, CheckCircle2, ShieldAlert, Shapes } from "lucide-react";
 import type { AdminMetrics } from "../../adminTypes";
 import { clampPct } from "../../utils/adminSelectors";
 import { useTheme } from "../../../../context/ThemeContext";
@@ -10,157 +10,6 @@ type Props = {
   recommendedPct: number;
   highRiskPct: number;
   scopeLabel: string;
-};
-
-const CardShell = ({
-  children,
-  tone,
-}: {
-  children: React.ReactNode;
-  tone: "emerald" | "cyan" | "rose";
-}) => {
-  const { theme } = useTheme();
-  const isDark = theme === "dark";
-
-  const baseToneBorder =
-    tone === "emerald"
-      ? "hover:border-emerald-500/30 hover:shadow-[0_20px_40px_-15px_rgba(16,185,129,0.25)]"
-      : tone === "cyan"
-      ? "hover:border-cyan-500/30 hover:shadow-[0_20px_40px_-15px_rgba(34,211,238,0.25)]"
-      : "hover:border-rose-500/30 hover:shadow-[0_20px_40px_-15px_rgba(244,63,94,0.25)]";
-
-  const glowStrong =
-    tone === "emerald"
-      ? "bg-emerald-500/12"
-      : tone === "cyan"
-      ? "bg-cyan-500/14"
-      : "bg-rose-500/14";
-
-  const glowSoft =
-    tone === "emerald"
-      ? "bg-emerald-500/6"
-      : tone === "cyan"
-      ? "bg-cyan-500/6"
-      : "bg-rose-500/6";
-
-  return (
-    <div
-      className={[
-        "group relative overflow-hidden rounded-[24px] p-6",
-        "transition-all duration-500 hover:-translate-y-1 border",
-        isDark
-          ? "bg-[#0A0C10] border-white/5 shadow-2xl"
-          : "bg-white border-slate-200 shadow-[0_18px_50px_rgba(15,23,42,0.12)]",
-        baseToneBorder,
-      ].join(" ")}
-    >
-      {/* ambient glows solo en oscuro */}
-      {isDark && (
-        <>
-          <div
-            className={[
-              "pointer-events-none absolute top-0 right-0 -mt-16 -mr-16 h-64 w-64 rounded-full blur-[80px] transition-all duration-700",
-              glowStrong,
-            ].join(" ")}
-          />
-          <div
-            className={[
-              "pointer-events-none absolute bottom-0 left-0 -mb-16 -ml-16 h-40 w-40 rounded-full blur-[60px]",
-              glowSoft,
-            ].join(" ")}
-          />
-        </>
-      )}
-
-      <div className="relative z-10">{children}</div>
-    </div>
-  );
-};
-
-const StatHeader = ({
-  icon,
-  label,
-  tone,
-}: {
-  icon: React.ReactNode;
-  label: string;
-  tone: "emerald" | "cyan" | "rose";
-}) => {
-  const { theme } = useTheme();
-  const isDark = theme === "dark";
-
-  const iconCls =
-    tone === "emerald"
-      ? "bg-emerald-500/10 text-emerald-300 border-emerald-500/20"
-      : tone === "cyan"
-      ? "bg-cyan-500/10 text-cyan-300 border-cyan-500/20"
-      : "bg-rose-500/10 text-rose-300 border-rose-500/20";
-
-  return (
-    <div className="flex items-start justify-between gap-3 mb-4">
-      <div
-        className={[
-          "h-11 w-11 rounded-2xl border flex items-center justify-center",
-          iconCls,
-        ].join(" ")}
-      >
-        {icon}
-      </div>
-
-      <div className="text-right">
-        <p
-          className={[
-            "text-[10px] font-bold uppercase tracking-[0.22em]",
-            isDark ? "text-neutral-500" : "text-slate-500",
-          ].join(" ")}
-        >
-          {label}
-        </p>
-      </div>
-    </div>
-  );
-};
-
-const Progress = ({
-  value,
-  tone,
-  isDark,
-}: {
-  value: number;
-  tone: "emerald" | "rose";
-  isDark: boolean;
-}) => {
-  const pct = clampPct(value);
-
-  const barCls =
-    tone === "emerald"
-      ? "bg-emerald-500 shadow-[0_0_18px_rgba(16,185,129,0.35)]"
-      : "bg-rose-500 shadow-[0_0_18px_rgba(244,63,94,0.35)]";
-
-  return (
-    <div className="mt-3">
-      <div
-        className={[
-          "w-full h-2 rounded-full overflow-hidden",
-          isDark ? "bg-white/10" : "bg-slate-200",
-        ].join(" ")}
-      >
-        <div
-          className={["h-full rounded-full", barCls].join(" ")}
-          style={{ width: `${pct}%` }}
-        />
-      </div>
-      <div
-        className={[
-          "mt-2 flex justify-between text-[11px]",
-          isDark ? "text-neutral-500" : "text-slate-500",
-        ].join(" ")}
-      >
-        <span>0 %</span>
-        <span>100 %</span>
-      </div>
-    </div>
-  );
 };
 
 export default function AdminKpiGrid({
@@ -180,147 +29,166 @@ export default function AdminKpiGrid({
     notRecommended: 0,
   };
 
-  return (
-    <section>
-      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-5">
-        <CardShell tone="emerald">
-          <StatHeader
-            tone="emerald"
-            label="Total evaluaciones"
-            icon={<FileText className="w-5 h-5" />}
-          />
-          <div className="flex items-end justify-between gap-3">
-            <div
-              className={[
-                "text-4xl md:text-5xl font-black tracking-tight",
-                isDark ? "text-white" : "text-slate-900",
-              ].join(" ")}
-            >
-              {safeMetrics.total}
-            </div>
-            <div
-              className={[
-                "text-xs text-right",
-                isDark ? "text-neutral-500" : "text-slate-600",
-              ].join(" ")}
-            >
-              Registros completos disponibles para revisión ejecutiva.
-            </div>
-          </div>
-        </CardShell>
+  const cautionPct = useMemo(() => {
+    if (!safeMetrics.total) return 0;
+    return clampPct((safeMetrics.caution / safeMetrics.total) * 100);
+  }, [safeMetrics]);
 
-        <CardShell tone="cyan">
-          <StatHeader
-            tone="cyan"
-            label="Promedio global"
-            icon={<Activity className="w-5 h-5" />}
-          />
-          <div className="flex items-end justify-between gap-3">
-            <div
-              className={[
-                "text-4xl font-black tracking-tight",
-                isDark ? "text-white" : "text-slate-900",
-              ].join(" ")}
-            >
-              {Number.isFinite(safeMetrics.avgScore)
-                ? safeMetrics.avgScore.toFixed(1)
-                : "0.0"}
+  const unknownCount = useMemo(
+    () =>
+      Math.max(
+        0,
+        safeMetrics.total -
+          safeMetrics.recommended -
+          safeMetrics.caution -
+          safeMetrics.notRecommended
+      ),
+    [safeMetrics]
+  );
+
+  const unknownPct = useMemo(() => {
+    if (!safeMetrics.total) return 0;
+    return clampPct((unknownCount / safeMetrics.total) * 100);
+  }, [safeMetrics.total, unknownCount]);
+
+  const cards = [
+    {
+      key: "ok",
+      label: "Recomendados",
+      count: safeMetrics.recommended,
+      pct: clampPct(recommendedPct),
+      icon: <CheckCircle2 className="h-4 w-4" />,
+      tone: isDark
+        ? "text-cyan-300 border-cyan-500/25 bg-cyan-500/10"
+        : "text-cyan-700 border-cyan-200 bg-cyan-50",
+      bar: "bg-cyan-500",
+    },
+    {
+      key: "caution",
+      label: "En cautela",
+      count: safeMetrics.caution,
+      pct: cautionPct,
+      icon: <ShieldAlert className="h-4 w-4" />,
+      tone: isDark
+        ? "text-amber-300 border-amber-500/25 bg-amber-500/10"
+        : "text-amber-700 border-amber-200 bg-amber-50",
+      bar: "bg-amber-500",
+    },
+    {
+      key: "risk",
+      label: "Riesgo alto",
+      count: safeMetrics.notRecommended,
+      pct: clampPct(highRiskPct),
+      icon: <AlertCircle className="h-4 w-4" />,
+      tone: isDark
+        ? "text-rose-300 border-rose-500/25 bg-rose-500/10"
+        : "text-rose-700 border-rose-200 bg-rose-50",
+      bar: "bg-rose-500",
+    },
+    {
+      key: "unknown",
+      label: "Sin clasificar",
+      count: unknownCount,
+      pct: unknownPct,
+      icon: <Shapes className="h-4 w-4" />,
+      tone: isDark
+        ? "text-sky-300 border-sky-500/25 bg-sky-500/10"
+        : "text-sky-700 border-sky-200 bg-sky-50",
+      bar: "bg-sky-500",
+    },
+  ];
+
+  return (
+    <section
+      className={[
+        "rounded-[22px] border p-4 md:p-5",
+        isDark
+          ? "border-white/10 bg-black/25 shadow-[0_18px_60px_rgba(0,0,0,0.45)]"
+          : "border-slate-200 bg-white shadow-[0_14px_40px_rgba(15,23,42,0.08)]",
+      ].join(" ")}
+    >
+      <div className="mb-4 flex items-center justify-between gap-2">
+        <div className="min-w-0">
+          <p
+            className={[
+              "text-[10px] uppercase tracking-[0.22em] font-bold",
+              isDark ? "text-neutral-500" : "text-slate-500",
+            ].join(" ")}
+          >
+            Calidad del scope
+          </p>
+          <p
+            className={[
+              "mt-1 text-sm font-semibold truncate",
+              isDark ? "text-neutral-100" : "text-slate-900",
+            ].join(" ")}
+            title={scopeLabel}
+          >
+            Distribucion de recomendaciones IA
+          </p>
+        </div>
+        <span
+          className={[
+            "shrink-0 inline-flex items-center rounded-full border px-2.5 py-1 text-[11px] font-semibold",
+            isDark
+              ? "border-white/10 bg-white/5 text-white/70"
+              : "border-slate-200 bg-slate-50 text-slate-700",
+          ].join(" ")}
+        >
+          {safeMetrics.total} evals
+        </span>
+      </div>
+
+      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-3">
+        {cards.map((card) => (
+          <article
+            key={card.key}
+            className={[
+              "rounded-2xl border p-3.5",
+              isDark
+                ? "border-white/10 bg-[#070a0d] hover:border-white/20"
+                : "border-slate-200 bg-white hover:border-slate-300",
+            ].join(" ")}
+          >
+            <div className="flex items-center justify-between gap-2">
+              <span className={["inline-flex h-7 w-7 items-center justify-center rounded-xl border", card.tone].join(" ")}>
+                {card.icon}
+              </span>
               <span
                 className={[
-                  "text-lg font-semibold",
-                  isDark ? "text-neutral-600" : "text-slate-500",
+                  "text-[11px] font-bold",
+                  isDark ? "text-white/70" : "text-slate-700",
                 ].join(" ")}
               >
-                /100
+                {card.pct.toFixed(0)}%
               </span>
             </div>
-          </div>
-          <p
-            className={[
-              "mt-2 text-xs",
-              isDark ? "text-neutral-400" : "text-slate-600",
-            ].join(" ")}
-          >
-            Score promedio de idoneidad (IA).
-          </p>
-        </CardShell>
-
-        <CardShell tone="emerald">
-          <StatHeader
-            tone="emerald"
-            label="Recomendados"
-            icon={<TrendingUp className="w-5 h-5" />}
-          />
-          <div className="flex items-end justify-between gap-3">
-            <div
+            <p
               className={[
-                "text-4xl font-black tracking-tight",
+                "mt-2 text-[11px] uppercase tracking-[0.18em] font-bold",
+                isDark ? "text-white/45" : "text-slate-500",
+              ].join(" ")}
+            >
+              {card.label}
+            </p>
+            <p
+              className={[
+                "mt-1 text-[28px] leading-none font-black",
                 isDark ? "text-white" : "text-slate-900",
               ].join(" ")}
             >
-              {Number.isFinite(recommendedPct)
-                ? recommendedPct.toFixed(0)
-                : "0"}
-              %
-            </div>
+              {card.count}
+            </p>
             <div
               className={[
-                "text-xs text-right",
-                isDark ? "text-neutral-500" : "text-slate-600",
+                "mt-2 h-1.5 rounded-full overflow-hidden",
+                isDark ? "bg-white/10" : "bg-slate-200",
               ].join(" ")}
             >
-              {safeMetrics.recommended} candidatos
+              <div className={["h-full rounded-full", card.bar].join(" ")} style={{ width: `${card.pct}%` }} />
             </div>
-          </div>
-
-          <p
-            className={[
-              "mt-2 text-xs",
-              isDark ? "text-neutral-400" : "text-slate-600",
-            ].join(" ")}
-          >
-            Candidatos con recomendación positiva.
-          </p>
-
-          <Progress value={recommendedPct} tone="emerald" isDark={isDark} />
-        </CardShell>
-
-        <CardShell tone="rose">
-          <StatHeader
-            tone="rose"
-            label="Riesgo alto"
-            icon={<AlertCircle className="w-5 h-5" />}
-          />
-          <div className="flex items-end justify-between gap-3">
-            <div
-              className={[
-                "text-4xl font-black tracking-tight",
-                isDark ? "text-white" : "text-slate-900",
-              ].join(" ")}
-            >
-              {Number.isFinite(highRiskPct) ? highRiskPct.toFixed(0) : "0"}%
-            </div>
-            <div
-              className={[
-                "text-xs text-right",
-                isDark ? "text-neutral-500" : "text-slate-600",
-              ].join(" ")}
-            >
-              {safeMetrics.notRecommended} casos
-            </div>
-          </div>
-
-          <p
-            className={[
-              "mt-2 text-xs",
-              isDark ? "text-neutral-400" : "text-slate-600",
-            ].join(" ")}
-          >
-            Casos marcados como no recomendados.
-          </p>
-
-          <Progress value={highRiskPct} tone="rose" isDark={isDark} />
-        </CardShell>
+          </article>
+        ))}
       </div>
     </section>
   );

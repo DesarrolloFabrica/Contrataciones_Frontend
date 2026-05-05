@@ -8,9 +8,10 @@ import React, {
 } from "react";
 import { InterviewData } from "../types";
 import {
-  approvedExample,
-  mediumExample,
-  rejectedExample,
+  approvedExampleProfile,
+  mediumExampleProfile,
+  rejectedExampleProfile,
+  type InterviewExampleProfile,
 } from "../data/exampleData";
 
 import {
@@ -331,22 +332,38 @@ const InterviewForm: React.FC<InterviewFormProps> = ({
     } as any);
   };
 
-  const loadExample = (example: InterviewData) => {
+  const loadExample = (example: InterviewExampleProfile) => {
     resetSearch();
 
     setSelectedCandidateId(null);
 
-    setCandidateDocuments(createInitialCandidateDocuments());
+    const leaderSchool =
+      isLeader && leaderSchoolId
+        ? normalizedSchools.find((x) => String(x.id ?? "") === leaderSchoolId) ?? null
+        : null;
+
+    setHiringContext({
+      ...example.hiringContext,
+      ...(leaderSchool ? { requestingArea: leaderSchool.name } : {}),
+    });
+
+    setCandidateDocuments({
+      items: example.candidateDocuments.items.map((item) => ({ ...item })),
+    });
 
     setFormData((prev) => {
-      const next = { ...example };
-      if (isLeader && leaderSchoolId) {
-        const s = normalizedSchools.find((x) => String(x.id ?? "") === leaderSchoolId);
-        if (s) next.school = s.name;
+      const next = { ...example.formData };
+      if (leaderSchool) {
+        next.school = leaderSchool.name;
+        const leaderPrograms = leaderSchool.programs.map((program) => program.name);
+        if (!leaderPrograms.includes(next.program)) {
+          next.program = leaderPrograms[0] ?? "";
+        }
       }
       return next;
     });
 
+    setCurrentStep(1);
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
@@ -354,11 +371,11 @@ const InterviewForm: React.FC<InterviewFormProps> = ({
     if (!examplePreset) return;
 
     if (examplePreset === "approved") {
-      loadExample(approvedExample);
+      loadExample(approvedExampleProfile);
     } else if (examplePreset === "medium") {
-      loadExample(mediumExample);
+      loadExample(mediumExampleProfile);
     } else {
-      loadExample(rejectedExample);
+      loadExample(rejectedExampleProfile);
     }
 
     onExampleApplied?.();

@@ -1,24 +1,20 @@
 // src/pages/coordinator/hooks/useCoordinatorUsers.ts
 import { useCallback, useEffect, useMemo, useState } from "react";
-import type { AdminUser, CreateAdminUserDto } from "../../admin/adminTypes"; 
-// ⚠️ Ajusta la ruta si tus types no están ahí. Mira dónde está adminTypes en tu proyecto.
+import type { AdminUser, CreateAdminUserDto } from "../../admin/adminTypes";
 
-import { adminMockDb } from "../../admin/utils/adminMockDb"; 
-// ⚠️ Ajusta la ruta según tu árbol real.
-// Tú pegaste: src/pages/admin/utils/adminMockDb.ts
+import { adminMockDb } from "../../admin/utils/adminMockDb";
 
-import { useAuth } from "../../../context/AuthContext"; 
-// ⚠️ Ajusta si tu AuthContext está en otra ruta
+import { useAuth } from "../../../context/AuthContext";
 
 type UseCoordinatorUsersResult = {
   users: AdminUser[];
   loading: boolean;
   error: string | null;
 
-  // Acciones
-  createLeader: (dto: Omit<CreateAdminUserDto, "role" | "schoolId">) => Promise<{ ok: boolean; password?: string; user?: AdminUser }>;
+  createLeader: (
+    dto: Omit<CreateAdminUserDto, "role" | "schoolId">
+  ) => Promise<{ ok: boolean; user?: AdminUser }>;
   toggleActive: (id: string) => Promise<void>;
-  resetPassword: (id: string) => Promise<{ ok: boolean; password?: string }>;
 };
 
 export function useCoordinatorUsers(): UseCoordinatorUsersResult {
@@ -28,7 +24,6 @@ export function useCoordinatorUsers(): UseCoordinatorUsersResult {
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
 
-  // ✅ schoolId del coordinador (debe existir para heredar)
   const coordinatorSchoolId = useMemo(() => {
     const raw =
       (user as any)?.schoolId ??
@@ -45,12 +40,9 @@ export function useCoordinatorUsers(): UseCoordinatorUsersResult {
     try {
       const all = await adminMockDb.listUsers();
 
-      // ✅ Coordinador solo ve líderes de su escuela (y opcionalmente a sí mismo)
       const filtered = (all ?? []).filter((u) => {
-        // muestra solo líderes
         if (u.role !== "LEADER") return false;
 
-        // y solo de su misma escuela
         if (!coordinatorSchoolId) return false;
         return String((u as any).schoolId ?? "") === coordinatorSchoolId;
       });
@@ -72,13 +64,11 @@ export function useCoordinatorUsers(): UseCoordinatorUsersResult {
     async (dtoBase: Omit<CreateAdminUserDto, "role" | "schoolId">) => {
       setError(null);
 
-      // ✅ Si el coordinador no tiene schoolId, bloqueamos
       if (!coordinatorSchoolId) {
         return { ok: false };
       }
 
       try {
-        // ✅ Forzamos rol y schoolId (herencia)
         const dto: CreateAdminUserDto = {
           ...dtoBase,
           role: "LEADER",
@@ -91,7 +81,6 @@ export function useCoordinatorUsers(): UseCoordinatorUsersResult {
         return {
           ok: true,
           user: res.user,
-          password: res.password?.temporaryPassword,
         };
       } catch (e: any) {
         setError(e?.message ?? "No se pudo crear el líder.");
@@ -114,21 +103,5 @@ export function useCoordinatorUsers(): UseCoordinatorUsersResult {
     [refresh, user]
   );
 
-  const resetPassword = useCallback(
-    async (id: string) => {
-      setError(null);
-      try {
-        const res = await adminMockDb.resetPassword(id, (user as any)?.id ?? "u-coord-1");
-        return { ok: true, password: res.temporaryPassword };
-      } catch (e: any) {
-        setError(e?.message ?? "No se pudo resetear la contraseña.");
-        return { ok: false };
-      } finally {
-        await refresh();
-      }
-    },
-    [refresh, user]
-  );
-
-  return { users, loading, error, createLeader, toggleActive, resetPassword };
+  return { users, loading, error, createLeader, toggleActive };
 }

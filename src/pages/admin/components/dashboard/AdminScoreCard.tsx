@@ -61,18 +61,17 @@ export default function AdminScoreCard({ avg, median, min, max, count }: Props) 
   return (
     <div
       className={[
-        "relative flex h-full min-h-[380px] w-full min-w-0 flex-col overflow-hidden rounded-[24px] border p-6 transition-all duration-500",
+        "relative flex h-full min-h-[380px] w-full min-w-0 flex-col overflow-hidden rounded-xl border p-5",
         isDark
-          ? "border-white/[0.04] bg-[#0c0c0e] hover:border-white/[0.08]"
-          : "border-slate-200/60 bg-white hover:border-slate-300 hover:shadow-xl hover:shadow-slate-200/20",
+          ? "border-white/10 bg-white/[0.03]"
+          : "border-slate-200 bg-white shadow-sm",
       ].join(" ")}
     >
-      {/* Header Minimalista */}
-      <div className="flex items-start justify-between mb-6">
-        <div className="flex flex-col gap-1">
+      <div className="flex items-start justify-between mb-4">
+        <div className="flex flex-col gap-0.5">
           <h3
             className={[
-              "text-sm font-semibold uppercase tracking-widest",
+              "text-xs font-semibold uppercase tracking-widest",
               isDark ? "text-neutral-300" : "text-slate-800",
             ].join(" ")}
           >
@@ -80,7 +79,7 @@ export default function AdminScoreCard({ avg, median, min, max, count }: Props) 
           </h3>
           <p
             className={[
-              "text-[13px]",
+              "text-xs",
               isDark ? "text-neutral-500" : "text-slate-500",
             ].join(" ")}
           >
@@ -88,22 +87,16 @@ export default function AdminScoreCard({ avg, median, min, max, count }: Props) 
           </p>
         </div>
 
-        <div className="flex items-center gap-4">
-          {/* N Badge Estilo Técnico */}
+        <div className="flex items-center gap-3">
           <div
             className={[
-              "flex items-center gap-1.5 px-3 py-1 rounded-full border text-xs font-semibold",
+              "flex items-center gap-1 px-2.5 py-0.5 rounded-md border text-[11px] font-medium",
               isDark
-                ? "bg-white/[0.02] border-white/10 text-neutral-400"
+                ? "bg-white/[0.02] border-white/10 text-neutral-500"
                 : "bg-slate-50 border-slate-200 text-slate-500",
             ].join(" ")}
           >
-            <Users className="w-3.5 h-3.5 opacity-70" />
             <span>n={count ?? 0}</span>
-          </div>
-          {/* Ícono de fondo */}
-          <div className={isDark ? "text-neutral-800" : "text-slate-200"}>
-            <Brain strokeWidth={1.5} className="w-6 h-6" />
           </div>
         </div>
       </div>
@@ -122,8 +115,8 @@ export default function AdminScoreCard({ avg, median, min, max, count }: Props) 
               className={[
                 "text-6xl md:text-7xl font-black tracking-tighter relative z-10",
                 isDark
-                  ? "text-transparent bg-clip-text bg-gradient-to-br from-emerald-400 to-cyan-400"
-                  : "text-emerald-700",
+                  ? "text-transparent bg-clip-text bg-gradient-to-br from-cyan-400 to-cyan-400"
+                  : "text-cyan-700",
               ].join(" ")}
             >
               {main}
@@ -131,7 +124,7 @@ export default function AdminScoreCard({ avg, median, min, max, count }: Props) 
             <span
               className={[
                 "text-[10px] uppercase tracking-[0.25em] font-bold mt-2 relative z-10",
-                isDark ? "text-emerald-500/70" : "text-emerald-600/80",
+                isDark ? "text-cyan-500/70" : "text-cyan-600/80",
               ].join(" ")}
             >
               Promedio General
@@ -152,8 +145,8 @@ export default function AdminScoreCard({ avg, median, min, max, count }: Props) 
                   className={[
                     "absolute inset-0 opacity-40",
                     isDark
-                      ? "bg-gradient-to-r from-emerald-500/50 to-cyan-500/50"
-                      : "bg-gradient-to-r from-emerald-400/50 to-cyan-400/50",
+                      ? "bg-gradient-to-r from-cyan-500/50 to-cyan-500/50"
+                      : "bg-gradient-to-r from-cyan-400/50 to-cyan-400/50",
                   ].join(" ")}
                 />
 

@@ -14,7 +14,7 @@ function statusBadge(status: string) {
   const s = (status || "").toUpperCase();
 
   if (s === "APROBADO") {
-    return "bg-emerald-500/10 text-emerald-300 border-emerald-500/30";
+    return "bg-cyan-500/10 text-cyan-300 border-cyan-500/30";
   }
 
   if (s === "RECHAZADO") {
@@ -59,7 +59,7 @@ const AdminAdminDecisionCard: React.FC<Props> = ({
   return (
     <div className="bg-white/5 border border-white/10 rounded-2xl p-6">
       <div className="flex items-center gap-2 mb-4">
-        <ShieldCheck className="w-4 h-4 text-emerald-300" />
+        <ShieldCheck className="w-4 h-4 text-cyan-300" />
         <span className="text-xs uppercase tracking-widest text-neutral-500 font-bold">
           Decisión final
         </span>

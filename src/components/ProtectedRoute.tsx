@@ -8,39 +8,18 @@ interface ProtectedRouteProps {
 }
 
 /**
- * Envuelve rutas que requieren login y/o rol específico.
- * - Si no hay usuario → /login
- * - Si mustResetPassword = true → /change-password (excepto si ya estás ahí)
- * - Si el rol no está permitido → /
+ * Rutas que requieren sesión y, opcionalmente, un rol concreto.
  */
 const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ allowedRoles }) => {
-  const { user, isReady } = useAuth();
+  const { user } = useAuth();
   const location = useLocation();
 
-  const isOnChangePassword = location.pathname === "/change-password";
-
-  // 1) No logueado → login (guardamos a dónde iba)
+  // 1) No logueado → login
   if (!user) {
     return <Navigate to="/login" state={{ from: location }} replace />;
   }
 
-  // 2) Forzar cambio de contraseña si aplica
-  const needsReset = user.mustResetPassword === true;
-
-  if (needsReset && !isOnChangePassword) {
-    return (
-      <Navigate
-        to="/change-password"
-        replace
-        state={{
-          from: location, // para volver luego si quieres
-          email: user.email, // útil para mostrarlo en ChangePasswordPage
-        }}
-      />
-    );
-  }
-
-  // 3) Validación de rol
+  // 2) Validación de rol
   if (allowedRoles && !allowedRoles.includes(user.role)) {
     return <Navigate to="/" replace />;
   }

@@ -19,7 +19,7 @@ export default function AdminDetailTabs(props: {
         onClick={() => setTab("RESUMEN")}
         className={`${pillBase} ${
           tab === "RESUMEN"
-            ? "border-emerald-500/40 bg-emerald-500/10 text-emerald-300"
+            ? "border-cyan-500/40 bg-cyan-500/10 text-cyan-300"
             : "border-white/10 bg-white/5 text-neutral-300 hover:border-white/20"
         }`}
       >

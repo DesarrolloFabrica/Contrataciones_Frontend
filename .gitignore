@@ -14,3 +14,6 @@ yarn-error.log*
 !.env.example
 # otros
 metadata.json
+
+# binarios / instaladores (no versionar en el frontend)
+*.exe

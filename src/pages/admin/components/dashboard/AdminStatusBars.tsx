@@ -108,19 +108,17 @@ export default function AdminStatusBars({ approved, rejected, pending, noEval }:
   return (
     <div
       className={[
-        "relative w-full overflow-hidden rounded-[24px] border p-6 transition-all duration-500",
+        "relative w-full overflow-hidden rounded-xl border p-5",
         isDark
-          // Fondos ultra oscuros inspirados en las referencias
-          ? "border-white/[0.04] bg-[#0c0c0e] hover:border-white/[0.08]"
-          : "border-slate-200/60 bg-white hover:border-slate-300 hover:shadow-xl hover:shadow-slate-200/20",
+          ? "border-white/10 bg-white/[0.03]"
+          : "border-slate-200 bg-white shadow-sm",
       ].join(" ")}
     >
-      {/* Encabezado limpio y minimalista */}
-      <div className="flex items-center justify-between mb-8">
-        <div className="flex flex-col gap-1">
+      <div className="flex items-center justify-between mb-6">
+        <div className="flex flex-col gap-0.5">
           <h3
             className={[
-              "text-sm font-semibold uppercase tracking-widest",
+              "text-xs font-semibold uppercase tracking-widest",
               isDark ? "text-neutral-300" : "text-slate-800",
             ].join(" ")}
           >
@@ -128,7 +126,7 @@ export default function AdminStatusBars({ approved, rejected, pending, noEval }:
           </h3>
           <p
             className={[
-              "text-[13px]",
+              "text-xs",
               isDark ? "text-neutral-500" : "text-slate-500",
             ].join(" ")}
           >

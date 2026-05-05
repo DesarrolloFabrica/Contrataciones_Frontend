@@ -13,23 +13,17 @@ import ProtectedRoute from "./components/ProtectedRoute";
 
 import CoordinatorEvaluationReport from "./pages/coordinator/CoordinatorEvaluationReport";
 import CoordinatorEvaluationDetailPage from "./pages/coordinator/CoordinatorEvaluationDetailPage";
-import ChangePasswordPage from "./pages/auth/ChangePasswordPage";
 import { AppLayout } from "./layouts";
 
 /**
- * ✅ Redirect base
- * - Si no hay user → /login
- * - Si mustResetPassword → /change-password
- * - Si no, redirige según role
+ * Redirect base según rol.
+ * - Sin user → /login
+ * - Con user → consola correspondiente al rol
  */
 const HomeRedirect: React.FC = () => {
   const { user } = useAuth();
 
   if (!user) return <Navigate to="/login" replace />;
-
-  if (user.mustResetPassword) {
-    return <Navigate to="/change-password" replace />;
-  }
 
   const role = (user.role || "").toLowerCase();
 
@@ -49,11 +43,6 @@ const App: React.FC = () => {
 
       {/* Pública */}
       <Route path="/login" element={<LoginPage />} />
-
-      {/* ✅ Change password (protegida, cualquier rol logueado) */}
-      <Route element={<ProtectedRoute />}>
-        <Route path="/change-password" element={<ChangePasswordPage />} />
-      </Route>
 
       {/* Protegidas por rol */}
       <Route element={<ProtectedRoute allowedRoles={["leader"]} />}>

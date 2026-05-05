@@ -11,7 +11,7 @@ const AdminAssignmentCard: React.FC<Props> = ({ assignment }) => {
   return (
     <div className="bg-white/5 border border-white/10 rounded-2xl p-6">
       <div className="flex items-center gap-2 mb-3">
-        <Users className="w-4 h-4 text-emerald-300" />
+        <Users className="w-4 h-4 text-cyan-300" />
         <div className="text-xs uppercase tracking-widest text-neutral-500 font-bold">
           Asignación
         </div>

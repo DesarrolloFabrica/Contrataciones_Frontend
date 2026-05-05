@@ -4,7 +4,6 @@ import type {
   AdminUser,
   AdminUserRole,
   AdminUserStatus,
-  ResetPasswordResult,
 } from "../pages/admin/adminTypes";
 
 type BackendRole = "ADMIN" | "COORDINADOR" | "LIDER";
@@ -145,26 +144,4 @@ export async function apiSetUserStatus(id: string, status: AdminUserStatus) {
 
   const { data } = await api.patch(path);
   return data;
-}
-
-// ✅ RESETEAR CONTRASEÑA
-// ResetPasswordResult exige { userId, temporaryPassword }
-export async function apiResetPassword(id: string): Promise<ResetPasswordResult> {
-  const userId = String(id);
-
-  // 1) intenta /users/:id/reset-password
-  try {
-    const { data } = await api.post(`${USERS_BASE_PATH}/${id}/reset-password`);
-    return {
-      userId,
-      temporaryPassword: data?.temporaryPassword ?? data?.tempPassword ?? "",
-    };
-  } catch (e: any) {
-    // 2) fallback /admin/users/:id/reset-password (si existe)
-    const { data } = await api.post(`${ADMIN_BASE_PATH}/${id}/reset-password`);
-    return {
-      userId,
-      temporaryPassword: data?.temporaryPassword ?? data?.tempPassword ?? "",
-    };
-  }
 }

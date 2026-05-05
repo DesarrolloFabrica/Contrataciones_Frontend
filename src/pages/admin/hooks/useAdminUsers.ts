@@ -6,11 +6,10 @@ import type {
   AdminUserStatus,
   CreateAdminUserDto,
   UpdateAdminUserDto,
-  ResetPasswordResult, // ✅ IMPORTANTE
 } from "../adminTypes";
 
 import {
-  usersService, // ✅ named export (NO default)
+  usersService,
   type BackendUser,
   type BackendRole,
 } from "../../../services/usersService";
@@ -31,21 +30,18 @@ const pickUserSchool = (u: any) =>
 const pickUserProgram = (u: any) =>
   u?.programName ?? u?.program ?? u?.programNameSnapshot ?? "";
 
-// UI role -> Backend role (tu backend usa ES)
 function uiRoleToBackend(role: AdminUserRole): BackendRole {
   if (role === "ADMIN") return "ADMIN";
   if (role === "COORDINATOR") return "COORDINADOR";
   return "LIDER";
 }
 
-// Helpers para fechas seguras
 function toIso(v: any) {
   if (!v) return new Date().toISOString();
   const d = v instanceof Date ? v : new Date(v);
   return isNaN(d.getTime()) ? new Date().toISOString() : d.toISOString();
 }
 
-// BackendUser -> AdminUser
 function backendToAdminUser(b: BackendUser): AdminUser {
   const full = String((b as any).fullName ?? "").trim();
   const parts = full ? full.split(/\s+/) : [];
@@ -61,7 +57,6 @@ function backendToAdminUser(b: BackendUser): AdminUser {
 
   const isActive = (b as any).isActive !== false;
   const statusUi: AdminUserStatus = isActive ? "ACTIVE" : "INACTIVE";
-  const mustChangePassword = Boolean((b as any).mustResetPassword);
 
   const u = {
     id: b.id,
@@ -71,12 +66,10 @@ function backendToAdminUser(b: BackendUser): AdminUser {
     cedula: String((b as any).cedula ?? ""),
     role: roleUi,
     status: statusUi,
-    mustChangePassword,
     createdAt: toIso((b as any).createdAt),
     updatedAt: toIso((b as any).updatedAt),
   } as AdminUser;
 
-  // extras para búsqueda sin tocar adminTypes
   (u as any).schoolName = pickUserSchool(b);
   (u as any).programName = pickUserProgram(b);
 
@@ -105,14 +98,6 @@ export function useAdminUsers(scope: ScopeArgs) {
 
   const [editUser, setEditUser] = useState<AdminUser | null>(null);
 
-  const [lastCreatedCredentials, setLastCreatedCredentials] = useState<{
-    email: string;
-    tempPassword: string;
-  } | null>(null);
-
-  const clearCredentials = useCallback(() => setLastCreatedCredentials(null), []);
-
-  // ✅ bloquea requests paralelos (y ayuda si hay doble-mount en dev)
   const inFlightRef = useRef(false);
 
   const loadUsers = useCallback(async () => {
@@ -140,7 +125,6 @@ export function useAdminUsers(scope: ScopeArgs) {
     }
   }, []);
 
-  // ✅ Carga SOLO al montar (el scope filtra en memoria)
   useEffect(() => {
     let alive = true;
     (async () => {
@@ -152,7 +136,6 @@ export function useAdminUsers(scope: ScopeArgs) {
     };
   }, [loadUsers]);
 
-  // Scope filter (en memoria)
   const scopedUsers = useMemo(() => {
     let base = [...(users ?? [])];
 
@@ -175,7 +158,6 @@ export function useAdminUsers(scope: ScopeArgs) {
     return base;
   }, [users, selectedSchool, selectedProgram]);
 
-  // Filters + search
   const filteredUsers = useMemo(() => {
     let base = [...scopedUsers];
 
@@ -206,7 +188,6 @@ export function useAdminUsers(scope: ScopeArgs) {
     return base;
   }, [scopedUsers, roleFilter, statusFilter, search]);
 
-  // Metrics
   const metrics = useMemo(() => {
     const total = filteredUsers.length;
     const active = filteredUsers.filter((u: any) => u.status === "ACTIVE").length;
@@ -219,58 +200,25 @@ export function useAdminUsers(scope: ScopeArgs) {
     return { total, active, inactive, leaders, coordinators, admins };
   }, [filteredUsers]);
 
-  // Actions
   const createUser = useCallback(
-    async (
-      dto: CreateAdminUserDto
-    ): Promise<{ email: string; tempPassword: string } | null> => {
-      clearCredentials();
-
+    async (dto: CreateAdminUserDto): Promise<void> => {
       const fullName = buildFullName(dto);
       const email = String((dto as any).email || "").trim();
-
       const uiRole = (dto as any).role as AdminUserRole;
       const backendRole = uiRoleToBackend(uiRole);
-
-      const mustChangePassword = Boolean(
-        (dto as any).mustChangePassword ??
-          (dto as any).mustResetPassword ??
-          (dto as any).forceResetPassword ??
-          true
-      );
-
-      const generatePassword = Boolean((dto as any).generatePassword ?? true);
-      const password = (dto as any).password;
       const schoolId = (dto as any).schoolId ?? null;
 
-      const res = await usersService.create({
+      await usersService.create({
         email,
         fullName,
         role: backendRole,
         schoolId,
-        mustResetPassword: mustChangePassword,
-        generatePassword,
-        password,
         isActive: true,
-        cedula: (dto as any).cedula ?? undefined,
       } as any);
 
       await loadUsers();
-
-      const temp =
-        (res as any)?.password?.temporaryPassword ||
-        (res as any)?.generatedPassword ||
-        (res as any)?.temporaryPassword;
-
-      if (temp && email) {
-        const creds = { email, tempPassword: String(temp) };
-        setLastCreatedCredentials(creds);
-        return creds;
-      }
-
-      return null;
     },
-    [clearCredentials, loadUsers]
+    [loadUsers]
   );
 
   const updateUser = useCallback(
@@ -285,12 +233,6 @@ export function useAdminUsers(scope: ScopeArgs) {
 
       if ((dto as any).status === "ACTIVE") payload.isActive = true;
       if ((dto as any).status === "INACTIVE") payload.isActive = false;
-
-      if ((dto as any).mustChangePassword !== undefined) {
-        payload.mustResetPassword = Boolean((dto as any).mustChangePassword);
-      } else if ((dto as any).mustResetPassword !== undefined) {
-        payload.mustResetPassword = Boolean((dto as any).mustResetPassword);
-      }
 
       if ((dto as any).schoolId !== undefined) payload.schoolId = (dto as any).schoolId;
       if ((dto as any).cedula !== undefined) payload.cedula = String((dto as any).cedula).trim();
@@ -312,33 +254,6 @@ export function useAdminUsers(scope: ScopeArgs) {
       return { ok: true };
     },
     [users, loadUsers]
-  );
-
-  // ✅ AQUÍ ESTÁ EL FIX DEL TYPE: DEVUELVE { userId, temporaryPassword }
-  const resetPassword = useCallback(
-    async (userId: string): Promise<ResetPasswordResult | null> => {
-      clearCredentials();
-
-      const res = await usersService.resetPassword(userId);
-      await loadUsers();
-
-      const temp =
-        (res as any)?.password?.temporaryPassword ||
-        (res as any)?.temporaryPassword ||
-        (res as any)?.generatedPassword ||
-        (res as any)?.tempPassword;
-
-      const u = users.find((x) => x.id === userId);
-      if (temp && u?.email) {
-        setLastCreatedCredentials({ email: u.email, tempPassword: String(temp) });
-      }
-
-      return {
-        userId,
-        temporaryPassword: temp ? String(temp) : "",
-      };
-    },
-    [clearCredentials, loadUsers, users]
   );
 
   const openEdit = (u: AdminUser) => setEditUser(u);
@@ -365,10 +280,6 @@ export function useAdminUsers(scope: ScopeArgs) {
     createUser,
     updateUser,
     toggleActive,
-    resetPassword,
-
-    lastCreatedCredentials,
-    clearCredentials,
 
     reload: loadUsers,
   };

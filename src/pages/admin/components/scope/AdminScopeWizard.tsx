@@ -135,12 +135,12 @@ export default function AdminScopeWizard({
     <div className="h-full flex flex-col">
       {/* Hero */}
       <div className="flex-none text-center pt-4">
-        <div className="mx-auto h-14 w-14 rounded-2xl bg-emerald-500/15 border border-emerald-500/25 flex items-center justify-center">
-          <span className="text-emerald-300 font-black text-xl">✦</span>
+        <div className="mx-auto h-14 w-14 rounded-2xl bg-cyan-500/15 border border-cyan-500/25 flex items-center justify-center">
+          <span className="text-cyan-300 font-black text-xl">✦</span>
         </div>
 
         <h2 className="mt-4 text-3xl font-black text-white">
-          Cambiar <span className="text-emerald-400">Scope</span>
+          Cambiar <span className="text-cyan-400">Scope</span>
         </h2>
 
         <p className="mt-2 text-sm text-neutral-400">
@@ -152,7 +152,7 @@ export default function AdminScopeWizard({
             className={[
               "px-4 py-2 rounded-xl border text-xs font-bold uppercase tracking-widest flex items-center gap-2",
               step === 1
-                ? "bg-emerald-600 text-white border-emerald-500/40 shadow-[0_0_30px_rgba(16,185,129,0.25)]"
+                ? "bg-cyan-600 text-white border-cyan-500/40 shadow-[0_0_30px_rgba(16,185,129,0.25)]"
                 : "bg-white/5 text-gray-300 border-white/10",
             ].join(" ")}
           >
@@ -166,7 +166,7 @@ export default function AdminScopeWizard({
             className={[
               "px-4 py-2 rounded-xl border text-xs font-bold uppercase tracking-widest flex items-center gap-2",
               step === 2
-                ? "bg-emerald-600 text-white border-emerald-500/40 shadow-[0_0_30px_rgba(16,185,129,0.25)]"
+                ? "bg-cyan-600 text-white border-cyan-500/40 shadow-[0_0_30px_rgba(16,185,129,0.25)]"
                 : "bg-white/5 text-gray-300 border-white/10",
             ].join(" ")}
           >
@@ -190,7 +190,7 @@ export default function AdminScopeWizard({
 
         {(loadingSchools || loadingPrograms) && (
           <div className="mt-5 flex items-center justify-center gap-2 text-xs text-neutral-400">
-            <Loader2 className="w-4 h-4 animate-spin text-emerald-400" />
+            <Loader2 className="w-4 h-4 animate-spin text-cyan-400" />
             Cargando opciones...
           </div>
         )}
@@ -213,7 +213,7 @@ export default function AdminScopeWizard({
           <p className="mt-1 text-xs text-neutral-500">
             {step === 1 ? "Primero eliges escuela. Luego eliges programa." : "Escuela seleccionada: "}
             {step === 2 && (
-              <span className="text-emerald-300 font-semibold">{selectedSchoolName}</span>
+              <span className="text-cyan-300 font-semibold">{selectedSchoolName}</span>
             )}
           </p>
 
@@ -221,7 +221,7 @@ export default function AdminScopeWizard({
             <button
               type="button"
               onClick={onBackToSchools}
-              className="mt-4 inline-flex items-center gap-2 px-4 py-2 rounded-xl border border-emerald-500/20 bg-emerald-500/10 text-emerald-200 text-xs font-bold hover:bg-emerald-500/15 transition-colors"
+              className="mt-4 inline-flex items-center gap-2 px-4 py-2 rounded-xl border border-cyan-500/20 bg-cyan-500/10 text-cyan-200 text-xs font-bold hover:bg-cyan-500/15 transition-colors"
             >
               ← Volver a Escuelas
             </button>
@@ -249,14 +249,14 @@ export default function AdminScopeWizard({
                         key={s.id}
                         type="button"
                         onClick={() => onSelectSchool(s.id)}
-                        className="text-left rounded-2xl border border-emerald-500/15 bg-black/20 hover:border-emerald-500/30 hover:bg-emerald-500/5 transition-all p-5"
+                        className="text-left rounded-2xl border border-cyan-500/15 bg-black/20 hover:border-cyan-500/30 hover:bg-cyan-500/5 transition-all p-5"
                       >
                         <div className="flex items-start justify-between gap-3">
                           <div className="min-w-0">
                             <p className="text-white font-bold">{s.name}</p>
-                            <p className="text-xs text-emerald-300 mt-1">{count} evaluaciones</p>
+                            <p className="text-xs text-cyan-300 mt-1">{count} evaluaciones</p>
                           </div>
-                          <ChevronRight className="w-5 h-5 text-emerald-300/70" />
+                          <ChevronRight className="w-5 h-5 text-cyan-300/70" />
                         </div>
                       </button>
                     );
@@ -289,8 +289,8 @@ export default function AdminScopeWizard({
                         className={[
                           "text-left rounded-2xl border transition-all p-5",
                           active
-                            ? "border-emerald-400/40 bg-emerald-600/30 shadow-[0_0_40px_rgba(16,185,129,0.18)]"
-                            : "border-white/10 bg-black/20 hover:border-emerald-500/25 hover:bg-emerald-500/5",
+                            ? "border-cyan-400/40 bg-cyan-600/30 shadow-[0_0_40px_rgba(16,185,129,0.18)]"
+                            : "border-white/10 bg-black/20 hover:border-cyan-500/25 hover:bg-cyan-500/5",
                         ].join(" ")}
                       >
                         <div className="flex items-start justify-between gap-3">
@@ -301,7 +301,7 @@ export default function AdminScopeWizard({
 
                           <div className="h-7 w-7 rounded-full border border-white/10 flex items-center justify-center">
                             {active ? (
-                              <Check className="w-4 h-4 text-emerald-300" />
+                              <Check className="w-4 h-4 text-cyan-300" />
                             ) : (
                               <span className="w-2 h-2 rounded-full bg-white/15" />
                             )}

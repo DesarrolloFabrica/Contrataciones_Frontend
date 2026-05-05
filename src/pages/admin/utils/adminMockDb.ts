@@ -7,7 +7,6 @@ import type {
   AdminUser,
   AdminUserStatus,
   CreateAdminUserDto,
-  ResetPasswordResult,
   UpdateAdminUserDto,
 } from "../adminTypes";
 
@@ -49,7 +48,6 @@ const seed: MockDb = {
       // ✅ opcional (admin puede ser global, pero no estorba)
       schoolId: null,
       status: "ACTIVE",
-      mustChangePassword: false,
       createdAt: nowIso(),
       updatedAt: nowIso(),
     },
@@ -63,7 +61,6 @@ const seed: MockDb = {
       // ✅ CLAVE: esta es la escuela que heredará el líder creado por este coordinador
       schoolId: "school-ingenieria",
       status: "ACTIVE",
-      mustChangePassword: true,
       createdAt: nowIso(),
       updatedAt: nowIso(),
     },
@@ -75,7 +72,6 @@ const seed: MockDb = {
       cedula: "2020202020",
       role: "COORDINATOR",
       status: "ACTIVE",
-      mustChangePassword: true,
       createdAt: nowIso(),
       updatedAt: nowIso(),
     },
@@ -119,14 +115,6 @@ const addAudit = (db: MockDb, ev: Omit<AdminAuditEvent, "id">) => {
   }
 };
 
-
-function genTempPassword() {
-  const chars =
-    "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789!@#$%";
-  let out = "";
-  for (let i = 0; i < 10; i++) out += chars[Math.floor(Math.random() * chars.length)];
-  return out;
-}
 
 export const adminMockDb = {
   // -------------------------
@@ -220,7 +208,7 @@ export const adminMockDb = {
   createUser(
     dto: CreateAdminUserDto,
     actorUserId = "u-admin-1"
-  ): Promise<{ user: AdminUser; password?: ResetPasswordResult }> {
+  ): Promise<{ user: AdminUser }> {
     const db = load();
 
     const user: AdminUser = {
@@ -230,11 +218,8 @@ export const adminMockDb = {
       email: dto.email.trim().toLowerCase(),
       cedula: dto.cedula?.trim() || null,
       role: dto.role,
-      // ✅ NUEVO: guarda la escuela si viene en el DTO (coordinador -> líder)
-      // Si no viene, queda null y no rompe el flujo del admin.
       schoolId: dto.schoolId ?? null,
       status: "ACTIVE",
-      mustChangePassword: dto.mustChangePassword ?? true,
       createdAt: nowIso(),
       updatedAt: nowIso(),
     };
@@ -251,24 +236,8 @@ export const adminMockDb = {
       meta: { email: user.email, role: user.role, schoolId: user.schoolId ?? null  },
     });
 
-    const password: ResetPasswordResult | undefined = dto.generatePassword
-      ? { userId: user.id, temporaryPassword: genTempPassword() }
-      : undefined;
-
-    if (password) {
-      addAudit(db, {
-        entityType: "USER",
-        entityId: user.id,
-        action: "PASSWORD_RESET",
-        actorUserId,
-        actorRole: "ADMIN",
-        at: nowIso(),
-        meta: { reason: "AUTO_ON_CREATE" },
-      });
-    }
-
     save(db);
-    return Promise.resolve({ user, password });
+    return Promise.resolve({ user });
   },
 
   updateUser(
@@ -328,36 +297,6 @@ export const adminMockDb = {
 
     save(db);
     return Promise.resolve(u);
-  },
-
-  resetPassword(
-    userId: string,
-    actorUserId = "u-admin-1"
-  ): Promise<ResetPasswordResult> {
-    const db = load();
-    const u = db.users.find((x) => x.id === userId);
-    if (!u) throw new Error("User not found");
-
-    u.mustChangePassword = true;
-    u.updatedAt = nowIso();
-
-    const res: ResetPasswordResult = {
-      userId,
-      temporaryPassword: genTempPassword(),
-    };
-
-    addAudit(db, {
-      entityType: "USER",
-      entityId: userId,
-      action: "PASSWORD_RESET",
-      actorUserId,
-      actorRole: "ADMIN",
-      at: nowIso(),
-      meta: { email: u.email },
-    });
-
-    save(db);
-    return Promise.resolve(res);
   },
 
   // -------------------------
@@ -497,7 +436,7 @@ export const adminMockDb = {
   createAdminUser(
     dto: CreateAdminUserDto,
     actorUserId = "u-admin-1"
-  ): Promise<{ user: AdminUser; password?: ResetPasswordResult }> {
+  ): Promise<{ user: AdminUser }> {
     return this.createUser(dto, actorUserId);
   },
 
@@ -514,13 +453,6 @@ export const adminMockDb = {
     actorUserId = "u-admin-1"
   ): Promise<AdminUser> {
     return this.toggleUserActive(userId, actorUserId);
-  },
-
-  resetAdminUserPassword(
-    userId: string,
-    actorUserId = "u-admin-1"
-  ): Promise<ResetPasswordResult> {
-    return this.resetPassword(userId, actorUserId);
   },
 
 };

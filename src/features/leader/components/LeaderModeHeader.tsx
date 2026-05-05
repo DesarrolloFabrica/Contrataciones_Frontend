@@ -1,6 +1,7 @@
 import React from "react";
 import { Sparkles, BarChart3, History, LogOut, Sun, Moon } from "lucide-react";
 import { useTheme } from "../../../context/ThemeContext";
+import { UserHeaderProfile } from "../../../components/UserHeaderProfile";
 
 type ViewMode = "analyze" | "history";
 
@@ -79,7 +80,8 @@ export function LeaderModeHeader({ mode, onChangeMode, onLogout, statusLabel }: 
             </div>
           </div>
 
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center justify-end gap-2 md:gap-3">
+            <UserHeaderProfile />
             <button
               type="button"
               className={btnBase(mode === "analyze")}

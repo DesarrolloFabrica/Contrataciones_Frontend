@@ -184,7 +184,6 @@ export type AuthUser = {
   fullName: string;
   role: "ADMIN" | "COORDINADOR" | "LIDER";
   schoolId: string | null;
-  mustResetPassword?: boolean;
 };
 
 export type AuthResponse = {

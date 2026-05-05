@@ -63,14 +63,14 @@ export default function AdminGlobalControlPanel({
     : "text-slate-900 text-lg font-black";
 
   const labelClsDark = isDark
-    ? "text-neutral-500"
-    : "text-slate-500";
+    ? "text-neutral-400"
+    : "text-slate-600";
 
   return (
     <div className={shellCls}>
       <div className="p-5 border-b border-white/5 flex items-center gap-3">
-        <div className="w-9 h-9 rounded-2xl bg-emerald-500/15 border border-emerald-500/25 flex items-center justify-center shrink-0">
-          <Activity className="w-4 h-4 text-emerald-300" />
+        <div className="w-9 h-9 rounded-2xl bg-cyan-500/15 border border-cyan-500/25 flex items-center justify-center shrink-0">
+          <Activity className="w-4 h-4 text-cyan-300" />
         </div>
         <div>
           <h3 className={`text-sm font-black ${isDark ? "text-white" : "text-slate-900"}`}>
@@ -87,7 +87,7 @@ export default function AdminGlobalControlPanel({
           <div className="p-4 space-y-2">
             <div className={`${labelCls} ${labelClsDark}`}>Evaluaciones</div>
             <div className={`${valueCls} flex items-center gap-2`}>
-              <BarChart3 className="w-4 h-4 text-emerald-400" />
+              <BarChart3 className="w-4 h-4 text-cyan-400" />
               {metrics.total}
             </div>
           </div>

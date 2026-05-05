@@ -7,6 +7,12 @@ import axios, {
 
 export const AUTH_STORAGE_KEY = "cun-auth";
 
+let onUnauthorizedHandler: (() => void) | null = null;
+
+export function setUnauthorizedHandler(handler: (() => void) | null) {
+  onUnauthorizedHandler = handler;
+}
+
 // ✅ Limpia comillas, espacios y slash final (evita caer a localhost por un espacio)
 const rawBaseUrl =
   (import.meta.env.VITE_API_URL as string | undefined) ??
@@ -17,15 +23,12 @@ const API_BASE_URL = rawBaseUrl
   .trim() // quita espacios
   .replace(/\/+$/, ""); // quita trailing /
 
-console.log("[apiClient] MODE:", import.meta.env.MODE);
-console.log("[apiClient] usando baseURL:", API_BASE_URL);
-
 const api = axios.create({
   baseURL: API_BASE_URL,
   headers: { "Content-Type": "application/json" },
 });
 
-const NO_AUTH_PATHS = ["/auth/login", "/auth/register", "/auth/refresh"];
+const NO_AUTH_PATHS = ["/auth/google", "/auth/register", "/auth/refresh"];
 
 function isNoAuthRoute(url?: string) {
   if (!url) return false;
@@ -67,12 +70,6 @@ api.interceptors.request.use((config: InternalAxiosRequestConfig) => {
   // ✅ Rutas sin auth
   if (isNoAuthRoute(config.url)) {
     config.headers.delete("Authorization");
-    console.log(
-      "[apiClient] ->",
-      config.method?.toUpperCase(),
-      config.url,
-      "| (no-auth)",
-    );
     return config;
   }
 
@@ -82,7 +79,6 @@ api.interceptors.request.use((config: InternalAxiosRequestConfig) => {
     if (token) config.headers.set("Authorization", `Bearer ${token}`);
   }
 
-  console.log("[apiClient] ->", config.method?.toUpperCase(), config.url);
   return config;
 });
 
@@ -99,6 +95,7 @@ api.interceptors.response.use(
       console.warn(
         "[apiClient] 401 detectado. No borro cun-auth automáticamente.",
       );
+      onUnauthorizedHandler?.();
     }
     return Promise.reject(error);
   },

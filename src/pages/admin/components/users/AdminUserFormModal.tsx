@@ -13,7 +13,6 @@ import {
   UserRound,
   ChevronDown,
   Building2,
-  Lock,
   Mail,
   Fingerprint,
 } from "lucide-react";
@@ -26,11 +25,13 @@ type Step = "FORM" | "REVIEW" | "SUCCESS";
 type Props = {
   open: boolean;
   onClose: () => void;
-  onCreate: (dto: CreateAdminUserDto & { schoolId?: string | null }) => Promise<any>;
+  onCreate: (dto: CreateAdminUserDto & { schoolId?: string | null }) => Promise<void>;
   onUpdate: (id: string, patch: any) => Promise<void>;
   editingUser: AdminUser | null;
-  lastCreatedCredentials: { email: string; tempPassword: string } | null;
-  clearCredentials: () => void;
+  /** Coordinador: fuerza rol LÍDER */
+  forcedRole?: AdminUserRole;
+  hideRoleSelect?: boolean;
+  forcedSchoolId?: string | null;
 };
 
 // --- Helpers (Lógica original intacta) ---
@@ -229,17 +230,12 @@ const Input: React.FC<React.InputHTMLAttributes<HTMLInputElement>> = (props) => 
   );
 };
 
-const SelectWrapper = ({ children, loading, icon }: { children: React.ReactNode, loading?: boolean, icon?: React.ElementType }) => (
+const SelectWrapper = ({ children, loading }: { children: React.ReactNode, loading?: boolean }) => (
     <div className="relative">
         {children}
         <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-zinc-500">
             {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <ChevronDown className="w-4 h-4" />}
         </div>
-        {icon && (
-            <div className="absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none text-zinc-500">
-                {/* Optional left icon implementation */}
-            </div>
-        )}
     </div>
 )
 
@@ -257,8 +253,9 @@ const AdminUserFormModal: React.FC<Props> = ({
   onCreate,
   onUpdate,
   editingUser,
-  lastCreatedCredentials,
-  clearCredentials,
+  forcedRole,
+  hideRoleSelect,
+  forcedSchoolId,
 }) => {
   const { theme } = useTheme();
   const isDark = theme === "dark";
@@ -272,10 +269,6 @@ const AdminUserFormModal: React.FC<Props> = ({
   const [emailTouched, setEmailTouched] = useState(false);
   const [cedula, setCedula] = useState("");
   const [role, setRole] = useState<AdminUserRole>("COORDINATOR");
-  const [generatePassword, setGeneratePassword] = useState(true);
-  const [password, setPassword] = useState("");
-  const [password2, setPassword2] = useState("");
-  const [mustChangePassword, setMustChangePassword] = useState(true);
   const [schoolId, setSchoolId] = useState<string>("");
   
   const [schools, setSchools] = useState<SchoolOption[]>([]);
@@ -299,17 +292,13 @@ const AdminUserFormModal: React.FC<Props> = ({
     if (!email.trim()) return "El correo es obligatorio.";
     if (!emailLooksValid(email)) return "El correo no parece válido.";
     if (!isEdit) {
-      if (!generatePassword) {
-        if (password.trim().length < 8) return "La contraseña manual debe tener mínimo 8 caracteres.";
-        if (password2.trim().length < 8) return "Confirma la contraseña.";
-        if (password.trim() !== password2.trim()) return "Las contraseñas no coinciden.";
-      }
+      // sin validación de contraseña: acceso solo con Google
     }
     if (roleNeedsSchool(role) && !schoolId.trim()) {
       return "Para este rol debes asignar una escuela.";
     }
     return null;
-  }, [fullName, cedula, email, isEdit, generatePassword, password, password2, role, schoolId]);
+  }, [fullName, cedula, email, isEdit, role, schoolId]);
 
   useEffect(() => {
     if (!open) return;
@@ -347,39 +336,39 @@ const AdminUserFormModal: React.FC<Props> = ({
       setEmailTouched(true);
       setCedula(String((editingUser as any).cedula ?? ""));
       setRole(editingUser.role);
-      setMustChangePassword(Boolean((editingUser as any).mustChangePassword));
       setSchoolId(String((editingUser as any).schoolId ?? ""));
-      setGeneratePassword(true);
-      setPassword("");
-      setPassword2("");
-      clearCredentials();
     } else {
       setFullName("");
       setEmail("");
       setEmailTouched(false);
       setCedula("");
-      setRole("COORDINATOR");
-      setMustChangePassword(true);
-      setGeneratePassword(true);
-      setPassword("");
-      setPassword2("");
-      setSchoolId("");
-      clearCredentials();
+      setRole(forcedRole ?? "COORDINATOR");
+      setSchoolId(forcedSchoolId ? String(forcedSchoolId) : "");
     }
-  }, [open, editingUser, clearCredentials]);
+  }, [open, editingUser, forcedRole, forcedSchoolId]);
 
   useEffect(() => {
     if (role === "ADMIN") setSchoolId("");
   }, [role]);
 
   useEffect(() => {
+    if (!open) return;
+    if (forcedRole) setRole(forcedRole);
+  }, [open, forcedRole]);
+
+  useEffect(() => {
+    if (!open) return;
+    if (forcedSchoolId) setSchoolId(String(forcedSchoolId));
+  }, [open, forcedSchoolId]);
+
+  useEffect(() => {
     if (!localError) return;
     setLocalError(null);
-  }, [fullName, email, cedula, role, schoolId, mustChangePassword, generatePassword, password, password2]);
+  }, [fullName, email, cedula, role, schoolId]);
 
   if (!open) return null;
 
-  const close = () => { clearCredentials(); setStep("FORM"); onClose(); };
+  const close = () => { setStep("FORM"); onClose(); };
 
   const copy = async (text: string) => {
     try {
@@ -404,9 +393,6 @@ const AdminUserFormModal: React.FC<Props> = ({
       email: email.trim(),
       cedula: cedula.trim(),
       role,
-      mustChangePassword,
-      generatePassword,
-      password: generatePassword ? undefined : password.trim(),
       schoolId: roleNeedsSchool(role) ? schoolId.trim() : null,
     };
   };
@@ -442,7 +428,6 @@ const AdminUserFormModal: React.FC<Props> = ({
         email: email.trim(),
         cedula: cedula.trim(),
         role,
-        mustChangePassword,
         schoolId: roleNeedsSchool(role) ? schoolId.trim() : null,
       });
       close();
@@ -453,12 +438,11 @@ const AdminUserFormModal: React.FC<Props> = ({
   };
 
   const createAnother = () => {
-    clearCredentials();
     setStep("FORM");
     setFullName(""); setEmail(""); setEmailTouched(false);
-    setCedula(""); setRole("COORDINATOR"); setMustChangePassword(true);
-    setGeneratePassword(true); setPassword(""); setPassword2("");
-    setSchoolId(""); setLocalError(null); setSaving(false);
+    setCedula(""); setRole(forcedRole ?? "COORDINATOR");
+    setSchoolId(forcedSchoolId ? String(forcedSchoolId) : "");
+    setLocalError(null); setSaving(false);
   };
 
   const primaryDisabled = saving || (!!validationError && step !== "SUCCESS") || (!isEdit && step === "SUCCESS");
@@ -468,14 +452,17 @@ const AdminUserFormModal: React.FC<Props> = ({
     if (step === "REVIEW") return runCreate();
     return;
   };
-  const canCopy = Boolean((lastCreatedCredentials?.email ?? email.trim())?.length);
+  const canCopy = Boolean(email.trim().length);
   const { name: previewName, lastName: previewLast } = splitFullName(fullName);
 
   return (
   <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
       {/* Backdrop */}
       <div
-        className="absolute inset-0 bg-zinc-950/60 backdrop-blur-xl transition-opacity duration-300"
+        className={[
+          "absolute inset-0 transition-opacity duration-300",
+          isDark ? "bg-zinc-950/60 backdrop-blur-xl" : "bg-black/30 backdrop-blur-sm",
+        ].join(" ")}
         onClick={close}
       />
 
@@ -542,8 +529,8 @@ const AdminUserFormModal: React.FC<Props> = ({
                               : "text-cyan-700",
                           ].join(" ")}
                         >
-                            El usuario ya se encuentra activo. Si se generaron credenciales temporales, 
-                            esta es la única vez que se mostrarán.
+                          El usuario podrá entrar con <b>Google</b> usando este correo @cun.edu.co
+                          (cuando exista en el directorio y la cuenta esté activa en el sistema).
                         </p>
                     </div>
                 </div>
@@ -574,7 +561,7 @@ const AdminUserFormModal: React.FC<Props> = ({
                                 isDark ? "text-zinc-500" : "text-slate-500",
                               ].join(" ")}
                             >
-                              Credenciales de Acceso
+                              Correo para acceso Google
                             </span>
                             <UserRound
                               className={[
@@ -584,7 +571,7 @@ const AdminUserFormModal: React.FC<Props> = ({
                             />
                         </div>
 
-                        <div className="grid grid-cols-2 gap-8">
+                        <div className="grid grid-cols-1 gap-4">
                             <div>
                                 <p
                                   className={[
@@ -592,7 +579,7 @@ const AdminUserFormModal: React.FC<Props> = ({
                                     isDark ? "text-zinc-500" : "text-slate-500",
                                   ].join(" ")}
                                 >
-                                  Usuario / Correo
+                                  Correo institucional
                                 </p>
                                 <p
                                   className={[
@@ -600,33 +587,14 @@ const AdminUserFormModal: React.FC<Props> = ({
                                     isDark ? "text-white" : "text-slate-900",
                                   ].join(" ")}
                                 >
-                                  {(lastCreatedCredentials?.email ??
-                                    email.trim()) || "—"}
-                                </p>
-                            </div>
-                            <div>
-                                <p
-                                  className={[
-                                    "text-xs mb-1",
-                                    isDark ? "text-zinc-500" : "text-slate-500",
-                                  ].join(" ")}
-                                >
-                                  Contraseña Temporal
-                                </p>
-                                <p
-                                  className={[
-                                    "text-sm font-mono select-all",
-                                    isDark ? "text-white" : "text-slate-900",
-                                  ].join(" ")}
-                                >
-                                    {lastCreatedCredentials?.tempPassword ? lastCreatedCredentials.tempPassword : (generatePassword ? "—" : "Manual")}
+                                  {email.trim() || "—"}
                                 </p>
                             </div>
                         </div>
 
                         <div className="pt-4 mt-2 border-t border-white/5 flex gap-2">
                              <button
-                                onClick={() => copy(`Nombre: ${fullName.trim()}\nEmail: ${lastCreatedCredentials?.email ?? email.trim()}\nPassword: ${lastCreatedCredentials?.tempPassword ?? ""}`)}
+                                onClick={() => copy(`Nombre: ${fullName.trim()}\nEmail: ${email.trim()}\nAcceso: Google @cun.edu.co`)}
                                 disabled={!canCopy}
                                 className={[
                                   "flex-1 py-2 rounded-lg text-xs font-medium transition-colors flex items-center justify-center gap-2",
@@ -636,7 +604,7 @@ const AdminUserFormModal: React.FC<Props> = ({
                                 ].join(" ")}
                             >
                                 <Copy className="w-3.5 h-3.5" />
-                                {copied ? "Copiado al portapapeles" : "Copiar credenciales"}
+                                {copied ? "Copiado al portapapeles" : "Copiar resumen"}
                             </button>
                         </div>
                     </div>
@@ -719,8 +687,7 @@ const AdminUserFormModal: React.FC<Props> = ({
                         />
                         <CardRow k="Documento" v={cedula.trim()} />
                         <CardRow k="Correo electrónico" v={email.trim()} />
-                        <CardRow k="Escuela / Facultad" v={schools.find((s) => s.id === schoolId)?.name ?? (schoolId || "No aplica")} />
-                        <CardRow k="Método de contraseña" v={generatePassword ? "Generada automáticamente" : "Manual"} border={false} />
+                        <CardRow k="Escuela / Facultad" v={schools.find((s) => s.id === schoolId)?.name ?? (schoolId || "No aplica")} border={false} />
                     </div>
                 </div>
               </div>
@@ -741,7 +708,8 @@ const AdminUserFormModal: React.FC<Props> = ({
                      </Field>
                 </div>
 
-                    <Field label="Rol de Usuario" required icon={ShieldCheck}>
+                {!hideRoleSelect && (
+                  <Field label="Rol de Usuario" required icon={ShieldCheck}>
                    <SelectWrapper>
                         <select
                             value={role}
@@ -759,6 +727,7 @@ const AdminUserFormModal: React.FC<Props> = ({
                         </select>
                    </SelectWrapper>
                 </Field>
+                )}
 
                 <Field label="Cédula de Ciudadanía" required icon={Fingerprint}>
                     <Input 
@@ -774,7 +743,7 @@ const AdminUserFormModal: React.FC<Props> = ({
                         label="Correo Institucional" 
                         required 
                         icon={Mail}
-                        hint="Este será el usuario de acceso al sistema."
+                        hint="Debe coincidir con el correo @cun.edu.co que usará en Google."
                         actions={
                             <button
                                 type="button"
@@ -804,7 +773,7 @@ const AdminUserFormModal: React.FC<Props> = ({
                             <select
                                 value={schoolId}
                                 onChange={(e) => setSchoolId(e.target.value)}
-                                disabled={role === "ADMIN" || schoolsLoading}
+                                disabled={role === "ADMIN" || schoolsLoading || !!forcedSchoolId}
                                 className={[
                                   "w-full appearance-none rounded-lg px-3.5 py-2.5 text-sm outline-none transition-all",
                                   role === "ADMIN" ? "opacity-50 cursor-not-allowed" : "",
@@ -827,83 +796,6 @@ const AdminUserFormModal: React.FC<Props> = ({
                     </Field>
                 </div>
 
-                <div className="md:col-span-2 py-2">
-                    <label
-                      className={[
-                        "flex items-start gap-3 p-3 rounded-lg border transition-colors cursor-pointer",
-                        isDark
-                          ? "border-white/5 bg-white/[0.02] hover:bg-white/[0.04]"
-                          : "border-slate-200 bg-slate-50 hover:bg-slate-100",
-                      ].join(" ")}
-                    >
-                        <input
-                            type="checkbox"
-                            checked={mustChangePassword}
-                            onChange={(e) => setMustChangePassword(e.target.checked)}
-                            className="mt-0.5 rounded border-white/20 bg-zinc-900 text-cyan-500 focus:ring-cyan-500/40"
-                        />
-                        <div className="space-y-0.5">
-                            <span
-                              className={[
-                                "text-sm font-medium",
-                                isDark ? "text-zinc-200" : "text-slate-900",
-                              ].join(" ")}
-                            >
-                              Forzar cambio de contraseña
-                            </span>
-                            <p
-                              className={[
-                                "text-xs",
-                                isDark ? "text-zinc-500" : "text-slate-600",
-                              ].join(" ")}
-                            >
-                              El usuario deberá asignar una nueva clave al
-                              iniciar sesión por primera vez.
-                            </p>
-                        </div>
-                    </label>
-                </div>
-
-                {!isEdit && (
-                    <div className="md:col-span-2 pt-4 border-t border-white/5">
-                         <div className="flex items-center justify-between mb-4">
-                            <div className="flex items-center gap-2 text-zinc-400">
-                                <Lock className="w-3.5 h-3.5" />
-                                <span className="text-xs font-semibold uppercase tracking-wider">Seguridad</span>
-                            </div>
-                            <label className="flex items-center gap-2 cursor-pointer group">
-                                <input
-                                    type="checkbox"
-                                    checked={generatePassword}
-                                    onChange={(e) => setGeneratePassword(e.target.checked)}
-                                    className="rounded-sm border-white/20 bg-zinc-900 text-cyan-500 focus:ring-0 w-3.5 h-3.5"
-                                />
-                                <span className="text-xs text-zinc-400 group-hover:text-zinc-200 transition-colors">Generar automáticamente</span>
-                            </label>
-                         </div>
-
-                        {!generatePassword && (
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 animate-in fade-in slide-in-from-top-2">
-                                <Field label="Contraseña Manual" required>
-                                    <Input 
-                                        type="password"
-                                        value={password}
-                                        onChange={(e) => setPassword(e.target.value)}
-                                        placeholder="Min. 8 caracteres"
-                                    />
-                                </Field>
-                                <Field label="Confirmar Contraseña" required>
-                                    <Input 
-                                        type="password"
-                                        value={password2}
-                                        onChange={(e) => setPassword2(e.target.value)}
-                                        placeholder="Repetir contraseña"
-                                    />
-                                </Field>
-                            </div>
-                        )}
-                    </div>
-                )}
               </div>
             )}
 
@@ -971,7 +863,7 @@ const AdminUserFormModal: React.FC<Props> = ({
                 {step === 'SUCCESS' ? (
                      <button
                         onClick={createAnother}
-                        className="px-5 py-2.5 bg-slate-900 hover:bg-slate-800 text-white rounded-lg text-xs font-semibold shadow-lg shadow-black/20 transition-all flex items-center gap-2"
+                        className="px-5 py-2.5 bg-cyan-600 hover:bg-cyan-500 text-white rounded-lg text-xs font-semibold shadow-lg shadow-cyan-900/20 transition-all flex items-center gap-2 border border-cyan-500/50"
                     >
                         Crear otro usuario
                         <ArrowRight className="w-3.5 h-3.5" />

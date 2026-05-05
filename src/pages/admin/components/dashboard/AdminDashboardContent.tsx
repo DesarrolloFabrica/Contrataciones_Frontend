@@ -47,30 +47,6 @@ type Props = {
   topProgramsRef: React.RefObject<HTMLDivElement | null>;
 };
 
-function CardShell({ 
-  isDark, 
-  children,
-  className = ""
-}: { 
-  isDark: boolean; 
-  children: React.ReactNode;
-  className?: string;
-}) {
-  return (
-    <div
-      className={[
-        "relative flex flex-col justify-between overflow-hidden rounded-[24px] border p-6 min-h-[140px] transition-all duration-500 hover:-translate-y-1",
-        isDark
-          ? "border-white/[0.04] bg-[#0c0c0e] hover:border-white/[0.08] hover:shadow-[0_8px_30px_rgba(0,0,0,0.4)]"
-          : "border-slate-200/60 bg-white shadow-sm hover:border-slate-300 hover:shadow-[0_8px_30px_rgba(15,23,42,0.06)]",
-        className
-      ].join(" ")}
-    >
-      {children}
-    </div>
-  );
-}
-
 function KpisGrid({
   isDark,
   totalCandidates,
@@ -82,60 +58,52 @@ function KpisGrid({
   totalEvaluations: number;
   rejectionPct: number;
 }) {
-  const labelCls = [
-    "text-[11px] uppercase tracking-widest font-semibold", 
-    isDark ? "text-neutral-500" : "text-slate-500"
-  ].join(" ");
-  
-  const valueCls = [
-    "mt-auto pt-4 text-4xl font-bold tracking-tight", 
-    isDark ? "text-slate-100" : "text-slate-900"
-  ].join(" ");
-
-  // Calculamos la tasa de aceptación para balancear el grid a 4 tarjetas
   const acceptancePct = Math.max(0, 100 - rejectionPct);
 
+  const cardBase = [
+    "relative flex flex-col justify-between rounded-xl border p-5 min-h-[110px]",
+    isDark
+      ? "bg-white/[0.04] border-white/10"
+      : "bg-white border-slate-200 shadow-sm",
+  ].join(" ");
+
+  const labelCls = [
+    "text-xs font-medium tracking-wider",
+    isDark ? "text-neutral-500" : "text-slate-500",
+  ].join(" ");
+
+  const valueCls = (color: string) =>
+    ["mt-2 text-3xl font-bold tracking-tight", color].join(" ");
+
   return (
-    <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
-      {/* 1. Total Candidatos */}
-      <CardShell isDark={isDark}>
+    <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className={cardBase}>
         <div className={labelCls}>Total candidatos</div>
-        <div className={valueCls}>{totalCandidates}</div>
-      </CardShell>
+        <div className={valueCls(isDark ? "text-white" : "text-slate-900")}>
+          {totalCandidates}
+        </div>
+      </div>
 
-      {/* 2. Total Evaluaciones */}
-      <CardShell isDark={isDark}>
+      <div className={cardBase}>
         <div className={labelCls}>Total evaluaciones</div>
-        <div className={valueCls}>{totalEvaluations}</div>
-      </CardShell>
+        <div className={valueCls(isDark ? "text-white" : "text-slate-900")}>
+          {totalEvaluations}
+        </div>
+      </div>
 
-      {/* 3. Tasa Aceptación (Añadida para completar el diseño visual) */}
-      <CardShell isDark={isDark} className="group">
-        {isDark && (
-          <div className="absolute -top-10 -right-10 w-32 h-32 bg-emerald-500/10 rounded-full blur-[40px] transition-opacity duration-500 opacity-50 group-hover:opacity-100" />
-        )}
+      <div className={cardBase}>
         <div className={labelCls}>% Tasa aceptación</div>
-        <div className={[
-          "mt-auto pt-4 text-4xl font-bold tracking-tight", 
-          isDark ? "text-white" : "text-emerald-700"
-        ].join(" ")}>
+        <div className={valueCls(isDark ? "text-emerald-400" : "text-emerald-600")}>
           {acceptancePct}%
         </div>
-      </CardShell>
+      </div>
 
-      {/* 4. Tasa Rechazo */}
-      <CardShell isDark={isDark} className="group">
-        {isDark && (
-          <div className="absolute -top-10 -right-10 w-32 h-32 bg-rose-500/10 rounded-full blur-[40px] transition-opacity duration-500 opacity-50 group-hover:opacity-100" />
-        )}
+      <div className={cardBase}>
         <div className={labelCls}>% Tasa rechazo</div>
-        <div className={[
-          "mt-auto pt-4 text-4xl font-bold tracking-tight", 
-          isDark ? "text-white" : "text-rose-700"
-        ].join(" ")}>
+        <div className={valueCls(isDark ? "text-rose-400" : "text-rose-600")}>
           {rejectionPct}%
         </div>
-      </CardShell>
+      </div>
     </div>
   );
 }
@@ -154,10 +122,11 @@ export default function AdminDashboardContent({
   topProgramsRef,
 }: Props) {
   return (
-    <div className="space-y-6 md:space-y-8">
+    <div className="space-y-6">
       {activeSection === "ALL" && (
         <>
-          <div ref={kpisRef} className="scroll-mt-28">
+          {/* KPIs */}
+          <div ref={kpisRef} className="scroll-mt-20">
             <KpisGrid
               isDark={isDark}
               totalCandidates={data.kpis.totalCandidates}
@@ -166,7 +135,8 @@ export default function AdminDashboardContent({
             />
           </div>
 
-          <div ref={statusRef} className="scroll-mt-28">
+          {/* Row 1: Status de candidatos - full width */}
+          <div ref={statusRef} className="scroll-mt-20">
             <AdminStatusBars
               approved={data.kpis.approved}
               rejected={data.kpis.rejected}
@@ -175,11 +145,12 @@ export default function AdminDashboardContent({
             />
           </div>
 
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 md:gap-8 lg:items-stretch">
-            <div ref={seriesRef} className="lg:col-span-7 scroll-mt-28 flex min-h-0 h-full">
+          {/* Row 2: Serie temporal (left/large) + AI Score (right/compact) */}
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
+            <div ref={seriesRef} className="lg:col-span-7 scroll-mt-20">
               <AdminEvaluationsSeriesChart points={data.evaluationsSeries} />
             </div>
-            <div ref={scoreRef} className="lg:col-span-5 scroll-mt-28 flex min-h-0 h-full">
+            <div ref={scoreRef} className="lg:col-span-5 scroll-mt-20">
               <AdminScoreCard
                 avg={data.score.avg}
                 median={data.score.median}
@@ -190,15 +161,16 @@ export default function AdminDashboardContent({
             </div>
           </div>
 
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 md:gap-8 lg:items-stretch">
-            <div ref={decisionRef} className="lg:col-span-4 scroll-mt-28 flex min-h-0 h-full">
+          {/* Row 3: Tiempo a decisión + Programas top */}
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
+            <div ref={decisionRef} className="lg:col-span-4 scroll-mt-20">
               <AdminTimeToDecisionCard
                 avgHours={data.timeToDecision.avgHours}
                 medianHours={data.timeToDecision.medianHours}
                 decided={data.timeToDecision.decided}
               />
             </div>
-            <div ref={topProgramsRef} className="lg:col-span-8 scroll-mt-28 flex min-h-0 h-full">
+            <div ref={topProgramsRef} className="lg:col-span-8 scroll-mt-20">
               <AdminTopProgramsCard
                 mode={programsMode}
                 byVolume={data.topPrograms.byVolume}
@@ -209,9 +181,8 @@ export default function AdminDashboardContent({
         </>
       )}
 
-      {/* Renderizado individual de secciones */}
       {activeSection === "KPIS" && (
-        <div ref={kpisRef} className="scroll-mt-28">
+        <div ref={kpisRef} className="scroll-mt-20">
           <KpisGrid
             isDark={isDark}
             totalCandidates={data.kpis.totalCandidates}
@@ -222,7 +193,7 @@ export default function AdminDashboardContent({
       )}
 
       {activeSection === "STATUS" && (
-        <div ref={statusRef} className="scroll-mt-28">
+        <div ref={statusRef} className="scroll-mt-20">
           <AdminStatusBars
             approved={data.kpis.approved}
             rejected={data.kpis.rejected}
@@ -233,7 +204,7 @@ export default function AdminDashboardContent({
       )}
 
       {activeSection === "SCORE" && (
-        <div ref={scoreRef} className="scroll-mt-28">
+        <div ref={scoreRef} className="scroll-mt-20">
           <AdminScoreCard
             avg={data.score.avg}
             median={data.score.median}
@@ -245,7 +216,7 @@ export default function AdminDashboardContent({
       )}
 
       {activeSection === "DECISION" && (
-        <div ref={decisionRef} className="scroll-mt-28">
+        <div ref={decisionRef} className="scroll-mt-20">
           <AdminTimeToDecisionCard
             avgHours={data.timeToDecision.avgHours}
             medianHours={data.timeToDecision.medianHours}
@@ -253,7 +224,6 @@ export default function AdminDashboardContent({
           />
         </div>
       )}
-
     </div>
   );
 }

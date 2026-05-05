@@ -1,12 +1,11 @@
 // src/pages/coordinator/components/users/CoordinatorUsersPanel.tsx
-import React, { useMemo, useState, useCallback } from "react";
+import React, { useMemo, useState } from "react";
 import { AlertCircle, Loader2, Users } from "lucide-react";
-import { useAuth } from "../../../../context/AuthContext"; // ajusta ruta si cambia
+import { useAuth } from "../../../../context/AuthContext";
 import { useTheme } from "../../../../context/ThemeContext";
 
 import { useCoordinatorUsers } from "../../hooks/useCoordinatorUsers";
 
-// Reutilizamos componentes de admin (tabla + modal)
 import AdminUsersTable from "../../../admin/components/users/AdminUsersTable";
 import AdminUserFormModal from "../../../admin/components/users/AdminUserFormModal";
 
@@ -16,8 +15,7 @@ const CoordinatorUsersPanel: React.FC = () => {
   const users = useCoordinatorUsers();
   const { user } = useAuth();
 
-  // 1️⃣ primero se obtiene el schoolId del coordinador
-    const coordinatorSchoolId = useMemo(() => {
+  const coordinatorSchoolId = useMemo(() => {
     const raw =
       (user as any)?.schoolId ??
       (user as any)?.user?.schoolId ??
@@ -28,13 +26,11 @@ const CoordinatorUsersPanel: React.FC = () => {
     return raw ? String(raw) : null;
   }, [user]);
 
-  // 2️⃣ luego se deriva la validación
   const hasSchool = !!coordinatorSchoolId;
 
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [editUser, setEditUser] = useState<AdminUser | null>(null);
 
-  // 3️⃣ ahora sí puedes usarlo en funciones
   const openCreate = () => {
     if (!hasSchool) {
       console.warn("El coordinador no tiene schoolId asignado.");
@@ -58,14 +54,6 @@ const CoordinatorUsersPanel: React.FC = () => {
     !users.loading &&
     !users.error &&
     (users.users?.length ?? 0) === 0;
-
-  // ✅ Credenciales “solo una vez” (si quieres mostrarlas como en admin)
-  const [lastCreatedCredentials, setLastCreatedCredentials] = useState<{
-    email: string;
-    tempPassword: string;
-  } | null>(null);
-
-  const clearCredentials = () => setLastCreatedCredentials(null);
 
   const { theme } = useTheme();
   const isDark = theme === "dark";
@@ -110,12 +98,12 @@ const CoordinatorUsersPanel: React.FC = () => {
                 isDark ? "text-gray-500" : "text-slate-600",
               ].join(" ")}
             >
-              Crea y administra líderes (heredan tu escuela automáticamente).
+              Crea líderes; acceden con Google @cun.edu.co (usuario dado de alta por administración).
             </p>
           </div>
         </div>
 
-        
+
         <button
           type="button"
           onClick={openCreate}
@@ -185,11 +173,6 @@ const CoordinatorUsersPanel: React.FC = () => {
           users={users.users}
           onEdit={openEdit}
           onToggleActive={users.toggleActive}
-          onResetPassword={async (id) => {
-            const r = await users.resetPassword(id);
-            // Si quieres mostrar el password temporal como en admin:
-            // aquí necesitarías también el email del usuario, o que resetPassword retorne email.
-          }}
         />
       )}
 
@@ -236,35 +219,21 @@ const CoordinatorUsersPanel: React.FC = () => {
         forcedSchoolId={coordinatorSchoolId}
 
         onCreate={async (dto) => {
-          // ✅ el hook ya fuerza role=LEADER + schoolId=coordinatorSchoolId
           const res = await users.createLeader({
             name: dto.name,
             lastName: dto.lastName,
             email: dto.email,
             cedula: dto.cedula,
-            mustChangePassword: dto.mustChangePassword,
-            generatePassword: dto.generatePassword,
-            password: dto.password,
           });
-        
-          if (!res.ok || !res.user?.email || !res.password) {
-            // ✅ si falla, lanzamos error para que el modal lo capture
+
+          if (!res.ok || !res.user?.email) {
             throw new Error("No se pudo crear el líder.");
           }
-        
-          // ✅ para que el modal muestre credenciales “solo una vez”
-          setLastCreatedCredentials({
-            email: res.user.email,
-            tempPassword: res.password,
-          });
         }}
-      
-        // opcional: si no quieres edición, déjalo así
+
         onUpdate={async () => {}}
-      
+
         editingUser={editUser}
-        lastCreatedCredentials={lastCreatedCredentials}
-        clearCredentials={clearCredentials}
       />
 
     </section>

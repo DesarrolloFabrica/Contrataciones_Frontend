@@ -28,7 +28,7 @@ type Row = {
   name: string;
   value: number;
   subtitle: string;
-  accent: "emerald" | "cyan";
+  accent: "cyan" | "cyan";
 };
 
 export default function AdminTopProgramsCard({ mode, byVolume, byAcceptance }: Props) {
@@ -46,7 +46,7 @@ export default function AdminTopProgramsCard({ mode, byVolume, byAcceptance }: P
           name: String(r.name),
           value: Number(r.candidates ?? 0),
           subtitle: `${Number(r.candidates ?? 0)} candidatos`,
-          accent: "emerald" as const,
+          accent: "cyan" as const,
         }));
     }
 
@@ -83,8 +83,8 @@ export default function AdminTopProgramsCard({ mode, byVolume, byAcceptance }: P
             <span
               className={[
                 "text-3xl font-black tracking-tight",
-                data.accent === "emerald" 
-                  ? (isDark ? "text-emerald-400" : "text-emerald-600")
+                data.accent === "cyan" 
+                  ? (isDark ? "text-cyan-400" : "text-cyan-600")
                   : (isDark ? "text-cyan-400" : "text-cyan-600"),
               ].join(" ")}
             >
@@ -106,18 +106,17 @@ export default function AdminTopProgramsCard({ mode, byVolume, byAcceptance }: P
   return (
     <div
       className={[
-        "relative flex h-full min-h-[420px] w-full min-w-0 flex-col overflow-hidden rounded-[24px] border p-6 transition-all duration-500",
+        "relative flex h-full min-h-[420px] w-full min-w-0 flex-col overflow-hidden rounded-xl border p-5",
         isDark
-          ? "border-white/[0.04] bg-[#0c0c0e] hover:border-white/[0.08]"
-          : "border-slate-200/60 bg-white hover:border-slate-300 hover:shadow-xl hover:shadow-slate-200/20",
+          ? "border-white/10 bg-white/[0.03]"
+          : "border-slate-200 bg-white shadow-sm",
       ].join(" ")}
     >
-      {/* Header Minimalista */}
-      <div className="flex items-start justify-between mb-6">
-        <div className="flex flex-col gap-1">
+      <div className="flex items-start justify-between mb-4">
+        <div className="flex flex-col gap-0.5">
           <h3
             className={[
-              "text-sm font-semibold uppercase tracking-widest",
+              "text-xs font-semibold uppercase tracking-widest",
               isDark ? "text-neutral-300" : "text-slate-800",
             ].join(" ")}
           >
@@ -125,7 +124,7 @@ export default function AdminTopProgramsCard({ mode, byVolume, byAcceptance }: P
           </h3>
           <p
             className={[
-              "text-[13px]",
+              "text-xs",
               isDark ? "text-neutral-500" : "text-slate-500",
             ].join(" ")}
           >
@@ -133,20 +132,15 @@ export default function AdminTopProgramsCard({ mode, byVolume, byAcceptance }: P
           </p>
         </div>
 
-        <div className="flex items-center gap-4">
-          <div
-            className={[
-              "flex items-center gap-1.5 px-3 py-1 rounded-full border text-[11px] font-semibold uppercase tracking-wider",
-              isDark
-                ? "bg-white/[0.02] border-white/10 text-neutral-400"
-                : "bg-slate-50 border-slate-200 text-slate-500",
-            ].join(" ")}
-          >
-            <span>Top {rows.length}</span>
-          </div>
-          <div className={isDark ? "text-neutral-800" : "text-slate-200"}>
-            <TrendingUp strokeWidth={1.5} className="w-6 h-6" />
-          </div>
+        <div
+          className={[
+            "flex items-center gap-1 px-2.5 py-0.5 rounded-md border text-[11px] font-medium shrink-0",
+            isDark
+              ? "bg-white/[0.02] border-white/10 text-neutral-500"
+              : "bg-slate-50 border-slate-200 text-slate-500",
+          ].join(" ")}
+        >
+          <span>Top {rows.length}</span>
         </div>
       </div>
 
@@ -220,7 +214,7 @@ export default function AdminTopProgramsCard({ mode, byVolume, byAcceptance }: P
                 {rows.map((r) => (
                   <Cell
                     key={r.key}
-                    fill={r.accent === "emerald" ? "url(#gradEmerald)" : "url(#gradCyan)"}
+                    fill={r.accent === "cyan" ? "url(#gradEmerald)" : "url(#gradCyan)"}
                     className="transition-opacity duration-300"
                     opacity={hoveredKey && hoveredKey !== r.key ? 0.3 : 1}
                     onMouseEnter={() => setHoveredKey(r.key)}

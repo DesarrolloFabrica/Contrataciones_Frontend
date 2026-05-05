@@ -245,8 +245,6 @@ export async function uploadTeacherReport(
 export async function listTeacherEvaluations(): Promise<TeacherEvaluationSummary[]> {
   const res = await apiClient.get<ListEvalResponse>("/teachers/evaluations");
 
-  console.log("listTeacherEvaluations raw response:", res.data);
-
   const data = res.data;
 
   if (Array.isArray(data)) {

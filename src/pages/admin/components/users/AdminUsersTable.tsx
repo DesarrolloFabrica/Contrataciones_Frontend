@@ -1,6 +1,6 @@
-// src/pages/admin/components/users/AdminUsersTable.tsx
 import React from "react";
-import type { AdminUser, ResetPasswordResult } from "../../adminTypes";
+import { ChevronLeft, ChevronRight, Search, ShieldCheck } from "lucide-react";
+import type { AdminUser } from "../../adminTypes";
 import AdminUserRowActions from "./AdminUserRowActions";
 import { useTheme } from "../../../../context/ThemeContext";
 
@@ -8,8 +8,7 @@ type Props = {
   users: AdminUser[];
   onEdit: (u: AdminUser) => void;
   onToggleActive: (id: string) => Promise<{ ok: boolean }>;
-  onResetPassword: (id: string) => Promise<ResetPasswordResult | null>;
-  onViewSecurity: (u: AdminUser) => void;
+  onViewSecurity?: (u: AdminUser) => void;
 };
 
 const fmtDate = (iso?: string | null) => {
@@ -25,40 +24,40 @@ const fmtDate = (iso?: string | null) => {
 
 const roleLabel = (role: AdminUser["role"]) => {
   switch (role) {
-    case "COORDINATOR":
-      return "Coordinador";
-    case "LEADER":
-      return "Líder";
-    case "ADMIN":
-      return "Administrador";
-    default:
-      return role;
+    case "COORDINATOR": return "Coordinador";
+    case "LEADER": return "Líder";
+    case "ADMIN": return "Administrador";
+    default: return role;
   }
 };
 
-const roleBadge = (role: AdminUser["role"]) => {
-  switch (role) {
-    case "ADMIN":
-      return "bg-purple-500/10 text-purple-200 border border-purple-500/30";
-    case "LEADER":
-      return "bg-cyan-500/10 text-cyan-200 border border-cyan-500/30";
-    case "COORDINATOR":
-    default:
-      return "bg-white/5 text-gray-200 border border-white/10";
-  }
+const roleConfig: Record<AdminUser["role"], { badge: string }> = {
+  ADMIN: {
+    badge: "bg-purple-500/10 text-purple-600 dark:text-purple-300 border-purple-200 dark:border-purple-500/30",
+  },
+  LEADER: {
+    badge: "bg-cyan-500/10 text-cyan-600 dark:text-cyan-300 border-cyan-200 dark:border-cyan-500/30",
+  },
+  COORDINATOR: {
+    badge: "bg-blue-500/10 text-blue-600 dark:text-blue-300 border-blue-200 dark:border-blue-500/30",
+  },
 };
 
-const statusBadge = (status: AdminUser["status"]) => {
-  return status === "ACTIVE"
-    ? "bg-emerald-500/10 text-emerald-300 border border-emerald-500/30"
-    : "bg-rose-500/10 text-rose-300 border border-rose-500/30";
+const statusConfig: Record<AdminUser["status"], { badge: string; dot: string }> = {
+  ACTIVE: {
+    badge: "bg-emerald-500/10 text-emerald-600 dark:text-emerald-300 border-emerald-200 dark:border-emerald-500/30",
+    dot: "bg-emerald-500",
+  },
+  INACTIVE: {
+    badge: "bg-rose-500/10 text-rose-600 dark:text-rose-300 border-rose-200 dark:border-rose-500/30",
+    dot: "bg-rose-500",
+  },
 };
 
 const AdminUsersTable: React.FC<Props> = ({
   users,
   onEdit,
   onToggleActive,
-  onResetPassword,
   onViewSecurity,
 }) => {
   const { theme } = useTheme();
@@ -86,15 +85,12 @@ const AdminUsersTable: React.FC<Props> = ({
 
   if (!total) {
     return (
-      <div
-        className={[
-          "flex items-center justify-center py-12 text-sm rounded-2xl border",
-          isDark
-            ? "text-gray-500 border-white/10 bg-[#090909]"
-            : "text-slate-500 border-slate-200 bg-slate-50",
-        ].join(" ")}
-      >
-        No hay usuarios para los filtros actuales.
+      <div className={`flex flex-col items-center justify-center gap-4 rounded-2xl border border-dashed py-16 ${
+        isDark ? "border-white/10 bg-black/10 text-neutral-400" : "border-slate-200 bg-slate-50 text-slate-500"
+      }`}>
+        <Search className="w-8 h-8 opacity-50" />
+        <p className="text-sm font-medium">No se encontraron usuarios</p>
+        <p className="text-xs opacity-60">Ajusta los filtros o crea un nuevo usuario.</p>
       </div>
     );
   }
@@ -124,12 +120,12 @@ const AdminUsersTable: React.FC<Props> = ({
                 isDark ? "text-gray-500" : "text-slate-500",
               ].join(" ")}
             >
-              <th className="px-4 py-3">Usuario</th>
-              <th className="px-4 py-3">Rol</th>
-              <th className="px-4 py-3">Estado</th>
-              <th className="px-4 py-3">Cédula</th>
-              <th className="px-4 py-3">Creado</th>
-              <th className="px-4 py-3 text-right">Acciones</th>
+              <th className="px-4 py-3 font-semibold">Usuario</th>
+              <th className="px-4 py-3 font-semibold">Rol</th>
+              <th className="px-4 py-3 font-semibold">Estado</th>
+              <th className="px-4 py-3 font-semibold">Cédula</th>
+              <th className="px-4 py-3 font-semibold">Creado</th>
+              <th className="px-4 py-3 text-right font-semibold">Acciones</th>
             </tr>
           </thead>
 
@@ -140,100 +136,99 @@ const AdminUsersTable: React.FC<Props> = ({
           >
             {pageItems.map((u) => {
               const createdLabel = fmtDate(u.createdAt);
-              const statusCls = statusBadge(u.status);
-              const roleCls = roleBadge(u.role);
+              const roleCfg = roleConfig[u.role];
+              const statusCfg = statusConfig[u.status];
 
               return (
                 <tr
                   key={u.id}
                   className={
                     isDark
-                      ? "hover:bg-white/[0.03]"
-                      : "hover:bg-cyan-50/40"
+                      ? "hover:bg-white/[0.03] transition-colors"
+                      : "hover:bg-cyan-50/40 transition-colors"
                   }
                 >
-                  {/* Usuario */}
-                  <td className="px-4 py-3">
-                    <div className="min-w-0">
-                      <p
+                  <td className="px-4 py-3.5">
+                    <div className="flex items-center gap-3 min-w-0">
+                      <div
                         className={[
-                          "font-semibold truncate",
-                          isDark ? "text-white" : "text-slate-900",
+                          "w-9 h-9 rounded-xl flex items-center justify-center border shrink-0",
+                          isDark
+                            ? "bg-white/5 border-white/10"
+                            : "bg-cyan-50 border-cyan-100",
                         ].join(" ")}
                       >
-                        {u.name} {u.lastName}
-                      </p>
-                      <p
-                        className={[
-                          "text-[12px] truncate",
-                          isDark ? "text-gray-500" : "text-slate-700",
-                        ].join(" ")}
-                      >
-                        {u.email}
-                      </p>
-
-                      {u.mustChangePassword && (
-                        <span
+                        <ShieldCheck
                           className={[
-                            "mt-1 inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-widest border",
-                            isDark
-                              ? "bg-yellow-500/10 text-yellow-200 border-yellow-500/20"
-                              : "bg-amber-50 text-amber-700 border-amber-200",
+                            "w-4 h-4",
+                            isDark ? "text-cyan-400" : "text-cyan-600",
+                          ].join(" ")}
+                        />
+                      </div>
+                      <div className="min-w-0">
+                        <p
+                          className={[
+                            "font-semibold truncate",
+                            isDark ? "text-white" : "text-slate-900",
                           ].join(" ")}
                         >
-                          Debe cambiar contraseña
-                        </span>
-                      )}
+                          {u.name} {u.lastName}
+                        </p>
+                        <p
+                          className={[
+                            "text-[12px] truncate",
+                            isDark ? "text-gray-500" : "text-slate-700",
+                          ].join(" ")}
+                        >
+                          {u.email}
+                        </p>
+                      </div>
                     </div>
                   </td>
 
-                  {/* Rol */}
-                  <td className="px-4 py-3">
+                  <td className="px-4 py-3.5">
                     <span
-                      className={`inline-flex items-center px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-widest ${roleCls}`}
-                      title={u.role}
+                      className={`inline-flex items-center px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-widest border ${roleCfg.badge}`}
                     >
                       {roleLabel(u.role)}
                     </span>
                   </td>
 
-                  {/* Estado */}
-                  <td className="px-4 py-3">
-                    <span
-                      className={`inline-flex items-center px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-widest ${statusCls}`}
-                    >
-                      {u.status === "ACTIVE" ? "Activo" : "Inactivo"}
-                    </span>
+                  <td className="px-4 py-3.5">
+                    <div className="flex items-center gap-2">
+                      <div className={`w-1.5 h-1.5 rounded-full ${statusCfg.dot}`} />
+                      <span
+                        className={`inline-flex items-center px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-widest border ${statusCfg.badge}`}
+                      >
+                        {u.status === "ACTIVE" ? "Activo" : "Inactivo"}
+                      </span>
+                    </div>
                   </td>
 
-                  {/* Cédula */}
                   <td
                     className={[
-                      "px-4 py-3",
+                      "px-4 py-3.5",
                       isDark ? "text-gray-300" : "text-slate-800",
                     ].join(" ")}
                   >
                     {u.cedula ?? "—"}
                   </td>
 
-                  {/* Creado */}
                   <td
                     className={[
-                      "px-4 py-3",
+                      "px-4 py-3.5",
                       isDark ? "text-gray-400" : "text-slate-500",
                     ].join(" ")}
                   >
                     {createdLabel}
                   </td>
 
-                  {/* Acciones */}
-                  <td className="px-4 py-3">
+                  <td className="px-4 py-3.5">
                     <div className="flex justify-end">
                       <AdminUserRowActions
                         user={u}
                         onEdit={() => onEdit(u)}
                         onToggleActive={() => onToggleActive(u.id)}
-                        onResetPassword={() => onResetPassword(u.id)}
                         onViewSecurity={onViewSecurity}
                       />
                     </div>
@@ -245,7 +240,7 @@ const AdminUsersTable: React.FC<Props> = ({
         </table>
       </div>
 
-      {/* Paginación inferior */}
+      {/* Pagination */}
       <div
         className={[
           "flex flex-col md:flex-row items-center justify-between gap-3 px-4 py-3 border-t",
@@ -296,26 +291,27 @@ const AdminUsersTable: React.FC<Props> = ({
             onClick={() => setPage((p) => Math.max(1, p - 1))}
             disabled={safePage <= 1}
             className={[
-              "h-8 px-3 rounded-xl border text-[11px] font-bold uppercase tracking-widest flex items-center gap-2 transition-colors",
+              "h-8 px-3 rounded-lg border text-[11px] font-medium transition flex items-center gap-1",
               safePage <= 1
                 ? isDark
-                  ? "bg-white/5 border-white/10 text-neutral-600 cursor-not-allowed"
-                  : "bg-white border-slate-200 text-slate-300 cursor-not-allowed"
+                  ? "border-white/5 text-neutral-600 cursor-not-allowed"
+                  : "border-slate-200 text-slate-300 cursor-not-allowed"
                 : isDark
-                  ? "bg-white/5 border-white/10 text-neutral-200 hover:bg-white/10"
-                  : "bg-white border-slate-200 text-slate-700 hover:bg-slate-50",
+                  ? "border-white/10 text-neutral-300 hover:bg-white/5"
+                  : "border-slate-200 text-slate-600 hover:bg-slate-50",
             ].join(" ")}
           >
+            <ChevronLeft className="w-3.5 h-3.5" />
             Anterior
           </button>
 
           <span
             className={[
-              "text-[11px]",
-              isDark ? "text-gray-400" : "text-slate-500",
+              "text-[11px] min-w-[40px] text-center",
+              isDark ? "text-neutral-400" : "text-slate-500",
             ].join(" ")}
           >
-            {safePage} / {totalPages}
+            {safePage}/{totalPages}
           </span>
 
           <button
@@ -323,17 +319,18 @@ const AdminUsersTable: React.FC<Props> = ({
             onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
             disabled={safePage >= totalPages}
             className={[
-              "h-8 px-3 rounded-xl border text-[11px] font-bold uppercase tracking-widest flex items-center gap-2 transition-colors",
+              "h-8 px-3 rounded-lg border text-[11px] font-medium transition flex items-center gap-1",
               safePage >= totalPages
                 ? isDark
-                  ? "bg-white/5 border-white/10 text-neutral-600 cursor-not-allowed"
-                  : "bg-white border-slate-200 text-slate-300 cursor-not-allowed"
+                  ? "border-white/5 text-neutral-600 cursor-not-allowed"
+                  : "border-slate-200 text-slate-300 cursor-not-allowed"
                 : isDark
-                  ? "bg-white/5 border-white/10 text-neutral-200 hover:bg-white/10"
-                  : "bg-white border-slate-200 text-slate-700 hover:bg-slate-50",
+                  ? "border-white/10 text-neutral-300 hover:bg-white/5"
+                  : "border-slate-200 text-slate-600 hover:bg-slate-50",
             ].join(" ")}
           >
             Siguiente
+            <ChevronRight className="w-3.5 h-3.5" />
           </button>
         </div>
       </div>

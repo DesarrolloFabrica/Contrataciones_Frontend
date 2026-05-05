@@ -1,25 +1,22 @@
 // src/context/AuthContext.tsx
-import React, { createContext, useContext, useMemo, useState } from "react";
-import api, { AUTH_STORAGE_KEY } from "../services/apiClient";
+import React, { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
+import api, { AUTH_STORAGE_KEY, setUnauthorizedHandler } from "../services/apiClient";
 import { auditAppend } from "../services/auditService";
 import type { AuditActor } from "../types";
 
-// Roles que ya usas en el frontend (para rutas, etc.)
 export type Role = "leader" | "coordinator" | "admin";
 
-// Roles que vienen del backend
 export type BackendRole = "ADMIN" | "COORDINADOR" | "LIDER";
 
 export interface AuthUser {
   id: string;
   name: string;
   email: string;
-  // rol para la UI
   role: Role;
-  // rol real de BD
   backendRole: BackendRole;
   schoolId: string | null;
-  mustResetPassword?: boolean;
+  /** URL de foto de perfil desde Google OAuth */
+  googlePicture?: string | null;
 }
 
 type StoredAuth = {
@@ -29,24 +26,20 @@ type StoredAuth = {
 
 interface AuthContextValue {
   user: AuthUser | null;
-  isReady: boolean; // ✅ clave para que ProtectedRoute espere
-  login: (email: string, password: string) => Promise<AuthUser>;
+  isReady: boolean;
+  loginWithGoogle: (accessToken: string) => Promise<AuthUser>;
   logout: () => void;
-
-  // ✅ NUEVO: actualizar parcialmente el user y persistirlo
   updateUser: (patch: Partial<AuthUser>) => void;
 }
 
 const AuthContext = createContext<AuthContextValue | undefined>(undefined);
 
-// Traducción de rol backend → rol UI
 function mapBackendRoleToUiRole(backendRole: BackendRole): Role {
   if (backendRole === "ADMIN") return "admin";
   if (backendRole === "COORDINADOR") return "coordinator";
   return "leader";
 }
 
-// helper para poner el header en axios
 function setAxiosAuthHeader(token?: string) {
   if (token) {
     api.defaults.headers.common["Authorization"] = `Bearer ${token}`;
@@ -55,7 +48,6 @@ function setAxiosAuthHeader(token?: string) {
   }
 }
 
-/** Lee localStorage de forma segura (sin romper si está corrupto) */
 function readStoredAuth(): StoredAuth | null {
   if (typeof window === "undefined") return null;
 
@@ -64,10 +56,7 @@ function readStoredAuth(): StoredAuth | null {
 
   try {
     const parsed = JSON.parse(raw) as StoredAuth;
-
-    // Si hay token, inyecta header YA (antes del primer render de rutas)
     if (parsed?.accessToken) setAxiosAuthHeader(parsed.accessToken);
-
     return parsed;
   } catch (err) {
     console.warn("No se pudo leer auth desde localStorage", err);
@@ -80,17 +69,14 @@ function readStoredAuth(): StoredAuth | null {
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
   children,
 }) => {
-  // ✅ Hidratación sincrónica: evita “flash” de user=null en refresh
   const boot = useMemo(() => readStoredAuth(), []);
 
   const [user, setUser] = useState<AuthUser | null>(() => boot?.user ?? null);
-  const [isReady, setIsReady] = useState<boolean>(() => true); // ✅ ya está listo desde el arranque
+  const [isReady, setIsReady] = useState<boolean>(() => true);
 
-  // ✅ NUEVO: actualiza user en memoria + localStorage (mantiene accessToken)
   const updateUser = (patch: Partial<AuthUser>) => {
     setUser((prev) => {
       if (!prev) return prev;
-
       const next = { ...prev, ...patch };
 
       if (typeof window !== "undefined") {
@@ -107,7 +93,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
               JSON.stringify({ accessToken: parsed.accessToken, user: next })
             );
           } else {
-            // raro, pero por si no existía
             localStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify({ user: next }));
           }
         } catch (err) {
@@ -119,10 +104,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
     });
   };
 
-  // ✅ login: email + password
-  const login = async (email: string, password: string): Promise<AuthUser> => {
-    const cleanEmail = email.toLowerCase().trim();
-
+  const loginWithGoogle = async (accessToken: string): Promise<AuthUser> => {
     let data: {
       accessToken?: string;
       user?: {
@@ -131,34 +113,25 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
         role: BackendRole;
         schoolId: string | null;
         fullName?: string;
-        mustResetPassword?: boolean;
+        googlePicture?: string | null;
       };
     };
 
     try {
-      const resp = await api.post<typeof data>("/auth/login", {
-        email: cleanEmail,
-        password,
-      });
+      const resp = await api.post<typeof data>("/auth/google", { accessToken });
       data = resp.data;
     } catch (error: any) {
       console.error(
-        "[AuthContext] Error en /auth/login:",
+        "[AuthContext] Error en /auth/google:",
         error?.response?.data || error
       );
       throw error;
     }
 
-    console.log("[AuthContext] login resp.data =", data);
+    const { accessToken: jwt, user: backendUser } = data;
 
-    const { accessToken, user: backendUser } = data;
-
-    if (!accessToken || !backendUser) {
-      console.error(
-        "[AuthContext] Respuesta inesperada de login, falta accessToken o user:",
-        data
-      );
-      throw new Error("Respuesta de login inválida");
+    if (!jwt || !backendUser) {
+      throw new Error("Respuesta de Google login inválida");
     }
 
     const uiRole = mapBackendRoleToUiRole(backendUser.role);
@@ -170,17 +143,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
       role: uiRole,
       backendRole: backendUser.role,
       schoolId: backendUser.schoolId,
-      mustResetPassword: backendUser.mustResetPassword,
+      googlePicture: backendUser.googlePicture ?? null,
     };
 
-    // Inyectar header y persistir
-    setAxiosAuthHeader(accessToken);
+    setAxiosAuthHeader(jwt);
     localStorage.setItem(
       AUTH_STORAGE_KEY,
-      JSON.stringify({ accessToken, user: authUser } satisfies StoredAuth)
+      JSON.stringify({ accessToken: jwt, user: authUser } satisfies StoredAuth)
     );
 
-    // Auditoría
     const actor: AuditActor = {
       id: authUser.id,
       name: authUser.name,
@@ -191,7 +162,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
     auditAppend({
       type: "LOGIN",
       actor,
-      metadata: { email: authUser.email, role: authUser.role },
+      metadata: { email: authUser.email, role: authUser.role, method: "google" },
     });
 
     setUser(authUser);
@@ -199,7 +170,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
     return authUser;
   };
 
-  const logout = () => {
+  const logout = useCallback(() => {
     if (user) {
       auditAppend({
         type: "LOGOUT",
@@ -217,10 +188,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
     localStorage.removeItem(AUTH_STORAGE_KEY);
     setAxiosAuthHeader(undefined);
     setIsReady(true);
-  };
+  }, [user]);
+
+  useEffect(() => {
+    setUnauthorizedHandler(logout);
+    return () => setUnauthorizedHandler(null);
+  }, [logout]);
 
   return (
-    <AuthContext.Provider value={{ user, isReady, login, logout, updateUser }}>
+    <AuthContext.Provider value={{ user, isReady, loginWithGoogle, logout, updateUser }}>
       {children}
     </AuthContext.Provider>
   );

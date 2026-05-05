@@ -64,7 +64,7 @@ const CoordinatorEvaluationReport: React.FC = () => {
       try {
         const detail = await getTeacherEvaluationById(evaluationId);
 
-        const ai: AnalysisResult = detail.aiRawJson;
+        const ai: AnalysisResult | null = detail.aiRawJson ?? null;
         const interview: InterviewData = mapFormToInterviewData(detail);
 
         setAnalysis(ai);
@@ -252,6 +252,20 @@ const CoordinatorEvaluationReport: React.FC = () => {
               resetLabel="Volver al panel"
               initialTab={initialTab}
             />
+          </div>
+        )}
+
+        {!loading && !error && !analysis && interviewData && (
+          <div className="flex flex-col items-center justify-center py-16 gap-3">
+            <AlertCircle className={["w-8 h-8", isDark ? "text-cyan-300" : "text-cyan-600"].join(" ")} />
+            <p
+              className={[
+                "text-sm text-center max-w-md",
+                isDark ? "text-white/65" : "text-slate-600",
+              ].join(" ")}
+            >
+              Esta evaluación existe, pero aún no tiene análisis IA disponible para mostrar.
+            </p>
           </div>
         )}
       </main>

@@ -1,5 +1,29 @@
 // src/data/exampleData.ts
 import { InterviewData } from "../types";
+import { createInitialCandidateDocuments } from "../features/leader/interview-form/constants";
+import type {
+  CandidateDocumentDraft,
+  CandidateDocumentsDraft,
+  HiringContextDraft,
+} from "../features/leader/interview-form/types";
+
+export interface InterviewExampleProfile {
+  formData: InterviewData;
+  hiringContext: HiringContextDraft;
+  candidateDocuments: CandidateDocumentsDraft;
+}
+
+const createExampleDocuments = (
+  overrides: Record<string, Partial<CandidateDocumentDraft>> = {},
+): CandidateDocumentsDraft => ({
+  items: createInitialCandidateDocuments().items.map((item) => ({
+    ...item,
+    status: "Disponible",
+    note: "Documento validado para el caso de prueba.",
+    tempUrl: "",
+    ...overrides[item.id],
+  })),
+});
 
 /**
  * ✅ Coherente con DB:
@@ -112,4 +136,84 @@ export const rejectedExample: InterviewData = {
     "Cancelar clases sin plan de contingencia ni coordinación. No prepararía material alterno ni pediría apoyo institucional.",
   scenarioFeedback:
     "No tomaría acciones de mejora. Considero que el problema es el estudiante y no ajustaría metodología ni comunicación.",
+};
+
+export const approvedExampleProfile: InterviewExampleProfile = {
+  formData: approvedExample,
+  hiringContext: {
+    targetRole: "Docente de Ingeniería de Software e IA",
+    processType: "Docente",
+    requestingArea: "Escuela de Ingeniería",
+    needDescription:
+      "Se requiere fortalecer la oferta de asignaturas prácticas de programación, arquitectura de software e inteligencia artificial con un perfil docente de alta experiencia académica y aplicada.",
+    priority: "Alta",
+  },
+  candidateDocuments: createExampleDocuments({
+    portfolio: {
+      note: "Incluye repositorio docente, proyectos de software y evidencias de investigación aplicada.",
+      tempUrl: "https://ejemplo.cun.edu.co/portafolio/elena-velez",
+    },
+    "other-supports": {
+      status: "Disponible",
+      note: "Cartas de recomendación y certificados de ponencias disponibles.",
+    },
+  }),
+};
+
+export const mediumExampleProfile: InterviewExampleProfile = {
+  formData: mediumExample,
+  hiringContext: {
+    targetRole: "Facilitador de Publicidad y Mercadeo",
+    processType: "Facilitador",
+    requestingArea: "Escuela de Transformación Empresarial",
+    needDescription:
+      "Se busca un perfil con experiencia real en agencias para acompañar cursos de campaña, estrategia y medición, con disponibilidad parcial y seguimiento cercano de coordinación.",
+    priority: "Media",
+  },
+  candidateDocuments: createExampleDocuments({
+    "academic-certificates": {
+      status: "Pendiente",
+      note: "Pendiente validar diploma y acta de grado.",
+    },
+    portfolio: {
+      status: "Disponible",
+      note: "Presenta muestras de campañas y casos de agencia.",
+      tempUrl: "https://ejemplo.cun.edu.co/portafolio/carlos-rojas",
+    },
+    "other-supports": {
+      status: "No aplica",
+      note: "No se requieren soportes adicionales para esta prueba.",
+    },
+  }),
+};
+
+export const rejectedExampleProfile: InterviewExampleProfile = {
+  formData: rejectedExample,
+  hiringContext: {
+    targetRole: "Docente de Administración Pública",
+    processType: "Docente",
+    requestingArea: "Escuela de Ciencias Sociales Jurídicas y Gobierno",
+    needDescription:
+      "La coordinación necesita evaluar un perfil propuesto para clases introductorias, pero existen dudas sobre metodología, compromiso institucional y criterios de evaluación.",
+    priority: "Baja",
+  },
+  candidateDocuments: createExampleDocuments({
+    "academic-certificates": {
+      status: "Pendiente",
+      note: "No presenta soportes académicos verificables.",
+      tempUrl: "",
+    },
+    "work-certificates": {
+      status: "Pendiente",
+      note: "Experiencia reportada sin certificaciones laborales.",
+    },
+    portfolio: {
+      status: "Pendiente",
+      note: "No aporta portafolio ni evidencias docentes.",
+    },
+    "other-supports": {
+      status: "No aplica",
+      note: "Sin soportes complementarios.",
+    },
+  }),
 };

@@ -69,14 +69,10 @@ export interface AdminUser {
   email: string;
   cedula?: string | null;
 
-  // Opcional: algunos flujos (coordinador -> líder) heredan una escuela específica.
-  // Se mantiene opcional para compatibilidad con usuarios admin globales.
   schoolId?: string | null;
 
   role: AdminUserRole;
   status: AdminUserStatus;
-
-  mustChangePassword: boolean;
 
   createdAt: string; // ISO
   updatedAt: string; // ISO
@@ -88,14 +84,8 @@ export interface CreateAdminUserDto {
   email: string;
   cedula?: string | null;
 
-  role: AdminUserRole; // en tu caso: "COORDINATOR"
-  mustChangePassword: boolean;
+  role: AdminUserRole;
 
-  // UX:
-  generatePassword: boolean;
-  password?: string; // si generatePassword=false, puede venir aquí
-
-  // ✅ NUEVO: permite que el coordinador cree líderes en SU escuela
   schoolId?: string | null;
 }
 
@@ -105,12 +95,6 @@ export interface UpdateAdminUserDto {
   cedula?: string | null;
   role?: AdminUserRole;
   status?: AdminUserStatus;
-  mustChangePassword?: boolean;
-}
-
-export interface ResetPasswordResult {
-  userId: string;
-  temporaryPassword: string;
 }
 
 // ✅ SOPORTE: Historial, asignaciones, decisiones y trazabilidad

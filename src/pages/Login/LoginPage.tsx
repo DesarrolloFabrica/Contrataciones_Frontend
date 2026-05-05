@@ -1,115 +1,138 @@
-// src/pages/Login/LoginPage.tsx
-import React, { useMemo, useState } from "react";
+import React, { useCallback, useRef, useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
+import { useGoogleLogin } from "@react-oauth/google";
 
 import { useAuth } from "../../context/AuthContext";
-import { useTheme } from "../../context/ThemeContext";
-
-import { Eye, EyeOff, AlertCircle, Loader2 } from "lucide-react";
-
+import AnimatedBackground from "../../components/AnimatedBackground";
 import LogoCun from "../../assets/images/LogoCunColor.png";
-import LogoCun2 from "../../assets/images/LogoCUN.png";
-import Enciendete from "../../assets/images/Enciendete.png";
-import BGVideo from "../../assets/videos/Op2_1.mp4";
-
-const inputBase =
-  "w-full rounded-2xl bg-gray-100 px-4 py-3 text-sm " +
-  "border border-gray-200 shadow-sm " +
-  "placeholder:text-gray-400 text-gray-900 " +
-  "focus:outline-none focus:ring-2 focus:ring-emerald-500/30 focus:border-emerald-400 " +
-  "transition";
 
 const LoginPage: React.FC = () => {
-  const { login } = useAuth();
-  const { theme } = useTheme();
-  const isDark = theme === "dark";
+  const { loginWithGoogle } = useAuth();
   const navigate = useNavigate();
   const location = useLocation() as any;
 
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-
-  const [showPass, setShowPass] = useState(false);
   const [loading, setLoading] = useState(false);
-
   const [error, setError] = useState<string | null>(null);
-  const [showPassword, setShowPassword] = useState(false); //visualizar clave
 
-  // ✅ Guardamos el objeto completo (pathname, state, etc.)
   const from = location.state?.from;
+  const cardRef = useRef<HTMLDivElement>(null);
+  const [mousePos, setMousePos] = useState({ x: 50, y: 50 });
 
-  const canSubmit = useMemo(() => {
-    return !!email.trim() && !!password && !loading;
-  }, [email, password, loading]);
+  const handleMouseMove = useCallback((e: React.MouseEvent) => {
+    if (!cardRef.current) return;
+    const rect = cardRef.current.getBoundingClientRect();
+    setMousePos({
+      x: ((e.clientX - rect.left) / rect.width) * 100,
+      y: ((e.clientY - rect.top) / rect.height) * 100,
+    });
+  }, []);
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setError(null);
-
-    if (!email.trim() || !password) return;
-
-    setLoading(true);
-    try {
-      const user = await login(email.trim(), password);
-
-      // ✅ 1) Forzar reset si aplica
-      if (user?.mustResetPassword) {
-        navigate("/change-password", {
-          replace: true,
-          state: { email: user.email, from },
-        });
-        return;
-      }
-
-      // ✅ 2) Si venía de una ruta protegida, devolvemos ahí
-      if (from?.pathname) {
-        navigate(from.pathname, { replace: true });
-        return;
-      }
-
-      // ✅ 3) Navegación por rol UI (minúscula)
-      const role = (user.role || "").toLowerCase();
-
-      if (role === "leader") {
-        navigate("/leader", { replace: true });
-      } else if (role === "coordinator") {
-        navigate("/coordinator", { replace: true });
-      } else {
-        navigate("/admin", { replace: true });
-      }
-    } catch (err: any) {
-      console.error("Error en login:", err);
-      const msg =
-        err?.response?.data?.message ||
-        err?.message ||
-        "No se pudo iniciar sesión. Verifica tu correo y contraseña.";
-      setError(msg);
-    } finally {
-      setLoading(false);
+  const navigateRole = (user: any) => {
+    if (from?.pathname) {
+      navigate(from.pathname, { replace: true });
+      return;
     }
+    const role = (user.role || "").toLowerCase();
+    if (role === "leader") navigate("/leader", { replace: true });
+    else if (role === "coordinator") navigate("/coordinator", { replace: true });
+    else navigate("/admin", { replace: true });
+  };
+
+  const googleLogin = useGoogleLogin({
+    onSuccess: async (tokenResponse) => {
+      setError(null);
+      try {
+        const user = await loginWithGoogle(tokenResponse.access_token);
+        navigateRole(user);
+      } catch (err: any) {
+        const msg =
+          err?.response?.data?.message ||
+          err?.message ||
+          "No se pudo iniciar sesión con Google.";
+        setError(msg);
+      } finally {
+        setLoading(false);
+      }
+    },
+    onError: () => {
+      setError("Autenticación con Google cancelada o fallida.");
+      setLoading(false);
+    },
+    flow: "implicit",
+    scope: "openid email profile",
+  });
+
+  const handleGoogleClick = () => {
+    setError(null);
+    setLoading(true);
+    googleLogin();
   };
 
   return (
-    <div
-      className={[
-        "min-h-screen w-full",
-        isDark ? "bg-black" : "bg-gray-50",
-      ].join(" ")}
-    >
-      <div className="relative grid h-screen grid-cols-1 lg:grid-cols-[30%_70%]">
-        {/* Panel izquierdo */}
-        <div className="relative z-10 bg-white text-gray-900 lg:border-r lg:border-gray-100 lg:shadow-[8px_0_30px_rgba(0,0,0,0.08)]">
-          <div className="h-full flex items-center justify-center px-6">
-            <div className="w-full max-w-sm">
-              <div className="flex flex-col items-center text-center mb-12">
-                <img
-                  src={LogoCun}
-                  alt="Logo CUN"
-                  className="w-24 h-auto mb-1 select-none"
-                  draggable={false}
-                />
-                <p className="text-xs text-gray-500 mt-2">
-                  Acceso a consolas por rol
+    <div className="min-h-screen w-full bg-[#020308] relative overflow-hidden select-none">
+      <AnimatedBackground />
+
+      {/* Login-specific overlays */}
+      <div className="absolute inset-0 pointer-events-none z-[1]">
+        <div
+          className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[900px] h-[900px] rounded-full"
+          style={{
+            background:
+              "radial-gradient(circle, rgba(6,182,212,0.12) 0%, rgba(59,130,246,0.06) 40%, transparent 65%)",
+            filter: "blur(70px)",
+          }}
+        />
+        <div
+          className="absolute inset-0 opacity-[0.015]"
+          style={{
+            backgroundImage:
+              "linear-gradient(rgba(255,255,255,0.06) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.06) 1px, transparent 1px)",
+            backgroundSize: "60px 60px",
+          }}
+        />
+      </div>
+
+      {/* Center content */}
+      <div className="relative z-10 min-h-screen flex items-center justify-center px-4 py-8">
+        <div className="w-full max-w-sm">
+          {/* Logo */}
+          <div className="flex justify-center mb-8">
+            <img
+              src={LogoCun}
+              alt="CUN"
+              className="w-28 h-auto select-none"
+              draggable={false}
+            />
+          </div>
+
+          {/* Glass Card */}
+          <div className="relative group" ref={cardRef} onMouseMove={handleMouseMove}>
+            {/* Glow behind */}
+            <div className="absolute -inset-1 bg-gradient-to-r from-cyan-500/20 via-blue-500/20 to-cyan-500/20 rounded-2xl blur-xl opacity-40 group-hover:opacity-70 transition-all duration-700" />
+
+            {/* Card */}
+            <div
+              className="relative bg-[#060B16]/80 backdrop-blur-xl border border-white/[0.06] rounded-2xl p-8 shadow-[0_20px_80px_-20px_rgba(0,0,0,0.8)] overflow-hidden"
+              style={{
+                background: `radial-gradient(circle at ${mousePos.x}% ${mousePos.y}%, rgba(6,182,212,0.04) 0%, transparent 60%)`,
+              }}
+            >
+              {/* Top shimmer line */}
+              <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-cyan-500/30 to-transparent opacity-60" />
+
+              {/* Decorative corner dots */}
+              <div className="absolute top-3 left-3 w-1 h-1 rounded-full bg-cyan-400/30" />
+              <div className="absolute top-3 right-3 w-1 h-1 rounded-full bg-cyan-400/30" />
+              <div className="absolute bottom-3 left-3 w-1 h-1 rounded-full bg-cyan-400/30" />
+              <div className="absolute bottom-3 right-3 w-1 h-1 rounded-full bg-cyan-400/30" />
+
+              {/* Title */}
+              <div className="text-center mb-8 space-y-2">
+                <h1 className="text-3xl font-bold tracking-tight text-white">
+                  Facilitadores
+                </h1>
+                <p className="text-sm text-slate-300">
+                  Acceso seguro a la plataforma
                 </p>
               </div>
 
@@ -117,137 +140,98 @@ const LoginPage: React.FC = () => {
               {error && (
                 <div
                   role="alert"
-                  className="mb-4 rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700 flex items-start gap-2"
+                  className="mb-5 rounded-xl border border-red-500/20 bg-red-500/10 px-4 py-3 text-sm text-red-400 flex items-start gap-2"
                 >
-                  <AlertCircle className="mt-0.5 h-4 w-4 flex-shrink-0" />
+                  <svg
+                    className="mt-0.5 h-4 w-4 shrink-0"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M12 9v2m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                    />
+                  </svg>
                   <span className="leading-snug">{error}</span>
                 </div>
               )}
 
-              <form onSubmit={handleSubmit} className="space-y-4">
-                <input
-                  type="email"
-                  required
-                  placeholder="ejemplo@cun.edu.co"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  autoComplete="email"
-                  inputMode="email"
-                  aria-invalid={!!error}
-                  className={inputBase}
-                />
-
-                {/* Password con toggle */}
-                <div className="relative">
-                  <input
-                    type={showPass ? "text" : "password"}
-                    required
-                    placeholder="Contraseña"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    autoComplete="current-password"
-                    aria-invalid={!!error}
-                    className={`${inputBase} pr-12`}
-                  />
-
-                  <button
-                    type="button"
-                    onClick={() => setShowPass((v) => !v)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 rounded-lg p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 transition"
-                    aria-label={
-                      showPass ? "Ocultar contraseña" : "Mostrar contraseña"
-                    }
-                    tabIndex={-1}
+              {/* Google Button */}
+              <button
+                type="button"
+                onClick={handleGoogleClick}
+                disabled={loading}
+                className={[
+                  "w-full flex items-center justify-center gap-3 rounded-xl py-3 text-sm font-semibold",
+                  "bg-white hover:bg-gray-50 text-slate-800",
+                  "border border-slate-200/80 shadow-sm",
+                  "transition-all duration-200 active:scale-[0.98]",
+                  "focus:outline-none focus:ring-2 focus:ring-cyan-500/40 focus:ring-offset-2 focus:ring-offset-[#060B16]",
+                  loading ? "opacity-60 cursor-not-allowed" : "hover:shadow-md",
+                ].join(" ")}
+              >
+                {loading ? (
+                  <svg
+                    className="animate-spin h-5 w-5 text-slate-400"
+                    fill="none"
+                    viewBox="0 0 24 24"
                   >
-                    {showPass ? (
-                      <EyeOff className="h-4 w-4" />
-                    ) : (
-                      <Eye className="h-4 w-4" />
-                    )}
-                  </button>
-                </div>
+                    <circle
+                      className="opacity-25"
+                      cx="12"
+                      cy="12"
+                      r="10"
+                      stroke="currentColor"
+                      strokeWidth="4"
+                    />
+                    <path
+                      className="opacity-75"
+                      fill="currentColor"
+                      d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"
+                    />
+                  </svg>
+                ) : (
+                  <svg className="h-5 w-5 shrink-0" viewBox="0 0 24 24">
+                    <path
+                      d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 01-2.2 3.32v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.1z"
+                      fill="#4285F4"
+                    />
+                    <path
+                      d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
+                      fill="#34A853"
+                    />
+                    <path
+                      d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"
+                      fill="#FBBC05"
+                    />
+                    <path
+                      d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
+                      fill="#EA4335"
+                    />
+                  </svg>
+                )}
+                <span>
+                  {loading ? "Conectando..." : "Continuar con Google"}
+                </span>
+              </button>
 
-                <button
-                  type="submit"
-                  disabled={!canSubmit}
-                  className={[
-                    "w-full rounded-2xl py-3 text-sm font-bold uppercase tracking-widest text-white",
-                    "bg-gradient-to-r from-[#91DC00] to-[#31AB2E]",
-                    "transition active:scale-[0.99]",
-                    canSubmit
-                      ? "hover:brightness-105"
-                      : "opacity-70 cursor-not-allowed",
-                  ].join(" ")}
-                >
-                  {loading ? (
-                    <span className="inline-flex items-center justify-center gap-2">
-                      <Loader2 className="h-4 w-4 animate-spin" />
-                      Ingresando...
-                    </span>
-                  ) : (
-                    "Entrar"
-                  )}
-                </button>
-              </form>
-              {/* Sello equipo (sutil e institucional) */}
-              <div className="mt-6 flex flex-col items-center">
-                <div className="h-px w-24 bg-gray-200" />
-                <p className="mt-3 text-[10px] text-gray-400 text-center tracking-wide">
+              {/* Info text */}
+              <p className="mt-3 text-center text-[11px] text-slate-400">
+                Usa tu cuenta institucional{" "}
+                <span className="text-slate-500">@cun.edu.co</span>
+              </p>
+
+              {/* Divider + footer */}
+              <div className="mt-6 text-center">
+                <div className="h-px w-20 bg-white/[0.06] mx-auto mb-3" />
+                <p className="text-[10px] text-slate-500 tracking-wide">
                   Equipo de Desarrollo – Operaciones
                 </p>
               </div>
             </div>
-          </div>
-        </div>
-
-        {/* Panel derecho */}
-        <div className="relative hidden lg:block">
-          {/* Video */}
-          <video
-            src={BGVideo}
-            autoPlay
-            loop
-            muted
-            playsInline
-            className="absolute inset-0 h-full w-full object-cover"
-          />
-
-          {/* Difuminado lateral hacia el panel blanco */}
-          <div
-            className="absolute inset-y-0 left-0 w-16 pointer-events-none
-      bg-gradient-to-r from-white/80 via-white/25 to-transparent"
-          />
-
-          {/* Overlay radial oscuro */}
-          <div
-            className="absolute inset-0 pointer-events-none"
-            style={{
-              background: `
-        radial-gradient(
-          ellipse at center,
-          rgba(0,0,0,0.10) 0%,
-          rgba(0,0,0,0.45) 70%,
-          rgba(0,0,0,0.75) 100%
-        )
-      `,
-            }}
-          />
-
-          {/* Logos inferiores */}
-          <div className="absolute bottom-6 left-0 right-0 z-10 flex justify-center gap-6 px-6">
-            <img
-              src={Enciendete}
-              alt="Enciéndete"
-              className="h-[140px] object-contain select-none"
-              draggable={false}
-            />
-
-            <img
-              src={LogoCun2}
-              alt="CUN"
-              className="ml-auto mt-10 h-[70px] object-contain opacity-90 select-none"
-              draggable={false}
-            />
           </div>
         </div>
       </div>
