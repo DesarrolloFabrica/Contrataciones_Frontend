@@ -13,6 +13,39 @@ export function setUnauthorizedHandler(handler: (() => void) | null) {
   onUnauthorizedHandler = handler;
 }
 
+function decodeJwtPayload(token: string): Record<string, unknown> | null {
+  try {
+    const parts = token.split(".");
+    if (parts.length !== 3) return null;
+    const payload = parts[1]
+      .replace(/-/g, "+")
+      .replace(/_/g, "/");
+    const json = atob(payload);
+    return JSON.parse(json) as Record<string, unknown>;
+  } catch {
+    return null;
+  }
+}
+
+export function getTokenExpiration(token: string): Date | null {
+  const payload = decodeJwtPayload(token);
+  if (!payload || typeof payload.exp !== "number") return null;
+  return new Date(payload.exp * 1000);
+}
+
+export function isTokenExpired(token: string): boolean {
+  const exp = getTokenExpiration(token);
+  if (!exp) return false;
+  return Date.now() >= exp.getTime();
+}
+
+export function clearAuthStorage(): void {
+  if (typeof window !== "undefined") {
+    localStorage.removeItem(AUTH_STORAGE_KEY);
+    sessionStorage.removeItem(AUTH_STORAGE_KEY);
+  }
+}
+
 // ✅ Limpia comillas, espacios y slash final (evita caer a localhost por un espacio)
 const rawBaseUrl =
   (import.meta.env.VITE_API_URL as string | undefined) ??
@@ -40,13 +73,10 @@ function getStoredToken(): string | null {
   const raw = localStorage.getItem(AUTH_STORAGE_KEY);
   if (!raw) return null;
 
-  // Si guardaste el token como string plano
-  if (raw.startsWith("eyJ")) return raw; // JWT típico
+  if (raw.startsWith("eyJ")) return raw;
 
   try {
     const parsed = JSON.parse(raw) as any;
-
-    // Variantes comunes
     return (
       parsed?.accessToken ??
       parsed?.access_token ??
@@ -55,10 +85,27 @@ function getStoredToken(): string | null {
       null
     );
   } catch {
-    // Si no es JSON y no empieza con eyJ, igual puede ser token con comillas
     const cleaned = raw.replace(/^"+|"+$/g, "").trim();
     return cleaned.startsWith("eyJ") ? cleaned : null;
   }
+}
+
+export function getStoredAuth(): { token: string | null; expiresAt: number | null } {
+  const raw = localStorage.getItem(AUTH_STORAGE_KEY);
+  if (!raw) return { token: null, expiresAt: null };
+
+  let token: string | null = null;
+  let expiresAt: number | null = null;
+
+  try {
+    const parsed = JSON.parse(raw) as any;
+    token = parsed?.accessToken ?? parsed?.access_token ?? parsed?.token ?? parsed?.jwt ?? null;
+    expiresAt = parsed?.expiresAt ?? null;
+  } catch {
+    if (raw.startsWith("eyJ")) token = raw;
+  }
+
+  return { token, expiresAt };
 }
 
 api.interceptors.request.use((config: InternalAxiosRequestConfig) => {
@@ -92,9 +139,8 @@ api.interceptors.response.use(
     console.error("[apiClient] ERROR", status, url, data ?? error.message);
 
     if (status === 401) {
-      console.warn(
-        "[apiClient] 401 detectado. No borro cun-auth automáticamente.",
-      );
+      clearAuthStorage();
+      delete api.defaults.headers.common["Authorization"];
       onUnauthorizedHandler?.();
     }
     return Promise.reject(error);

@@ -1,6 +1,6 @@
 // src/context/AuthContext.tsx
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
-import api, { AUTH_STORAGE_KEY, setUnauthorizedHandler } from "../services/apiClient";
+import api, { AUTH_STORAGE_KEY, setUnauthorizedHandler, isTokenExpired, getTokenExpiration, clearAuthStorage } from "../services/apiClient";
 import { auditAppend } from "../services/auditService";
 import type { AuditActor } from "../types";
 
@@ -22,6 +22,7 @@ export interface AuthUser {
 type StoredAuth = {
   accessToken?: string;
   user?: AuthUser;
+  expiresAt?: number;
 };
 
 interface AuthContextValue {
@@ -56,7 +57,20 @@ function readStoredAuth(): StoredAuth | null {
 
   try {
     const parsed = JSON.parse(raw) as StoredAuth;
-    if (parsed?.accessToken) setAxiosAuthHeader(parsed.accessToken);
+    if (!parsed?.accessToken) {
+      localStorage.removeItem(AUTH_STORAGE_KEY);
+      setAxiosAuthHeader(undefined);
+      return null;
+    }
+
+    if (isTokenExpired(parsed.accessToken)) {
+      console.info("[AuthContext] Token expirado al iniciar app, limpiando sesión");
+      clearAuthStorage();
+      setAxiosAuthHeader(undefined);
+      return null;
+    }
+
+    setAxiosAuthHeader(parsed.accessToken);
     return parsed;
   } catch (err) {
     console.warn("No se pudo leer auth desde localStorage", err);
@@ -86,11 +100,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
             const parsed = JSON.parse(raw) as {
               accessToken?: string;
               user?: AuthUser;
+              expiresAt?: number;
             };
 
             localStorage.setItem(
               AUTH_STORAGE_KEY,
-              JSON.stringify({ accessToken: parsed.accessToken, user: next })
+              JSON.stringify({ accessToken: parsed.accessToken, user: next, expiresAt: parsed.expiresAt })
             );
           } else {
             localStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify({ user: next }));
@@ -147,9 +162,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
     };
 
     setAxiosAuthHeader(jwt);
+
+    const expDate = getTokenExpiration(jwt);
+    const expiresAt = expDate ? expDate.getTime() : null;
+
     localStorage.setItem(
       AUTH_STORAGE_KEY,
-      JSON.stringify({ accessToken: jwt, user: authUser } satisfies StoredAuth)
+      JSON.stringify({ accessToken: jwt, user: authUser, expiresAt } satisfies StoredAuth)
     );
 
     const actor: AuditActor = {
@@ -185,7 +204,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
     }
 
     setUser(null);
-    localStorage.removeItem(AUTH_STORAGE_KEY);
+    clearAuthStorage();
     setAxiosAuthHeader(undefined);
     setIsReady(true);
   }, [user]);
