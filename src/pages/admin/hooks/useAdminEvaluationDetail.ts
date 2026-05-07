@@ -1,5 +1,5 @@
-// src/pages/admin/hooks/useAdminEvaluationDetail.ts
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import type {
   AnalysisResult,
   InterviewData,
@@ -7,7 +7,7 @@ import type {
 } from "../../../types";
 import { getTeacherEvaluationById } from "../../../services/teachersService";
 import { generateAnalysisPdfFromData } from "../../../services/pdfReport";
-import { adminMockDb } from "../utils/adminMockDb";
+import { queryKeys } from "../../../services/queryKeys";
 
 type DetailPayload = {
   analysis: AnalysisResult;
@@ -23,11 +23,33 @@ export function useAdminEvaluationDetail(params: {
   const { evaluations } = params;
 
   const [selectedId, setSelectedId] = useState<string | null>(null);
-  const [loadingDetail, setLoadingDetail] = useState(false);
   const [selectedDetail, setSelectedDetail] = useState<DetailPayload | null>(null);
-
   const [errorDetail, setErrorDetail] = useState<string | null>(null);
   const requestSeqRef = useRef(0);
+
+  const { data: detailData, isLoading: loadingDetail } = useQuery({
+    queryKey: selectedId ? queryKeys.evaluations.detail(selectedId) : ["evaluations", "detail", null],
+    queryFn: selectedId ? () => getTeacherEvaluationById(selectedId) : async () => null,
+    enabled: !!selectedId,
+    staleTime: 1000 * 60 * 5,
+  });
+
+  useEffect(() => {
+    if (!detailData || !selectedId) return;
+
+    const mySeq = ++requestSeqRef.current;
+
+    const analysis: AnalysisResult = detailData.aiRawJson;
+    const interview: InterviewData =
+      (detailData.interview as InterviewData) ?? ({} as InterviewData);
+
+    setSelectedDetail({ analysis, interview, raw: detailData });
+    setErrorDetail(null);
+
+    return () => {
+      if (mySeq !== requestSeqRef.current) return;
+    };
+  }, [detailData, selectedId]);
 
   const selectedSummary = useMemo(() => {
     if (!selectedId) return null;
@@ -35,44 +57,18 @@ export function useAdminEvaluationDetail(params: {
   }, [selectedId, evaluations]);
 
   const resetDetailState = useCallback(() => {
-    setLoadingDetail(false);
     setSelectedDetail(null);
     setErrorDetail(null);
   }, []);
 
   const handleSelectEvaluation = useCallback(async (id: string) => {
     setSelectedId(id);
-    setLoadingDetail(true);
     setSelectedDetail(null);
     setErrorDetail(null);
 
     try {
       localStorage.setItem(LS_SELECTED_EVAL_KEY, id);
     } catch {}
-
-    adminMockDb.logEvaluationEvent(id, "DETAIL_VIEWED", { source: "AdminConsole" });
-
-    const mySeq = ++requestSeqRef.current;
-
-    try {
-      const detail = await getTeacherEvaluationById(id);
-      if (mySeq !== requestSeqRef.current) return;
-
-      const analysis: AnalysisResult = detail.aiRawJson;
-      const interview: InterviewData =
-        (detail.interview as InterviewData) ?? ({} as InterviewData);
-
-      setSelectedDetail({ analysis, interview, raw: detail });
-    } catch (e) {
-      if (mySeq !== requestSeqRef.current) return;
-
-      console.error("Admin: error cargando detalle", e);
-      setSelectedDetail(null);
-      setErrorDetail("No se pudo cargar el detalle de esta evaluación.");
-    } finally {
-      if (mySeq !== requestSeqRef.current) return;
-      setLoadingDetail(false);
-    }
   }, []);
 
   const clearSelection = useCallback(() => {
@@ -106,10 +102,8 @@ export function useAdminEvaluationDetail(params: {
     }
 
     handleSelectEvaluation(saved);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [evaluations.length, selectedId]);
+  }, [evaluations.length, selectedId, handleSelectEvaluation]);
 
-  // ✅ NUEVO: arma contexto candidato desde summary + raw
   const candidateContext = useMemo(() => {
     const sum: any = selectedSummary ?? {};
     const raw: any = selectedDetail?.raw ?? {};
@@ -123,7 +117,6 @@ export function useAdminEvaluationDetail(params: {
       {};
 
     return {
-      // lo más importante:
       fullName:
         cand?.fullName ??
         cand?.name ??
@@ -148,13 +141,11 @@ export function useAdminEvaluationDetail(params: {
         raw?.programName ??
         "",
 
-      // opcional: edad/fecha nacimiento si existe
       age:
         cand?.age ??
         raw?.age ??
         "",
 
-      // útil para el PDF
       evaluationId: selectedId ?? "",
     };
   }, [selectedSummary, selectedDetail?.raw, selectedId]);
@@ -168,15 +159,9 @@ export function useAdminEvaluationDetail(params: {
         selectedDetail.interview,
         {
           download: true,
-
-          // ✅ CLAVE: pasar metadata de candidato al PDF
           candidate: candidateContext,
         }
       );
-
-      adminMockDb.logEvaluationEvent(selectedId, "PDF_EXPORTED", {
-        via: "AdminDetailPanel",
-      });
     } catch (e) {
       console.error("Admin: error exportando PDF", e);
       alert("No se pudo generar el PDF.");

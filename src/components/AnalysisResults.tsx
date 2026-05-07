@@ -14,6 +14,9 @@ import {
   Sparkles,
   Activity,
   BrainCircuit,
+  IdCard,
+  Calendar,
+  Briefcase,
 } from "lucide-react";
 
 import { AnalysisResult, InterviewData } from "../types";
@@ -305,6 +308,25 @@ const AnalysisResults: React.FC<AnalysisResultsProps> = ({
               </h1>
 
               <div
+                className={`flex flex-wrap gap-4 gap-y-2 text-sm ${
+                  isDark ? "text-slate-400" : "text-slate-500"
+                }`}
+              >
+                {interviewData.documentNumber && (
+                  <div className="flex items-center gap-2">
+                    <IdCard className="w-4 h-4 text-cyan-500" />
+                    <span className="font-medium">{interviewData.documentNumber}</span>
+                  </div>
+                )}
+                {interviewData.age && (
+                  <div className="flex items-center gap-2">
+                    <Calendar className="w-4 h-4 text-cyan-500" />
+                    <span>{interviewData.age} años</span>
+                  </div>
+                )}
+              </div>
+
+              <div
                 className={`flex flex-wrap gap-x-6 gap-y-2 text-sm font-medium ${
                   isDark ? "text-slate-400" : "text-slate-500"
                 }`}
@@ -322,6 +344,17 @@ const AnalysisResults: React.FC<AnalysisResultsProps> = ({
                   </div>
                 )}
               </div>
+
+              {interviewData.previousExperience && (
+                <div
+                  className={`mt-3 flex items-start gap-2 text-xs leading-relaxed ${
+                    isDark ? "text-slate-500" : "text-slate-400"
+                  }`}
+                >
+                  <Briefcase className="w-3.5 h-3.5 text-cyan-500 shrink-0 mt-0.5" />
+                  <span>{interviewData.previousExperience}</span>
+                </div>
+              )}
             </div>
 
             {/* Right: Decision card */}

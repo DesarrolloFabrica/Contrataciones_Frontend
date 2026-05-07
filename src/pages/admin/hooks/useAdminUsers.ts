@@ -1,5 +1,5 @@
-// src/pages/admin/hooks/useAdminUsers.ts
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import type {
   AdminUser,
   AdminUserRole,
@@ -12,7 +12,10 @@ import {
   usersService,
   type BackendUser,
   type BackendRole,
+  type CreateBackendUserDto,
+  type UpdateBackendUserDto,
 } from "../../../services/usersService";
+import { queryKeys } from "../../../services/queryKeys";
 
 type RoleFilter = AdminUserRole | "ALL";
 type StatusFilter = AdminUserStatus | "ALL";
@@ -88,53 +91,25 @@ export function useAdminUsers(scope: ScopeArgs) {
   const selectedSchool = scope?.selectedSchool ?? null;
   const selectedProgram = scope?.selectedProgram ?? null;
 
-  const [users, setUsers] = useState<AdminUser[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-
   const [search, setSearch] = useState("");
   const [roleFilter, setRoleFilter] = useState<RoleFilter>("ALL");
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("ALL");
-
   const [editUser, setEditUser] = useState<AdminUser | null>(null);
 
-  const inFlightRef = useRef(false);
+  const queryClient = useQueryClient();
 
-  const loadUsers = useCallback(async () => {
-    if (inFlightRef.current) return;
-    inFlightRef.current = true;
+  const { data: backendUsers = [], isLoading, error: queryError } = useQuery<BackendUser[]>({
+    queryKey: queryKeys.users.list(),
+    queryFn: usersService.list,
+  });
 
-    setLoading(true);
-    setError(null);
+  const users = useMemo(() => {
+    return (backendUsers ?? []).map(backendToAdminUser);
+  }, [backendUsers]);
 
-    try {
-      const backendUsers = await usersService.list();
-      const mapped = (backendUsers ?? []).map(backendToAdminUser);
-      setUsers(mapped);
-    } catch (e: any) {
-      console.error(e);
-      const msg =
-        e?.response?.data?.message ||
-        e?.message ||
-        "No se pudo cargar la lista de usuarios.";
-      setError(msg);
-      setUsers([]);
-    } finally {
-      inFlightRef.current = false;
-      setLoading(false);
-    }
-  }, []);
-
-  useEffect(() => {
-    let alive = true;
-    (async () => {
-      if (!alive) return;
-      await loadUsers();
-    })();
-    return () => {
-      alive = false;
-    };
-  }, [loadUsers]);
+  const error = queryError
+    ? (queryError as Error)?.message ?? "No se pudo cargar la lista de usuarios."
+    : null;
 
   const scopedUsers = useMemo(() => {
     let base = [...(users ?? [])];
@@ -200,6 +175,29 @@ export function useAdminUsers(scope: ScopeArgs) {
     return { total, active, inactive, leaders, coordinators, admins };
   }, [filteredUsers]);
 
+  const createMutation = useMutation({
+    mutationFn: async (dto: CreateBackendUserDto) => usersService.create(dto),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.users.list() });
+    },
+  });
+
+  const updateMutation = useMutation({
+    mutationFn: ({ userId, dto }: { userId: string; dto: UpdateBackendUserDto }) =>
+      usersService.update(userId, dto),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.users.list() });
+    },
+  });
+
+  const setActiveMutation = useMutation({
+    mutationFn: ({ userId, isActive }: { userId: string; isActive: boolean }) =>
+      usersService.setActive(userId, isActive),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.users.list() });
+    },
+  });
+
   const createUser = useCallback(
     async (dto: CreateAdminUserDto): Promise<void> => {
       const fullName = buildFullName(dto);
@@ -208,17 +206,15 @@ export function useAdminUsers(scope: ScopeArgs) {
       const backendRole = uiRoleToBackend(uiRole);
       const schoolId = (dto as any).schoolId ?? null;
 
-      await usersService.create({
+      await createMutation.mutateAsync({
         email,
         fullName,
         role: backendRole,
         schoolId,
         isActive: true,
       } as any);
-
-      await loadUsers();
     },
-    [loadUsers]
+    [createMutation]
   );
 
   const updateUser = useCallback(
@@ -237,10 +233,9 @@ export function useAdminUsers(scope: ScopeArgs) {
       if ((dto as any).schoolId !== undefined) payload.schoolId = (dto as any).schoolId;
       if ((dto as any).cedula !== undefined) payload.cedula = String((dto as any).cedula).trim();
 
-      await usersService.update(userId, payload);
-      await loadUsers();
+      await updateMutation.mutateAsync({ userId, dto: payload });
     },
-    [loadUsers]
+    [updateMutation]
   );
 
   const toggleActive = useCallback(
@@ -249,11 +244,10 @@ export function useAdminUsers(scope: ScopeArgs) {
       if (!u) return { ok: false };
 
       const nextActive = u.status !== "ACTIVE";
-      await usersService.setActive(userId, nextActive);
-      await loadUsers();
+      await setActiveMutation.mutateAsync({ userId, isActive: nextActive });
       return { ok: true };
     },
-    [users, loadUsers]
+    [users, setActiveMutation]
   );
 
   const openEdit = (u: AdminUser) => setEditUser(u);
@@ -261,7 +255,7 @@ export function useAdminUsers(scope: ScopeArgs) {
   return {
     users,
     filteredUsers,
-    loading,
+    loading: isLoading,
     error,
 
     search,
@@ -281,6 +275,6 @@ export function useAdminUsers(scope: ScopeArgs) {
     updateUser,
     toggleActive,
 
-    reload: loadUsers,
+    reload: () => queryClient.invalidateQueries({ queryKey: queryKeys.users.list() }),
   };
 }

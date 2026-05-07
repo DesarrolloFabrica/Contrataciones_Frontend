@@ -128,10 +128,16 @@ export interface TeacherEvaluationSummary {
 
   coordinatorDecisionStatus?: DecisionStatusApi | null;
   coordinatorDecisionComment?: string | null;
+  coordinatorDecidedAt?: string | null;
+
+  /** @deprecated Use coordinatorDecidedAt instead */
   coordinatorDecisionAt?: string | null;
 
   adminDecisionStatus?: DecisionStatusApi | null;
   adminDecisionComment?: string | null;
+  adminDecidedAt?: string | null;
+
+  /** @deprecated Use adminDecidedAt instead */
   adminDecisionAt?: string | null;
 
   interviewerUserId?: string | null;

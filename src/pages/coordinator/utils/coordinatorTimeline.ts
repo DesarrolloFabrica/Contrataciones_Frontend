@@ -51,6 +51,7 @@ export function buildTimelineEvents(
     summary.coordinatorDecisionStatus,
   );
   const hasCoordDecision = coordStatus !== "PENDING";
+  const coordDate = summary.coordinatorDecidedAt ?? summary.coordinatorDecisionAt ?? null;
   events.push({
     id: "coordinator-decision",
     label: `Decisión coordinador${
@@ -60,8 +61,8 @@ export function buildTimelineEvents(
           : " (Rechazado)"
         : ""
     }`,
-    date: summary.coordinatorDecisionAt ?? null,
-    actor: summary.coordinatorDecisionAt ? "Coordinador" : null,
+    date: coordDate,
+    actor: coordDate ? "Coordinador" : null,
     status: hasCoordDecision ? "completed" : "pending",
   });
 
@@ -70,6 +71,7 @@ export function buildTimelineEvents(
     summary.adminDecisionStatus,
   );
   const hasAdminDecision = adminStatus !== "PENDING";
+  const adminDate = summary.adminDecidedAt ?? summary.adminDecisionAt ?? null;
   events.push({
     id: "admin-decision",
     label: `Decisión administración${
@@ -79,8 +81,8 @@ export function buildTimelineEvents(
           : " (Rechazado)"
         : ""
     }`,
-    date: summary.adminDecisionAt ?? null,
-    actor: summary.adminDecisionAt ? "Administrador" : null,
+    date: adminDate,
+    actor: adminDate ? "Administrador" : null,
     status: hasAdminDecision ? "completed" : "pending",
   });
 

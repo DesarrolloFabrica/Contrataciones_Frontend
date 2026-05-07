@@ -20,6 +20,7 @@ export interface AdminMetrics {
   recommended: number;
   caution: number;
   notRecommended: number;
+  noAnalysis: number;
 }
 
 export interface SchoolSummary {
@@ -100,7 +101,7 @@ export interface UpdateAdminUserDto {
 // ✅ SOPORTE: Historial, asignaciones, decisiones y trazabilidad
 
 /** Para auditoría: sobre qué entidad aplica el evento */
-export type AdminAuditEntityType = "EVALUATION" | "USER" | "SYSTEM";
+export type AdminAuditEntityType = "EVALUATION" | "USER" | "SYSTEM" | "TEACHER_CANDIDATE" | "CANDIDATE_DOCUMENT" | "HIRING_REQUEST" | "TEACHER_EVALUATION";
 
 /** Acciones que el Admin/Coordinador pueden generar (mock hoy, backend mañana) */
 export type AdminAuditAction =
@@ -108,11 +109,28 @@ export type AdminAuditAction =
   | "PDF_EXPORTED"
   | "USER_CREATED"
   | "USER_UPDATED"
+  | "USER_ACTIVATED"
+  | "USER_DEACTIVATED"
   | "USER_TOGGLED"
   | "PASSWORD_RESET"
   | "COORDINATOR_ASSIGNED"
   | "COORDINATOR_DECISION_SAVED"
+  | "COORDINATOR_DECISION_CREATED"
+  | "COORDINATOR_DECISION_UPDATED"
   | "ADMIN_DECISION_SAVED"
+  | "ADMIN_DECISION_BLOCKED"
+  | "CANDIDATE_CREATED"
+  | "CANDIDATE_UPDATED"
+  | "EVALUATION_SUBMITTED"
+  | "EVALUATION_UPDATED"
+  | "EVALUATION_HIRING_REQUEST_ASSOCIATED"
+  | "INTERVIEW_CREATED"
+  | "DOCUMENT_UPLOADED"
+  | "DOCUMENT_LINK_REGISTERED"
+  | "RESUME_MARKED_PRIMARY"
+  | "EVALUATION_REPORT_ATTACHED"
+  | "HIRING_REQUEST_CREATED"
+  | "HIRING_REQUEST_UPDATED"
   | "SETTINGS_UPDATED"; 
 
 /** Evento de auditoría */

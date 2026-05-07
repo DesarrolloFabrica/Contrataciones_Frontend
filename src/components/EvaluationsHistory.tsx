@@ -12,6 +12,7 @@ import {
   GraduationCap,
   Download,
   Database,
+  IdCard,
 } from "lucide-react";
 import type { TeacherEvaluationSummary } from "../types";
 import { listTeacherEvaluations } from "../services/teachersService";
@@ -363,11 +364,12 @@ const EvaluationsHistory: React.FC<EvaluationsHistoryProps> = ({
                         {ev.candidate?.fullName || "Sin Nombre"}
                       </p>
                       <p
-                        className={`text-[11px] font-mono mt-0.5 truncate ${
+                        className={`text-[11px] font-mono mt-0.5 truncate flex items-center gap-1 ${
                           isDark ? "text-slate-600" : "text-slate-400"
                         }`}
                       >
-                        ID: {String(ev.id).slice(0, 8)}
+                        <IdCard className="w-3 h-3 shrink-0" />
+                        {ev.candidate?.documentNumber || ev.candidate?.document_number || "N/A"}
                       </p>
                     </div>
                   </div>

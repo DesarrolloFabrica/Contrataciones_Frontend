@@ -1,38 +1,21 @@
-// src/pages/coordinator/hooks/useCoordinatorEvaluations.ts
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import type { TeacherEvaluationSummary } from "../../../types";
 import { listTeacherEvaluations } from "../../../services/teachersService";
+import { queryKeys } from "../../../services/queryKeys";
 import type { LocalDecision, DecisionFilter } from "../types";
 
 export function useCoordinatorEvaluations() {
-  const [evaluations, setEvaluations] = useState<TeacherEvaluationSummary[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-
   const [search, setSearch] = useState("");
   const [decisionFilter, setDecisionFilter] = useState<DecisionFilter>("ALL");
+  const [localDecisions, setLocalDecisions] = useState<Record<string, LocalDecision>>({});
 
-  // mapa local id -> decisión (para que la lista y los filtros funcionen visualmente)
-  const [localDecisions, setLocalDecisions] = useState<
-    Record<string, LocalDecision>
-  >({});
+  const { data: evaluations = [], isLoading, error: queryError } = useQuery<TeacherEvaluationSummary[]>({
+    queryKey: queryKeys.evaluations.list(),
+    queryFn: listTeacherEvaluations,
+  });
 
-  useEffect(() => {
-    const load = async () => {
-      setLoading(true);
-      setError(null);
-      try {
-        const data = await listTeacherEvaluations();
-        setEvaluations(data);
-      } catch (err) {
-        console.error("Error al cargar evaluaciones (coordinador):", err);
-        setError("No se pudo cargar el historial de evaluaciones.");
-      } finally {
-        setLoading(false);
-      }
-    };
-    load();
-  }, []);
+  const error = queryError ? "No se pudo cargar el historial de evaluaciones." : null;
 
   const filteredEvaluations = useMemo(() => {
     let base = [...evaluations];
@@ -51,8 +34,7 @@ export function useCoordinatorEvaluations() {
       base = base.filter((ev) => {
         const status =
           localDecisions[ev.id] ??
-          ((ev.coordinatorDecisionStatus as LocalDecision | undefined) ??
-            "PENDIENTE");
+          ((ev.coordinatorDecisionStatus as LocalDecision | undefined) ?? "PENDIENTE");
         return status === decisionFilter;
       });
     }
@@ -72,9 +54,8 @@ export function useCoordinatorEvaluations() {
 
   return {
     evaluations,
-    loading,
+    loading: isLoading,
     error,
-    setError,
 
     search,
     setSearch,

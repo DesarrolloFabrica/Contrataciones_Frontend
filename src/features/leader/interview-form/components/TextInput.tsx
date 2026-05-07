@@ -9,6 +9,7 @@ interface TextInputProps {
   type?: string;
   placeholder?: string;
   required?: boolean;
+  disabled?: boolean;
   inputMode?: React.HTMLAttributes<HTMLInputElement>["inputMode"];
   pattern?: string;
 }
@@ -20,6 +21,7 @@ export const TextInput: React.FC<TextInputProps> = ({
   type = "text",
   placeholder,
   required = true,
+  disabled = false,
   inputMode,
   pattern,
 }) => {
@@ -36,6 +38,7 @@ export const TextInput: React.FC<TextInputProps> = ({
       className={isDark ? darkInputStyles : lightInputStyles}
       placeholder={placeholder}
       required={required}
+      disabled={disabled}
       autoComplete="off"
       inputMode={inputMode}
       pattern={pattern}

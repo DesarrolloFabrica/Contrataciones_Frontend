@@ -55,6 +55,8 @@ export type TeacherCandidateSearchItemDto = {
   documentNumber?: string | number | null;
   fullName?: string | null;
   age?: number | null;
+  email?: string | null;
+  phone?: string | null;
 
   // opcionales (si backend los manda)
   schoolId?: string | null;
@@ -92,6 +94,8 @@ export type CreateTeacherCandidatePayload = {
   documentNumber: string;
   fullName: string;
   age?: number | null;
+  email?: string | null;
+  phone?: string | null;
   schoolId: string;
   programId: string;
 };
@@ -101,6 +105,8 @@ export type CreateTeacherCandidateResponse = {
   documentNumber?: string | number | null;
   fullName?: string | null;
   age?: number | null;
+  email?: string | null;
+  phone?: string | null;
   schoolId?: string | null;
   programId?: string | null;
   schoolName?: string | null;
@@ -127,11 +133,11 @@ export async function createTeacherCandidate(
 export async function createTeacherEvaluation(
   orgId: string,
   form: TeacherForm,
-  aiResult: TeacherAiResult
+  aiResult: TeacherAiResult,
+  options?: { hiringRequestId?: string | null }
 ): Promise<TeacherEvaluationResponse> {
   const candidate: any = (form as any)?.candidate ?? {};
 
-  // Acepta ambos nombres (camelCase y snake_case)
   const documentNumber = String(
     candidate.documentNumber ?? candidate.document_number ?? ""
   ).trim();
@@ -140,7 +146,6 @@ export async function createTeacherEvaluation(
     throw new Error("No se encontró documentNumber del candidato para crear la evaluación.");
   }
 
-  // 1) Intentar encontrar el candidato (lo más común si ya existe)
   let candidateId: string | null = null;
 
   const found = await searchTeacherCandidates({
@@ -149,7 +154,6 @@ export async function createTeacherEvaluation(
     limit: 8,
   });
 
-  // si hay match exacto por cédula úsalo; si no, usa el primero
   const exact =
     found.find(
       (c) => String(c.documentNumber ?? "").trim() === documentNumber
@@ -157,7 +161,6 @@ export async function createTeacherEvaluation(
 
   if (exact?.id) candidateId = exact.id;
 
-  // 2) Si no existe, intentar crearlo (si tenemos IDs necesarios)
   if (!candidateId) {
     const fullName = String(candidate.fullName ?? "").trim();
     const age = candidate.age ?? null;
@@ -165,7 +168,6 @@ export async function createTeacherEvaluation(
     const schoolId = String(candidate.schoolId ?? candidate.school_id ?? "").trim();
     const programId = String(candidate.programId ?? candidate.program_id ?? "").trim();
 
-    // Si no tienes schoolId/programId, no podemos crear el candidato
     if (!fullName || !schoolId || !programId) {
       throw new Error(
         "El candidato no existe y faltan datos para crearlo (fullName/schoolId/programId). " +
@@ -185,7 +187,6 @@ export async function createTeacherEvaluation(
 
       candidateId = created.id;
     } catch (err: any) {
-      // Si ya existe (409), búscalo otra vez
       if (err?.response?.status === 409) {
         const again = await searchTeacherCandidates({
           orgId,
@@ -194,29 +195,63 @@ export async function createTeacherEvaluation(
         });
         candidateId = again?.[0]?.id ?? null;
       } else {
-        throw err;
+        const errorMsg = err?.response?.data?.message ?? err?.message ?? "Error creando candidato";
+        throw new Error(`No se pudo crear el candidato: ${errorMsg}`);
       }
     }
   }
 
   if (!candidateId) {
     throw new Error(
-      "No se pudo resolver candidateId (UUID). Revisa endpoints /teachers/candidates y /teachers/candidates/search."
+      `No se pudo resolver candidateId para cédula ${documentNumber}. Verifica que el candidato exista en la organización.`
     );
   }
 
-  // 3) Ahora sí: crear evaluación enviando candidateId
-  const { data } = await apiClient.post<TeacherEvaluationResponse>(
-    "/teachers/evaluations",
-    {
-      orgId,
-      candidateId,
-      form,
-      aiResult,
-    }
-  );
+  const payload = {
+    orgId,
+    candidateId,
+    hiringRequestId: options?.hiringRequestId ?? null,
+    form,
+    aiResult,
+  };
 
-  return data;
+  try {
+    const { data } = await apiClient.post<TeacherEvaluationResponse>(
+      "/teachers/evaluations",
+      payload
+    );
+
+    return data;
+  } catch (err: any) {
+    const status = err?.response?.status;
+    const backendMessage = err?.response?.data?.message ?? err?.message;
+
+    if (status === 404) {
+      throw new Error(
+        backendMessage ??
+          "Candidato no encontrado para la organización actual. Verifica que el candidato pertenezca a la organización correcta."
+      );
+    }
+
+    if (status === 403) {
+      throw new Error(
+        backendMessage ??
+          "No tienes permisos para evaluar este candidato. Verifica que pertenezca a tu escuela."
+      );
+    }
+
+    if (status === 409) {
+      throw new Error(
+        backendMessage ??
+          "Esta evaluación ya tiene decisiones y no se puede sobrescribir."
+      );
+    }
+
+    throw new Error(
+      backendMessage ??
+        `Error al crear la evaluación (HTTP ${status ?? "desconocido"}). Revisa la consola para más detalles.`
+    );
+  }
 }
 
 

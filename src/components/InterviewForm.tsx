@@ -16,6 +16,7 @@ import {
 
 import {
   createTeacherCandidate,
+  searchTeacherCandidates,
   type TeacherCandidateSearchItemDto,
 } from "../services/teachersService";
 
@@ -49,6 +50,7 @@ import {
 } from "../features/leader/interview-form/components/InterviewWizardStepper";
 import { InterviewWizardNavigation } from "../features/leader/interview-form/components/InterviewWizardNavigation";
 import { InterviewReviewStep } from "../features/leader/interview-form/components/InterviewReviewStep";
+import type { CreateCandidateModalPayload } from "../features/leader/interview-form/components/CreateCandidateModal";
 
 import { useInterviewDraft } from "../features/leader/interview-form/hooks/useInterviewDraft";
 import { useLeaderSchoolPrograms } from "../features/leader/interview-form/hooks/useLeaderSchoolPrograms";
@@ -103,6 +105,10 @@ const InterviewForm: React.FC<InterviewFormProps> = ({
   });
 
   const initialHiringContext: HiringContextDraft = {
+    hiringRequestId: null,
+    contextMode: "MANUAL",
+    selectedVacancyLabel: "",
+    coordination: "",
     targetRole: "",
     processType: "",
     requestingArea: "",
@@ -132,7 +138,7 @@ const InterviewForm: React.FC<InterviewFormProps> = ({
   );
 
   // ── Schools / Programs ──
-  const { normalizedSchools, schoolsLoading } = useLeaderSchoolPrograms(
+  const { normalizedSchools, schoolsLoading, schoolsLoadError } = useLeaderSchoolPrograms(
     isLeader,
     leaderSchoolId,
     user,
@@ -141,35 +147,41 @@ const InterviewForm: React.FC<InterviewFormProps> = ({
   const [availablePrograms, setAvailablePrograms] = useState<string[]>([]);
 
   const selectedSchool = useMemo(
-    () => normalizedSchools.find((s) => s.name === formData.school) ?? null,
-    [normalizedSchools, formData.school],
+    () =>
+      normalizedSchools.find((s) => s.id === formData.schoolId) ??
+      normalizedSchools.find((s) => s.name === formData.school) ??
+      null,
+    [normalizedSchools, formData.school, formData.schoolId],
   );
 
   const selectedProgramObj = useMemo(() => {
     if (!selectedSchool || !formData.program) return null;
-    return (selectedSchool.programs.find((p) => p.name === formData.program) ?? null);
-  }, [selectedSchool, formData.program]);
+    return (
+      selectedSchool.programs.find((p) => p.id === formData.programId) ??
+      selectedSchool.programs.find((p) => p.name === formData.program) ??
+      null
+    );
+  }, [selectedSchool, formData.program, formData.programId]);
 
   const resolvedSchoolId = useMemo(() => {
-    if (isLeader && leaderSchoolId) return leaderSchoolId;
-    return selectedSchool?.id ?? null;
-  }, [isLeader, leaderSchoolId, selectedSchool?.id]);
+    return formData.schoolId ?? selectedSchool?.id ?? (isLeader && leaderSchoolId ? leaderSchoolId : null);
+  }, [formData.schoolId, isLeader, leaderSchoolId, selectedSchool?.id]);
 
   const resolvedProgramId = useMemo(() => {
-    return selectedProgramObj?.id ?? null;
-  }, [selectedProgramObj?.id]);
+    return formData.programId ?? selectedProgramObj?.id ?? null;
+  }, [formData.programId, selectedProgramObj?.id]);
 
   // LÍDER: auto-selecciona escuela por schoolId
   useEffect(() => {
     if (!isLeader || !leaderSchoolId) return;
     if (schoolsLoading) return;
 
-    const s = normalizedSchools.find((x) => String(x.id ?? "") === leaderSchoolId);
+    const s = normalizedSchools.find((x) => x.id === leaderSchoolId);
     if (!s) return;
 
     setFormData((prev) => {
       if (prev.school?.trim()) return prev;
-      return { ...prev, school: s.name, program: "" };
+      return { ...prev, school: s.name, schoolId: s.id, program: "", programId: null };
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isLeader, leaderSchoolId, schoolsLoading, normalizedSchools]);
@@ -182,11 +194,11 @@ const InterviewForm: React.FC<InterviewFormProps> = ({
       setAvailablePrograms(progs);
 
       if (formData.program && !progs.includes(formData.program)) {
-        setFormData((prev) => ({ ...prev, program: "" }));
+        setFormData((prev) => ({ ...prev, program: "", programId: null }));
       }
     } else {
       setAvailablePrograms([]);
-      if (formData.program) setFormData((prev) => ({ ...prev, program: "" }));
+      if (formData.program) setFormData((prev) => ({ ...prev, program: "", programId: null }));
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [formData.school, normalizedSchools]);
@@ -198,13 +210,55 @@ const InterviewForm: React.FC<InterviewFormProps> = ({
   const { candidateMatches, isSearching, lookupError, resetSearch, setLookupError } =
     useCandidateLookup(ORG_ID, formData.documentNumber);
 
+  const exactCandidateMatch = useMemo(() => {
+    const documentNumber = formData.documentNumber.trim();
+    if (!documentNumber) return null;
+    return candidateMatches.find(
+      (candidate) => String(candidate.documentNumber ?? "").trim() === documentNumber,
+    ) ?? null;
+  }, [candidateMatches, formData.documentNumber]);
+
+  const [isCreatingCandidate, setIsCreatingCandidate] = useState(false);
+  const [resumeError, setResumeError] = useState<string | null>(null);
+  const [identityError, setIdentityError] = useState<string | null>(null);
+  const [candidateStatus, setCandidateStatus] = useState<string | null>("Busca el candidato por cédula.");
+  const [isCreateCandidateModalOpen, setIsCreateCandidateModalOpen] = useState(false);
+  const [createCandidateError, setCreateCandidateError] = useState<string | null>(null);
+  const [currentStep, setCurrentStep] = useState<WizardStep>(1);
+
   // Clear selected candidate when document changes
   useEffect(() => {
     setSelectedCandidateId(null);
+    setCandidateStatus(
+      formData.documentNumber.trim().length >= 3
+        ? "Buscando candidato por cédula..."
+        : "Busca el candidato por cédula.",
+    );
   }, [formData.documentNumber]);
 
-  const [isCreatingCandidate, setIsCreatingCandidate] = useState(false);
-  const [currentStep, setCurrentStep] = useState<WizardStep>(1);
+  useEffect(() => {
+    const documentNumber = formData.documentNumber.trim();
+    if (selectedCandidateId || isSearching || documentNumber.length < 3) return;
+
+    if (exactCandidateMatch) {
+      setSelectedCandidateId(exactCandidateMatch.id);
+      setCandidateStatus("Candidato encontrado.");
+      setIdentityError(null);
+      setFormData((prev) => ({
+        ...prev,
+        documentNumber: String(exactCandidateMatch.documentNumber ?? prev.documentNumber ?? ""),
+        candidateName: exactCandidateMatch.fullName ?? prev.candidateName,
+        age: typeof exactCandidateMatch.age === "number" && !Number.isNaN(exactCandidateMatch.age) ? String(exactCandidateMatch.age) : prev.age,
+        ...(exactCandidateMatch.schoolName ? { school: exactCandidateMatch.schoolName } : {}),
+        ...(exactCandidateMatch.programName ? { program: exactCandidateMatch.programName } : {}),
+      }));
+      return;
+    }
+
+    if (!exactCandidateMatch) {
+      setCandidateStatus("Candidato no encontrado. Crea el candidato para continuar.");
+    }
+  }, [candidateMatches.length, exactCandidateMatch, formData.documentNumber, isSearching, selectedCandidateId]);
 
   useEffect(() => {
     onStepChange?.(currentStep);
@@ -216,6 +270,7 @@ const InterviewForm: React.FC<InterviewFormProps> = ({
 
   const handleCandidateDocumentsChange = useCallback((updated: CandidateDocumentsDraft) => {
     setCandidateDocuments(updated);
+    setResumeError(null);
   }, []);
 
   // ── Handlers ──
@@ -230,18 +285,43 @@ const InterviewForm: React.FC<InterviewFormProps> = ({
       }
 
       if (name === "school") {
-        setFormData((prev) => ({ ...prev, school: value, program: "" } as InterviewData));
+        setIdentityError(null);
+        const nextSchool = normalizedSchools.find((school) => school.name === value) ?? null;
+        setFormData((prev) => ({
+          ...prev,
+          school: nextSchool?.name ?? "",
+          schoolId: nextSchool?.id ?? null,
+          program: "",
+          programId: null,
+        } as InterviewData));
+        return;
+      }
+
+      if (name === "program") {
+        setIdentityError(null);
+        const school =
+          normalizedSchools.find((item) => item.id === formData.schoolId) ??
+          normalizedSchools.find((item) => item.name === formData.school) ??
+          null;
+        const nextProgram = school?.programs.find((program) => program.name === value) ?? null;
+        setFormData((prev) => ({
+          ...prev,
+          program: nextProgram?.name ?? "",
+          programId: nextProgram?.id ?? null,
+        } as InterviewData));
         return;
       }
 
       setFormData((prev) => ({ ...prev, [name]: value } as InterviewData));
     },
-    [],
+    [formData.school, formData.schoolId, normalizedSchools],
   );
 
   const handlePickCandidate = useCallback(
     (c: TeacherCandidateSearchItemDto) => {
       resetSearch();
+      setIdentityError(null);
+      setCandidateStatus("Candidato encontrado.");
 
       setSelectedCandidateId(c.id);
 
@@ -262,63 +342,120 @@ const InterviewForm: React.FC<InterviewFormProps> = ({
     !!formData.documentNumber?.trim() &&
     formData.documentNumber.trim().length >= 3 &&
     !isSearching &&
-    (candidateMatches?.length ?? 0) === 0 &&
+    !exactCandidateMatch &&
     !!resolvedSchoolId &&
     !!resolvedProgramId;
 
   const missingScopeForCreate = !resolvedSchoolId || !resolvedProgramId;
 
-  const handleCreateCandidate = useCallback(async () => {
-    const documentNumber = formData.documentNumber.trim();
-    const fullName = (formData.candidateName ?? "").trim();
+  const handleOpenCreateCandidate = useCallback(() => {
+    if (!resolvedSchoolId || !resolvedProgramId) {
+      setIdentityError("Selecciona escuela/coordinación y programa académico antes de crear el candidato.");
+      return;
+    }
+    setCreateCandidateError(null);
+    setIsCreateCandidateModalOpen(true);
+  }, [resolvedProgramId, resolvedSchoolId]);
+
+  const handleCloseCreateCandidate = useCallback(() => {
+    if (isCreatingCandidate) return;
+    setIsCreateCandidateModalOpen(false);
+    setCreateCandidateError(null);
+  }, [isCreatingCandidate]);
+
+  const handleCreateCandidate = useCallback(async (payload: CreateCandidateModalPayload) => {
+    const documentNumber = payload.documentNumber.trim();
+    const fullName = payload.fullName.trim();
 
     if (!documentNumber || documentNumber.length < 3) return;
 
     if (!fullName) {
-      setLookupError("Escribe el nombre del candidato para crearlo.");
+      setCreateCandidateError("Escribe el nombre del candidato para crearlo.");
       return;
     }
 
-    if (!resolvedSchoolId || !resolvedProgramId) {
-      setLookupError("Selecciona escuela y programa antes de crear el candidato.");
+    if (!payload.schoolId || !payload.programId) {
+      setCreateCandidateError("Selecciona escuela y programa antes de crear el candidato.");
       return;
     }
 
     setIsCreatingCandidate(true);
-    setLookupError(null);
+    setCreateCandidateError(null);
 
     try {
-      const ageNum = Number(formData.age);
-      const age = Number.isFinite(ageNum) && ageNum > 0 ? ageNum : null;
-
       const created = await createTeacherCandidate({
         orgId: ORG_ID,
         documentNumber,
         fullName,
-        age,
-        schoolId: resolvedSchoolId,
-        programId: resolvedProgramId,
+        age: payload.age,
+        email: payload.email,
+        phone: payload.phone,
+        schoolId: payload.schoolId,
+        programId: payload.programId,
       });
 
       resetSearch();
       setSelectedCandidateId(created.id);
+      setIsCreateCandidateModalOpen(false);
+      setCandidateStatus("Candidato creado correctamente.");
+      setIdentityError(null);
 
       setFormData((prev) => ({
         ...prev,
         documentNumber,
         candidateName: fullName,
+        age: payload.age ? String(payload.age) : prev.age,
+        school: payload.schoolName,
+        program: payload.programName,
+        careerSummary: payload.careerSummary || prev.careerSummary,
+        previousExperience: payload.previousExperience || prev.previousExperience,
       }));
     } catch (e: any) {
-      setLookupError(e?.message ?? "No se pudo crear el candidato.");
+      if (e?.response?.status === 409) {
+        const again = await searchTeacherCandidates({ orgId: ORG_ID, q: documentNumber, limit: 8 });
+        const existing = again.find(
+          (candidate) => String(candidate.documentNumber ?? "").trim() === documentNumber,
+        ) ?? again[0];
+        if (existing?.id) {
+          setSelectedCandidateId(existing.id);
+          setIsCreateCandidateModalOpen(false);
+          setCandidateStatus("Candidato ya existía, se reutiliza.");
+          setIdentityError(null);
+          setFormData((prev) => ({
+            ...prev,
+            documentNumber: String(existing.documentNumber ?? documentNumber),
+            candidateName: existing.fullName ?? fullName,
+            age: typeof existing.age === "number" && !Number.isNaN(existing.age) ? String(existing.age) : prev.age,
+            ...(existing.schoolName ? { school: existing.schoolName } : {}),
+            ...(existing.programName ? { program: existing.programName } : {}),
+          }));
+          return;
+        }
+      }
+      setCreateCandidateError(e?.response?.data?.message ?? e?.message ?? "No se pudo crear el candidato.");
     } finally {
       setIsCreatingCandidate(false);
     }
-  }, [formData, resolvedSchoolId, resolvedProgramId, resetSearch]);
+  }, [resetSearch]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
 
     if (!isCedulaValid) return;
+
+    if (!selectedCandidateId) {
+      setIdentityError("Busca o crea el candidato antes de ejecutar el análisis.");
+      setCandidateStatus("Candidato no seleccionado.");
+      setCurrentStep(3);
+      return;
+    }
+
+    const resumeItem = candidateDocuments.items.find((item) => item.id === "resume");
+    if (!resumeItem?.file) {
+      setResumeError("La hoja de vida es el documento principal y es obligatoria.");
+      setCurrentStep(2);
+      return;
+    }
 
     clearDraft();
 
@@ -327,6 +464,7 @@ const InterviewForm: React.FC<InterviewFormProps> = ({
       candidateId: selectedCandidateId,
       schoolId: resolvedSchoolId,
       programId: resolvedProgramId,
+      hiringRequestId: hiringContext.hiringRequestId ?? null,
       hiringContext,
       candidateDocuments,
     } as any);
@@ -390,6 +528,11 @@ const InterviewForm: React.FC<InterviewFormProps> = ({
     setHiringContext({ ...initialHiringContext });
 
     setCandidateDocuments(createInitialCandidateDocuments());
+    setResumeError(null);
+    setIdentityError(null);
+    setCandidateStatus("Busca el candidato por cédula.");
+    setIsCreateCandidateModalOpen(false);
+    setCreateCandidateError(null);
 
     clearDraft();
 
@@ -410,8 +553,24 @@ const InterviewForm: React.FC<InterviewFormProps> = ({
   }, []);
 
   const handleNext = useCallback(() => {
+    if (currentStep === 3) {
+      if (!formData.school?.trim() || !formData.program?.trim()) {
+        setIdentityError("Debes seleccionar escuela/coordinación y programa académico para continuar.");
+        return;
+      }
+      if (!resolvedSchoolId || !resolvedProgramId) {
+        setIdentityError("La escuela y el programa deben estar vinculados a IDs válidos del backend.");
+        return;
+      }
+      if (!selectedCandidateId) {
+        setIdentityError("Busca o crea el candidato antes de continuar.");
+        setCandidateStatus("Candidato no seleccionado.");
+        return;
+      }
+      setIdentityError(null);
+    }
     setCurrentStep((prev) => (prev < 5 ? ((prev + 1) as WizardStep) : prev));
-  }, []);
+  }, [currentStep, formData.program, formData.school, resolvedProgramId, resolvedSchoolId, selectedCandidateId]);
 
   const goToStep = useCallback((step: WizardStep) => {
     setCurrentStep(step);
@@ -432,6 +591,7 @@ const InterviewForm: React.FC<InterviewFormProps> = ({
         <CandidateDocumentsSection
           candidateDocuments={candidateDocuments}
           onChange={handleCandidateDocumentsChange}
+          resumeError={resumeError}
         />
       );
     }
@@ -453,8 +613,15 @@ const InterviewForm: React.FC<InterviewFormProps> = ({
           isCreatingCandidate={isCreatingCandidate}
           canCreateCandidate={canCreateCandidate}
           missingScopeForCreate={missingScopeForCreate}
+          identityError={identityError}
+          schoolsLoadError={schoolsLoadError}
+          candidateStatus={candidateStatus}
+          isCreateCandidateModalOpen={isCreateCandidateModalOpen}
+          createCandidateError={createCandidateError}
           onChange={handleChange}
           onPickCandidate={handlePickCandidate}
+          onOpenCreateCandidate={handleOpenCreateCandidate}
+          onCloseCreateCandidate={handleCloseCreateCandidate}
           onCreateCandidate={handleCreateCandidate}
         />
       );

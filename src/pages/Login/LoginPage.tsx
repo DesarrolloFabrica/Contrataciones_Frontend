@@ -41,6 +41,23 @@ const LoginPage: React.FC = () => {
   const googleLogin = useGoogleLogin({
     onSuccess: async (tokenResponse) => {
       setError(null);
+      // #region agent log
+      fetch("http://127.0.0.1:7833/ingest/9cc374de-9782-41fb-b06c-07fc5e72b639", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "X-Debug-Session-Id": "c5f22d",
+        },
+        body: JSON.stringify({
+          sessionId: "c5f22d",
+          hypothesisId: "H8",
+          location: "LoginPage.tsx:googleLogin.onSuccess",
+          message: "popup oauth success callback",
+          data: { hasAccessToken: Boolean(tokenResponse?.access_token) },
+          timestamp: Date.now(),
+        }),
+      }).catch(() => {});
+      // #endregion
       try {
         const user = await loginWithGoogle(tokenResponse.access_token);
         navigateRole(user);
@@ -65,6 +82,23 @@ const LoginPage: React.FC = () => {
   const handleGoogleClick = () => {
     setError(null);
     setLoading(true);
+    // #region agent log
+    fetch("http://127.0.0.1:7833/ingest/9cc374de-9782-41fb-b06c-07fc5e72b639", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "X-Debug-Session-Id": "c5f22d",
+      },
+      body: JSON.stringify({
+        sessionId: "c5f22d",
+        hypothesisId: "H8",
+        location: "LoginPage.tsx:handleGoogleClick",
+        message: "popup oauth requested",
+        data: {},
+        timestamp: Date.now(),
+      }),
+    }).catch(() => {});
+    // #endregion
     googleLogin();
   };
 

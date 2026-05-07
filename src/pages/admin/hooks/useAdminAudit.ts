@@ -1,7 +1,8 @@
-// src/pages/admin/hooks/useAdminAudit.ts
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import type { AdminAuditEvent, AdminAuditEntityType } from "../adminTypes";
 import { listAuditEvents } from "../../../services/auditEventsService";
+import { queryKeys } from "../../../services/queryKeys";
 
 type Opts = {
   entityType?: AdminAuditEntityType;
@@ -9,8 +10,8 @@ type Opts = {
   schoolName?: string;
   programName?: string;
 
-  initialLimit?: number; // default 50
-  pageSize?: number;     // default 25
+  initialLimit?: number;
+  pageSize?: number;
 };
 
 const DEFAULT_INITIAL = 50;
@@ -31,7 +32,6 @@ const isAllToken = (v?: string) => {
   );
 };
 
-// Intenta inferir school/program desde meta (mock-friendly)
 function metaSchool(ev: any): string {
   const m: any = ev?.meta ?? {};
   return (
@@ -57,29 +57,14 @@ function metaProgram(ev: any): string {
 }
 
 export const useAdminAudit = (opts?: Opts) => {
-  const [all, setAll] = useState<AdminAuditEvent[]>([]);
   const [limit, setLimit] = useState(opts?.initialLimit ?? DEFAULT_INITIAL);
 
-  const [loadingAudit, setLoadingAudit] = useState(false);
-  const [errorAudit, setErrorAudit] = useState<string | null>(null);
-
-  const key = useMemo(() => {
-    const t = opts?.entityType ?? "ALL";
-    const id = opts?.entityId ?? "GLOBAL";
-    const s = opts?.schoolName ?? "ALL_SCHOOLS";
-    const p = opts?.programName ?? "ALL_PROGRAMS";
-    return `${t}:${id}:${s}:${p}`;
-  }, [opts?.entityType, opts?.entityId, opts?.schoolName, opts?.programName]);
-
-  // ✅ Derivado, no estado duplicado
-  const visible = useMemo(() => all.slice(0, limit), [all, limit]);
-  const hasMore = visible.length < all.length;
-
-  const refreshAudit = useCallback(async () => {
-    setLoadingAudit(true);
-    setErrorAudit(null);
-
-    try {
+  const { data: all = [], isLoading: loadingAudit, error: queryError, refetch: refetchAudit } = useQuery<AdminAuditEvent[]>({
+    queryKey: queryKeys.audit.list({
+      entityType: opts?.entityType,
+      entityId: opts?.entityId,
+    }),
+    queryFn: async () => {
       const res = await listAuditEvents({
         entityType: opts?.entityType,
         entityId: opts?.entityId,
@@ -113,24 +98,18 @@ export const useAdminAudit = (opts?: Opts) => {
         return (Number.isFinite(tb) ? tb : 0) - (Number.isFinite(ta) ? ta : 0);
       });
 
-      setAll(ordered);
-    } catch (e) {
-      console.error("Admin: error cargando auditoría", e);
-      setErrorAudit("No se pudo cargar el historial de auditoría.");
-      setAll([]);
-    } finally {
-      setLoadingAudit(false);
-    }
-  }, [opts?.entityType, opts?.entityId, opts?.schoolName, opts?.programName]);
+      return ordered;
+    },
+  });
 
-  // ✅ cada vez que cambia filtro/scope reiniciamos límite
-  useEffect(() => {
-    setLimit(opts?.initialLimit ?? DEFAULT_INITIAL);
-  }, [key, opts?.initialLimit]);
+  const errorAudit = queryError ? "No se pudo cargar el historial de auditoría." : null;
 
-  useEffect(() => {
-    refreshAudit();
-  }, [key, refreshAudit]);
+  const visible = useMemo(() => all.slice(0, limit), [all, limit]);
+  const hasMore = visible.length < all.length;
+
+  const refreshAudit = useCallback(async () => {
+    await refetchAudit();
+  }, [refetchAudit]);
 
   const loadMore = useCallback(() => {
     const step = opts?.pageSize ?? DEFAULT_PAGE;

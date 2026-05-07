@@ -37,8 +37,7 @@ export function getVisualProcessStatus(
   coordinatorStatus: BackendDecisionStatus | null | undefined,
   adminStatus: BackendDecisionStatus | null | undefined,
 ): VisualProcessStatus {
-  if (adminStatus === "APPROVED") return "APROBADO";
-  if (adminStatus === "REJECTED") return "RECHAZADO";
+  void adminStatus;
   if (coordinatorStatus === "APPROVED") return "PRESELECCIONADO";
   if (coordinatorStatus === "REJECTED") return "RECHAZADO";
   return "EN_REVISION";

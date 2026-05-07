@@ -1,6 +1,6 @@
-// src/pages/coordinator/hooks/useEvaluationDetail.ts
 import { useCallback, useMemo, useState } from "react";
 import type { Dispatch, SetStateAction } from "react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 
 import type {
   AnalysisResult,
@@ -12,10 +12,13 @@ import type {
 import {
   getTeacherEvaluationById,
   updateCoordinatorDecision,
+  type CoordinatorDecisionPayload,
 } from "../../../services/teachersService";
 import { generateAnalysisPdfFromData } from "../../../services/pdfReport";
 import { auditAppend } from "../../../services/auditService";
 import { actorFromUser } from "../../../services/auditActor";
+import { useToast } from "../../../context/ToastContext";
+import { queryKeys } from "../../../services/queryKeys";
 
 import type {
   LocalDecision,
@@ -35,6 +38,7 @@ type Params = {
   evaluations: TeacherEvaluationSummary[];
   localDecisions: Record<string, LocalDecision>;
   setLocalDecisions: Dispatch<SetStateAction<Record<string, LocalDecision>>>;
+  isAlreadyEvaluated: boolean;
 };
 
 const emptyCriteria = (): CoordinatorCriteria => ({ ...DEFAULT_CRITERIA });
@@ -57,43 +61,47 @@ export const useEvaluationDetail = ({
   evaluations,
   localDecisions,
   setLocalDecisions,
+  isAlreadyEvaluated,
 }: Params) => {
+  const { showToast } = useToast();
+  const queryClient = useQueryClient();
   const [selectedId, setSelectedId] = useState<string | null>(null);
-
-  const [selectedDetail, setSelectedDetail] = useState<{
-    analysis: AnalysisResult | null;
-    interview: InterviewData;
-  } | null>(null);
-
-  const [loadingDetail, setLoadingDetail] = useState(false);
 
   const [decision, setDecision] = useState<LocalDecision>("PENDIENTE");
   const [decisionComment, setDecisionComment] = useState("");
   const [submittingDecision, setSubmittingDecision] = useState(false);
 
-  // ✅ NOTAS por evaluación (persisten por id)
   const [notesByEval, setNotesByEval] = useState<CoordinatorNotesByEval>({});
 
+  const { data: detailData, isLoading: loadingDetail } = useQuery({
+    queryKey: selectedId ? queryKeys.evaluations.detail(selectedId) : ["evaluations", "detail", null],
+    queryFn: selectedId ? () => getTeacherEvaluationById(selectedId) : async () => null,
+    enabled: !!selectedId,
+    staleTime: 1000 * 60 * 5,
+  });
+
+  const selectedDetail = useMemo<{ analysis: AnalysisResult | null; interview: InterviewData } | null>(() => {
+    if (!detailData) return null;
+    const analysis: AnalysisResult | null = detailData.aiRawJson ?? null;
+    const interview = mapFormToInterviewData(detailData);
+    return { analysis, interview };
+  }, [detailData]);
+
   const bumpAudit = useCallback(() => {
-    // placeholder (por si luego fuerzas refresh de auditoría)
+    // placeholder
   }, []);
 
   const clearSelection = useCallback(() => {
     setSelectedId(null);
-    setSelectedDetail(null);
-    setLoadingDetail(false);
     setDecision("PENDIENTE");
     setDecisionComment("");
-    // no borramos notesByEval para mantener notas al navegar
   }, []);
 
-  // ✅ notas actuales según selectedId
   const currentNotes = useMemo(() => {
     if (!selectedId) return emptyNotes();
     return notesByEval[selectedId] ?? emptyNotes();
   }, [notesByEval, selectedId]);
 
-  // ✅ decisión actual: primero localDecisions, si no existe usa status de backend (summary)
   const decisionStatus = useMemo(() => {
     if (!selectedId) return "PENDIENTE" as LocalDecision;
 
@@ -104,7 +112,6 @@ export const useEvaluationDetail = ({
     return apiDecisionToLocal(api);
   }, [evaluations, localDecisions, selectedId]);
 
-  // ✅ candidateGroup para entrevistas
   const candidateGroup = useMemo(() => {
     if (!selectedId) return null;
     const base = evaluations.find((e) => e.id === selectedId);
@@ -139,7 +146,6 @@ export const useEvaluationDetail = ({
     return group;
   }, [evaluations, selectedId]);
 
-  // ✅ setters que escriben sobre notesByEval
   const setNotes = useCallback(
     (v: string) => {
       if (!selectedId) return;
@@ -174,10 +180,6 @@ export const useEvaluationDetail = ({
       });
       bumpAudit();
 
-      setSelectedDetail(null);
-      setLoadingDetail(true);
-
-      // ✅ decisión inicial (local o backend)
       const fromLocal = localDecisions[id];
       const fromApi = apiDecisionToLocal(
         evaluations.find((e) => e.id === id)?.coordinatorDecisionStatus,
@@ -186,26 +188,27 @@ export const useEvaluationDetail = ({
       setDecision(fromLocal ?? fromApi);
       setDecisionComment("");
 
-      // ✅ asegura notas base para esa evaluación
       setNotesByEval((prev) => (prev[id] ? prev : { ...prev, [id]: emptyNotes() }));
 
-      try {
-        const detail = await getTeacherEvaluationById(id);
-
-        // ✅ ojo: tu backend guarda AnalysisResult en aiRawJson.rawOutput
-        // pero en tu types, TeacherAiResult.rawOutput?: AnalysisResult
-        // aquí asumimos que detail.aiRawJson YA ES AnalysisResult (como venías manejándolo).
-        const analysis: AnalysisResult | null = detail.aiRawJson ?? null;
-        const interview = mapFormToInterviewData(detail);
-
-        setSelectedDetail({ analysis, interview });
-      } catch (err) {
-        console.error("Error al cargar detalle:", err);
-      } finally {
-        setLoadingDetail(false);
+      if (detailData) {
+        if (detailData.coordinatorDecisionComment) {
+          setDecisionComment(detailData.coordinatorDecisionComment);
+        }
+        if (detailData.coordinatorNotes) {
+          setNotesByEval((prev) => ({
+            ...prev,
+            [id]: { ...(prev[id] ?? emptyNotes()), notes: detailData.coordinatorNotes! },
+          }));
+        }
+        if (detailData.coordinatorCriteria) {
+          setNotesByEval((prev) => ({
+            ...prev,
+            [id]: { ...(prev[id] ?? emptyNotes()), criteria: { ...DEFAULT_CRITERIA, ...detailData.coordinatorCriteria } },
+          }));
+        }
       }
     },
-    [actor, bumpAudit, evaluations, localDecisions],
+    [actor, bumpAudit, evaluations, localDecisions, detailData],
   );
 
   const exportPdf = useCallback(async () => {
@@ -222,11 +225,12 @@ export const useEvaluationDetail = ({
         metadata: { source: "coordinator", download: true },
       });
       bumpAudit();
+      showToast("success", "Reporte PDF generado correctamente.");
     } catch (err) {
       console.error("Error al generar PDF:", err);
-      alert("No se pudo generar el PDF del reporte.");
+      showToast("error", "No se pudo generar el PDF del reporte.");
     }
-  }, [actor, bumpAudit, selectedDetail, selectedId]);
+  }, [actor, bumpAudit, selectedDetail, selectedId, showToast]);
 
   const applyDecision = useCallback(
     (newDecision: LocalDecision) => {
@@ -272,14 +276,10 @@ export const useEvaluationDetail = ({
     bumpAudit();
   }, [actor, bumpAudit, decisionComment, selectedId]);
 
-  // -----------------------------
-  // ✅ VALIDACIÓN OBLIGATORIA (antes de enviar)
-  // -----------------------------
   const checkedCount = useMemo(() => {
     return Object.values(currentNotes.criteria ?? {}).filter(Boolean).length;
   }, [currentNotes.criteria]);
 
-  // ✅ Nota efectiva: primero NOTAS, si está vacía usa el comentario de DECISIÓN
   const effectiveNote = useMemo(() => {
     const n = String(currentNotes.notes ?? "").trim();
     if (n.length) return n;
@@ -299,7 +299,20 @@ export const useEvaluationDetail = ({
 
   const canSubmitDecision = missingReasons.length === 0;
 
-  const submitDecisionToAdmin = useCallback(async () => {
+  const decisionMutation = useMutation({
+    mutationFn: async (payload: CoordinatorDecisionPayload) => {
+      if (!selectedId) throw new Error("No evaluationId");
+      return updateCoordinatorDecision(selectedId, payload);
+    },
+    onSuccess: () => {
+      if (selectedId) {
+        queryClient.invalidateQueries({ queryKey: queryKeys.evaluations.detail(selectedId) });
+        queryClient.invalidateQueries({ queryKey: queryKeys.evaluations.list() });
+      }
+    },
+  });
+
+  const submitOfficialDecision = useCallback(async () => {
     if (!selectedId) return;
     if (!canSubmitDecision) return;
     if (submittingDecision) return;
@@ -314,7 +327,7 @@ export const useEvaluationDetail = ({
     try {
       setSubmittingDecision(true);
 
-      await updateCoordinatorDecision(selectedId, {
+      await decisionMutation.mutateAsync({
         status,
         comment: String(decisionComment ?? "").trim() || undefined,
         notesBrief: effectiveNote,
@@ -334,13 +347,18 @@ export const useEvaluationDetail = ({
       });
 
       bumpAudit();
-      alert("✅ Decisión enviada al administrador.");
+
+      if (isAlreadyEvaluated) {
+        showToast("success", "Decisión actualizada correctamente.");
+      } else {
+        showToast("success", "Decisión oficial registrada correctamente.");
+      }
     } catch (err: any) {
       const message =
         err?.response?.data?.message ??
         err?.message ??
-        "No se pudo enviar la decisión al administrador.";
-      alert(`❌ ${message}`);
+        "No se pudo registrar la decisión oficial.";
+      showToast("error", message);
     } finally {
       setSubmittingDecision(false);
     }
@@ -351,10 +369,13 @@ export const useEvaluationDetail = ({
     currentNotes.criteria,
     decision,
     decisionComment,
+    decisionMutation,
     effectiveNote,
     effectiveNoteLen,
+    isAlreadyEvaluated,
     selectedId,
     submittingDecision,
+    showToast,
   ]);
 
   return {
@@ -367,17 +388,15 @@ export const useEvaluationDetail = ({
     decisionStatus,
     candidateGroup,
 
-    // ✅ notas + criterios (para NotesTab / UI)
     notes: currentNotes.notes,
     criteria: currentNotes.criteria,
     setNotes,
     setCriteria,
 
-    // ✅ validación + submit
     canSubmitDecision,
     submittingDecision,
     missingReasons,
-    submitDecisionToAdmin,
+    submitDecisionToAdmin: submitOfficialDecision,
 
     setDecisionComment,
 

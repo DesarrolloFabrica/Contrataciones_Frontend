@@ -8,6 +8,7 @@ interface TextAreaProps {
   onChange: (e: React.ChangeEvent<HTMLTextAreaElement>) => void;
   rows?: number;
   placeholder?: string;
+  disabled?: boolean;
 }
 
 export const TextArea: React.FC<TextAreaProps> = ({
@@ -16,6 +17,7 @@ export const TextArea: React.FC<TextAreaProps> = ({
   onChange,
   rows = 3,
   placeholder,
+  disabled = false,
 }) => {
   const ref = useRef<HTMLTextAreaElement | null>(null);
   const { theme } = useTheme();
@@ -39,6 +41,7 @@ export const TextArea: React.FC<TextAreaProps> = ({
         isDark ? darkInputStyles : lightInputStyles
       } resize-none leading-relaxed overflow-hidden min-h-[80px]`}
       placeholder={placeholder}
+      disabled={disabled}
       required
     />
   );

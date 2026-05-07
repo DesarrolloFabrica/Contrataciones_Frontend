@@ -1,4 +1,9 @@
 // src/pages/admin/utils/adminMockDb.ts
+// ⚠️ DEV/DEMO ONLY — This file is NO LONGER used in production flows.
+// All real user management now goes through usersService + React Query.
+// All real audit events go through the backend audit API.
+// This file is kept ONLY for historical reference and potential future dev tooling.
+// DO NOT import this file in production code paths.
 
 import type {
   AdminAuditAction,
@@ -13,9 +18,20 @@ import type {
 const LS_KEY = "ADMIN_MOCK_DB_V1";
 const SCOPE_KEY = "ADMIN_SCOPE_V1";
 
+const DEV_ONLY_WARNING =
+  "[adminMockDb] This is a DEV-ONLY utility. Do not use in production. Use usersService + audit API instead.";
+
+function guardDevOnly() {
+  if (import.meta.env.PROD) {
+    console.warn(DEV_ONLY_WARNING);
+    return false;
+  }
+  return true;
+}
+
 type AdminScope = {
-  selectedSchool: string | null; // null => sin seleccionar
-  selectedProgram: string | null; // null => sin seleccionar
+  selectedSchool: string | null;
+  selectedProgram: string | null;
   search: string;
 };
 
@@ -45,7 +61,6 @@ const seed: MockDb = {
       email: "admin@cun.edu.co",
       cedula: null,
       role: "ADMIN",
-      // ✅ opcional (admin puede ser global, pero no estorba)
       schoolId: null,
       status: "ACTIVE",
       createdAt: nowIso(),
@@ -58,7 +73,6 @@ const seed: MockDb = {
       email: "camilo.rojas@cun.edu.co",
       cedula: "1010101010",
       role: "COORDINATOR",
-      // ✅ CLAVE: esta es la escuela que heredará el líder creado por este coordinador
       schoolId: "school-ingenieria",
       status: "ACTIVE",
       createdAt: nowIso(),
@@ -90,7 +104,6 @@ const load = (): MockDb => {
     if (!raw) return clone(seed);
     const parsed = JSON.parse(raw) as MockDb;
 
-    // ✅ backward-safe
     if (!parsed.ui) parsed.ui = { adminScope: scopeDefault() };
     if (!parsed.ui.adminScope) parsed.ui.adminScope = scopeDefault();
     if (!parsed.audit) parsed.audit = [];
@@ -109,18 +122,14 @@ const save = (db: MockDb) => {
 const addAudit = (db: MockDb, ev: Omit<AdminAuditEvent, "id">) => {
   db.audit.unshift({ id: uid(), ...ev });
 
-  // ✅ Capar tamaño (evita lista infinita)
   if (db.audit.length > MAX_AUDIT_EVENTS) {
     db.audit = db.audit.slice(0, MAX_AUDIT_EVENTS);
   }
 };
 
-
 export const adminMockDb = {
-  // -------------------------
-  // SCOPE (persistencia UI admin)
-  // -------------------------
   getAdminScope(): AdminScope {
+    guardDevOnly();
     try {
       const raw = localStorage.getItem(SCOPE_KEY);
       if (!raw) return scopeDefault();
@@ -136,46 +145,43 @@ export const adminMockDb = {
   },
 
   setAdminScope(next: Partial<AdminScope>, actorUserId = "u-admin-1"): AdminScope {
-  const cur = this.getAdminScope();
+    guardDevOnly();
+    const cur = this.getAdminScope();
 
-  const safe: AdminScope = {
-    selectedSchool: next.selectedSchool ?? cur.selectedSchool ?? null,
-    selectedProgram: next.selectedProgram ?? cur.selectedProgram ?? null,
-    search: next.search ?? cur.search ?? "",
-  };
+    const safe: AdminScope = {
+      selectedSchool: next.selectedSchool ?? cur.selectedSchool ?? null,
+      selectedProgram: next.selectedProgram ?? cur.selectedProgram ?? null,
+      search: next.search ?? cur.search ?? "",
+    };
 
-  // ✅ 0) Si no cambió, no guardes ni audites (evita spam infinito)
-  const same =
-    safe.selectedSchool === cur.selectedSchool &&
-    safe.selectedProgram === cur.selectedProgram &&
-    safe.search === cur.search;
+    const same =
+      safe.selectedSchool === cur.selectedSchool &&
+      safe.selectedProgram === cur.selectedProgram &&
+      safe.search === cur.search;
 
-  if (same) return cur;
+    if (same) return cur;
 
-  // ✅ 1) Persistimos scope “rápido” (solo UI)
-  localStorage.setItem(SCOPE_KEY, JSON.stringify(safe));
+    localStorage.setItem(SCOPE_KEY, JSON.stringify(safe));
 
-  // ✅ 2) También lo guardamos en la DB mock
-  const db = load();
-  db.ui.adminScope = safe;
+    const db = load();
+    db.ui.adminScope = safe;
 
-  // ✅ 3) Audit (solo si hubo cambio REAL)
-  addAudit(db, {
-    entityType: "SYSTEM",
-    entityId: "SYSTEM",
-    action: "SETTINGS_UPDATED" as AdminAuditAction,
-    actorUserId,
-    actorRole: "ADMIN",
-    at: nowIso(),
-    meta: { adminScope: safe },
-  });
+    addAudit(db, {
+      entityType: "SYSTEM",
+      entityId: "SYSTEM",
+      action: "SETTINGS_UPDATED" as AdminAuditAction,
+      actorUserId,
+      actorRole: "ADMIN",
+      at: nowIso(),
+      meta: { adminScope: safe },
+    });
 
-  save(db);
-  return safe;
-},
-
+    save(db);
+    return safe;
+  },
 
   clearAdminScope(actorUserId = "u-admin-1"): void {
+    guardDevOnly();
     localStorage.removeItem(SCOPE_KEY);
 
     const db = load();
@@ -194,14 +200,13 @@ export const adminMockDb = {
     save(db);
   },
 
-  // -------------------------
-  // USERS
-  // -------------------------
   getUsers(): AdminUser[] {
+    guardDevOnly();
     return load().users;
   },
 
   listUsers(): Promise<AdminUser[]> {
+    guardDevOnly();
     return Promise.resolve(load().users);
   },
 
@@ -209,6 +214,7 @@ export const adminMockDb = {
     dto: CreateAdminUserDto,
     actorUserId = "u-admin-1"
   ): Promise<{ user: AdminUser }> {
+    guardDevOnly();
     const db = load();
 
     const user: AdminUser = {
@@ -233,7 +239,7 @@ export const adminMockDb = {
       actorUserId,
       actorRole: "ADMIN",
       at: nowIso(),
-      meta: { email: user.email, role: user.role, schoolId: user.schoolId ?? null  },
+      meta: { email: user.email, role: user.role, schoolId: user.schoolId ?? null },
     });
 
     save(db);
@@ -245,6 +251,7 @@ export const adminMockDb = {
     dto: UpdateAdminUserDto,
     actorUserId = "u-admin-1"
   ): Promise<AdminUser> {
+    guardDevOnly();
     const db = load();
     const idx = db.users.findIndex((u) => u.id === userId);
     if (idx === -1) throw new Error("User not found");
@@ -277,6 +284,7 @@ export const adminMockDb = {
     userId: string,
     actorUserId = "u-admin-1"
   ): Promise<AdminUser> {
+    guardDevOnly();
     const db = load();
     const u = db.users.find((x) => x.id === userId);
     if (!u) throw new Error("User not found");
@@ -299,10 +307,8 @@ export const adminMockDb = {
     return Promise.resolve(u);
   },
 
-  // -------------------------
-  // AUDIT
-  // -------------------------
   logEvent(ev: Omit<AdminAuditEvent, "id">): void {
+    guardDevOnly();
     const db = load();
     addAudit(db, ev);
     save(db);
@@ -312,6 +318,7 @@ export const adminMockDb = {
     entityType?: AdminAuditEntityType,
     entityId?: string
   ): Promise<AdminAuditEvent[]> {
+    guardDevOnly();
     const db = load();
     let a = db.audit;
 
@@ -322,20 +329,19 @@ export const adminMockDb = {
   },
 
   listAuditGlobal(entityType?: AdminAuditEntityType): Promise<AdminAuditEvent[]> {
+    guardDevOnly();
     const db = load();
     const all = db.audit ?? [];
     const filtered = entityType ? all.filter((x) => x.entityType === entityType) : all;
     return Promise.resolve(filtered);
   },
 
-  // -------------------------
-  // HELPERS
-  // -------------------------
   logSystemEvent(
     action: AdminAuditAction,
     meta?: Record<string, any>,
     actorUserId = "u-admin-1"
   ): void {
+    guardDevOnly();
     this.logEvent({
       entityType: "SYSTEM",
       entityId: "SYSTEM",
@@ -356,6 +362,7 @@ export const adminMockDb = {
     meta?: Record<string, any>,
     actorUserId = "u-admin-1"
   ): void {
+    guardDevOnly();
     this.logEvent({
       entityType: "USER",
       entityId: userId,
@@ -373,6 +380,7 @@ export const adminMockDb = {
     meta?: Record<string, any>,
     actorUserId = "u-admin-1"
   ): void {
+    guardDevOnly();
     this.logEvent({
       entityType: "EVALUATION",
       entityId: evaluationId,
@@ -389,6 +397,7 @@ export const adminMockDb = {
     meta?: Record<string, any>;
     actorUserId?: string;
   }): Promise<true> {
+    guardDevOnly();
     this.logSystemEvent(params.action, params.meta, params.actorUserId ?? "u-admin-1");
     return Promise.resolve(true);
   },
@@ -402,6 +411,7 @@ export const adminMockDb = {
     meta?: Record<string, any>;
     actorUserId?: string;
   }): Promise<true> {
+    guardDevOnly();
     this.logUserEvent(params.userId, params.action, params.meta, params.actorUserId ?? "u-admin-1");
     return Promise.resolve(true);
   },
@@ -412,6 +422,7 @@ export const adminMockDb = {
     meta?: Record<string, any>;
     actorUserId?: string;
   }): Promise<true> {
+    guardDevOnly();
     this.logEvaluationEvent(
       params.evaluationId,
       params.action,
@@ -421,15 +432,13 @@ export const adminMockDb = {
     return Promise.resolve(true);
   },
 
-
-    // -------------------------
-  // ALIASES (compatibilidad con hooks antiguos)
-  // -------------------------
   getAdminUsers(): Promise<AdminUser[]> {
+    guardDevOnly();
     return this.listUsers();
   },
 
   listAdminUsers(): Promise<AdminUser[]> {
+    guardDevOnly();
     return this.listUsers();
   },
 
@@ -437,6 +446,7 @@ export const adminMockDb = {
     dto: CreateAdminUserDto,
     actorUserId = "u-admin-1"
   ): Promise<{ user: AdminUser }> {
+    guardDevOnly();
     return this.createUser(dto, actorUserId);
   },
 
@@ -445,6 +455,7 @@ export const adminMockDb = {
     dto: UpdateAdminUserDto,
     actorUserId = "u-admin-1"
   ): Promise<AdminUser> {
+    guardDevOnly();
     return this.updateUser(userId, dto, actorUserId);
   },
 
@@ -452,7 +463,7 @@ export const adminMockDb = {
     userId: string,
     actorUserId = "u-admin-1"
   ): Promise<AdminUser> {
+    guardDevOnly();
     return this.toggleUserActive(userId, actorUserId);
   },
-
 };

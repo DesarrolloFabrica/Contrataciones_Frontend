@@ -14,11 +14,17 @@ import {
   createTeacherEvaluation,
   getTeacherEvaluationById,
   searchTeacherCandidates,
-  createTeacherCandidate,
 } from "../../services/teachersService";
+import {
+  createCandidateDocument,
+  uploadCandidateResume,
+  type CandidateDocumentType,
+} from "../../services/candidateDocumentsService";
+import { createManualHiringRequest } from "../../services/hiringRequestsService";
 import { auditAppend } from "../../services/auditService";
 import { actorFromUser } from "../../services/auditActor";
 import { mapInterviewToTeacherForm } from "../../services/mappers/mapInterviewToTeacherForm";
+import apiClient from "../../services/apiClient";
 
 // Context
 import { useAuth } from "../../context/AuthContext";
@@ -42,6 +48,45 @@ const ORG_ID = import.meta.env.VITE_ORG_ID ?? "ORG_DEFAULT";
 type ViewMode = "analyze" | "history";
 type ExamplePreset = "approved" | "medium" | "rejected" | null;
 
+type SchoolWithPrograms = {
+  id?: string;
+  name?: string;
+  programs?: Array<{ id?: string; name?: string }>;
+};
+
+async function resolveSchoolAndProgramIds(
+  schoolName: string,
+  programName: string,
+): Promise<{ schoolId: string | null; programId: string | null }> {
+  const schoolNameNormalized = schoolName.trim().toLowerCase();
+  const programNameNormalized = programName.trim().toLowerCase();
+  if (!schoolNameNormalized || !programNameNormalized) {
+    return { schoolId: null, programId: null };
+  }
+
+  const { data } = await apiClient.get<SchoolWithPrograms[] | { items?: SchoolWithPrograms[] }>("/schools", {
+    params: { includePrograms: "true" },
+  });
+
+  const schools = Array.isArray(data) ? data : Array.isArray(data?.items) ? data.items : [];
+  const matchedSchool = schools.find(
+    (school) => String(school?.name ?? "").trim().toLowerCase() === schoolNameNormalized,
+  );
+
+  if (!matchedSchool?.id) {
+    return { schoolId: null, programId: null };
+  }
+
+  const matchedProgram = (matchedSchool.programs ?? []).find(
+    (program) => String(program?.name ?? "").trim().toLowerCase() === programNameNormalized,
+  );
+
+  return {
+    schoolId: String(matchedSchool.id),
+    programId: matchedProgram?.id ? String(matchedProgram.id) : null,
+  };
+}
+
 const LeaderConsole: React.FC = () => {
   const [mode, setMode] = useState<ViewMode>("analyze");
   const { user } = useAuth();
@@ -54,6 +99,7 @@ const LeaderConsole: React.FC = () => {
 
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
+  const [warning, setWarning] = useState<string | null>(null);
   const [isFlowHelpOpen, setIsFlowHelpOpen] = useState(false);
   const [wizardStep, setWizardStep] = useState<number>(1);
   const [examplePreset, setExamplePreset] = useState<ExamplePreset>(null);
@@ -63,80 +109,73 @@ const LeaderConsole: React.FC = () => {
       const actor = actorFromUser(user);
 
       const fullName = (data.candidateName ?? "").trim();
-      const schoolId = (data.schoolId ?? "").trim();
-      const programId = (data.programId ?? "").trim();
+      let schoolId = (data.schoolId ?? "").trim();
+      let programId = (data.programId ?? "").trim();
+
+      if ((!schoolId || !programId) && data.school?.trim() && data.program?.trim()) {
+        try {
+          const resolvedIds = await resolveSchoolAndProgramIds(data.school, data.program);
+          schoolId = schoolId || String(resolvedIds.schoolId ?? "").trim();
+          programId = programId || String(resolvedIds.programId ?? "").trim();
+        } catch {
+          setWarning("No se pudo validar catálogo de escuelas/programas en este momento. Verifica conexión con backend.");
+        }
+      }
 
       if (!fullName || !schoolId || !programId) {
         const missing: string[] = [];
         if (!fullName) missing.push("nombre del candidato");
         if (!schoolId) missing.push("escuela/coordinación");
         if (!programId) missing.push("programa académico");
-        setError(`Faltan datos obligatorios: ${missing.join(", ")}. Selecciona escuela y programa antes de ejecutar el análisis.`);
+        setError(`Faltan datos obligatorios: ${missing.join(", ")}. Selecciona escuela y programa válidos antes de ejecutar el análisis.`);
+        return;
+      }
+
+      const enrichedData: InterviewData = {
+        ...(data as any),
+        schoolId,
+        programId,
+      };
+
+      const docItems = ((data as any)?.candidateDocuments?.items ?? []) as Array<any>;
+      const resumeItem = docItems.find((item) => String(item?.id) === "resume");
+      if (!resumeItem?.file) {
+        setError("La hoja de vida es el documento principal y es obligatoria.");
         return;
       }
 
       setIsLoading(true);
       setError(null);
+      setWarning(null);
       setAnalysisResult(null);
-      setInterviewData(data);
+      setInterviewData(enrichedData);
       setEvaluationId(null);
 
       try {
-        let candidateId: string | null = null;
+        let candidateId: string | null = (data as any)?.candidateId ?? null;
         const documentNumber = (data.documentNumber ?? "").trim();
 
-        if (documentNumber) {
+        if (!candidateId && documentNumber) {
           const found = await searchTeacherCandidates({
             orgId: ORG_ID,
             q: documentNumber,
             limit: 8,
           });
 
-          const exact =
-            found.find(
-              (c) => String(c.documentNumber ?? "").trim() === documentNumber
-            ) ?? found[0];
+          const exact = found.find(
+            (c) => String(c.documentNumber ?? "").trim() === documentNumber
+          );
 
           if (exact?.id) {
             candidateId = exact.id;
+            setWarning("Fallback técnico: candidato encontrado por cédula y reutilizado.");
           }
         }
 
         if (!candidateId) {
-          if (!documentNumber) {
-            throw new Error("Se requiere documento de identidad para crear el candidato.");
-          }
-
-          try {
-            const ageNum = Number(data.age);
-            const age = Number.isFinite(ageNum) && ageNum > 0 ? ageNum : null;
-
-            const created = await createTeacherCandidate({
-              orgId: ORG_ID,
-              documentNumber,
-              fullName,
-              age,
-              schoolId,
-              programId,
-            });
-            candidateId = created.id;
-          } catch (err: any) {
-            if (err?.response?.status === 409) {
-              const again = await searchTeacherCandidates({
-                orgId: ORG_ID,
-                q: documentNumber,
-                limit: 8,
-              });
-              candidateId = again?.[0]?.id ?? null;
-            } else {
-              throw err;
-            }
-          }
+          throw new Error("Debes buscar o crear el candidato antes de ejecutar el análisis.");
         }
-
-        if (!candidateId) {
-          throw new Error("No se pudo resolver ni crear el candidato. Verifica los datos.");
-        }
+        const resolvedCandidateId = candidateId;
 
         auditAppend({
           type: "AI_ANALYSIS_STARTED",
@@ -144,27 +183,126 @@ const LeaderConsole: React.FC = () => {
           metadata: { orgId: ORG_ID },
         });
 
-        const aiResult: TeacherAiResult = await analyzeTeacherInterview(data);
+        const interviewOnlyData: InterviewData = { ...(enrichedData as InterviewData) };
+        delete (interviewOnlyData as any).candidateDocuments;
+        delete (interviewOnlyData as any).hiringContext;
+        delete (interviewOnlyData as any).hiringRequestId;
 
-        if (aiResult.rawOutput) {
-          setAnalysisResult(aiResult.rawOutput);
+        const aiResult: TeacherAiResult = await analyzeTeacherInterview(interviewOnlyData);
 
-          auditAppend({
-            type: "AI_ANALYSIS_FINISHED",
-            actor,
-            metadata: {
-              orgId: ORG_ID,
-              overallScore: aiResult.rawOutput.overallScore ?? null,
-              risk: aiResult.rawOutput.overallRiskLevel ?? null,
-              verdict: aiResult.rawOutput.finalVerdict ?? null,
-            },
-          });
-        }
+        auditAppend({
+          type: "AI_ANALYSIS_FINISHED",
+          actor,
+          metadata: {
+            orgId: ORG_ID,
+            overallScore: aiResult.rawOutput?.overallScore ?? null,
+            risk: aiResult.rawOutput?.overallRiskLevel ?? null,
+            verdict: aiResult.rawOutput?.finalVerdict ?? null,
+          },
+        });
 
-        const formFrontend: TeacherForm = mapInterviewToTeacherForm(data);
+        const formFrontend: TeacherForm = mapInterviewToTeacherForm(enrichedData);
         const formBackend = toBackendTeacherForm(formFrontend);
 
-        const saved = await createTeacherEvaluation(ORG_ID, formBackend as any, aiResult);
+        let hiringRequestId = (data as any)?.hiringRequestId ?? (data as any)?.hiringContext?.hiringRequestId ?? null;
+        if (!hiringRequestId) {
+          const ctx: any = (data as any)?.hiringContext ?? {};
+          const role = String(ctx.targetRole ?? "").trim();
+          const description = String(ctx.needDescription ?? "").trim();
+          if (!role || !description) {
+            throw new Error(
+              "En modo manual debes completar al menos cargo/perfil y descripción de la necesidad."
+            );
+          }
+
+          try {
+            const createdHr = await createManualHiringRequest({
+              positionName: role,
+              roleName: role,
+              profile: String(ctx.processType ?? "Manual"),
+              area: String(ctx.requestingArea ?? "").trim() || null,
+              coordination: String(ctx.coordination ?? "").trim() || null,
+              priority: String(ctx.priority ?? "").trim() || null,
+              schoolId: schoolId || null,
+              programId: programId || null,
+              description,
+              externalSource: "MANUAL",
+            });
+            hiringRequestId = createdHr.id;
+          } catch (err: any) {
+            throw new Error(
+              err?.response?.data?.message ??
+              "No se pudo crear el contexto manual de vacante. Verifica los datos del contexto e intenta nuevamente."
+            );
+          }
+        }
+        (formBackend as any).hiringContext = (data as any)?.hiringContext ?? null;
+        (formBackend as any).candidateDocuments = (data as any)?.candidateDocuments ?? null;
+
+        const saved = await createTeacherEvaluation(ORG_ID, formBackend as any, aiResult, {
+          hiringRequestId,
+        });
+
+        const mapTypeById: Record<string, CandidateDocumentType> = {
+          resume: "RESUME",
+          "academic-certificates": "ACADEMIC_CERTIFICATE",
+          "work-certificates": "WORK_CERTIFICATE",
+          portfolio: "PORTFOLIO",
+          "identity-document": "IDENTITY_DOCUMENT",
+          "other-supports": "OTHER",
+        };
+
+        const resumeNotes = String(resumeItem?.note ?? "").trim();
+        try {
+          await uploadCandidateResume({
+            file: resumeItem.file,
+            candidateId: resolvedCandidateId,
+            evaluationId: saved.id,
+            hiringRequestId,
+            notes: resumeNotes || null,
+          });
+        } catch (resumeError: any) {
+          if (import.meta.env.DEV) {
+            console.error("[LEADER] Resume upload failed", {
+              message: resumeError?.message,
+              status: resumeError?.response?.status,
+              data: resumeError?.response?.data,
+            });
+          }
+          throw new Error(
+            resumeError?.response?.data?.message ??
+              "La evaluación se creó, pero falló la subida de la hoja de vida. Intenta nuevamente en documentos del candidato."
+          );
+        }
+
+        let docFailures = 0;
+        for (const item of docItems) {
+          if (String(item?.id ?? "") === "resume") continue;
+          const link = String(item?.tempUrl ?? "").trim();
+          const note = String(item?.note ?? "").trim();
+          if (!link && !note) continue;
+
+          const type = mapTypeById[String(item?.id ?? "")] ?? "OTHER";
+          try {
+            await createCandidateDocument({
+              candidateId: resolvedCandidateId,
+              evaluationId: saved.id,
+              hiringRequestId,
+              documentType: type,
+              sourceType: "URL",
+              url: link || null,
+              notes: note || null,
+              isPrimaryResume: false,
+            });
+          } catch {
+          }
+        }
+
+        if (docFailures > 0) {
+          setWarning(
+            `La evaluación se guardó, pero ${docFailures} documento(s) no se pudieron registrar. Puedes volver a cargarlos luego.`
+          );
+        }
 
         auditAppend({
           type: "EVALUATION_CREATED",
@@ -173,18 +311,25 @@ const LeaderConsole: React.FC = () => {
             orgId: ORG_ID,
             candidateId: saved.candidateId,
             evaluationId: saved.id,
+            hiringRequestId,
             documentNumber: data.documentNumber ?? null,
           },
         });
 
         setEvaluationId(saved.id);
+
+        if (aiResult.rawOutput) {
+          setAnalysisResult(aiResult.rawOutput);
+        }
       } catch (err: any) {
-        console.error("Error during analysis or save:", {
+        console.error("[LEADER] Error during analysis or save:", {
           message: err?.message,
           status: err?.response?.status,
           data: err?.response?.data,
         });
 
+        setAnalysisResult(null);
+        setEvaluationId(null);
         setError(
           err?.response?.data?.message ??
             (err instanceof Error ? err.message : "Ocurrió un error durante el proceso.")
@@ -252,6 +397,7 @@ const LeaderConsole: React.FC = () => {
     setEvaluationId(null);
     setIsLoading(false);
     setError(null);
+    setWarning(null);
   }, []);
 
   const handleLogout = useCallback(() => {
@@ -376,6 +522,12 @@ const LeaderConsole: React.FC = () => {
                       </div>
                     </div>
                   </aside>
+                </div>
+              )}
+
+              {warning && !error && (
+                <div className={`rounded-xl border px-4 py-3 text-sm ${isDark ? "border-amber-400/30 bg-amber-500/10 text-amber-200" : "border-amber-300 bg-amber-50 text-amber-800"}`}>
+                  {warning}
                 </div>
               )}
 

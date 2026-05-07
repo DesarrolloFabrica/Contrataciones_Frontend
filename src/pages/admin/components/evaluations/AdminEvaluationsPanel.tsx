@@ -16,17 +16,9 @@ import {
 import type { TeacherEvaluationSummary } from "../../../../types";
 import type { AdminMetrics } from "../../adminTypes";
 import { useTheme } from "../../../../context/ThemeContext";
-import { filterEvaluations } from "../../utils/adminSelectors";
+import { filterEvaluations, getAiRecommendationStatus, aiRecommendationLabel, type AiRecommendationStatus } from "../../utils/adminSelectors";
 
-type EvalStatus = "recommended" | "caution" | "not_recommended" | "pending";
-
-function getEvalStatus(ev: TeacherEvaluationSummary): EvalStatus {
-  const v = (ev.aiFinalRecommendation ?? "").toLowerCase();
-  if (v.includes("no recomend") || v.includes("no se recomienda") || v.includes("rechaz") || v.includes("no apto") || v.includes("no es apto")) return "not_recommended";
-  if (v.includes("precauc") || v.includes("condicion") || v.includes("reserv") || v.includes("duda") || v.includes("riesgo medio")) return "caution";
-  if (v.includes("recomend") || v.includes("apto") || v.includes("idóneo")) return "recommended";
-  return "pending";
-}
+type EvalStatus = AiRecommendationStatus;
 
 function getScore(ev: TeacherEvaluationSummary) {
   const n = Number(ev.aiTeachingSuitabilityScore ?? 0);
@@ -52,16 +44,44 @@ function getDateLabel(iso?: string | null) {
   return d.toLocaleDateString("es-CO", { year: "numeric", month: "short", day: "2-digit" });
 }
 
-type StatusFilter = "all" | "recommended" | "caution" | "not_recommended" | "pending";
+function getCoordinatorDecisionStatus(ev: TeacherEvaluationSummary): string | null {
+  return (ev as any)?.coordinatorDecisionStatus ?? null;
+}
+
+function coordinatorDecisionBadge(status: string | null, isDark: boolean): string | null {
+  if (!status) return null;
+  const s = status.toUpperCase();
+  if (s === "APPROVED") {
+    return isDark
+      ? "bg-emerald-500/10 text-emerald-300 border-emerald-500/20"
+      : "bg-emerald-50 text-emerald-700 border-emerald-200";
+  }
+  if (s === "REJECTED") {
+    return isDark
+      ? "bg-rose-500/10 text-rose-300 border-rose-500/20"
+      : "bg-rose-50 text-rose-700 border-rose-200";
+  }
+  return null;
+}
+
+function coordinatorDecisionLabel(status: string | null): string | null {
+  if (!status) return null;
+  const s = status.toUpperCase();
+  if (s === "APPROVED") return "Aprobado";
+  if (s === "REJECTED") return "Rechazado";
+  return null;
+}
+
+type StatusFilter = "all" | "RECOMMENDED" | "RESERVED" | "NOT_RECOMMENDED" | "NO_ANALYSIS";
 type ScoreRange = "all" | "high" | "medium" | "low";
 type SortKey = "RECENT" | "SCORE_DESC" | "SCORE_ASC";
 
 const statusOptions: { value: StatusFilter; label: string }[] = [
   { value: "all", label: "Todos" },
-  { value: "recommended", label: "Recomendados" },
-  { value: "caution", label: "En cautela" },
-  { value: "not_recommended", label: "No recomendados" },
-  { value: "pending", label: "Sin evaluar" },
+  { value: "RECOMMENDED", label: "Recomendados" },
+  { value: "RESERVED", label: "Con reservas" },
+  { value: "NOT_RECOMMENDED", label: "No recomendados" },
+  { value: "NO_ANALYSIS", label: "Pendientes" },
 ];
 
 const scoreOptions: { value: ScoreRange; label: string }[] = [
@@ -72,33 +92,33 @@ const scoreOptions: { value: ScoreRange; label: string }[] = [
 ];
 
 const statusConfig: Record<EvalStatus, { side: string; badge: string; text: string; bar: string; label: string }> = {
-  recommended: {
+  RECOMMENDED: {
     side: "bg-emerald-500",
     badge: "bg-emerald-100 text-emerald-700 border-emerald-200 dark:bg-emerald-500/15 dark:text-emerald-300 dark:border-emerald-500/30",
     text: "text-emerald-600 dark:text-emerald-400",
     bar: "bg-emerald-500",
     label: "Recomendado",
   },
-  caution: {
+  RESERVED: {
     side: "bg-amber-500",
     badge: "bg-amber-100 text-amber-700 border-amber-200 dark:bg-amber-500/15 dark:text-amber-300 dark:border-amber-500/30",
     text: "text-amber-600 dark:text-amber-400",
     bar: "bg-amber-500",
-    label: "En cautela",
+    label: "Recomendado con reservas",
   },
-  not_recommended: {
+  NOT_RECOMMENDED: {
     side: "bg-red-500",
     badge: "bg-red-100 text-red-700 border-red-200 dark:bg-red-500/15 dark:text-red-300 dark:border-red-500/30",
     text: "text-red-600 dark:text-red-400",
     bar: "bg-red-500",
     label: "No recomendado",
   },
-  pending: {
+  NO_ANALYSIS: {
     side: "bg-slate-400",
     badge: "bg-slate-100 text-slate-600 border-slate-200 dark:bg-slate-500/15 dark:text-slate-300 dark:border-slate-500/30",
     text: "text-slate-500 dark:text-slate-400",
     bar: "bg-slate-400",
-    label: "Sin evaluar",
+    label: "Pendiente de decisión",
   },
 };
 
@@ -177,7 +197,7 @@ export default function AdminEvaluationsPanel({
     let base = filterEvaluations(evaluations, search, schoolFilter, programFilter);
 
     if (statusFilter !== "all") {
-      base = base.filter((ev) => getEvalStatus(ev) === statusFilter);
+      base = base.filter((ev) => getAiRecommendationStatus(ev) === statusFilter);
     }
 
     if (scoreRange !== "all") {
@@ -295,12 +315,18 @@ export default function AdminEvaluationsPanel({
           </span>
           <span className="inline-flex items-center gap-1.5 text-amber-600 dark:text-amber-400">
             <AlertTriangle className="w-3.5 h-3.5" />
-            <span><span className="font-semibold">{metrics.caution}</span> en cautela</span>
+            <span><span className="font-semibold">{metrics.caution}</span> con reservas</span>
           </span>
           <span className="inline-flex items-center gap-1.5 text-red-600 dark:text-red-400">
             <ShieldAlert className="w-3.5 h-3.5" />
-            <span><span className="font-semibold">{metrics.notRecommended}</span> riesgo alto</span>
+            <span><span className="font-semibold">{metrics.notRecommended}</span> no recomendados</span>
           </span>
+          {metrics.noAnalysis > 0 && (
+            <span className="inline-flex items-center gap-1.5 text-slate-500 dark:text-slate-400">
+              <span className="w-3.5 h-3.5 rounded-full bg-slate-400 dark:bg-slate-500" />
+              <span><span className="font-semibold">{metrics.noAnalysis}</span> pendientes</span>
+            </span>
+          )}
         </div>
 
         <div className={`border-t ${isDark ? "border-white/5" : "border-slate-100"}`} />
@@ -604,7 +630,7 @@ export default function AdminEvaluationsPanel({
           {pageItems.length > 0 ? (
             <div className="space-y-4">
             {pageItems.map((ev) => {
-              const status = getEvalStatus(ev);
+              const status = getAiRecommendationStatus(ev);
               const cfg = statusConfig[status];
               const score = getScore(ev);
               const isSelected = selectedId === ev.id;
@@ -643,6 +669,17 @@ export default function AdminEvaluationsPanel({
                         <span className={["inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-semibold border", cfg.badge].join(" ")}>
                           {cfg.label}
                         </span>
+                        {(() => {
+                          const coordStatus = getCoordinatorDecisionStatus(ev);
+                          const coordBadge = coordinatorDecisionBadge(coordStatus, isDark);
+                          const coordLabel = coordinatorDecisionLabel(coordStatus);
+                          if (!coordBadge || !coordLabel) return null;
+                          return (
+                            <span className={["inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-semibold border", coordBadge].join(" ")}>
+                              {coordLabel}
+                            </span>
+                          );
+                        })()}
                       </div>
                       <div className={`flex flex-wrap items-center gap-x-2 gap-y-0.5 text-xs ${isDark ? "text-neutral-500" : "text-slate-500"}`}>
                         {getProgramName(ev) && <span>{getProgramName(ev)}</span>}

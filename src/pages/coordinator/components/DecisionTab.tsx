@@ -138,9 +138,9 @@ const DecisionTab: React.FC<Props> = ({
               Decisión del Coordinador
             </p>
             <p className="text-sm text-gray-300">
-              El coordinador define la recomendación y deja trazabilidad para el
-              admin. La decisión solo se envía al presionar{" "}
-              <b>Enviar decisión</b>.
+              El coordinador define la decisión oficial del proceso. El resultado
+              queda registrado con trazabilidad completa. Se aplica al presionar{" "}
+              <b>Registrar decisión oficial</b>.
             </p>
           </div>
 
@@ -243,13 +243,12 @@ const DecisionTab: React.FC<Props> = ({
             ) : (
               <Send className="w-4 h-4" />
             )}
-            {saving ? "Enviando..." : "Enviar decisión"}
+            {saving ? "Enviando..." : "Registrar decisión oficial"}
           </button>
         </div>
 
         <p className="text-[11px] text-gray-500">
-          La decisión registrada aquí se usa luego para trazabilidad y paneles
-          de administración.
+          Esta decisión define el estado oficial del candidato y se refleja en los listados del sistema.
         </p>
       </div>
     </div>

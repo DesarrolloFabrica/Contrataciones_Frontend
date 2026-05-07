@@ -7,6 +7,7 @@ import { TextInput } from "./TextInput";
 import { SelectInput } from "./SelectInput";
 import { CandidateLookupPanel } from "./CandidateLookupPanel";
 import { ExperienceSection } from "./ExperienceSection";
+import { CreateCandidateModal, type CreateCandidateModalPayload } from "./CreateCandidateModal";
 import { MIN_CC_LENGTH, MAX_CC_LENGTH } from "../constants";
 import type { NormalizedSchool, TeacherCandidateSearchItemDto, InterviewFormChangeHandler } from "../types";
 import type { InterviewData } from "../../../../types";
@@ -17,6 +18,7 @@ interface IdentitySectionProps {
   normalizedSchools: NormalizedSchool[];
   availablePrograms: string[];
   schoolsLoading: boolean;
+  schoolsLoadError: string | null;
   isLeader: boolean;
   leaderSchoolId: string | null;
   isSearching: boolean;
@@ -26,9 +28,15 @@ interface IdentitySectionProps {
   isCreatingCandidate: boolean;
   canCreateCandidate: boolean;
   missingScopeForCreate: boolean;
+  identityError: string | null;
+  candidateStatus: string | null;
+  isCreateCandidateModalOpen: boolean;
+  createCandidateError: string | null;
   onChange: InterviewFormChangeHandler;
   onPickCandidate: (c: TeacherCandidateSearchItemDto) => void;
-  onCreateCandidate: () => void;
+  onOpenCreateCandidate: () => void;
+  onCloseCreateCandidate: () => void;
+  onCreateCandidate: (payload: CreateCandidateModalPayload) => void;
 }
 
 export const IdentitySection: React.FC<IdentitySectionProps> = ({
@@ -37,6 +45,7 @@ export const IdentitySection: React.FC<IdentitySectionProps> = ({
   normalizedSchools,
   availablePrograms,
   schoolsLoading,
+  schoolsLoadError,
   isLeader,
   leaderSchoolId,
   isSearching,
@@ -46,8 +55,14 @@ export const IdentitySection: React.FC<IdentitySectionProps> = ({
   isCreatingCandidate,
   canCreateCandidate,
   missingScopeForCreate,
+  identityError,
+  candidateStatus,
+  isCreateCandidateModalOpen,
+  createCandidateError,
   onChange,
   onPickCandidate,
+  onOpenCreateCandidate,
+  onCloseCreateCandidate,
   onCreateCandidate,
 }) => {
   const { theme } = useTheme();
@@ -173,6 +188,24 @@ export const IdentitySection: React.FC<IdentitySectionProps> = ({
         </FormField>
       </div>
 
+      {identityError && (
+        <div className={`rounded-xl border px-4 py-3 text-sm ${isDark ? "bg-red-500/10 border-red-400/30 text-red-200" : "bg-red-50 border-red-200 text-red-700"}`}>
+          {identityError}
+        </div>
+      )}
+
+      {schoolsLoadError && (
+        <div className={`rounded-xl border px-4 py-3 text-sm ${isDark ? "bg-amber-500/10 border-amber-400/30 text-amber-200" : "bg-amber-50 border-amber-200 text-amber-700"}`}>
+          {schoolsLoadError}
+        </div>
+      )}
+
+      {candidateStatus && (
+        <div className={`rounded-xl border px-4 py-3 text-sm ${isDark ? "bg-cyan-500/10 border-cyan-400/30 text-cyan-200" : "bg-cyan-50 border-cyan-200 text-cyan-700"}`}>
+          {candidateStatus}
+        </div>
+      )}
+
       {!selectedCandidateId && (
         <div className="space-y-2">
           {missingScopeForCreate &&
@@ -182,8 +215,8 @@ export const IdentitySection: React.FC<IdentitySectionProps> = ({
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                 </svg>
                 <span>
-                  Selecciona escuela y programa para poder crear el
-                  candidato con IDs.
+                  La escuela o programa seleccionado no tiene ID válido. Vuelve
+                  a seleccionar desde el listado oficial.
                 </span>
               </div>
             )}
@@ -206,20 +239,36 @@ export const IdentitySection: React.FC<IdentitySectionProps> = ({
 
               <button
                 type="button"
-                onClick={onCreateCandidate}
+                onClick={onOpenCreateCandidate}
                 disabled={isCreatingCandidate}
                 className="px-4 py-2 rounded-xl border border-cyan-500/35 bg-cyan-500/10 text-cyan-200 text-[11px] font-extrabold uppercase tracking-[0.22em] hover:bg-cyan-500/15 transition disabled:opacity-60 disabled:cursor-wait"
               >
-                {isCreatingCandidate ? "Creando..." : "Crear candidato"}
+                Crear candidato
               </button>
             </div>
           )}
         </div>
       )}
 
+      {selectedCandidateId && (
+        <div className={`rounded-xl border px-4 py-3 text-xs font-semibold ${isDark ? "bg-emerald-500/10 border-emerald-400/30 text-emerald-200" : "bg-emerald-50 border-emerald-200 text-emerald-700"}`}>
+          Candidato encontrado y listo para el análisis.
+        </div>
+      )}
+
       <ExperienceSection
         formData={formData}
         onChange={onChange}
+      />
+
+      <CreateCandidateModal
+        open={isCreateCandidateModalOpen}
+        formData={formData}
+        normalizedSchools={normalizedSchools}
+        isSaving={isCreatingCandidate}
+        error={createCandidateError}
+        onClose={onCloseCreateCandidate}
+        onConfirm={onCreateCandidate}
       />
     </FormSection>
   );

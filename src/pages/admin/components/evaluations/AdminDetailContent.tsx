@@ -12,14 +12,15 @@ import {
   CheckCircle2,
   AlertTriangle,
   Sparkles,
+  FolderOpen,
 } from "lucide-react";
 
 import type { TeacherEvaluationSummary } from "../../../../types";
 import { getBucket } from "../../utils/adminSelectors";
 import { useAdminAudit } from "../../hooks/useAdminAudit";
 import AdminDecisionTraceCard from "../detail/AdminDecisionTraceCard";
-import AdminFinalDecisionPanel from "../detail/AdminFinalDecisionPanel";
-import { useAdminLocalDecision } from "../../hooks/useAdminLocalDecision";
+import CoordinatorDecisionCard from "../detail/CoordinatorDecisionCard";
+import CoordinatorDocumentsSection from "../../../coordinator/components/CoordinatorDocumentsSection";
 
 import {
   getExecutiveSummary,
@@ -366,7 +367,7 @@ type Props = {
   selectedDetail: { analysis: any; interview: any; raw: any } | null;
 };
 
-type TabKey = "RESUMEN" | "DECISION" | "TRAZABILIDAD";
+type TabKey = "RESUMEN" | "DECISION" | "DOCUMENTOS" | "TRAZABILIDAD";
 
 export default function AdminDetailContent({
   selectedId,
@@ -390,12 +391,11 @@ export default function AdminDetailContent({
   const [coordUser, setCoordUser] = useState<UserBasic | null>(null);
   const [coordUserLoading, setCoordUserLoading] = useState(false);
 
-  const { status: adminDecisionStatus } = useAdminLocalDecision(selectedId);
-
   const [activeTab, setActiveTab] = useState<TabKey>("RESUMEN");
 
   const refResumen = useRef<HTMLDivElement>(null);
   const refDecision = useRef<HTMLDivElement>(null);
+  const refDocumentos = useRef<HTMLDivElement>(null);
   const refTraz = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -830,6 +830,15 @@ export default function AdminDetailContent({
 
                   <button
                     type="button"
+                    className={chipClass("DOCUMENTOS")}
+                    onClick={() => setActiveTab("DOCUMENTOS")}
+                  >
+                    <FolderOpen className="w-4 h-4" />
+                    Documentos
+                  </button>
+
+                  <button
+                    type="button"
                     className={chipClass("TRAZABILIDAD")}
                     onClick={() => setActiveTab("TRAZABILIDAD")}
                   >
@@ -944,7 +953,7 @@ export default function AdminDetailContent({
                 <div className="flex items-center justify-between gap-3 mb-4">
                   <div className="flex items-center gap-2">
                     <Gavel className="w-4 h-4 text-cyan-300" />
-                    <h5 className="text-sm font-extrabold text-white uppercase tracking-[0.18em]">
+                    <h5 className={`text-sm font-extrabold uppercase tracking-[0.18em] ${isDark ? "text-white" : "text-slate-900"}`}>
                       Decisión del coordinador
                     </h5>
                   </div>
@@ -955,47 +964,31 @@ export default function AdminDetailContent({
                   />
                 </div>
 
-                <p className="text-[12px] text-white/45 mb-4">
-                  Veredicto y comentario (si aplica).
+                <CoordinatorDecisionCard
+                  status={actors.coord.status}
+                  coordinatorName={actors.coord.name}
+                  coordinatorEmail={actors.coord.email}
+                  decidedAt={actors.coord.at}
+                  notes={(execSummary as any)?.coordinatorDecision?.notes ?? rawDetail?.coordinatorNotes}
+                  criteria={(execSummary as any)?.coordinatorDecision?.criteria ?? rawDetail?.coordinatorCriteria}
+                />
+              </div>
+            )}
+
+            {activeTab === "DOCUMENTOS" && (
+              <div ref={refDocumentos} className={cardClass}>
+                <div className="flex items-center gap-2 mb-4">
+                  <FolderOpen className="w-4 h-4 text-cyan-300" />
+                  <h5 className={`text-sm font-extrabold uppercase tracking-[0.18em] ${isDark ? "text-white" : "text-slate-900"}`}>
+                    Soportes documentales
+                  </h5>
+                </div>
+
+                <p className={`text-[12px] mb-4 ${isDark ? "text-white/45" : "text-slate-600"}`}>
+                  Hoja de vida, links opcionales y observaciones del candidato.
                 </p>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <ActorCard actor={actors.coord} />
-
-                  <div className={subCardClass}>
-                    <p
-                      className={
-                        isDark
-                          ? STYLES.labelDark
-                          : "text-[10px] uppercase tracking-[0.24em] text-slate-500 font-bold"
-                      }
-                    >
-                      Comentario
-                    </p>
-                    <div
-                      className={[
-                        "mt-2 rounded-2xl border p-4 min-h-[120px]",
-                        isDark
-                          ? "bg-black/25 border-white/10"
-                          : "bg-slate-50 border-slate-200",
-                      ].join(" ")}
-                    >
-                      <p
-                        className={`text-sm whitespace-pre-wrap leading-relaxed ${
-                          isDark ? "text-white/80" : "text-slate-700"
-                        }`}
-                      >
-                        {(execSummary as any)?.coordinatorDecision?.notes ||
-                          "Sin comentario."}
-                      </p>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Admin final decision */}
-                <div className={["mt-6 pt-6 border-t", isDark ? "border-white/10" : "border-slate-200"].join(" ")}>
-                  <AdminFinalDecisionPanel evaluationId={selectedId} />
-                </div>
+                <CoordinatorDocumentsSection evaluationId={selectedId} />
               </div>
             )}
 
@@ -1017,7 +1010,6 @@ export default function AdminDetailContent({
                     status: actors.coord.status,
                     at: actors.coord.at ?? null,
                   }}
-                  adminStatus={adminDecisionStatus}
                 />
               </div>
             )}
@@ -1059,11 +1051,15 @@ export default function AdminDetailContent({
                 </li>
                 <li className="flex gap-2">
                   <span className="text-cyan-300">2)</span>
-                  <span>Valida decisión del coordinador y comentario.</span>
+                  <span>Consulta decisión oficial del coordinador y criterios.</span>
                 </li>
                 <li className="flex gap-2">
                   <span className="text-cyan-300">3)</span>
-                  <span>Comprueba trazabilidad (líder/coordinador).</span>
+                  <span>Revisa documentos soportes del candidato.</span>
+                </li>
+                <li className="flex gap-2">
+                  <span className="text-cyan-300">4)</span>
+                  <span>Comprueba trazabilidad completa (líder/coordinador).</span>
                 </li>
               </ul>
             </div>

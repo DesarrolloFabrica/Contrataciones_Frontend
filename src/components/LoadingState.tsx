@@ -1,112 +1,174 @@
 // src/components/LoadingState.tsx
-import React, { useState, useEffect } from 'react';
-import { BrainCircuit, Sparkles, Cpu, Search, Fingerprint } from 'lucide-react';
+import React, { useState, useEffect } from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import { Loader2, ListTodo } from "lucide-react";
+import { useTheme } from "../context/ThemeContext";
 
 const messages = [
-  "Analizando observaciones cualitativas...",
-  "Aplicando rúbrica de puntuación...",
-  "Calculando puntaje global ponderado...",
-  "Evaluando factores de riesgo...",
-  "Correlacionando patrones históricos...",
-  "Generando estrategias de mitigación...",
-  "Redactando informe ejecutivo..."
+  "Analizando observaciones cualitativas…",
+  "Aplicando rúbrica de puntuación…",
+  "Calculando puntaje global ponderado…",
+  "Evaluando factores de riesgo…",
+  "Contrastando con patrones históricos…",
+  "Generando estrategias de mitigación…",
+  "Redactando informe ejecutivo…",
 ];
 
 const LoadingState: React.FC = () => {
+  const { theme } = useTheme();
+  const isDark = theme === "dark";
   const [messageIndex, setMessageIndex] = useState(0);
-  const [progress, setProgress] = useState(0);
 
   useEffect(() => {
-    // Rotación de mensajes
     const msgInterval = setInterval(() => {
-      setMessageIndex((prevIndex) => (prevIndex + 1) % messages.length);
-    }, 2000);
-
-    // Barra de progreso simulada
-    const progressInterval = setInterval(() => {
-      setProgress((oldProgress) => {
-        if (oldProgress === 100) return 0;
-        const diff = Math.random() * 10;
-        return Math.min(oldProgress + diff, 100);
-      });
-    }, 500);
-
-    return () => {
-      clearInterval(msgInterval);
-      clearInterval(progressInterval);
-    };
+      setMessageIndex((prev) => (prev + 1) % messages.length);
+    }, 2800);
+    return () => clearInterval(msgInterval);
   }, []);
 
+  const shellCls = [
+    "relative overflow-hidden rounded-2xl border",
+    isDark
+      ? "border-white/[0.08] bg-gradient-to-b from-[#080D16]/95 via-[#0A1018]/90 to-[#060A12] shadow-[0_0_40px_-12px_rgba(6,182,212,0.08)]"
+      : "border-slate-200/80 bg-gradient-to-b from-white via-slate-50/90 to-white shadow-[0_12px_40px_-12px_rgba(15,23,42,0.06)]",
+  ].join(" ");
+
+  const statusCardCls = [
+    "w-full rounded-xl border p-4 relative overflow-hidden",
+    isDark ? "border-white/[0.08] bg-white/[0.02]" : "border-slate-200/90 bg-white/80",
+  ].join(" ");
+
   return (
-    <div className="min-h-[50vh] flex flex-col items-center justify-center p-6 relative overflow-hidden rounded-3xl bg-[#050505] border border-white/5">
-      
-      {/* Luces Ambientales de Fondo */}
-      <div className="absolute top-0 left-1/2 -translate-x-1/2 w-96 h-96 bg-emerald-500/10 rounded-full blur-[100px] animate-pulse" />
-      
-      <div className="relative z-10 flex flex-col items-center max-w-lg w-full">
-        
-        {/* --- NÚCLEO DE IA (Spinner Avanzado) --- */}
-        <div className="relative w-24 h-24 mb-10 flex items-center justify-center">
-          {/* Anillo Exterior (Lento) */}
-          <div className="absolute inset-0 rounded-full border border-emerald-500/20 border-t-emerald-500 animate-[spin_3s_linear_infinite]" />
-          
-          {/* Anillo Interior (Rápido inverso) */}
-          <div className="absolute inset-3 rounded-full border border-cyan-500/20 border-b-cyan-400 animate-[spin_2s_linear_infinite_reverse]" />
-          
-          {/* Icono Central Pulsante */}
-          <div className="relative bg-[#0F0F0F] rounded-full p-4 border border-white/10 shadow-[0_0_30px_-5px_rgba(16,185,129,0.3)] animate-pulse">
-            <BrainCircuit className="w-8 h-8 text-emerald-400" />
-          </div>
-
-          {/* Partículas decorativas */}
-          <Sparkles className="absolute -top-2 -right-4 w-5 h-5 text-cyan-400 animate-bounce opacity-50" />
+    <div
+      className={`min-h-[50vh] flex flex-col items-center justify-center p-6 md:p-10 ${shellCls}`}
+      role="status"
+      aria-live="polite"
+      aria-busy="true"
+    >
+      {isDark && (
+        <div className="absolute inset-0 pointer-events-none">
+          <div className="absolute top-1/2 left-1/2 h-[320px] w-[320px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-cyan-500/[0.07] blur-[90px]" />
+          <div className="absolute bottom-0 right-0 h-[200px] w-[200px] rounded-full bg-blue-500/[0.05] blur-[70px]" />
         </div>
+      )}
 
-        {/* --- TEXTOS --- */}
-        <h2 className="text-2xl md:text-3xl font-bold text-white mb-3 tracking-tight text-center">
-          Procesando Perfil
+      <div className="relative z-10 flex max-w-md w-full flex-col items-center">
+        <motion.div
+          className={[
+            "relative mb-8 flex h-[4.75rem] w-[4.75rem] items-center justify-center rounded-2xl border backdrop-blur-sm",
+            isDark
+              ? "border-cyan-300/25 bg-cyan-400/[0.08] shadow-[0_0_32px_-8px_rgba(34,211,238,0.25)]"
+              : "border-cyan-400/35 bg-cyan-500/10 shadow-[0_12px_32px_-12px_rgba(8,145,178,0.2)]",
+          ].join(" ")}
+          initial={{ opacity: 0, scale: 0.94 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
+        >
+          <motion.div
+            className="absolute inset-0 rounded-2xl border border-cyan-400/20"
+            animate={{ opacity: [0.35, 0.65, 0.35], scale: [1, 1.04, 1] }}
+            transition={{ duration: 2.4, repeat: Infinity, ease: "easeInOut" }}
+            aria-hidden
+          />
+          <Loader2
+            className={[
+              "relative z-[1] h-9 w-9 animate-spin",
+              isDark ? "text-cyan-200" : "text-cyan-600",
+            ].join(" ")}
+            strokeWidth={2}
+            aria-hidden
+          />
+        </motion.div>
+
+        <h2
+          className={[
+            "mb-2 text-center text-2xl font-black tracking-tight md:text-3xl",
+            isDark ? "text-white" : "text-slate-900",
+          ].join(" ")}
+        >
+          Procesando{" "}
+          <span className="bg-gradient-to-r from-cyan-400 to-blue-400 bg-clip-text text-transparent">
+            perfil
+          </span>
         </h2>
-        
-        <p className="text-gray-400 text-sm text-center mb-8 max-w-sm leading-relaxed">
-          Nuestros modelos están deconstruyendo las respuestas para generar un análisis predictivo de riesgo y potencial.
+
+        <p
+          className={[
+            "mb-8 text-center text-sm leading-relaxed",
+            isDark ? "text-slate-400" : "text-slate-600",
+          ].join(" ")}
+        >
+          Generamos el informe de evaluación a partir de tus respuestas. Suele tardar unos
+          instantes.
         </p>
 
-        {/* --- TARJETA DE ESTADO (Log) --- */}
-        <div className="w-full bg-[#0A0A0A] border border-white/10 rounded-xl p-4 relative overflow-hidden group">
-          {/* Barra de Progreso Superior */}
-          <div className="absolute top-0 left-0 h-0.5 bg-gradient-to-r from-emerald-500 to-cyan-500 transition-all duration-300 ease-out" style={{ width: `${progress}%` }} />
-          
-          <div className="flex items-center gap-4">
-            <div className="p-2 bg-white/5 rounded-lg text-emerald-400">
-               {/* Cambia el icono dinámicamente según el paso (opcional, o usa uno fijo) */}
-               <Cpu className="w-5 h-5 animate-pulse" />
+        <div className={statusCardCls}>
+          <div
+            className={[
+              "relative mb-3 h-1 w-full overflow-hidden rounded-full",
+              isDark ? "bg-white/[0.06]" : "bg-slate-200/80",
+            ].join(" ")}
+            aria-hidden
+          >
+            <motion.div
+              className="absolute top-0 h-full w-[32%] rounded-full bg-gradient-to-r from-cyan-400 to-emerald-400 shadow-[0_0_12px_rgba(34,211,238,0.35)]"
+              animate={{ left: ["-32%", "100%"] }}
+              transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
+            />
+          </div>
+
+          <div className="flex items-start gap-3">
+            <div
+              className={[
+                "flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border",
+                isDark
+                  ? "border-white/10 bg-white/[0.04] text-cyan-300"
+                  : "border-slate-200 bg-slate-50 text-cyan-700",
+              ].join(" ")}
+            >
+              <ListTodo className="h-4 w-4" aria-hidden />
             </div>
-            
-            <div className="flex-1 min-w-0">
-              <p className="text-[10px] font-bold uppercase tracking-widest text-gray-500 mb-1">
-                Estado del Sistema
-              </p>
-              <div className="h-6 relative overflow-hidden">
-                {messages.map((msg, idx) => (
-                  <span
-                    key={idx}
-                    className={`absolute inset-0 flex items-center text-sm font-mono text-cyan-300 transition-all duration-500 transform ${
-                      idx === messageIndex 
-                        ? 'opacity-100 translate-y-0' 
-                        : 'opacity-0 translate-y-4'
-                    }`}
+
+            <div className="min-w-0 flex-1">
+              <div className="mb-1 flex items-center justify-between gap-2">
+                <p
+                  className={[
+                    "text-[10px] font-bold uppercase tracking-[0.16em]",
+                    isDark ? "text-slate-500" : "text-slate-500",
+                  ].join(" ")}
+                >
+                  Actividad
+                </p>
+                <span
+                  className={[
+                    "tabular-nums text-[10px] font-semibold",
+                    isDark ? "text-cyan-400/90" : "text-cyan-700",
+                  ].join(" ")}
+                >
+                  {messageIndex + 1} / {messages.length}
+                </span>
+              </div>
+
+              <div className="relative min-h-[2.75rem]">
+                <AnimatePresence mode="wait">
+                  <motion.p
+                    key={messageIndex}
+                    initial={{ opacity: 0, y: 6 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -6 }}
+                    transition={{ duration: 0.25, ease: [0.22, 1, 0.36, 1] }}
+                    className={[
+                      "text-sm font-medium leading-snug",
+                      isDark ? "text-slate-200" : "text-slate-700",
+                    ].join(" ")}
                   >
-                    {msg} <span className="animate-pulse ml-1">_</span>
-                  </span>
-                ))}
+                    {messages[messageIndex]}
+                  </motion.p>
+                </AnimatePresence>
               </div>
             </div>
           </div>
-
-          {/* Brillo de fondo al procesar */}
-          <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/5 to-transparent -translate-x-full animate-[shimmer_2s_infinite]" />
         </div>
-
       </div>
     </div>
   );

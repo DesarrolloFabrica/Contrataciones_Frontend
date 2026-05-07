@@ -10,6 +10,7 @@ type NavItem = {
   label: string;
   description: string;
   icon: React.ReactNode;
+  hidden?: boolean;
 };
 
 const NAV_ITEMS: NavItem[] = [
@@ -36,12 +37,14 @@ const NAV_ITEMS: NavItem[] = [
     label: "Analítica",
     description: "Dashboard global",
     icon: <BarChart3 className="w-5 h-5" />,
+    hidden: true,
   },
   {
     id: "AUDIT",
     label: "Auditoría",
     description: "Trazabilidad",
     icon: <ScrollText className="w-5 h-5" />,
+    hidden: true,
   },
 ];
 
@@ -98,7 +101,7 @@ export default function AdminSidebar({ view, onNavigate }: Props) {
 
       {/* Nav items */}
       <nav className="flex-1 py-4 px-2 xl:px-3 space-y-1 overflow-y-auto">
-        {NAV_ITEMS.map((item) => {
+        {NAV_ITEMS.filter(item => !item.hidden).map((item) => {
           const isActive = view === item.id;
           return (
             <button

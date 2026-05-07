@@ -35,7 +35,7 @@ export default function AdminAuditGlobalPanel({
   const isDark = theme === "dark";
 
   const [entityType, setEntityType] = useState<FilterType>("ALL");
-  const [hideAdmin, setHideAdmin] = useState(false);
+  const [hideSystem, setHideSystem] = useState(false);
 
   const { audit, loadingAudit, errorAudit } = useAdminAudit({
     entityType: entityType === "ALL" ? undefined : entityType,
@@ -46,8 +46,8 @@ export default function AdminAuditGlobalPanel({
   const countsTotal = useMemo(() => countByType(audit), [audit]);
 
   const relevantEvents = useMemo(() => {
-    return (audit ?? []).filter((ev) => shouldShowEvent(ev, { hideAdmin }));
-  }, [audit, hideAdmin]);
+    return (audit ?? []).filter((ev) => shouldShowEvent(ev, { hideAdmin: hideSystem }));
+  }, [audit, hideSystem]);
 
   const countsRelevant = useMemo(() => countByType(relevantEvents), [relevantEvents]);
 
@@ -102,10 +102,10 @@ export default function AdminAuditGlobalPanel({
           <div className="flex items-center gap-3">
             <button
               type="button"
-              onClick={() => setHideAdmin((s) => !s)}
+              onClick={() => setHideSystem((s) => !s)}
               className={[
                 pill,
-                hideAdmin
+                hideSystem
                   ? isDark
                     ? "border-cyan-500/40 bg-cyan-500/10 text-cyan-300"
                     : "border-cyan-200 bg-cyan-50 text-cyan-700"
@@ -114,7 +114,7 @@ export default function AdminAuditGlobalPanel({
                     : "border-slate-200 bg-white text-slate-600 hover:border-slate-300",
               ].join(" ")}
             >
-              {hideAdmin ? "Ocultando ADMIN" : "Mostrar ADMIN"}
+              {hideSystem ? "Ocultando sistema" : "Mostrar sistema"}
             </button>
 
             <span className={`text-xs ${isDark ? "text-neutral-500" : "text-slate-400"}`}>
@@ -191,18 +191,18 @@ export default function AdminAuditGlobalPanel({
               isDark ? "text-neutral-500" : "text-slate-500",
             ].join(" ")}>
               No hay eventos registrados aún.
-              <div className={[
-                "text-xs mt-2",
-                isDark ? "text-neutral-600" : "text-slate-400",
-              ].join(" ")}>
-                Prueba desactivar "Ocultando ADMIN" o cambia el filtro.
-              </div>
+                <div className={[
+                  "text-xs mt-2",
+                  isDark ? "text-neutral-600" : "text-slate-400",
+                ].join(" ")}>
+                  Prueba cambiar el filtro de tipo de entidad.
+                </div>
             </div>
           ) : (
             <div className="p-5">
               <AdminAuditTimeline
                 events={audit}
-                hideAdminEvents={hideAdmin}
+                hideAdminEvents={hideSystem}
               />
             </div>
           )}

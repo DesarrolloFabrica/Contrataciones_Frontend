@@ -5,6 +5,14 @@ import {
   UserCog,
   ShieldCheck,
   Clock,
+  Send,
+  Upload,
+  Link2,
+  RefreshCw,
+  AlertTriangle,
+  UserCheck,
+  UserX,
+  Briefcase,
 } from "lucide-react";
 
 import type {
@@ -17,21 +25,25 @@ export type Severity = "INFO" | "DECISION" | "CRITICAL";
 
 /**
  * Acciones que SIEMPRE ocultamos (ruido).
- * Mantén esto pequeño.
  */
 const HIDDEN_ACTIONS = new Set<AdminAuditAction>([
-  "DETAIL_VIEWED", // ocultar definitivo
+  "DETAIL_VIEWED",
 ]);
 
 /**
- * Acciones "top" (las resaltamos y les damos severidad/labels mejores),
- * pero OJO: YA NO BLOQUEAMOS lo demás.
+ * Acciones "top" (las resaltamos y les damos severidad/labels mejores).
  */
 const IMPORTANT_ACTIONS = new Set<AdminAuditAction>([
   "USER_CREATED",
   "USER_UPDATED",
   "COORDINATOR_DECISION_SAVED",
-  "ADMIN_DECISION_SAVED",
+  "COORDINATOR_DECISION_CREATED",
+  "COORDINATOR_DECISION_UPDATED",
+  "EVALUATION_SUBMITTED",
+  "CANDIDATE_CREATED",
+  "DOCUMENT_UPLOADED",
+  "HIRING_REQUEST_CREATED",
+  "ADMIN_DECISION_BLOCKED",
 ]);
 
 export function shouldShowEvent(
@@ -40,30 +52,40 @@ export function shouldShowEvent(
 ) {
   if (!ev) return false;
 
-  // ✅ Oculta ruido
   if (HIDDEN_ACTIONS.has(ev.action)) return false;
 
-  // ✅ Opcional: ocultar lo que haga el ADMIN
   if (opts?.hideAdmin && ev.actorRole === "ADMIN") return false;
 
-  // ✅ Antes: aquí bloqueabas TODO lo que no estuviera permitido.
-  // Ahora: mostramos también acciones nuevas/desconocidas (mejor que timeline vacío).
   return true;
 }
 
 export function severityForAction(action: AdminAuditAction): Severity {
   switch (action) {
     case "USER_CREATED":
+    case "CANDIDATE_CREATED":
+    case "HIRING_REQUEST_CREATED":
+    case "DOCUMENT_UPLOADED":
+    case "DOCUMENT_LINK_REGISTERED":
+    case "EVALUATION_UPDATED":
+    case "INTERVIEW_CREATED":
+    case "EVALUATION_HIRING_REQUEST_ASSOCIATED":
+    case "RESUME_MARKED_PRIMARY":
+    case "EVALUATION_REPORT_ATTACHED":
+    case "HIRING_REQUEST_UPDATED":
+    case "CANDIDATE_UPDATED":
       return "INFO";
-    case "USER_UPDATED":
-      return "CRITICAL";
     case "COORDINATOR_DECISION_SAVED":
+    case "COORDINATOR_DECISION_CREATED":
+    case "COORDINATOR_DECISION_UPDATED":
+    case "EVALUATION_SUBMITTED":
       return "DECISION";
-    case "ADMIN_DECISION_SAVED":
+    case "USER_UPDATED":
+    case "ADMIN_DECISION_BLOCKED":
+    case "USER_ACTIVATED":
+    case "USER_DEACTIVATED":
       return "CRITICAL";
     default:
-      // Si no es “importante”, lo tratamos como INFO
-      return IMPORTANT_ACTIONS.has(action) ? "INFO" : "INFO";
+      return "INFO";
   }
 }
 
@@ -104,12 +126,44 @@ export function actionLabel(action: AdminAuditAction) {
       return "Usuario creado";
     case "USER_UPDATED":
       return "Usuario actualizado";
+    case "USER_ACTIVATED":
+      return "Usuario activado";
+    case "USER_DEACTIVATED":
+      return "Usuario desactivado";
     case "COORDINATOR_DECISION_SAVED":
+    case "COORDINATOR_DECISION_CREATED":
       return "Decisión coordinador";
+    case "COORDINATOR_DECISION_UPDATED":
+      return "Decisión coordinador actualizada";
     case "ADMIN_DECISION_SAVED":
-      return "Decisión admin";
+      return "Decisión admin (legacy)";
+    case "ADMIN_DECISION_BLOCKED":
+      return "Intento admin bloqueado";
+    case "CANDIDATE_CREATED":
+      return "Candidato creado";
+    case "CANDIDATE_UPDATED":
+      return "Candidato actualizado";
+    case "EVALUATION_SUBMITTED":
+      return "Evaluación enviada";
+    case "EVALUATION_UPDATED":
+      return "Evaluación actualizada";
+    case "EVALUATION_HIRING_REQUEST_ASSOCIATED":
+      return "Evaluación vinculada a solicitud";
+    case "INTERVIEW_CREATED":
+      return "Entrevista creada";
+    case "DOCUMENT_UPLOADED":
+      return "Documento subido";
+    case "DOCUMENT_LINK_REGISTERED":
+      return "Link registrado";
+    case "RESUME_MARKED_PRIMARY":
+      return "Hoja de vida marcada principal";
+    case "EVALUATION_REPORT_ATTACHED":
+      return "Reporte adjuntado";
+    case "HIRING_REQUEST_CREATED":
+      return "Solicitud de contratación creada";
+    case "HIRING_REQUEST_UPDATED":
+      return "Solicitud actualizada";
     default:
-      // ✅ Fallback: no dejes strings feos si te llega algo nuevo
       return String(action)
         .replaceAll("_", " ")
         .toLowerCase()
@@ -122,9 +176,16 @@ export function entityLabel(t: AdminAuditEntityType) {
     case "USER":
       return "Usuario";
     case "EVALUATION":
+    case "TEACHER_EVALUATION":
       return "Evaluación";
     case "SYSTEM":
       return "Sistema";
+    case "TEACHER_CANDIDATE":
+      return "Candidato";
+    case "CANDIDATE_DOCUMENT":
+      return "Documento";
+    case "HIRING_REQUEST":
+      return "Solicitud";
     default:
       return "Sistema";
   }
@@ -136,10 +197,39 @@ export function iconForAction(action: AdminAuditAction) {
       return <UserPlus className="w-4 h-4" />;
     case "USER_UPDATED":
       return <UserCog className="w-4 h-4" />;
+    case "USER_ACTIVATED":
+      return <UserCheck className="w-4 h-4" />;
+    case "USER_DEACTIVATED":
+      return <UserX className="w-4 h-4" />;
     case "COORDINATOR_DECISION_SAVED":
+    case "COORDINATOR_DECISION_CREATED":
+    case "COORDINATOR_DECISION_UPDATED":
       return <ShieldCheck className="w-4 h-4" />;
     case "ADMIN_DECISION_SAVED":
       return <FileText className="w-4 h-4" />;
+    case "ADMIN_DECISION_BLOCKED":
+      return <AlertTriangle className="w-4 h-4" />;
+    case "CANDIDATE_CREATED":
+    case "CANDIDATE_UPDATED":
+      return <UserPlus className="w-4 h-4" />;
+    case "EVALUATION_SUBMITTED":
+      return <Send className="w-4 h-4" />;
+    case "EVALUATION_UPDATED":
+    case "INTERVIEW_CREATED":
+      return <FileText className="w-4 h-4" />;
+    case "EVALUATION_HIRING_REQUEST_ASSOCIATED":
+      return <Briefcase className="w-4 h-4" />;
+    case "DOCUMENT_UPLOADED":
+      return <Upload className="w-4 h-4" />;
+    case "DOCUMENT_LINK_REGISTERED":
+      return <Link2 className="w-4 h-4" />;
+    case "RESUME_MARKED_PRIMARY":
+      return <FileText className="w-4 h-4" />;
+    case "EVALUATION_REPORT_ATTACHED":
+      return <FileText className="w-4 h-4" />;
+    case "HIRING_REQUEST_CREATED":
+    case "HIRING_REQUEST_UPDATED":
+      return <Briefcase className="w-4 h-4" />;
     default:
       return <Clock className="w-4 h-4" />;
   }
@@ -180,8 +270,10 @@ export function metaChips(meta?: Record<string, any>) {
   if (md.status) out.push({ k: "estado", v: String(md.status) });
   if (md.candidateName) out.push({ k: "candidato", v: String(md.candidateName) });
   if (md.source) out.push({ k: "origen", v: String(md.source) });
+  if (md.verdict) out.push({ k: "veredicto", v: String(md.verdict) });
+  if (md.reason) out.push({ k: "razón", v: String(md.reason) });
 
-  return out.slice(0, 4);
+  return out.slice(0, 5);
 }
 
 export function buildHumanLine(ev: AdminAuditEvent) {
@@ -192,6 +284,8 @@ export function buildHumanLine(ev: AdminAuditEvent) {
       ? "Admin"
       : ev.actorRole === "COORDINATOR"
       ? "Coordinador"
+      : ev.actorRole === "LEADER"
+      ? "Líder"
       : "Usuario";
 
   const target =
@@ -199,10 +293,22 @@ export function buildHumanLine(ev: AdminAuditEvent) {
       ? md.email
         ? `usuario ${md.email}`
         : "un usuario"
-      : ev.entityType === "EVALUATION"
+      : ev.entityType === "EVALUATION" || ev.entityType === "TEACHER_EVALUATION"
       ? md.candidateName
         ? `evaluación de ${md.candidateName}`
         : "una evaluación"
+      : ev.entityType === "TEACHER_CANDIDATE"
+      ? md.candidateName
+        ? `candidato ${md.candidateName}`
+        : "un candidato"
+      : ev.entityType === "CANDIDATE_DOCUMENT"
+      ? md.fileName
+        ? `documento ${md.fileName}`
+        : "un documento"
+      : ev.entityType === "HIRING_REQUEST"
+      ? md.positionName
+        ? `solicitud ${md.positionName}`
+        : "una solicitud"
       : "el sistema";
 
   switch (ev.action) {
@@ -210,12 +316,44 @@ export function buildHumanLine(ev: AdminAuditEvent) {
       return `${actor} creó ${target}.`;
     case "USER_UPDATED":
       return `${actor} actualizó ${target}.`;
+    case "USER_ACTIVATED":
+      return `${actor} activó ${target}.`;
+    case "USER_DEACTIVATED":
+      return `${actor} desactivó ${target}.`;
     case "COORDINATOR_DECISION_SAVED":
-      return `Coordinador registró una decisión en ${target}.`;
+    case "COORDINATOR_DECISION_CREATED":
+      return `Coordinador registró decisión en ${target}.`;
+    case "COORDINATOR_DECISION_UPDATED":
+      return `Coordinador actualizó su decisión en ${target}.`;
     case "ADMIN_DECISION_SAVED":
-      return `Admin registró la decisión final en ${target}.`;
+      return `Admin registró decisión (legacy) en ${target}.`;
+    case "ADMIN_DECISION_BLOCKED":
+      return `Intento de decisión admin bloqueado en ${target}.`;
+    case "CANDIDATE_CREATED":
+      return `${actor} creó ${target}.`;
+    case "CANDIDATE_UPDATED":
+      return `${actor} actualizó ${target}.`;
+    case "EVALUATION_SUBMITTED":
+      return `${actor} envió ${target} con análisis IA.`;
+    case "EVALUATION_UPDATED":
+      return `${actor} actualizó ${target}.`;
+    case "EVALUATION_HIRING_REQUEST_ASSOCIATED":
+      return `${actor} vinculó ${target} a solicitud.`;
+    case "INTERVIEW_CREATED":
+      return `${actor} creó entrevista para ${target}.`;
+    case "DOCUMENT_UPLOADED":
+      return `${actor} subió ${target}.`;
+    case "DOCUMENT_LINK_REGISTERED":
+      return `${actor} registró link para ${target}.`;
+    case "RESUME_MARKED_PRIMARY":
+      return `${actor} marcó hoja de vida principal en ${target}.`;
+    case "EVALUATION_REPORT_ATTACHED":
+      return `${actor} adjuntó reporte a ${target}.`;
+    case "HIRING_REQUEST_CREATED":
+      return `${actor} creó ${target}.`;
+    case "HIRING_REQUEST_UPDATED":
+      return `${actor} actualizó ${target}.`;
     default:
-      // ✅ Acción nueva/desconocida: igual la mostramos en humano
       return `${actor} realizó "${actionLabel(ev.action)}" sobre ${target}.`;
   }
 }

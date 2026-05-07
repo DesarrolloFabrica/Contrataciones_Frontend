@@ -1,50 +1,27 @@
-import { useEffect, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import {
   listSchools,
   listProgramsBySchool,
   type SchoolOption,
   type ProgramOption,
 } from "../../../services/adminScopeService";
+import { queryKeys } from "../../../services/queryKeys";
 
 export function useAdminScopeOptions(selectedSchoolId: string | null) {
-  const [schools, setSchools] = useState<SchoolOption[]>([]);
-  const [programs, setPrograms] = useState<ProgramOption[]>([]);
-  const [loadingSchools, setLoadingSchools] = useState(false);
-  const [loadingPrograms, setLoadingPrograms] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const { data: schools = [], isLoading: loadingSchools, error: schoolsError } = useQuery<SchoolOption[]>({
+    queryKey: queryKeys.schools.list(),
+    queryFn: listSchools,
+    staleTime: 1000 * 60 * 10,
+  });
 
-  useEffect(() => {
-    let alive = true;
-    setLoadingSchools(true);
-    setError(null);
+  const { data: programs = [], isLoading: loadingPrograms, error: programsError } = useQuery<ProgramOption[]>({
+    queryKey: queryKeys.schools.programs(selectedSchoolId ?? ""),
+    queryFn: () => listProgramsBySchool(selectedSchoolId!),
+    enabled: !!selectedSchoolId,
+    staleTime: 1000 * 60 * 10,
+  });
 
-    listSchools()
-      .then((rows) => alive && setSchools(rows))
-      .catch((e) => alive && setError(e?.message ?? "Error cargando escuelas"))
-      .finally(() => alive && setLoadingSchools(false));
-
-    return () => {
-      alive = false;
-    };
-  }, []);
-
-  useEffect(() => {
-    let alive = true;
-    setPrograms([]);
-    if (!selectedSchoolId) return;
-
-    setLoadingPrograms(true);
-    setError(null);
-
-    listProgramsBySchool(selectedSchoolId)
-      .then((rows) => alive && setPrograms(rows))
-      .catch((e) => alive && setError(e?.message ?? "Error cargando programas"))
-      .finally(() => alive && setLoadingPrograms(false));
-
-    return () => {
-      alive = false;
-    };
-  }, [selectedSchoolId]);
+  const error = (schoolsError as Error)?.message ?? (programsError as Error)?.message ?? null;
 
   return { schools, programs, loadingSchools, loadingPrograms, error };
 }

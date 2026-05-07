@@ -23,6 +23,7 @@ import { EvaluationSummaryCard } from "./components/EvaluationSummaryCard";
 import { ProcessTimeline } from "./components/ProcessTimeline";
 import { CandidateDecisionPanel } from "./components/CandidateDecisionPanel";
 import { EvaluationComparisonPreview } from "./components/EvaluationComparisonPreview";
+import { CoordinatorDocumentsSection } from "./components/CoordinatorDocumentsSection";
 import { buildTimelineEvents } from "./utils/coordinatorTimeline";
 
 // --- COMPONENTES UI DE ALTA GAMA ---
@@ -118,12 +119,27 @@ export default function CoordinatorEvaluationDetailPage() {
     "details",
   );
 
+  // ✅ Compute isAlreadyEvaluated BEFORE useEvaluationDetail (needs to be available at hook call)
+  const summaryForHook = useMemo(() => {
+    if (!id) return null;
+    return (
+      evals.evaluations.find((e: any) => String(e?.id) === String(id)) ?? null
+    );
+  }, [evals.evaluations, id]);
+
+  const coordinatorApiStatusForHook = String(
+    summaryForHook?.coordinatorDecisionStatus ?? "",
+  ).toUpperCase();
+  const isAlreadyEvaluated =
+    coordinatorApiStatusForHook === "APPROVED" || coordinatorApiStatusForHook === "REJECTED";
+
   const detail = useEvaluationDetail({
     user,
     actor,
     evaluations: evals.evaluations,
     localDecisions: evals.localDecisions,
     setLocalDecisions: evals.setLocalDecisions,
+    isAlreadyEvaluated,
   });
 
   useEffect(() => {
@@ -136,12 +152,8 @@ export default function CoordinatorEvaluationDetailPage() {
   const analysis = selected?.analysis ?? null;
   const interview = selected?.interview ?? null;
 
-  const summary = useMemo(() => {
-    if (!id) return null;
-    return (
-      evals.evaluations.find((e: any) => String(e?.id) === String(id)) ?? null
-    );
-  }, [evals.evaluations, id]);
+  // ✅ Reuse summaryForHook (already computed above)
+  const summary = summaryForHook;
 
   const candidateName =
     interview?.candidateName || summary?.candidate?.fullName || "Candidato";
@@ -155,15 +167,11 @@ export default function CoordinatorEvaluationDetailPage() {
     return Number.isFinite(v) ? Math.round(v * 10) / 10 : 0;
   }, [analysis]);
 
-  const coordinatorApiStatus = String(
-    summary?.coordinatorDecisionStatus ?? "",
-  ).toUpperCase();
-  const isAlreadyEvaluated =
-    coordinatorApiStatus === "APPROVED" || coordinatorApiStatus === "REJECTED";
+  // ✅ Reuse coordinatorApiStatusForHook from above
   const evaluatedVerdictLabel =
-    coordinatorApiStatus === "APPROVED"
+    coordinatorApiStatusForHook === "APPROVED"
       ? "APROBADO"
-      : coordinatorApiStatus === "REJECTED"
+      : coordinatorApiStatusForHook === "REJECTED"
         ? "RECHAZADO"
         : "PENDIENTE";
 
@@ -399,6 +407,26 @@ export default function CoordinatorEvaluationDetailPage() {
                     Trazabilidad del proceso
                   </h3>
                   <ProcessTimeline events={buildTimelineEvents(summary)} />
+                </div>
+              )}
+
+              {/* Documentos del candidato */}
+              {id && (
+                <div
+                  className={`rounded-2xl border p-5 ${
+                    isDark
+                      ? "bg-white/[0.02] border-white/10"
+                      : "bg-slate-50 border-slate-200"
+                  }`}
+                >
+                  <h3
+                    className={`text-xs font-bold uppercase tracking-widest mb-4 ${
+                      isDark ? "text-slate-400" : "text-slate-600"
+                    }`}
+                  >
+                    Soportes documentales
+                  </h3>
+                  <CoordinatorDocumentsSection evaluationId={id} />
                 </div>
               )}
 
@@ -752,7 +780,7 @@ export default function CoordinatorEvaluationDetailPage() {
                   isAlreadyEvaluated={isAlreadyEvaluated}
                   evaluatedVerdictLabel={evaluatedVerdictLabel}
                   coordinatorDecisionAt={
-                    summary?.coordinatorDecisionAt ?? undefined
+                    summary?.coordinatorDecidedAt ?? summary?.coordinatorDecisionAt ?? undefined
                   }
                 />
               </div>

@@ -6,8 +6,75 @@ import type {
   AdminDecisionStatus,
 } from "../adminTypes";
 
+// ── Unified AI recommendation status ─────────────────────────────────
+// Single source of truth for mapping AI recommendation → status bucket.
+// Used by both KPI counters and list badges to guarantee sync.
+
+export type AiRecommendationStatus = "RECOMMENDED" | "RESERVED" | "NOT_RECOMMENDED" | "NO_ANALYSIS";
+
+export const getAiRecommendationStatus = (ev: TeacherEvaluationSummary): AiRecommendationStatus => {
+  const rec = (ev.aiFinalRecommendation ?? "").toLowerCase().trim();
+  const score = Number(ev.aiTeachingSuitabilityScore ?? 0);
+  const hasScore = Number.isFinite(score) && score > 0;
+
+  // 1) Text-based classification (primary)
+  if (rec) {
+    // No recomendado: covers "no recomendar", "no recomendado", "no se recomienda", "rechaz", "no apto", "no es apto"
+    if (
+      rec.includes("no recomend") ||
+      rec.includes("no se recomienda") ||
+      rec.includes("rechaz") ||
+      rec.includes("no apto") ||
+      rec.includes("no es apto")
+    ) {
+      return "NOT_RECOMMENDED";
+    }
+    // Recomendado con reservas: covers "precauc", "condicion", "reserv", "duda", "riesgo medio"
+    if (
+      rec.includes("precauc") ||
+      rec.includes("condicion") ||
+      rec.includes("reserv") ||
+      rec.includes("duda") ||
+      rec.includes("riesgo medio")
+    ) {
+      return "RESERVED";
+    }
+    // Recomendado: covers "recomend", "apto", "idóneo"
+    if (
+      rec.includes("recomend") ||
+      rec.includes("apto") ||
+      rec.includes("idóneo") ||
+      rec.includes("idoneo")
+    ) {
+      return "RECOMMENDED";
+    }
+  }
+
+  // 2) Score-based fallback (when text is ambiguous or missing)
+  if (hasScore) {
+    if (score >= 80) return "RECOMMENDED";
+    if (score >= 60) return "RESERVED";
+    return "NOT_RECOMMENDED";
+  }
+
+  // 3) No analysis available
+  return "NO_ANALYSIS";
+};
+
+// Human-readable label for AI recommendation status
+export const aiRecommendationLabel = (status: AiRecommendationStatus): string => {
+  switch (status) {
+    case "RECOMMENDED": return "Recomendado";
+    case "RESERVED": return "Recomendado con reservas";
+    case "NOT_RECOMMENDED": return "No recomendado";
+    case "NO_ANALYSIS": return "Pendiente de decisión";
+  }
+};
+
+// Keep legacy getBucket for backward compatibility with existing code
 /**
  * Bucket de riesgo basado en veredicto IA (texto).
+ * @deprecated Use getAiRecommendationStatus instead
  */
 export const getBucket = (veredict: string | undefined | null): RiskBucket => {
   if (!veredict) return "DESCONOCIDO";
@@ -58,13 +125,7 @@ export const getCoordinatorDecisionFromSummary = (
 export const getAdminDecisionFromSummary = (
   ev: TeacherEvaluationSummary
 ): AdminDecisionStatus => {
-  const anyEv = ev as any;
-  if (anyEv?.adminDecisionStatus) {
-    return normalizeDecisionStatus(anyEv.adminDecisionStatus);
-  }
-  if (anyEv?.adminDecision?.status) {
-    return normalizeDecisionStatus(anyEv.adminDecision.status);
-  }
+  void ev;
   return "PENDIENTE";
 };
 
@@ -215,6 +276,7 @@ export const computeMetrics = (
       recommended: 0,
       caution: 0,
       notRecommended: 0,
+      noAnalysis: 0,
     };
   }
 
@@ -223,13 +285,15 @@ export const computeMetrics = (
   let recommended = 0;
   let caution = 0;
   let notRecommended = 0;
+  let noAnalysis = 0;
 
   evaluations.forEach((ev) => {
     sumScore += safeScore((ev as any).aiTeachingSuitabilityScore);
-    const bucket = getBucket((ev as any).aiFinalRecommendation);
-    if (bucket === "RECOMENDADA") recommended += 1;
-    if (bucket === "PRECAUCION") caution += 1;
-    if (bucket === "NO_RECOMENDAR") notRecommended += 1;
+    const status = getAiRecommendationStatus(ev);
+    if (status === "RECOMMENDED") recommended += 1;
+    if (status === "RESERVED") caution += 1;
+    if (status === "NOT_RECOMMENDED") notRecommended += 1;
+    if (status === "NO_ANALYSIS") noAnalysis += 1;
   });
 
   return {
@@ -238,6 +302,7 @@ export const computeMetrics = (
     recommended,
     caution,
     notRecommended,
+    noAnalysis,
   };
 };
 
@@ -292,10 +357,9 @@ export const computeDecisionMetrics = (evaluations: TeacherEvaluationSummary[]) 
     if (c === "APROBADO") coordApproved += 1;
     if (c === "RECHAZADO") coordRejected += 1;
 
-    const a = getAdminDecisionFromSummary(ev);
-    if (a === "PENDIENTE") adminPending += 1;
-    if (a === "APROBADO") adminApproved += 1;
-    if (a === "RECHAZADO") adminRejected += 1;
+    adminPending = coordPending;
+    adminApproved = coordApproved;
+    adminRejected = coordRejected;
   });
 
   return {

@@ -54,12 +54,12 @@ export const lightInputStyles =
 
 export const candidateDocumentDefaults: CandidateDocumentsDraft = {
   items: [
-    { id: "resume", label: "Hoja de vida", status: "Pendiente", note: "", tempUrl: "" },
-    { id: "academic-certificates", label: "Certificados académicos", status: "Pendiente", note: "", tempUrl: "" },
-    { id: "work-certificates", label: "Certificados laborales", status: "Pendiente", note: "", tempUrl: "" },
-    { id: "portfolio", label: "Portafolio / evidencias", status: "Pendiente", note: "", tempUrl: "" },
-    { id: "identity-document", label: "Documento de identidad", status: "Pendiente", note: "", tempUrl: "" },
-    { id: "other-supports", label: "Otros soportes", status: "Pendiente", note: "", tempUrl: "" },
+    { id: "resume", label: "Hoja de vida", status: "Pendiente", note: "", tempUrl: "", file: null, fileName: "" },
+    { id: "academic-certificates", label: "Certificados académicos", status: "Pendiente", note: "", tempUrl: "", file: null, fileName: "" },
+    { id: "work-certificates", label: "Certificados laborales", status: "Pendiente", note: "", tempUrl: "", file: null, fileName: "" },
+    { id: "portfolio", label: "Portafolio / evidencias", status: "Pendiente", note: "", tempUrl: "", file: null, fileName: "" },
+    { id: "identity-document", label: "Documento de identidad", status: "Pendiente", note: "", tempUrl: "", file: null, fileName: "" },
+    { id: "other-supports", label: "Otros soportes", status: "Pendiente", note: "", tempUrl: "", file: null, fileName: "" },
   ],
 };
 

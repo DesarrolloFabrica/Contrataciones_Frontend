@@ -9,6 +9,10 @@ export interface InterviewFormProps {
 }
 
 export interface HiringContextDraft {
+  hiringRequestId?: string | null;
+  contextMode?: "SELECTED" | "MANUAL";
+  selectedVacancyLabel?: string;
+  coordination?: string;
   targetRole: string;
   processType: string;
   requestingArea: string;
@@ -27,6 +31,8 @@ export interface CandidateDocumentDraft {
   status: CandidateDocumentStatus;
   note: string;
   tempUrl: string;
+  file?: File | null;
+  fileName?: string;
 }
 
 export interface CandidateDocumentsDraft {
@@ -44,15 +50,15 @@ export interface InterviewDraft {
 }
 
 export interface RemoteSchool {
-  id?: string;
+  id: string;
   name: string;
-  programs?: Array<{ id?: string; name: string }>;
+  programs?: Array<{ id: string; name: string }>;
 }
 
 export interface NormalizedSchool {
-  id?: string;
+  id: string;
   name: string;
-  programs: Array<{ id?: string; name: string }>;
+  programs: Array<{ id: string; name: string }>;
 }
 
 export type InterviewFormChangeHandler = (

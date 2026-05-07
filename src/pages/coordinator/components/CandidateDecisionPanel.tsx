@@ -4,6 +4,7 @@ import {
   XCircle,
   ArrowLeft,
   Info,
+  Edit3,
 } from "lucide-react";
 import { useTheme } from "../../../context/ThemeContext";
 import { TechnicalCriteriaPanel } from "./TechnicalCriteriaPanel";
@@ -45,42 +46,13 @@ export const CandidateDecisionPanel: React.FC<CandidateDecisionPanelProps> = ({
 
   const commentLen = (decisionComment ?? "").length;
 
-  if (isAlreadyEvaluated) {
-    return (
-    <div
-      className={`relative rounded-2xl p-[1px] shadow-2xl ${
-        isDark
-          ? "bg-gradient-to-b from-white/10 to-transparent"
-          : "bg-gradient-to-b from-cyan-200/40 via-transparent to-transparent"
-      }`}
-    >
-      <div
-        className={`rounded-2xl overflow-hidden ${
-          isDark ? "bg-[#0E1216]" : "bg-white"
-        }`}
-      >
-        <div className="p-8">
-          <div className="rounded-xl border border-cyan-500/20 bg-cyan-500/10 p-5">
-            <div className="text-[10px] font-black uppercase tracking-[0.2em] text-cyan-300 mb-2">
-              Ya evaluado
-            </div>
-            <p className="text-sm text-cyan-100 leading-relaxed">
-              Esta evaluacion ya fue registrada con veredicto{" "}
-              <span className="font-bold">{evaluatedVerdictLabel}</span>{" "}
-              y no puede volver a ser enviada.
-            </p>
-            {coordinatorDecisionAt && (
-              <p className="text-[11px] text-cyan-200/80 mt-3">
-                Fecha de registro:{" "}
-                {String(coordinatorDecisionAt).slice(0, 19)}
-              </p>
-            )}
-          </div>
-        </div>
-      </div>
-    </div>
-    );
-  }
+  const verdictColor = evaluatedVerdictLabel === "APROBADO"
+    ? isDark ? "text-emerald-400" : "text-emerald-700"
+    : isDark ? "text-rose-400" : "text-rose-700";
+
+  const verdictBg = evaluatedVerdictLabel === "APROBADO"
+    ? isDark ? "bg-emerald-500/10 border-emerald-500/20" : "bg-emerald-50 border-emerald-200"
+    : isDark ? "bg-rose-500/10 border-rose-500/20" : "bg-rose-50 border-rose-200";
 
   return (
     <div
@@ -103,24 +75,57 @@ export const CandidateDecisionPanel: React.FC<CandidateDecisionPanelProps> = ({
           }`}
         >
           <div className="flex items-center gap-3 mb-1">
-            <div className="relative flex h-2.5 w-2.5">
-              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-cyan-400 opacity-75" />
-              <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-cyan-500" />
-            </div>
+            {isAlreadyEvaluated ? (
+              <div className={`w-2.5 h-2.5 rounded-full ${isDark ? "bg-emerald-400" : "bg-emerald-500"}`} />
+            ) : (
+              <div className="relative flex h-2.5 w-2.5">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-cyan-400 opacity-75" />
+                <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-cyan-500" />
+              </div>
+            )}
             <h2
               className={`text-sm font-bold tracking-tight ${
                 isDark ? "text-white" : "text-slate-900"
               }`}
             >
-              Decision del coordinador
+              {isAlreadyEvaluated ? "Decisión registrada" : "Decisión del coordinador"}
             </h2>
           </div>
           <p className={`text-[11px] font-medium ml-5 ${isDark ? "text-slate-500" : "text-slate-400"}`}>
-            Complete los pasos requeridos para finalizar.
+            {isAlreadyEvaluated
+              ? "Puedes modificar la decisión existente si es necesario."
+              : "Complete los pasos requeridos para finalizar."}
           </p>
         </div>
 
         <div className="p-8 space-y-8">
+          {/* Estado actual */}
+          {isAlreadyEvaluated && (
+            <div className={`rounded-xl border p-4 ${verdictBg}`}>
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  {evaluatedVerdictLabel === "APROBADO" ? (
+                    <CheckCircle2 className={`w-4 h-4 ${verdictColor}`} />
+                  ) : (
+                    <XCircle className={`w-4 h-4 ${verdictColor}`} />
+                  )}
+                  <span className={`text-sm font-bold ${verdictColor}`}>
+                    {evaluatedVerdictLabel}
+                  </span>
+                </div>
+                <div className="flex items-center gap-1.5 text-[10px] text-slate-500">
+                  <Edit3 className="w-3 h-3" />
+                  <span>Modificable</span>
+                </div>
+              </div>
+              {coordinatorDecisionAt && (
+                <p className={`text-[11px] mt-2 ${isDark ? "text-slate-500" : "text-slate-400"}`}>
+                  Registrado: {String(coordinatorDecisionAt).slice(0, 19)}
+                </p>
+              )}
+            </div>
+          )}
+
           {/* PASO 1 */}
           <div className="space-y-4">
             <div className="flex items-center justify-between">
@@ -274,14 +279,18 @@ export const CandidateDecisionPanel: React.FC<CandidateDecisionPanelProps> = ({
               {submittingDecision
                 ? "Enviando..."
                 : canSubmitDecision
-                  ? "Finalizar Evaluación"
+                  ? isAlreadyEvaluated
+                    ? "Actualizar decisión"
+                    : "Registrar decisión oficial"
                   : "Formulario Incompleto"}
               {canSubmitDecision && !submittingDecision && (
                 <ArrowLeft className="w-4 h-4 rotate-180 group-hover:translate-x-1 transition-transform" />
               )}
             </button>
             <p className="text-center text-[10px] text-slate-600 mt-4">
-              Esta acción es irreversible y se registrará en la Blockchain.
+              {isAlreadyEvaluated
+                ? "Al actualizar se registrará una nueva versión de la decisión."
+                : "Esta acción es irreversible y se registrará en la Blockchain."}
             </p>
           </div>
         </div>

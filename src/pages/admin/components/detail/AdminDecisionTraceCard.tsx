@@ -24,7 +24,6 @@ type Props = {
   aiRecommendation: string;
   leader: ActorInfo;
   coordinator: ActorInfo;
-  adminStatus: string;
 };
 
 const stepBase =
@@ -32,9 +31,9 @@ const stepBase =
 
 function StepIcon({ status }: { status?: string | null }) {
   const s = (status ?? "").toUpperCase();
-  if (s === "APROBADO")
+  if (s === "APPROVED" || s === "APROBADO")
     return <CheckCircle2 className="w-4 h-4 text-cyan-400 shrink-0 mt-0.5" />;
-  if (s === "RECHAZADO" || s === "NO_RECOMENDAR")
+  if (s === "REJECTED" || s === "RECHAZADO" || s === "NO_RECOMENDAR")
     return <AlertCircle className="w-4 h-4 text-rose-400 shrink-0 mt-0.5" />;
   return <Clock className="w-4 h-4 text-amber-400 shrink-0 mt-0.5" />;
 }
@@ -42,15 +41,15 @@ function StepIcon({ status }: { status?: string | null }) {
 function StatusBadge({ status }: { status?: string | null }) {
   const s = (status ?? "").toUpperCase();
   let cls = "bg-white/5 text-neutral-300 border-white/10";
-  if (s === "APROBADO") cls = "bg-cyan-500/10 text-cyan-300 border-cyan-500/30";
-  else if (s === "RECHAZADO") cls = "bg-rose-500/10 text-rose-300 border-rose-500/30";
+  if (s === "APPROVED" || s === "APROBADO") cls = "bg-cyan-500/10 text-cyan-300 border-cyan-500/30";
+  else if (s === "REJECTED" || s === "RECHAZADO") cls = "bg-rose-500/10 text-rose-300 border-rose-500/30";
   else if (s === "NO_RECOMENDAR") cls = "bg-rose-500/10 text-rose-300 border-rose-500/30";
   else if (s === "PRECAUCION") cls = "bg-yellow-500/10 text-yellow-200 border-yellow-500/30";
   return (
     <span
       className={`inline-flex px-2.5 py-1 rounded-xl text-[10px] font-bold uppercase tracking-widest border leading-none ${cls}`}
     >
-      {s || "PENDIENTE"}
+      {s === "APPROVED" ? "APROBADO" : s === "REJECTED" ? "RECHAZADO" : s || "PENDIENTE"}
     </span>
   );
 }
@@ -61,7 +60,6 @@ export default function AdminDecisionTraceCard({
   aiRecommendation,
   leader,
   coordinator,
-  adminStatus,
 }: Props) {
   const { theme } = useTheme();
   const isDark = theme === "dark";
@@ -82,7 +80,7 @@ export default function AdminDecisionTraceCard({
       </div>
 
       <p className={`text-[12px] mb-4 ${isDark ? "text-white/45" : "text-slate-600"}`}>
-        Flujo de decisión: IA → Líder → Coordinador → Admin
+        Flujo de decisión: IA → Líder → Coordinador (decisión oficial)
       </p>
 
       <div className="space-y-3">
@@ -130,13 +128,19 @@ export default function AdminDecisionTraceCard({
 
         {connector()}
 
-        {/* Coordinador */}
-        <div className={`${stepBase} ${isDark ? "bg-white/[0.04] border-white/10" : "bg-slate-50 border-slate-200"}`}>
-          <StepIcon status={coordinator.status} />
+        {/* Coordinador - decisión oficial */}
+        <div className={`${stepBase} ${
+          isDark
+            ? "bg-cyan-500/[0.06] border-cyan-500/25"
+            : "bg-cyan-50 border-cyan-200"
+        }`}>
+          <div className={`w-5 h-5 shrink-0 mt-0.5 rounded-full flex items-center justify-center ${isDark ? "bg-cyan-500/20" : "bg-cyan-100"}`}>
+            <ShieldCheck className={`w-3.5 h-3.5 ${isDark ? "text-cyan-400" : "text-cyan-600"}`} />
+          </div>
           <div className="min-w-0 flex-1">
             <div className="flex items-center justify-between gap-3 flex-wrap">
-              <span className={`text-xs font-bold uppercase tracking-widest ${isDark ? "text-neutral-400" : "text-slate-500"}`}>
-                Coordinador
+              <span className={`text-xs font-bold uppercase tracking-widest ${isDark ? "text-cyan-300" : "text-cyan-700"}`}>
+                Coordinador (decisión oficial)
               </span>
               <StatusBadge status={coordinator.status} />
             </div>
@@ -148,31 +152,6 @@ export default function AdminDecisionTraceCard({
                 {coordinator.at}
               </p>
             )}
-          </div>
-        </div>
-
-        {connector()}
-
-        {/* Admin */}
-        <div className={`${stepBase} ${isDark ? "bg-white/[0.04] border-white/10" : "bg-slate-50 border-slate-200"}`}>
-          <StepIcon status={adminStatus} />
-          <div className="min-w-0 flex-1">
-            <div className="flex items-center justify-between gap-3 flex-wrap">
-              <span className={`text-xs font-bold uppercase tracking-widest ${isDark ? "text-neutral-400" : "text-slate-500"}`}>
-                Admin (decisión final)
-              </span>
-              <StatusBadge status={adminStatus} />
-            </div>
-            <p className={`text-sm font-bold mt-1 ${isDark ? "text-white" : "text-slate-900"}`}>
-              {adminStatus === "APROBADO" || adminStatus === "RECHAZADO"
-                ? "Decisión registrada"
-                : "Pendiente de revisión"}
-            </p>
-            <p className={`text-[11px] mt-0.5 ${isDark ? "text-white/40" : "text-slate-500"}`}>
-              {adminStatus === "APROBADO" || adminStatus === "RECHAZADO"
-                ? "Revisar panel de decisión final"
-                : "Sin acción aún"}
-            </p>
           </div>
         </div>
       </div>

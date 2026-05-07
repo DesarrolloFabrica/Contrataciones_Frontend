@@ -33,6 +33,18 @@ export const DocumentRequirementCard: React.FC<DocumentRequirementCardProps> = (
     onChange({ ...item, tempUrl: e.target.value });
   };
 
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const selectedFile = e.target.files?.[0] ?? null;
+    onChange({
+      ...item,
+      file: selectedFile,
+      fileName: selectedFile?.name ?? "",
+      status: selectedFile ? "Disponible" : item.status,
+    });
+  };
+
+  const isResume = item.id === "resume";
+
   return (
     <div
       className={`rounded-2xl border p-5 space-y-4 ${
@@ -52,7 +64,7 @@ export const DocumentRequirementCard: React.FC<DocumentRequirementCardProps> = (
         <select
           value={item.status}
           onChange={handleStatusChange}
-          className={`${isDark ? darkInputStyles : lightInputStyles} appearance-none cursor-pointer w-44`}
+          className={`${isDark ? darkInputStyles : lightInputStyles} appearance-none cursor-pointer ${isResume ? "w-56" : "w-44"}`}
         >
           {statusOptions.map((opt) => (
             <option key={opt.value} value={opt.value}>
@@ -61,6 +73,16 @@ export const DocumentRequirementCard: React.FC<DocumentRequirementCardProps> = (
           ))}
         </select>
       </div>
+      {isResume && (
+        <div className="flex flex-wrap items-center gap-2">
+          <span className={`rounded-full px-3 py-1 text-[10px] font-bold uppercase tracking-[0.14em] ${isDark ? "bg-cyan-500/15 text-cyan-300 border border-cyan-400/30" : "bg-cyan-100 text-cyan-700 border border-cyan-300"}`}>
+            Documento principal
+          </span>
+          <span className={`text-[11px] ${isDark ? "text-amber-300" : "text-amber-700"}`}>
+            Obligatorio
+          </span>
+        </div>
+      )}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <textarea
           value={item.note}
@@ -69,13 +91,27 @@ export const DocumentRequirementCard: React.FC<DocumentRequirementCardProps> = (
           placeholder="Observación..."
           className={`${isDark ? darkInputStyles : lightInputStyles} resize-none min-h-[60px] leading-relaxed`}
         />
-        <input
-          type="text"
-          value={item.tempUrl}
-          onChange={handleTempUrlChange}
-          placeholder="Link temporal opcional (URL)"
-          className={isDark ? darkInputStyles : lightInputStyles}
-        />
+        {isResume ? (
+          <div className="space-y-2">
+            <input
+              type="file"
+              accept=".pdf,.doc,.docx,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+              onChange={handleFileChange}
+              className={isDark ? darkInputStyles : lightInputStyles}
+            />
+            <p className={`text-xs ${isDark ? "text-slate-300" : "text-slate-600"}`}>
+              {item.fileName?.trim() ? `Archivo seleccionado: ${item.fileName}` : "No se ha seleccionado archivo"}
+            </p>
+          </div>
+        ) : (
+          <input
+            type="text"
+            value={item.tempUrl}
+            onChange={handleTempUrlChange}
+            placeholder="Link opcional (URL)"
+            className={isDark ? darkInputStyles : lightInputStyles}
+          />
+        )}
       </div>
     </div>
   );

@@ -59,7 +59,13 @@ export function useInterviewDraft(
         payload.hiringContext = hiringContext;
       }
       if (candidateDocuments !== undefined) {
-        payload.candidateDocuments = candidateDocuments;
+        payload.candidateDocuments = {
+          items: candidateDocuments.items.map((item) => ({
+            ...item,
+            file: null,
+            fileName: item.fileName ?? "",
+          })),
+        };
       }
       localStorage.setItem(draftKey(orgId, userId), JSON.stringify(payload));
     }, 250);

@@ -27,6 +27,7 @@ export default function AdminKpiGrid({
     recommended: 0,
     caution: 0,
     notRecommended: 0,
+    noAnalysis: 0,
   };
 
   const cautionPct = useMemo(() => {
@@ -34,22 +35,10 @@ export default function AdminKpiGrid({
     return clampPct((safeMetrics.caution / safeMetrics.total) * 100);
   }, [safeMetrics]);
 
-  const unknownCount = useMemo(
-    () =>
-      Math.max(
-        0,
-        safeMetrics.total -
-          safeMetrics.recommended -
-          safeMetrics.caution -
-          safeMetrics.notRecommended
-      ),
-    [safeMetrics]
-  );
-
-  const unknownPct = useMemo(() => {
+  const noAnalysisPct = useMemo(() => {
     if (!safeMetrics.total) return 0;
-    return clampPct((unknownCount / safeMetrics.total) * 100);
-  }, [safeMetrics.total, unknownCount]);
+    return clampPct((safeMetrics.noAnalysis / safeMetrics.total) * 100);
+  }, [safeMetrics]);
 
   const cards = [
     {
@@ -65,7 +54,7 @@ export default function AdminKpiGrid({
     },
     {
       key: "caution",
-      label: "En cautela",
+      label: "Con reservas",
       count: safeMetrics.caution,
       pct: cautionPct,
       icon: <ShieldAlert className="h-4 w-4" />,
@@ -76,7 +65,7 @@ export default function AdminKpiGrid({
     },
     {
       key: "risk",
-      label: "Riesgo alto",
+      label: "No recomendados",
       count: safeMetrics.notRecommended,
       pct: clampPct(highRiskPct),
       icon: <AlertCircle className="h-4 w-4" />,
@@ -87,9 +76,9 @@ export default function AdminKpiGrid({
     },
     {
       key: "unknown",
-      label: "Sin clasificar",
-      count: unknownCount,
-      pct: unknownPct,
+      label: "Pendientes",
+      count: safeMetrics.noAnalysis,
+      pct: noAnalysisPct,
       icon: <Shapes className="h-4 w-4" />,
       tone: isDark
         ? "text-sky-300 border-sky-500/25 bg-sky-500/10"
