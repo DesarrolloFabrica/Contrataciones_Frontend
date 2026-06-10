@@ -16,7 +16,7 @@ env:
   VITE_API_URL: https://contrataciones-backend-1003984285704.us-central1.run.app
   VITE_ORG_ID: dda9f974-f7d2-4d63-a002-ba6bc9b5f115
   VITE_APP_URL: https://contrataciones-frontend-1003984285704.us-central1.run.app
-  VITE_GOOGLE_CLIENT_ID: 1003984285704-14bo2915075j1rbssug8oc2v6olusrl.apps.googleusercontent.com
+  VITE_GOOGLE_CLIENT_ID: 1003984285704-r6660cirdvts0mh1du0c080ol0ukh90e.apps.googleusercontent.com
 
 jobs:
   deploy:
