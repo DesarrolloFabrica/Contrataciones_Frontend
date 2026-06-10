@@ -14,6 +14,9 @@ env:
   IMAGE_NAME: contrataciones-frontend
   RUNTIME_SERVICE_ACCOUNT: 1003984285704-compute@developer.gserviceaccount.com
   VITE_API_URL: https://contrataciones-backend-1003984285704.us-central1.run.app
+  VITE_ORG_ID: dda9f974-f7d2-4d63-a002-ba6bc9b5f115
+  VITE_APP_URL: https://contrataciones-frontend-1003984285704.us-central1.run.app
+  VITE_GOOGLE_CLIENT_ID: 1003984285704-14bo2915075j1rbssug8oc2v6olusrl.apps.googleusercontent.com
 
 jobs:
   deploy:
@@ -43,6 +46,9 @@ jobs:
         run: |
           docker build \
             --build-arg VITE_API_URL=${{ env.VITE_API_URL }} \
+            --build-arg VITE_ORG_ID=${{ env.VITE_ORG_ID }} \
+            --build-arg VITE_APP_URL=${{ env.VITE_APP_URL }} \
+            --build-arg VITE_GOOGLE_CLIENT_ID=${{ env.VITE_GOOGLE_CLIENT_ID }} \
             -t ${{ env.GAR_HOST }}/${{ env.PROJECT_ID }}/${{ env.GAR_REPOSITORY }}/${{ env.IMAGE_NAME }}:${{ github.sha }} \
             .
 
@@ -64,4 +70,4 @@ jobs:
             --cpu 1 \
             --port 8080 \
             --service-account ${{ env.RUNTIME_SERVICE_ACCOUNT }} \
-            --set-env-vars VITE_API_URL=${{ env.VITE_API_URL }}
+            --set-env-vars VITE_API_URL=${{ env.VITE_API_URL }},VITE_ORG_ID=${{ env.VITE_ORG_ID }},VITE_APP_URL=${{ env.VITE_APP_URL }},VITE_GOOGLE_CLIENT_ID=${{ env.VITE_GOOGLE_CLIENT_ID }}
