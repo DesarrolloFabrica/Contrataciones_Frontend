@@ -3,8 +3,6 @@ import React, { useMemo } from "react";
 import {
   FileText,
   Users,
-  BarChart3,
-  ScrollText,
   CheckCircle2,
   Clock,
   ArrowRight,
@@ -44,7 +42,7 @@ function SkeletonBox({
   );
 }
 
-type AccentKey = "cyan" | "blue" | "violet" | "emerald";
+type AccentKey = "cyan" | "blue";
 
 type AccentStyle = {
   cardBg: string;
@@ -113,34 +111,6 @@ export default function AdminHomeView({
         : "bg-blue-50 text-blue-700 border-blue-100",
       arrowCls: isDark ? "text-blue-400" : "text-blue-600",
     },
-    violet: {
-      cardBg: isDark ? "hover:bg-violet-500/[0.07]" : "hover:bg-violet-50",
-      cardBorder: isDark
-        ? "border-white/[0.07] hover:border-violet-500/40"
-        : "border-slate-200 hover:border-violet-200",
-      iconBox: isDark
-        ? "bg-violet-500/15 border-violet-500/25 text-violet-400"
-        : "bg-violet-50 border-violet-100 text-violet-600",
-      iconText: isDark ? "text-violet-400" : "text-violet-600",
-      badgeCls: isDark
-        ? "bg-violet-500/15 text-violet-300 border-violet-500/20"
-        : "bg-violet-50 text-violet-700 border-violet-100",
-      arrowCls: isDark ? "text-violet-400" : "text-violet-600",
-    },
-    emerald: {
-      cardBg: isDark ? "hover:bg-emerald-500/[0.07]" : "hover:bg-emerald-50",
-      cardBorder: isDark
-        ? "border-white/[0.07] hover:border-emerald-500/40"
-        : "border-slate-200 hover:border-emerald-200",
-      iconBox: isDark
-        ? "bg-emerald-500/15 border-emerald-500/25 text-emerald-400"
-        : "bg-emerald-50 border-emerald-100 text-emerald-600",
-      iconText: isDark ? "text-emerald-400" : "text-emerald-600",
-      badgeCls: isDark
-        ? "bg-emerald-500/15 text-emerald-300 border-emerald-500/20"
-        : "bg-emerald-50 text-emerald-700 border-emerald-100",
-      arrowCls: isDark ? "text-emerald-400" : "text-emerald-600",
-    },
   };
 
   // ── KPI strip ───────────────────────────────────────────────────────────────
@@ -193,24 +163,6 @@ export default function AdminHomeView({
       icon: <Users className="w-8 h-8" />,
       stat: "Gestión de roles",
       accent: "blue",
-    },
-    {
-      id: "ANALYTICS",
-      title: "Analítica",
-      description:
-        "Dashboard global con tendencias, distribuciones de puntaje, estados de decisión y ranking de programas.",
-      icon: <BarChart3 className="w-8 h-8" />,
-      stat: "Datos en tiempo real",
-      accent: "violet",
-    },
-    {
-      id: "AUDIT",
-      title: "Auditoría",
-      description:
-        "Trazabilidad completa de todas las acciones del sistema. Historial de eventos y decisiones.",
-      icon: <ScrollText className="w-8 h-8" />,
-      stat: "Trazabilidad total",
-      accent: "emerald",
     },
   ];
 
@@ -343,7 +295,7 @@ export default function AdminHomeView({
       {/* ── Module cards ── */}
       <div>
         <p className={sectionLabel}>Módulos del sistema</p>
-        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {moduleCards.map((mod) => {
             const ac = accents[mod.accent];
             return (
