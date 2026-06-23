@@ -27,10 +27,10 @@ const TOAST_ICONS: Record<ToastType, React.ReactNode> = {
 
 const TOAST_STYLES: Record<ToastType, { border: string; bg: string; icon: string; text: string }> = {
   success: {
-    border: "border-emerald-500/30",
-    bg: "bg-emerald-500/10",
-    icon: "text-emerald-400",
-    text: "text-emerald-200",
+    border: "border-brand-500/30",
+    bg: "bg-brand-500/10",
+    icon: "text-brand-400",
+    text: "text-brand-200",
   },
   error: {
     border: "border-rose-500/30",
@@ -45,10 +45,10 @@ const TOAST_STYLES: Record<ToastType, { border: string; bg: string; icon: string
     text: "text-amber-200",
   },
   info: {
-    border: "border-cyan-500/30",
-    bg: "bg-cyan-500/10",
-    icon: "text-cyan-400",
-    text: "text-cyan-200",
+    border: "border-brand-500/30",
+    bg: "bg-brand-500/10",
+    icon: "text-brand-400",
+    text: "text-brand-200",
   },
 };
 

@@ -52,8 +52,8 @@ export const LeaderIntroPanel: React.FC<LeaderIntroPanelProps> = ({
 
       {isDark && (
         <div className="absolute inset-0 pointer-events-none">
-          <div className="absolute -top-32 right-0 w-80 h-80 rounded-full blur-[90px] bg-cyan-500/12" />
-          <div className="absolute -bottom-40 left-10 w-72 h-72 rounded-full blur-[100px] bg-cyan-500/8" />
+          <div className="absolute -top-32 right-0 w-80 h-80 rounded-full blur-[90px] bg-brand-500/12" />
+          <div className="absolute -bottom-40 left-10 w-72 h-72 rounded-full blur-[100px] bg-brand-500/8" />
         </div>
       )}
 
@@ -64,8 +64,8 @@ export const LeaderIntroPanel: React.FC<LeaderIntroPanelProps> = ({
               className={[
                 "inline-flex items-center gap-2 px-3 py-1 rounded-full border text-[11px] font-bold uppercase tracking-[0.18em]",
                 isDark
-                  ? "border-cyan-500/25 bg-cyan-500/10 text-cyan-200"
-                  : "border-cyan-400/30 bg-cyan-50 text-cyan-700",
+                  ? "border-brand-500/25 bg-brand-500/10 text-brand-200"
+                  : "border-brand-400/30 bg-brand-50 text-brand-700",
               ].join(" ")}
             >
               <Sparkles className="w-3.5 h-3.5" />
@@ -127,7 +127,7 @@ export const LeaderIntroPanel: React.FC<LeaderIntroPanelProps> = ({
           >
             <div className="flex items-center justify-between mb-4 gap-2">
               <div className="flex items-center gap-2">
-                <div className="p-2 rounded-xl bg-cyan-500/15 text-cyan-300 flex items-center justify-center">
+                <div className="p-2 rounded-xl bg-brand-500/15 text-brand-300 flex items-center justify-center">
                   <ListChecks className="w-4 h-4" />
                 </div>
                 <div>
@@ -181,16 +181,16 @@ export const LeaderIntroPanel: React.FC<LeaderIntroPanelProps> = ({
                     className="flex items-start gap-3 relative"
                   >
                     {step.id !== 3 && (
-                      <div className="absolute left-3 top-6 bottom-[-6px] w-px bg-gradient-to-b from-cyan-500/40 via-cyan-500/10 to-transparent pointer-events-none" />
+                      <div className="absolute left-3 top-6 bottom-[-6px] w-px bg-gradient-to-b from-brand-500/40 via-brand-500/10 to-transparent pointer-events-none" />
                     )}
 
                     <div
                       className={`flex-shrink-0 w-6 h-6 rounded-full border flex items-center justify-center text-[11px] font-bold
                         ${
                           isDone
-                            ? "border-cyan-400 bg-cyan-500/20 text-cyan-100"
+                            ? "border-brand-400 bg-brand-500/20 text-brand-100"
                             : isActive
-                            ? "border-cyan-400/70 bg-cyan-500/10 text-cyan-200"
+                            ? "border-brand-400/70 bg-brand-500/10 text-brand-200"
                             : isDark
                             ? "border-white/15 bg-black/40 text-neutral-400"
                             : "border-slate-200 bg-slate-50 text-slate-500"
@@ -232,7 +232,7 @@ export const LeaderIntroPanel: React.FC<LeaderIntroPanelProps> = ({
               "relative p-5 rounded-2xl border",
               isDark
                 ? "bg-gradient-to-br from-[#050b07] via-[#050505] to-[#040812] border-white/10"
-                : "bg-gradient-to-br from-white via-slate-50 to-cyan-50/30 border-slate-200 shadow-[0_14px_40px_rgba(15,23,42,0.08)]",
+                : "bg-gradient-to-br from-white via-slate-50 to-brand-50/30 border-slate-200 shadow-[0_14px_40px_rgba(15,23,42,0.08)]",
             ].join(" ")}
           >
             <div className="flex items-center gap-2 mb-4">
@@ -240,8 +240,8 @@ export const LeaderIntroPanel: React.FC<LeaderIntroPanelProps> = ({
                 className={[
                   "p-2 rounded-xl flex items-center justify-center",
                   isDark
-                    ? "bg-cyan-500/15 text-cyan-300"
-                    : "bg-cyan-100 text-cyan-700",
+                    ? "bg-brand-500/15 text-brand-300"
+                    : "bg-brand-100 text-brand-700",
                 ].join(" ")}
               >
                 <FileText className="w-4 h-4" />
@@ -273,7 +273,7 @@ export const LeaderIntroPanel: React.FC<LeaderIntroPanelProps> = ({
               <li className="flex gap-2">
                 <span
                   className={`mt-1.5 h-1.5 w-1.5 rounded-full ${
-                    isDark ? "bg-cyan-400/80" : "bg-cyan-400/70"
+                    isDark ? "bg-brand-400/80" : "bg-brand-400/70"
                   }`}
                 />
                 <div>
@@ -290,7 +290,7 @@ export const LeaderIntroPanel: React.FC<LeaderIntroPanelProps> = ({
               <li className="flex gap-2">
                 <span
                   className={`mt-1.5 h-1.5 w-1.5 rounded-full ${
-                    isDark ? "bg-cyan-400/80" : "bg-cyan-400/70"
+                    isDark ? "bg-brand-400/80" : "bg-brand-400/70"
                   }`}
                 />
                 <div>
@@ -309,7 +309,7 @@ export const LeaderIntroPanel: React.FC<LeaderIntroPanelProps> = ({
               <li className="flex gap-2">
                 <span
                   className={`mt-1.5 h-1.5 w-1.5 rounded-full ${
-                    isDark ? "bg-cyan-400/80" : "bg-cyan-400/70"
+                    isDark ? "bg-brand-400/80" : "bg-brand-400/70"
                   }`}
                 />
                 <div>

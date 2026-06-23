@@ -36,10 +36,10 @@ const roleConfig: Record<AdminUser["role"], { badge: string }> = {
     badge: "bg-purple-500/10 text-purple-600 dark:text-purple-300 border-purple-200 dark:border-purple-500/30",
   },
   LEADER: {
-    badge: "bg-cyan-500/10 text-cyan-600 dark:text-cyan-300 border-cyan-200 dark:border-cyan-500/30",
+    badge: "bg-brand-500/10 text-brand-600 dark:text-brand-300 border-brand-200 dark:border-brand-500/30",
   },
   COORDINATOR: {
-    badge: "bg-blue-500/10 text-blue-600 dark:text-blue-300 border-blue-200 dark:border-blue-500/30",
+    badge: "bg-brand-500/10 text-brand-600 dark:text-brand-300 border-brand-200 dark:border-brand-500/30",
   },
 };
 
@@ -145,7 +145,7 @@ const AdminUsersTable: React.FC<Props> = ({
                   className={
                     isDark
                       ? "hover:bg-white/[0.03] transition-colors"
-                      : "hover:bg-cyan-50/40 transition-colors"
+                      : "hover:bg-brand-50/40 transition-colors"
                   }
                 >
                   <td className="px-4 py-3.5">
@@ -155,13 +155,13 @@ const AdminUsersTable: React.FC<Props> = ({
                           "w-9 h-9 rounded-xl flex items-center justify-center border shrink-0",
                           isDark
                             ? "bg-white/5 border-white/10"
-                            : "bg-cyan-50 border-cyan-100",
+                            : "bg-brand-50 border-brand-100",
                         ].join(" ")}
                       >
                         <ShieldCheck
                           className={[
                             "w-4 h-4",
-                            isDark ? "text-cyan-400" : "text-cyan-600",
+                            isDark ? "text-brand-400" : "text-brand-600",
                           ].join(" ")}
                         />
                       </div>

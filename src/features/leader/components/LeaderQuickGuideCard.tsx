@@ -43,10 +43,10 @@ export function LeaderQuickGuideCard({ currentStep = 1, onOpenFlowHelp }: Props)
 
   return (
     <div
-      className={`rounded-2xl border overflow-hidden transition-all duration-300 ${
+      className={`rounded-2xl border border-t-2 border-t-brand-500 overflow-hidden transition-all duration-300 ${
         isDark
-          ? "bg-gradient-to-b from-[#080D16] to-[#0A1018] border-white/[0.06] shadow-[0_0_40px_-12px_rgba(6,182,212,0.05)]"
-          : "bg-white border-slate-200/80 shadow-[0_4px_24px_-8px_rgba(15,23,42,0.06)]"
+          ? "bg-gradient-to-b from-[#080D16] to-[#0A1018] border-brand-500/25 shadow-[0_0_40px_-12px_rgba(16,185,129,0.10)]"
+          : "bg-white border-brand-500/20 shadow-[0_4px_24px_-8px_rgba(15,23,42,0.06)]"
       }`}
     >
       <div className="p-4 space-y-4">
@@ -55,11 +55,11 @@ export function LeaderQuickGuideCard({ currentStep = 1, onOpenFlowHelp }: Props)
           <div
             className={`w-8 h-8 rounded-lg flex items-center justify-center ${
               isDark
-                ? "bg-cyan-500/10 border border-cyan-500/20"
-                : "bg-cyan-50 border border-cyan-200"
+                ? "bg-brand-500/10 border border-brand-500/20"
+                : "bg-brand-50 border border-brand-200"
             }`}
           >
-            <Lightbulb className={`w-4 h-4 ${isDark ? "text-cyan-400" : "text-cyan-600"}`} />
+            <Lightbulb className={`w-4 h-4 ${isDark ? "text-brand-400" : "text-brand-600"}`} />
           </div>
           <div>
             <h3
@@ -79,24 +79,24 @@ export function LeaderQuickGuideCard({ currentStep = 1, onOpenFlowHelp }: Props)
         <div
           className={`rounded-xl border p-3 ${
             isDark
-              ? "bg-cyan-500/8 border-cyan-500/20"
-              : "bg-cyan-50 border-cyan-200"
+              ? "bg-brand-500/8 border-brand-500/20"
+              : "bg-brand-50 border-brand-200"
           }`}
         >
           <div className="flex items-center gap-2.5">
             <div
               className={`w-7 h-7 rounded-lg flex items-center justify-center shrink-0 ${
                 isDark
-                  ? "bg-cyan-500/15 border border-cyan-500/25"
-                  : "bg-cyan-100 border border-cyan-200"
+                  ? "bg-brand-500/15 border border-brand-500/25"
+                  : "bg-brand-100 border border-brand-200"
               }`}
             >
-              <StepIcon className={`w-3.5 h-3.5 ${isDark ? "text-cyan-300" : "text-cyan-600"}`} />
+              <StepIcon className={`w-3.5 h-3.5 ${isDark ? "text-brand-300" : "text-brand-600"}`} />
             </div>
             <div className="min-w-0">
               <p
                 className={`text-[10px] font-bold uppercase tracking-wider ${
-                  isDark ? "text-cyan-300" : "text-cyan-700"
+                  isDark ? "text-brand-300" : "text-brand-700"
                 }`}
               >
                 Paso actual
@@ -125,7 +125,7 @@ export function LeaderQuickGuideCard({ currentStep = 1, onOpenFlowHelp }: Props)
             <div key={field} className="flex items-center gap-2">
               <span
                 className={`w-1 h-1 rounded-full shrink-0 ${
-                  isDark ? "bg-cyan-400/60" : "bg-cyan-500/60"
+                  isDark ? "bg-brand-400/60" : "bg-brand-500/60"
                 }`}
               />
               <span
@@ -143,15 +143,15 @@ export function LeaderQuickGuideCard({ currentStep = 1, onOpenFlowHelp }: Props)
         <div
           className={`rounded-lg border p-2.5 flex items-center gap-2 ${
             isDark
-              ? "bg-cyan-500/5 border-cyan-500/15"
-              : "bg-cyan-50 border-cyan-200"
+              ? "bg-brand-500/5 border-brand-500/15"
+              : "bg-brand-50 border-brand-200"
           }`}
         >
-          <Clock className={`w-3.5 h-3.5 shrink-0 ${isDark ? "text-cyan-400" : "text-cyan-600"}`} />
+          <Clock className={`w-3.5 h-3.5 shrink-0 ${isDark ? "text-brand-400" : "text-brand-600"}`} />
           <div>
             <p
               className={`text-[9px] font-bold uppercase tracking-widest ${
-                isDark ? "text-cyan-300" : "text-cyan-700"
+                isDark ? "text-brand-300" : "text-brand-700"
               }`}
             >
               Borrador

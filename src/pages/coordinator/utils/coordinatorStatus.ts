@@ -87,16 +87,16 @@ export function getStatusTone(
     case "EN_REVISION":
       return isDark
         ? {
-            bg: "bg-cyan-500/10",
-            border: "border-cyan-500/20",
-            text: "text-cyan-300",
-            dot: "bg-cyan-400",
+            bg: "bg-brand-500/10",
+            border: "border-brand-500/20",
+            text: "text-brand-300",
+            dot: "bg-brand-400",
           }
         : {
-            bg: "bg-cyan-50",
-            border: "border-cyan-200",
-            text: "text-cyan-700",
-            dot: "bg-cyan-500",
+            bg: "bg-brand-50",
+            border: "border-brand-200",
+            text: "text-brand-700",
+            dot: "bg-brand-500",
           };
     default:
       return isDark

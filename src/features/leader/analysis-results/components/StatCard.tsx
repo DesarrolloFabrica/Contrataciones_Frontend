@@ -15,10 +15,10 @@ export const StatCard: React.FC<StatCardProps> = ({ label, value, icon, sub }) =
   return (
     <div
       className={[
-        "relative overflow-hidden group p-5 rounded-2xl transition-all duration-300 border",
+        "relative overflow-hidden group p-5 rounded-2xl transition-all duration-300 border border-t-2 border-t-brand-500",
         isDark
-          ? "bg-gradient-to-b from-[#111A2B]/85 via-[#0F1727]/78 to-[#0B1220]/65 border-white/[0.1] hover:border-cyan-400/35 hover:shadow-[0_18px_35px_-18px_rgba(6,182,212,0.45)]"
-          : "bg-white border-slate-200 hover:border-cyan-200 shadow-[0_4px_20px_-6px_rgba(15,23,42,0.06)] hover:shadow-[0_8px_30px_-6px_rgba(15,23,42,0.1)]",
+          ? "bg-gradient-to-b from-[#111A2B]/85 via-[#0F1727]/78 to-[#0B1220]/65 border-brand-500/25 hover:border-brand-400/50 hover:shadow-[0_18px_35px_-18px_rgba(16,185,129,0.45)]"
+          : "bg-white border-brand-500/20 hover:border-brand-500/40 shadow-[0_4px_20px_-6px_rgba(15,23,42,0.06)] hover:shadow-[0_8px_30px_-6px_rgba(15,23,42,0.1)]",
       ].join(" ")}
     >
       <div className="absolute top-0 right-0 p-4 opacity-15 group-hover:opacity-30 transition-opacity duration-300">

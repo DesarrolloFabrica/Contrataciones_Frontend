@@ -33,7 +33,7 @@ const DOC_TYPE_CONFIG: Record<
   RESUME: {
     label: "Hoja de vida",
     icon: <FileText className="w-4 h-4" />,
-    color: "text-cyan-400",
+    color: "text-brand-400",
   },
   ACADEMIC_CERTIFICATE: {
     label: "Certificado académico",
@@ -53,7 +53,7 @@ const DOC_TYPE_CONFIG: Record<
   IDENTITY_DOCUMENT: {
     label: "Documento de identidad",
     icon: <BadgeCheck className="w-4 h-4" />,
-    color: "text-blue-400",
+    color: "text-brand-400",
   },
   OTHER: {
     label: "Otro soporte",
@@ -204,7 +204,7 @@ export const CoordinatorDocumentsSection: React.FC<Props> = ({
         }`}
       >
         <div className="flex items-center gap-3">
-          <Loader2 className="w-5 h-5 animate-spin text-cyan-400" />
+          <Loader2 className="w-5 h-5 animate-spin text-brand-400" />
           <span className={`text-sm ${isDark ? "text-slate-400" : "text-slate-500"}`}>
             Cargando documentos...
           </span>
@@ -259,26 +259,26 @@ export const CoordinatorDocumentsSection: React.FC<Props> = ({
               key={doc.id}
               className={`relative rounded-2xl border overflow-hidden ${
                 isDark
-                  ? "bg-gradient-to-br from-cyan-500/5 to-transparent border-cyan-500/20"
-                  : "bg-gradient-to-br from-cyan-50 to-white border-cyan-200"
+                  ? "bg-gradient-to-br from-brand-500/5 to-transparent border-brand-500/20"
+                  : "bg-gradient-to-br from-brand-50 to-white border-brand-200"
               }`}
             >
               <div
                 className={`px-5 py-3 border-b ${
-                  isDark ? "border-cyan-500/10" : "border-cyan-100"
+                  isDark ? "border-brand-500/10" : "border-brand-100"
                 }`}
               >
                 <div className="flex items-center gap-2">
                   <div
                     className={`w-7 h-7 rounded-lg flex items-center justify-center ${
-                      isDark ? "bg-cyan-500/10" : "bg-cyan-100"
+                      isDark ? "bg-brand-500/10" : "bg-brand-100"
                     }`}
                   >
                     <FileText className={`w-4 h-4 ${cfg.color}`} />
                   </div>
                   <span
                     className={`text-[10px] font-black uppercase tracking-[0.2em] ${
-                      isDark ? "text-cyan-300" : "text-cyan-700"
+                      isDark ? "text-brand-300" : "text-brand-700"
                     }`}
                   >
                     Hoja de vida principal

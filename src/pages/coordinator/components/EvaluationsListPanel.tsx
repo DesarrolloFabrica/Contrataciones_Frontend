@@ -247,10 +247,10 @@ const EvaluationsListPanel: React.FC<Props> = ({
   // ✅ PREMIUM UI TOKENS (local)
   // -----------------------------
   const shellClass = [
-    "relative overflow-hidden rounded-[28px] backdrop-blur-xl",
+    "relative overflow-hidden rounded-[28px] backdrop-blur-xl border-t-2 border-t-brand-500",
     isDark
-      ? "border border-white/10 bg-[#0B0F14]/70 shadow-[0_24px_80px_-70px_rgba(16,185,129,0.18)]"
-      : "border border-slate-200 bg-white shadow-[0_18px_60px_rgba(15,23,42,0.08)]",
+      ? "border border-brand-500/25 bg-[#0B0F14]/70 shadow-[0_24px_80px_-70px_rgba(16,185,129,0.20)]"
+      : "border border-brand-500/20 bg-white shadow-[0_18px_60px_rgba(15,23,42,0.08)]",
   ].join(" ");
 
   const shellAmbient = (
@@ -258,7 +258,7 @@ const EvaluationsListPanel: React.FC<Props> = ({
       {isDark && (
         <>
           <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_14%_0%,rgba(16,185,129,0.10),transparent_55%)]" />
-          <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_90%_16%,rgba(34,211,238,0.08),transparent_58%)]" />
+          <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_90%_16%,rgba(52,211,153,0.08),transparent_58%)]" />
           <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(to_bottom,rgba(255,255,255,0.03),transparent_30%,rgba(255,255,255,0.01))]" />
         </>
       )}
@@ -276,8 +276,8 @@ const EvaluationsListPanel: React.FC<Props> = ({
       {/* Ambient */}
       {isDark && (
         <>
-          <div className="pointer-events-none absolute top-0 right-0 h-64 w-64 rounded-full bg-cyan-500/5 blur-[80px]" />
-          <div className="pointer-events-none absolute bottom-0 left-0 h-64 w-64 rounded-full bg-blue-500/5 blur-[80px]" />
+          <div className="pointer-events-none absolute top-0 right-0 h-64 w-64 rounded-full bg-brand-500/5 blur-[80px]" />
+          <div className="pointer-events-none absolute bottom-0 left-0 h-64 w-64 rounded-full bg-brand-500/5 blur-[80px]" />
           <div className="pointer-events-none absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-[0.03]" />
         </>
       )}
@@ -290,13 +290,13 @@ const EvaluationsListPanel: React.FC<Props> = ({
               <div
                 className={`shrink-0 grid h-14 w-14 place-items-center rounded-2xl border transition-all duration-300 ${
                   isDark
-                    ? "border-cyan-500/25 bg-gradient-to-br from-cyan-500/15 to-cyan-500/5 shadow-[0_0_20px_rgba(34,211,238,0.1)]"
-                    : "border-cyan-200 bg-gradient-to-br from-cyan-50 to-cyan-100/50 shadow-sm"
+                    ? "border-brand-500/25 bg-gradient-to-br from-brand-500/15 to-brand-500/5 shadow-[0_0_20px_rgba(52,211,153,0.1)]"
+                    : "border-brand-200 bg-gradient-to-br from-brand-50 to-brand-100/50 shadow-sm"
                 }`}
               >
                 <FileText
                   className={`w-6 h-6 ${
-                    isDark ? "text-cyan-400" : "text-cyan-600"
+                    isDark ? "text-brand-400" : "text-brand-600"
                   }`}
                 />
               </div>
@@ -337,12 +337,12 @@ const EvaluationsListPanel: React.FC<Props> = ({
           {/* Escuela */}
           <div className="space-y-2 group">
             <label
-              className={`text-[10px] font-bold uppercase tracking-widest flex items-center gap-2 transition-colors group-focus-within:text-cyan-500 ${
+              className={`text-[10px] font-bold uppercase tracking-widest flex items-center gap-2 transition-colors group-focus-within:text-brand-500 ${
                 isDark ? "text-slate-500" : "text-slate-600"
               }`}
             >
               Escuela / Coordinación
-              {lockedSchool && <Lock className="w-3 h-3 text-cyan-500" />}
+              {lockedSchool && <Lock className="w-3 h-3 text-brand-500" />}
             </label>
 
             <div className="relative">
@@ -354,10 +354,10 @@ const EvaluationsListPanel: React.FC<Props> = ({
                   isDark
                     ? lockedSchool
                       ? "bg-black/20 border-white/5 text-slate-500 cursor-not-allowed"
-                      : "bg-[#15191E]/80 border-white/10 text-slate-200 hover:border-white/20 focus:border-cyan-500/50 focus:bg-[#1A1F26] focus:shadow-[0_0_15px_rgba(6,182,212,0.08)]"
+                      : "bg-[#15191E]/80 border-white/10 text-slate-200 hover:border-white/20 focus:border-brand-500/50 focus:bg-[#1A1F26] focus:shadow-[0_0_15px_rgba(16,185,129,0.08)]"
                     : lockedSchool
                       ? "bg-slate-100 border-slate-200 text-slate-400 cursor-not-allowed"
-                      : "bg-white border-slate-200 text-slate-800 hover:border-cyan-300 focus:border-cyan-500/70 focus:shadow-[0_8px_25px_-5px_rgba(6,182,212,0.12)] shadow-sm"
+                      : "bg-white border-slate-200 text-slate-800 hover:border-brand-300 focus:border-brand-500/70 focus:shadow-[0_8px_25px_-5px_rgba(16,185,129,0.12)] shadow-sm"
                 }`}
               >
                 <option value="">Selecciona una escuela…</option>
@@ -390,7 +390,7 @@ const EvaluationsListPanel: React.FC<Props> = ({
             {schoolHint && (
               <p
                 className={`text-[11px] pl-1 ${
-                  isDark ? "text-cyan-400/80" : "text-cyan-700"
+                  isDark ? "text-brand-400/80" : "text-brand-700"
                 }`}
               >
                 {schoolHint}
@@ -401,7 +401,7 @@ const EvaluationsListPanel: React.FC<Props> = ({
           {/* Programa */}
           <div className="space-y-2 group">
             <label
-              className={`text-[10px] font-bold uppercase tracking-widest transition-colors group-focus-within:text-cyan-500 ${
+              className={`text-[10px] font-bold uppercase tracking-widest transition-colors group-focus-within:text-brand-500 ${
                 isDark ? "text-slate-500" : "text-slate-600"
               }`}
             >
@@ -417,10 +417,10 @@ const EvaluationsListPanel: React.FC<Props> = ({
                   isDark
                     ? !schoolFilter
                       ? "bg-black/20 border-white/5 text-slate-600 cursor-not-allowed"
-                      : "bg-[#15191E]/80 border-white/10 text-slate-200 hover:border-white/20 focus:border-cyan-500/50 focus:bg-[#1A1F26] focus:shadow-[0_0_15px_rgba(6,182,212,0.08)]"
+                      : "bg-[#15191E]/80 border-white/10 text-slate-200 hover:border-white/20 focus:border-brand-500/50 focus:bg-[#1A1F26] focus:shadow-[0_0_15px_rgba(16,185,129,0.08)]"
                     : !schoolFilter
                       ? "bg-slate-100 border-slate-200 text-slate-400 cursor-not-allowed"
-                      : "bg-white border-slate-200 text-slate-800 hover:border-cyan-300 focus:border-cyan-500/70 focus:shadow-[0_8px_25px_-5px_rgba(6,182,212,0.12)] shadow-sm"
+                      : "bg-white border-slate-200 text-slate-800 hover:border-brand-300 focus:border-brand-500/70 focus:shadow-[0_8px_25px_-5px_rgba(16,185,129,0.12)] shadow-sm"
                 }`}
               >
                 <option value="">
@@ -473,7 +473,7 @@ const EvaluationsListPanel: React.FC<Props> = ({
         >
           <div className="relative group">
             <Search
-              className={`w-5 h-5 absolute left-4 top-1/2 -translate-y-1/2 transition-colors group-focus-within:text-cyan-400 ${
+              className={`w-5 h-5 absolute left-4 top-1/2 -translate-y-1/2 transition-colors group-focus-within:text-brand-400 ${
                 isDark ? "text-slate-500" : "text-slate-400"
               }`}
             />
@@ -487,10 +487,10 @@ const EvaluationsListPanel: React.FC<Props> = ({
                 isDark
                   ? mustChooseScope
                     ? "bg-black/40 border-white/5 text-slate-600 cursor-not-allowed"
-                    : "bg-[#15191E]/80 border-white/10 text-white placeholder-slate-500 hover:border-white/20 focus:border-cyan-500/50 focus:bg-[#1A1F26] focus:shadow-[0_0_15px_rgba(6,182,212,0.1)]"
+                    : "bg-[#15191E]/80 border-white/10 text-white placeholder-slate-500 hover:border-white/20 focus:border-brand-500/50 focus:bg-[#1A1F26] focus:shadow-[0_0_15px_rgba(16,185,129,0.1)]"
                   : mustChooseScope
                     ? "bg-slate-100 border-slate-200 text-slate-400 cursor-not-allowed"
-                    : "bg-white border-slate-200 text-slate-800 placeholder-slate-400 hover:border-cyan-300 focus:border-cyan-500/70 focus:shadow-[0_8px_25px_-5px_rgba(6,182,212,0.15)] shadow-sm"
+                    : "bg-white border-slate-200 text-slate-800 placeholder-slate-400 hover:border-brand-300 focus:border-brand-500/70 focus:shadow-[0_8px_25px_-5px_rgba(16,185,129,0.15)] shadow-sm"
               }`}
             />
           </div>
@@ -522,8 +522,8 @@ const EvaluationsListPanel: React.FC<Props> = ({
                     : "bg-amber-50 text-amber-700 border border-amber-200 shadow-[0_10px_30px_rgba(251,191,36,0.35)]";
                 if (opt === "APROBADO")
                   activeClass = isDark
-                    ? "bg-cyan-500/10 text-cyan-400 border border-cyan-500/25 shadow-[0_0_10px_rgba(6,182,212,0.15)]"
-                    : "bg-cyan-50 text-cyan-700 border border-cyan-200 shadow-[0_10px_30px_rgba(6,182,212,0.35)]";
+                    ? "bg-brand-500/10 text-brand-400 border border-brand-500/25 shadow-[0_0_10px_rgba(16,185,129,0.15)]"
+                    : "bg-brand-50 text-brand-700 border border-brand-200 shadow-[0_10px_30px_rgba(16,185,129,0.35)]";
                 if (opt === "RECHAZADO")
                   activeClass = isDark
                     ? "bg-red-500/10 text-red-400 border border-red-500/20 shadow-[0_0_10px_rgba(239,68,68,0.15)]"
@@ -623,8 +623,8 @@ const EvaluationsListPanel: React.FC<Props> = ({
                     <span
                       className={`flex h-6 min-w-[1.5rem] items-center justify-center rounded-full px-2 font-mono text-xs ${
                         isDark
-                          ? "bg-cyan-500/10 text-cyan-400 border border-cyan-500/20"
-                          : "bg-cyan-50 text-cyan-700 border border-cyan-200"
+                          ? "bg-brand-500/10 text-brand-400 border border-brand-500/20"
+                          : "bg-brand-50 text-brand-700 border border-brand-200"
                       }`}
                     >
                       {g.interviews.length}
@@ -639,15 +639,15 @@ const EvaluationsListPanel: React.FC<Props> = ({
                       )
                     }
                     className={`flex items-center gap-2 text-[11px] font-bold uppercase tracking-wider transition-all duration-300 group-hover:gap-3 ${
-                      isDark ? "text-cyan-400 hover:text-cyan-300" : "text-cyan-700 hover:text-cyan-600"
+                      isDark ? "text-brand-400 hover:text-brand-300" : "text-brand-700 hover:text-brand-600"
                     }`}
                   >
                     Ver Detalle
                     <div
                       className={`grid h-6 w-6 place-items-center rounded-full border transition-all duration-300 ${
                         isDark
-                          ? "border-cyan-500/30 bg-cyan-500/10 group-hover:bg-cyan-500 group-hover:text-black"
-                          : "border-cyan-200 bg-cyan-50 group-hover:bg-cyan-500 group-hover:text-white"
+                          ? "border-brand-500/30 bg-brand-500/10 group-hover:bg-brand-500 group-hover:text-black"
+                          : "border-brand-200 bg-brand-50 group-hover:bg-brand-500 group-hover:text-white"
                       }`}
                     >
                       <svg
@@ -722,7 +722,7 @@ const EvaluationsListPanel: React.FC<Props> = ({
                       : "border-transparent text-slate-300 cursor-not-allowed"
                     : isDark
                       ? "border-white/10 bg-white/5 text-slate-300 hover:bg-white/10 hover:text-white hover:border-white/20"
-                      : "border-slate-200 bg-white text-slate-700 hover:bg-slate-50 hover:border-cyan-300 hover:text-cyan-700 shadow-sm"
+                      : "border-slate-200 bg-white text-slate-700 hover:bg-slate-50 hover:border-brand-300 hover:text-brand-700 shadow-sm"
                 }`}
                 aria-label="Anterior"
               >
@@ -767,11 +767,11 @@ const EvaluationsListPanel: React.FC<Props> = ({
                         ${
                           isActive
                             ? isDark
-                              ? "bg-cyan-500 text-black shadow-[0_0_20px_rgba(6,182,212,0.35)] scale-110"
-                              : "bg-cyan-500 text-white shadow-[0_0_20px_rgba(6,182,212,0.45)] scale-110"
+                              ? "bg-brand-500 text-black shadow-[0_0_20px_rgba(16,185,129,0.35)] scale-110"
+                              : "bg-brand-500 text-white shadow-[0_0_20px_rgba(16,185,129,0.45)] scale-110"
                             : isDark
                               ? "text-slate-500 hover:text-slate-300 hover:bg-white/5"
-                              : "text-slate-500 bg-white border border-slate-200 hover:text-cyan-700 hover:border-cyan-300 hover:bg-cyan-50 shadow-sm"
+                              : "text-slate-500 bg-white border border-slate-200 hover:text-brand-700 hover:border-brand-300 hover:bg-brand-50 shadow-sm"
                         }
                       `}
                       aria-current={isActive ? "page" : undefined}
@@ -793,7 +793,7 @@ const EvaluationsListPanel: React.FC<Props> = ({
                       : "border-transparent text-slate-300 cursor-not-allowed"
                     : isDark
                       ? "border-white/10 bg-white/5 text-slate-300 hover:bg-white/10 hover:text-white hover:border-white/20"
-                      : "border-slate-200 bg-white text-slate-700 hover:bg-slate-50 hover:border-cyan-300 hover:text-cyan-700 shadow-sm"
+                      : "border-slate-200 bg-white text-slate-700 hover:bg-slate-50 hover:border-brand-300 hover:text-brand-700 shadow-sm"
                 }`}
                 aria-label="Siguiente"
               >

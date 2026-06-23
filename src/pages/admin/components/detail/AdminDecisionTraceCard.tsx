@@ -32,7 +32,7 @@ const stepBase =
 function StepIcon({ status }: { status?: string | null }) {
   const s = (status ?? "").toUpperCase();
   if (s === "APPROVED" || s === "APROBADO")
-    return <CheckCircle2 className="w-4 h-4 text-cyan-400 shrink-0 mt-0.5" />;
+    return <CheckCircle2 className="w-4 h-4 text-brand-400 shrink-0 mt-0.5" />;
   if (s === "REJECTED" || s === "RECHAZADO" || s === "NO_RECOMENDAR")
     return <AlertCircle className="w-4 h-4 text-rose-400 shrink-0 mt-0.5" />;
   return <Clock className="w-4 h-4 text-amber-400 shrink-0 mt-0.5" />;
@@ -41,7 +41,7 @@ function StepIcon({ status }: { status?: string | null }) {
 function StatusBadge({ status }: { status?: string | null }) {
   const s = (status ?? "").toUpperCase();
   let cls = "bg-white/5 text-neutral-300 border-white/10";
-  if (s === "APPROVED" || s === "APROBADO") cls = "bg-cyan-500/10 text-cyan-300 border-cyan-500/30";
+  if (s === "APPROVED" || s === "APROBADO") cls = "bg-brand-500/10 text-brand-300 border-brand-500/30";
   else if (s === "REJECTED" || s === "RECHAZADO") cls = "bg-rose-500/10 text-rose-300 border-rose-500/30";
   else if (s === "NO_RECOMENDAR") cls = "bg-rose-500/10 text-rose-300 border-rose-500/30";
   else if (s === "PRECAUCION") cls = "bg-yellow-500/10 text-yellow-200 border-yellow-500/30";
@@ -73,7 +73,7 @@ export default function AdminDecisionTraceCard({
   return (
     <div className="space-y-1">
       <div className="flex items-center gap-2 mb-3">
-        <Gavel className="w-4 h-4 text-cyan-300" />
+        <Gavel className="w-4 h-4 text-brand-300" />
         <h5 className={`text-sm font-extrabold uppercase tracking-[0.18em] ${isDark ? "text-white" : "text-slate-900"}`}>
           Trazabilidad completa
         </h5>
@@ -86,7 +86,7 @@ export default function AdminDecisionTraceCard({
       <div className="space-y-3">
         {/* IA */}
         <div className={`${stepBase} ${isDark ? "bg-white/[0.04] border-white/10" : "bg-slate-50 border-slate-200"}`}>
-          <Brain className="w-5 h-5 text-cyan-400 shrink-0 mt-0.5" />
+          <Brain className="w-5 h-5 text-brand-400 shrink-0 mt-0.5" />
           <div className="min-w-0 flex-1">
             <div className="flex items-center justify-between gap-3 flex-wrap">
               <span className={`text-xs font-bold uppercase tracking-widest ${isDark ? "text-neutral-400" : "text-slate-500"}`}>
@@ -131,15 +131,15 @@ export default function AdminDecisionTraceCard({
         {/* Coordinador - decisión oficial */}
         <div className={`${stepBase} ${
           isDark
-            ? "bg-cyan-500/[0.06] border-cyan-500/25"
-            : "bg-cyan-50 border-cyan-200"
+            ? "bg-brand-500/[0.06] border-brand-500/25"
+            : "bg-brand-50 border-brand-200"
         }`}>
-          <div className={`w-5 h-5 shrink-0 mt-0.5 rounded-full flex items-center justify-center ${isDark ? "bg-cyan-500/20" : "bg-cyan-100"}`}>
-            <ShieldCheck className={`w-3.5 h-3.5 ${isDark ? "text-cyan-400" : "text-cyan-600"}`} />
+          <div className={`w-5 h-5 shrink-0 mt-0.5 rounded-full flex items-center justify-center ${isDark ? "bg-brand-500/20" : "bg-brand-100"}`}>
+            <ShieldCheck className={`w-3.5 h-3.5 ${isDark ? "text-brand-400" : "text-brand-600"}`} />
           </div>
           <div className="min-w-0 flex-1">
             <div className="flex items-center justify-between gap-3 flex-wrap">
-              <span className={`text-xs font-bold uppercase tracking-widest ${isDark ? "text-cyan-300" : "text-cyan-700"}`}>
+              <span className={`text-xs font-bold uppercase tracking-widest ${isDark ? "text-brand-300" : "text-brand-700"}`}>
                 Coordinador (decisión oficial)
               </span>
               <StatusBadge status={coordinator.status} />

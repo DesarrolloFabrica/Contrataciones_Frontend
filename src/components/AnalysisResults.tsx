@@ -92,11 +92,11 @@ const AnalysisResults: React.FC<AnalysisResultsProps> = ({
       return {
         ...base,
         chip: isDark
-          ? "border-cyan-500/25 bg-cyan-500/10 text-cyan-200"
-          : "border-cyan-200 bg-cyan-50 text-cyan-700",
+          ? "border-brand-500/25 bg-brand-500/10 text-brand-200"
+          : "border-brand-200 bg-brand-50 text-brand-700",
         iconWrap: isDark
-          ? "bg-cyan-500/10 border-cyan-500/25 text-cyan-300"
-          : "bg-cyan-50 border-cyan-200 text-cyan-600",
+          ? "bg-brand-500/10 border-brand-500/25 text-brand-300"
+          : "bg-brand-50 border-brand-200 text-brand-600",
         icon: <CheckCircle2 className="w-4 h-4" />,
       };
     }
@@ -159,15 +159,15 @@ const AnalysisResults: React.FC<AnalysisResultsProps> = ({
       className={[
         "relative w-full font-sans pb-20",
         isDark
-          ? "text-slate-200 selection:bg-cyan-500/30 selection:text-cyan-200"
-          : "text-slate-900 selection:bg-cyan-200/60 selection:text-slate-900",
+          ? "text-slate-200 selection:bg-brand-500/30 selection:text-brand-200"
+          : "text-slate-900 selection:bg-brand-200/60 selection:text-slate-900",
       ].join(" ")}
     >
       {isDark && (
         <div className="pointer-events-none absolute inset-0 -z-10 overflow-hidden">
-          <div className="absolute -top-28 -left-28 w-[480px] h-[480px] rounded-full bg-cyan-500/8 blur-[120px]" />
-          <div className="absolute top-[28%] -right-28 w-[420px] h-[420px] rounded-full bg-blue-500/8 blur-[120px]" />
-          <div className="absolute bottom-[-160px] left-1/3 w-[520px] h-[520px] rounded-full bg-cyan-500/6 blur-[140px]" />
+          <div className="absolute -top-28 -left-28 w-[480px] h-[480px] rounded-full bg-brand-500/8 blur-[120px]" />
+          <div className="absolute top-[28%] -right-28 w-[420px] h-[420px] rounded-full bg-brand-500/8 blur-[120px]" />
+          <div className="absolute bottom-[-160px] left-1/3 w-[520px] h-[520px] rounded-full bg-brand-500/6 blur-[140px]" />
         </div>
       )}
 
@@ -177,11 +177,11 @@ const AnalysisResults: React.FC<AnalysisResultsProps> = ({
           className={[
             "relative rounded-3xl border backdrop-blur-sm overflow-hidden",
             isDark
-              ? "bg-[#0B1220]/55 border-white/[0.08] shadow-[0_14px_50px_-24px_rgba(6,182,212,0.35)]"
+              ? "bg-[#0B1220]/55 border-white/[0.08] shadow-[0_14px_50px_-24px_rgba(16,185,129,0.35)]"
               : "bg-white/90 border-slate-200 shadow-[0_16px_40px_-18px_rgba(15,23,42,0.18)]",
           ].join(" ")}
         >
-          <div className="h-[2px] w-full bg-gradient-to-r from-transparent via-cyan-500/40 to-transparent" />
+          <div className="h-[2px] w-full bg-gradient-to-r from-transparent via-brand-500/40 to-transparent" />
 
           <div className="px-5 md:px-6 py-4 flex items-center justify-between gap-4 flex-wrap">
             <div className="flex items-center gap-3 min-w-0">
@@ -200,7 +200,7 @@ const AnalysisResults: React.FC<AnalysisResultsProps> = ({
                     "hidden sm:inline-flex items-center gap-2 rounded-full px-3 py-1 text-[11px] font-extrabold uppercase tracking-widest border",
                     isDark
                       ? "border-white/[0.08] bg-white/[0.03] text-slate-300"
-                      : "border-cyan-100 bg-cyan-50 text-cyan-700",
+                      : "border-brand-100 bg-brand-50 text-brand-700",
                   ].join(" ")}
                 >
                   AI Analisis Completo
@@ -238,20 +238,20 @@ const AnalysisResults: React.FC<AnalysisResultsProps> = ({
                 className={[
                   "group relative inline-flex items-center gap-2 rounded-xl px-5 py-2 text-[11px] font-extrabold uppercase tracking-widest border transition-all duration-300 overflow-hidden",
                   isDark
-                    ? "border-cyan-500/25 bg-gradient-to-r from-cyan-500/15 to-blue-500/10 text-cyan-300 hover:from-cyan-500/25 hover:to-blue-500/20 hover:border-cyan-400/40 hover:shadow-[0_0_24px_-6px_rgba(6,182,212,0.3)]"
-                    : "border-cyan-200 bg-gradient-to-r from-cyan-50 to-blue-50 text-cyan-700 hover:from-cyan-100 hover:to-blue-100 hover:border-cyan-300",
+                    ? "border-brand-500/25 bg-gradient-to-r from-brand-500/15 to-brand-500/10 text-brand-300 hover:from-brand-500/25 hover:to-brand-500/20 hover:border-brand-400/40 hover:shadow-[0_0_24px_-6px_rgba(16,185,129,0.3)]"
+                    : "border-brand-200 bg-gradient-to-r from-brand-50 to-brand-50 text-brand-700 hover:from-brand-100 hover:to-brand-100 hover:border-brand-300",
                   isDownloading ? "opacity-50 cursor-not-allowed" : "",
                 ].join(" ")}
               >
                 <div className="pointer-events-none absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity">
-                  <div className="absolute -inset-x-24 -top-10 h-20 rotate-12 bg-cyan-500/10 blur-xl" />
+                  <div className="absolute -inset-x-24 -top-10 h-20 rotate-12 bg-brand-500/10 blur-xl" />
                 </div>
 
                 {isDownloading ? (
-                  <span className={isDark ? "text-cyan-400/70" : "text-cyan-600/70"}>Procesando...</span>
+                  <span className={isDark ? "text-brand-400/70" : "text-brand-600/70"}>Procesando...</span>
                 ) : (
                   <>
-                    <Download className={`w-4 h-4 ${isDark ? "text-cyan-400/90" : "text-cyan-600"}`} />
+                    <Download className={`w-4 h-4 ${isDark ? "text-brand-400/90" : "text-brand-600"}`} />
                     <span>Exportar reporte</span>
                   </>
                 )}
@@ -269,10 +269,10 @@ const AnalysisResults: React.FC<AnalysisResultsProps> = ({
         {/* 2. HEADER HERO */}
         <div
           className={[
-            "relative rounded-3xl border p-5 md:p-7 backdrop-blur-sm",
+            "relative rounded-3xl border border-t-2 border-t-brand-500 p-5 md:p-7 backdrop-blur-sm",
             isDark
-              ? "bg-[#0B1220]/55 border-white/[0.08] shadow-[0_14px_50px_-24px_rgba(6,182,212,0.35)]"
-              : "bg-white/90 border-slate-200 shadow-[0_16px_40px_-18px_rgba(15,23,42,0.18)]",
+              ? "bg-[#0B1220]/55 border-brand-500/25 shadow-[0_14px_50px_-24px_rgba(16,185,129,0.35)]"
+              : "bg-white/90 border-brand-500/20 shadow-[0_16px_40px_-18px_rgba(15,23,42,0.18)]",
           ].join(" ")}
         >
           <div
@@ -287,7 +287,7 @@ const AnalysisResults: React.FC<AnalysisResultsProps> = ({
                   className={`px-2.5 py-1 rounded-lg text-[10px] font-bold uppercase tracking-wider border ${
                     isDark
                       ? "bg-white/[0.04] text-slate-400 border-white/[0.08]"
-                      : "bg-cyan-50 text-cyan-700 border-cyan-200"
+                      : "bg-brand-50 text-brand-700 border-brand-200"
                   }`}
                 >
                   Candidato
@@ -314,13 +314,13 @@ const AnalysisResults: React.FC<AnalysisResultsProps> = ({
               >
                 {interviewData.documentNumber && (
                   <div className="flex items-center gap-2">
-                    <IdCard className="w-4 h-4 text-cyan-500" />
+                    <IdCard className="w-4 h-4 text-brand-500" />
                     <span className="font-medium">{interviewData.documentNumber}</span>
                   </div>
                 )}
                 {interviewData.age && (
                   <div className="flex items-center gap-2">
-                    <Calendar className="w-4 h-4 text-cyan-500" />
+                    <Calendar className="w-4 h-4 text-brand-500" />
                     <span>{interviewData.age} años</span>
                   </div>
                 )}
@@ -333,13 +333,13 @@ const AnalysisResults: React.FC<AnalysisResultsProps> = ({
               >
                 {interviewData.program && (
                   <div className="flex items-center gap-2">
-                    <GraduationCap className="w-4 h-4 text-cyan-500" />
+                    <GraduationCap className="w-4 h-4 text-brand-500" />
                     <span>{interviewData.program}</span>
                   </div>
                 )}
                 {interviewData.school && (
                   <div className="flex items-center gap-2">
-                    <Building2 className="w-4 h-4 text-cyan-500" />
+                    <Building2 className="w-4 h-4 text-brand-500" />
                     <span>{interviewData.school}</span>
                   </div>
                 )}
@@ -351,7 +351,7 @@ const AnalysisResults: React.FC<AnalysisResultsProps> = ({
                     isDark ? "text-slate-500" : "text-slate-400"
                   }`}
                 >
-                  <Briefcase className="w-3.5 h-3.5 text-cyan-500 shrink-0 mt-0.5" />
+                  <Briefcase className="w-3.5 h-3.5 text-brand-500 shrink-0 mt-0.5" />
                   <span>{interviewData.previousExperience}</span>
                 </div>
               )}
@@ -361,17 +361,17 @@ const AnalysisResults: React.FC<AnalysisResultsProps> = ({
             <div className="relative w-full">
               <div
                 className={[
-                  "group relative overflow-hidden rounded-2xl border transition-all duration-300",
+                  "group relative overflow-hidden rounded-2xl border border-t-2 border-t-brand-500 transition-all duration-300",
                   isDark
-                    ? "border-white/[0.08] bg-gradient-to-b from-white/[0.02] to-transparent hover:border-white/[0.12] shadow-[0_0_40px_-12px_rgba(6,182,212,0.06)]"
-                    : "border-slate-200 bg-white hover:border-cyan-200 shadow-[0_8px_30px_-10px_rgba(15,23,42,0.08)]",
+                    ? "border-brand-500/25 bg-gradient-to-b from-white/[0.02] to-transparent hover:border-brand-400/40 shadow-[0_0_40px_-12px_rgba(16,185,129,0.10)]"
+                    : "border-brand-500/20 bg-white hover:border-brand-500/40 shadow-[0_8px_30px_-10px_rgba(15,23,42,0.08)]",
                 ].join(" ")}
               >
                 {/* accent line */}
                 <div
                   className={`h-[2px] w-full opacity-50 group-hover:opacity-100 transition-opacity ${
                     verdictKind === "APPROVED"
-                      ? "bg-gradient-to-r from-transparent via-cyan-500 to-transparent"
+                      ? "bg-gradient-to-r from-transparent via-brand-500 to-transparent"
                       : verdictKind === "REJECTED"
                         ? "bg-gradient-to-r from-transparent via-rose-500 to-transparent"
                         : "bg-gradient-to-r from-transparent via-white/20 to-transparent"
@@ -395,7 +395,7 @@ const AnalysisResults: React.FC<AnalysisResultsProps> = ({
                         <span
                           className={`h-1.5 w-1.5 rounded-full ${
                             verdictKind === "APPROVED"
-                              ? "bg-cyan-400"
+                              ? "bg-brand-400"
                               : verdictKind === "REJECTED"
                                 ? "bg-rose-400"
                                 : "bg-slate-400"
@@ -478,10 +478,10 @@ const AnalysisResults: React.FC<AnalysisResultsProps> = ({
         {/* 3. KPI GRID */}
         <div
           className={[
-            "rounded-3xl border p-4 md:p-5 backdrop-blur-sm",
+            "rounded-3xl border border-t-2 border-t-brand-500 p-4 md:p-5 backdrop-blur-sm",
             isDark
-              ? "bg-[#0B1220]/50 border-white/[0.08] shadow-[0_16px_50px_-30px_rgba(6,182,212,0.35)]"
-              : "bg-white/90 border-slate-200 shadow-[0_16px_40px_-18px_rgba(15,23,42,0.18)]",
+              ? "bg-[#0B1220]/50 border-brand-500/25 shadow-[0_16px_50px_-30px_rgba(16,185,129,0.35)]"
+              : "bg-white/90 border-brand-500/20 shadow-[0_16px_40px_-18px_rgba(15,23,42,0.18)]",
           ].join(" ")}
         >
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
@@ -528,10 +528,10 @@ const AnalysisResults: React.FC<AnalysisResultsProps> = ({
         {/* 4. MAIN ANALYTICS LAYOUT */}
         <div
           className={[
-            "rounded-3xl border p-4 md:p-6 backdrop-blur-sm",
+            "rounded-3xl border border-t-2 border-t-brand-500 p-4 md:p-6 backdrop-blur-sm",
             isDark
-              ? "bg-[#0B1220]/45 border-white/[0.08] shadow-[0_20px_60px_-36px_rgba(6,182,212,0.4)]"
-              : "bg-white/90 border-slate-200 shadow-[0_18px_44px_-22px_rgba(15,23,42,0.2)]",
+              ? "bg-[#0B1220]/45 border-brand-500/25 shadow-[0_20px_60px_-36px_rgba(16,185,129,0.4)]"
+              : "bg-white/90 border-brand-500/20 shadow-[0_18px_44px_-22px_rgba(15,23,42,0.2)]",
           ].join(" ")}
         >
           <div className="grid lg:grid-cols-12 gap-8">
@@ -539,14 +539,14 @@ const AnalysisResults: React.FC<AnalysisResultsProps> = ({
             <div className="lg:col-span-4 space-y-6">
             <div
               className={[
-                "rounded-2xl p-8 flex flex-col items-center relative overflow-hidden border transition-all duration-300",
+                "rounded-2xl p-8 flex flex-col items-center relative overflow-hidden border border-t-2 border-t-brand-500 transition-all duration-300",
                 isDark
-                  ? "bg-gradient-to-b from-white/[0.02] to-transparent border-white/[0.06] hover:border-white/[0.1]"
-                  : "bg-white border-slate-200 shadow-[0_8px_30px_-10px_rgba(15,23,42,0.08)]",
+                  ? "bg-gradient-to-b from-white/[0.02] to-transparent border-brand-500/25 hover:border-brand-400/40"
+                  : "bg-white border-brand-500/20 shadow-[0_8px_30px_-10px_rgba(15,23,42,0.08)]",
               ].join(" ")}
             >
               {isDark && (
-                <div className="absolute inset-0 bg-gradient-to-b from-cyan-500/5 to-transparent pointer-events-none" />
+                <div className="absolute inset-0 bg-gradient-to-b from-brand-500/5 to-transparent pointer-events-none" />
               )}
               <h3
                 className={`text-[11px] font-bold uppercase tracking-[0.18em] mb-6 relative z-10 ${
@@ -627,7 +627,7 @@ const AnalysisResults: React.FC<AnalysisResultsProps> = ({
                 <div className="text-center py-4">
                   <CheckCircle2
                     className={`w-8 h-8 mx-auto mb-2 ${
-                      isDark ? "text-cyan-500/40" : "text-cyan-400"
+                      isDark ? "text-brand-500/40" : "text-brand-400"
                     }`}
                   />
                   <p
@@ -646,17 +646,17 @@ const AnalysisResults: React.FC<AnalysisResultsProps> = ({
             <div className="lg:col-span-8 space-y-8">
             <div
               className={[
-                "rounded-2xl p-8 relative overflow-hidden border transition-all duration-300",
+                "rounded-2xl p-8 relative overflow-hidden border border-t-2 border-t-brand-500 transition-all duration-300",
                 isDark
-                  ? "bg-gradient-to-br from-white/[0.02] to-transparent border-white/[0.06] hover:border-white/[0.1]"
-                  : "bg-white border-slate-200 shadow-[0_8px_30px_-10px_rgba(15,23,42,0.08)]",
+                  ? "bg-gradient-to-br from-white/[0.02] to-transparent border-brand-500/25 hover:border-brand-400/40"
+                  : "bg-white border-brand-500/20 shadow-[0_8px_30px_-10px_rgba(15,23,42,0.08)]",
               ].join(" ")}
             >
               {isDark && (
-                <div className="absolute top-0 right-0 p-32 bg-cyan-500/5 blur-[80px] rounded-full pointer-events-none" />
+                <div className="absolute top-0 right-0 p-32 bg-brand-500/5 blur-[80px] rounded-full pointer-events-none" />
               )}
 
-              <div className={`flex items-center gap-2 mb-6 relative z-10 ${isDark ? "text-cyan-400" : "text-cyan-600"}`}>
+              <div className={`flex items-center gap-2 mb-6 relative z-10 ${isDark ? "text-brand-400" : "text-brand-600"}`}>
                 <Sparkles className="w-4 h-4" />
                 <h3 className="text-[11px] font-bold uppercase tracking-[0.18em]">
                   Resumen Ejecutivo de IA
@@ -681,7 +681,7 @@ const AnalysisResults: React.FC<AnalysisResultsProps> = ({
                     isDark ? "text-white" : "text-slate-900"
                   }`}
                 >
-                  <Target className={`w-4 h-4 ${isDark ? "text-cyan-500" : "text-cyan-600"}`} />
+                  <Target className={`w-4 h-4 ${isDark ? "text-brand-500" : "text-brand-600"}`} />
                   Analisis Dimensional
                 </h3>
                 <span
@@ -708,7 +708,7 @@ const AnalysisResults: React.FC<AnalysisResultsProps> = ({
       <div
         className="pointer-events-none fixed inset-x-0 bottom-0 h-px opacity-30"
         style={{
-          background: "linear-gradient(90deg, transparent, #06b6d4, #3b82f6, transparent)",
+          background: "linear-gradient(90deg, transparent, #10B981, #10B981, transparent)",
         }}
       />
     </div>

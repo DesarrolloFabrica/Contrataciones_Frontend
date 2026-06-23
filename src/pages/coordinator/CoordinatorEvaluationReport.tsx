@@ -142,7 +142,7 @@ const CoordinatorEvaluationReport: React.FC = () => {
       {isDark && (
         <div className="pointer-events-none absolute inset-0 overflow-hidden">
           <div className="absolute -top-24 -left-24 h-[420px] w-[420px] rounded-full blur-3xl opacity-25 bg-emerald-500/10" />
-          <div className="absolute -bottom-28 -right-28 h-[520px] w-[520px] rounded-full blur-3xl opacity-20 bg-cyan-500/10" />
+          <div className="absolute -bottom-28 -right-28 h-[520px] w-[520px] rounded-full blur-3xl opacity-20 bg-brand-500/10" />
           <div
             className="absolute inset-0 opacity-[0.06]"
             style={{
@@ -257,7 +257,7 @@ const CoordinatorEvaluationReport: React.FC = () => {
 
         {!loading && !error && !analysis && interviewData && (
           <div className="flex flex-col items-center justify-center py-16 gap-3">
-            <AlertCircle className={["w-8 h-8", isDark ? "text-cyan-300" : "text-cyan-600"].join(" ")} />
+            <AlertCircle className={["w-8 h-8", isDark ? "text-brand-300" : "text-brand-600"].join(" ")} />
             <p
               className={[
                 "text-sm text-center max-w-md",

@@ -99,7 +99,7 @@ const AdminUsersPanel: React.FC<Props> = ({ scope }) => {
           <button
             type="button"
             onClick={openCreate}
-            className="h-10 px-4 rounded-xl bg-cyan-600 hover:bg-cyan-500 text-white text-xs font-bold uppercase tracking-widest shadow-lg shadow-cyan-500/25 transition-all flex items-center gap-2"
+            className="h-10 px-4 rounded-xl bg-brand-600 hover:bg-brand-500 text-white text-xs font-bold uppercase tracking-widest shadow-lg shadow-brand-500/25 transition-all flex items-center gap-2"
           >
             <Plus className="w-3.5 h-3.5" />
             Crear usuario
@@ -110,8 +110,8 @@ const AdminUsersPanel: React.FC<Props> = ({ scope }) => {
       {/* Section 2: Main card */}
       <div
         className={[
-          "rounded-2xl border p-5 md:p-6 space-y-5",
-          isDark ? "bg-white/[0.03] border-white/10" : "bg-white border-slate-200",
+          "rounded-2xl border border-t-2 border-t-brand-500 p-5 md:p-6 space-y-5",
+          isDark ? "bg-white/[0.03] border-brand-500/25" : "bg-white border-brand-500/20 shadow-[0_8px_30px_-12px_rgba(15,23,42,0.08)]",
         ].join(" ")}
       >
         <AdminUsersHeader
@@ -144,7 +144,7 @@ const AdminUsersPanel: React.FC<Props> = ({ scope }) => {
                   : "text-slate-500 border-slate-200 bg-slate-50",
               ].join(" ")}
             >
-              <Loader2 className="w-8 h-8 animate-spin text-cyan-500" />
+              <Loader2 className="w-8 h-8 animate-spin text-brand-500" />
               <p className="text-sm">Cargando usuarios…</p>
             </div>
           )}
@@ -202,7 +202,7 @@ const AdminUsersPanel: React.FC<Props> = ({ scope }) => {
                 <button
                   type="button"
                   onClick={openCreate}
-                  className="px-3 py-2 rounded-lg bg-cyan-600 hover:bg-cyan-500 text-white text-[11px] font-bold uppercase tracking-widest shadow-lg shadow-cyan-500/25"
+                  className="px-3 py-2 rounded-lg bg-brand-600 hover:bg-brand-500 text-white text-[11px] font-bold uppercase tracking-widest shadow-lg shadow-brand-500/25"
                 >
                   Crear usuario
                 </button>
@@ -251,7 +251,7 @@ const AdminUsersPanel: React.FC<Props> = ({ scope }) => {
                   <p
                     className={[
                       "text-[11px] uppercase tracking-widest font-bold flex items-center gap-2",
-                      isDark ? "text-cyan-300" : "text-cyan-700",
+                      isDark ? "text-brand-300" : "text-brand-700",
                     ].join(" ")}
                   >
                     <ShieldCheck className="w-4 h-4" />

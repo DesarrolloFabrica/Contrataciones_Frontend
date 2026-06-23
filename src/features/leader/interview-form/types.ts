@@ -2,7 +2,7 @@ import type { InterviewData } from "../../../types";
 import type { TeacherCandidateSearchItemDto } from "../../../services/teachersService";
 
 export interface InterviewFormProps {
-  onSubmit: (data: InterviewData) => void;
+  onSubmit: (data: InterviewData) => void | Promise<void>;
   onStepChange?: (step: number) => void;
   examplePreset?: "approved" | "medium" | "rejected" | null;
   onExampleApplied?: () => void;
@@ -47,6 +47,8 @@ export interface InterviewDraft {
   selectedCandidateId: string | null;
   hiringContext?: HiringContextDraft;
   candidateDocuments?: CandidateDocumentsDraft;
+  currentStep?: number;
+  maxReachedStep?: number;
 }
 
 export interface RemoteSchool {

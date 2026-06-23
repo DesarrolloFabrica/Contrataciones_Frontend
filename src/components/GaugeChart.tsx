@@ -32,7 +32,7 @@ const GaugeChart: React.FC<GaugeChartProps> = ({ value, size = 250, label }) => 
   const getColor = (val: number) => {
     if (val < 40) return '#f43f5e';
     if (val < 70) return '#f59e0b';
-    return '#06b6d4';
+    return '#10B981';
   };
 
   const color = getColor(clampedValue);

@@ -31,7 +31,7 @@ export const ExampleProfilesToolbar: React.FC<ExampleProfilesToolbarProps> = ({
         <button
           type="button"
           onClick={onLoadApproved}
-          className="group flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold uppercase tracking-wide text-gray-500 hover:text-cyan-500 hover:bg-cyan-500/10 transition-all"
+          className="group flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold uppercase tracking-wide text-gray-500 hover:text-brand-500 hover:bg-brand-500/10 transition-all"
         >
           <CheckCircle2 className="w-4 h-4 transition-transform group-hover:scale-110" />
           <span className="hidden sm:inline">Perfil Aprobado</span>

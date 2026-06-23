@@ -75,7 +75,7 @@ export const DocumentRequirementCard: React.FC<DocumentRequirementCardProps> = (
       </div>
       {isResume && (
         <div className="flex flex-wrap items-center gap-2">
-          <span className={`rounded-full px-3 py-1 text-[10px] font-bold uppercase tracking-[0.14em] ${isDark ? "bg-cyan-500/15 text-cyan-300 border border-cyan-400/30" : "bg-cyan-100 text-cyan-700 border border-cyan-300"}`}>
+          <span className={`rounded-full px-3 py-1 text-[10px] font-bold uppercase tracking-[0.14em] ${isDark ? "bg-brand-500/15 text-brand-300 border border-brand-400/30" : "bg-brand-100 text-brand-700 border border-brand-300"}`}>
             Documento principal
           </span>
           <span className={`text-[11px] ${isDark ? "text-amber-300" : "text-amber-700"}`}>

@@ -61,10 +61,10 @@ export default function AdminScoreCard({ avg, median, min, max, count }: Props) 
   return (
     <div
       className={[
-        "relative flex h-full min-h-[380px] w-full min-w-0 flex-col overflow-hidden rounded-xl border p-5",
+        "relative flex h-full min-h-[380px] w-full min-w-0 flex-col overflow-hidden rounded-xl border border-t-2 border-t-brand-500 p-5",
         isDark
-          ? "border-white/10 bg-white/[0.03]"
-          : "border-slate-200 bg-white shadow-sm",
+          ? "border-brand-500/25 bg-white/[0.03]"
+          : "border-brand-500/20 bg-white shadow-[0_8px_30px_-12px_rgba(15,23,42,0.08)]",
       ].join(" ")}
     >
       <div className="flex items-start justify-between mb-4">
@@ -108,15 +108,15 @@ export default function AdminScoreCard({ avg, median, min, max, count }: Props) 
           <div className="relative flex flex-col items-center justify-center py-6">
             {/* Resplandor radial de fondo */}
             {isDark && (
-              <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-32 h-32 bg-cyan-500/10 rounded-full blur-[50px] pointer-events-none" />
+              <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-32 h-32 bg-brand-500/10 rounded-full blur-[50px] pointer-events-none" />
             )}
             
             <span
               className={[
                 "text-6xl md:text-7xl font-black tracking-tighter relative z-10",
                 isDark
-                  ? "text-transparent bg-clip-text bg-gradient-to-br from-cyan-400 to-cyan-400"
-                  : "text-cyan-700",
+                  ? "text-transparent bg-clip-text bg-gradient-to-br from-brand-400 to-brand-400"
+                  : "text-brand-700",
               ].join(" ")}
             >
               {main}
@@ -124,7 +124,7 @@ export default function AdminScoreCard({ avg, median, min, max, count }: Props) 
             <span
               className={[
                 "text-[10px] uppercase tracking-[0.25em] font-bold mt-2 relative z-10",
-                isDark ? "text-cyan-500/70" : "text-cyan-600/80",
+                isDark ? "text-brand-500/70" : "text-brand-600/80",
               ].join(" ")}
             >
               Promedio General
@@ -145,8 +145,8 @@ export default function AdminScoreCard({ avg, median, min, max, count }: Props) 
                   className={[
                     "absolute inset-0 opacity-40",
                     isDark
-                      ? "bg-gradient-to-r from-cyan-500/50 to-cyan-500/50"
-                      : "bg-gradient-to-r from-cyan-400/50 to-cyan-400/50",
+                      ? "bg-gradient-to-r from-brand-500/50 to-brand-500/50"
+                      : "bg-gradient-to-r from-brand-400/50 to-brand-400/50",
                   ].join(" ")}
                 />
 
@@ -167,8 +167,8 @@ export default function AdminScoreCard({ avg, median, min, max, count }: Props) 
                   className={[
                     "absolute -top-[5px] -translate-x-1/2 w-3.5 h-3.5 rounded-full border-[2.5px] transition-all",
                     isDark
-                      ? "bg-[#0c0c0e] border-cyan-400 shadow-[0_0_10px_rgba(34,211,238,0.4)]"
-                      : "bg-white border-cyan-500 shadow-sm",
+                      ? "bg-[#0c0c0e] border-brand-400 shadow-[0_0_10px_rgba(52,211,153,0.4)]"
+                      : "bg-white border-brand-500 shadow-sm",
                   ].join(" ")}
                   style={{ left: `${Math.max(0, Math.min(100, avgPct))}%` }}
                   title={`Promedio: ${fmt(avg, 2)}`}
@@ -188,7 +188,7 @@ export default function AdminScoreCard({ avg, median, min, max, count }: Props) 
                     <span className={["text-[9px] uppercase tracking-widest font-bold", isDark ? "text-neutral-500" : "text-slate-500"].join(" ")}>Mediana</span>
                   </div>
                   <div className="flex items-center gap-1.5">
-                    <span className={["w-2 h-2 rounded-full border-[1.5px]", isDark ? "border-cyan-400 bg-transparent" : "border-cyan-500 bg-white"].join(" ")} />
+                    <span className={["w-2 h-2 rounded-full border-[1.5px]", isDark ? "border-brand-400 bg-transparent" : "border-brand-500 bg-white"].join(" ")} />
                     <span className={["text-[9px] uppercase tracking-widest font-bold", isDark ? "text-neutral-500" : "text-slate-500"].join(" ")}>Avg</span>
                   </div>
                 </div>
@@ -267,8 +267,8 @@ function Stat({ label, value, icon: Icon }: { label: string; value: string; icon
         className={[
           "p-1.5 rounded-xl transition-colors opacity-60 group-hover:opacity-100",
           isDark
-            ? "text-neutral-400 group-hover:text-cyan-400 bg-transparent group-hover:bg-cyan-500/10"
-            : "text-slate-400 group-hover:text-cyan-600 bg-transparent group-hover:bg-cyan-50",
+            ? "text-neutral-400 group-hover:text-brand-400 bg-transparent group-hover:bg-brand-500/10"
+            : "text-slate-400 group-hover:text-brand-600 bg-transparent group-hover:bg-brand-50",
         ].join(" ")}
       >
         <Icon className="w-4 h-4" />

@@ -37,11 +37,11 @@ const ComparativeBars: React.FC<ComparativeBarsProps> = ({ categoryAnalyses }) =
               </span>
               <div className={`flex-1 rounded-full h-4 overflow-hidden ${isDark ? "bg-white/[0.04]" : "bg-slate-100"}`}>
                 <div
-                  className="h-full rounded-full bg-gradient-to-r from-cyan-500 to-cyan-400 transition-all duration-700"
+                  className="h-full rounded-full bg-gradient-to-r from-brand-500 to-brand-400 transition-all duration-700"
                   style={{ width: `${analysis.score}%` }}
                 />
               </div>
-              <span className="w-10 text-right font-bold text-cyan-400 text-sm">{analysis.score}</span>
+              <span className="w-10 text-right font-bold text-brand-400 text-sm">{analysis.score}</span>
             </div>
             {/* Average Bar */}
             <div className="flex items-center gap-3">
@@ -50,11 +50,11 @@ const ComparativeBars: React.FC<ComparativeBarsProps> = ({ categoryAnalyses }) =
               </span>
               <div className={`flex-1 rounded-full h-4 overflow-hidden ${isDark ? "bg-white/[0.04]" : "bg-slate-100"}`}>
                 <div
-                  className="h-full rounded-full bg-gradient-to-r from-blue-500/60 to-blue-400/60 transition-all duration-700"
+                  className="h-full rounded-full bg-gradient-to-r from-brand-500/60 to-brand-400/60 transition-all duration-700"
                   style={{ width: `${simulatedAverage[analysis.category] || 60}%` }}
                 />
               </div>
-              <span className={`w-10 text-right font-bold text-sm ${isDark ? "text-blue-400/70" : "text-blue-500/70"}`}>
+              <span className={`w-10 text-right font-bold text-sm ${isDark ? "text-brand-400/70" : "text-brand-500/70"}`}>
                 {simulatedAverage[analysis.category] || 60}
               </span>
             </div>

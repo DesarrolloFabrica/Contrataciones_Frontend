@@ -2,7 +2,10 @@
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
 import api, { AUTH_STORAGE_KEY, setUnauthorizedHandler, isTokenExpired, getTokenExpiration, clearAuthStorage } from "../services/apiClient";
 import { auditAppend } from "../services/auditService";
+import * as authService from "../services/authService";
+import type { LoginResponseUser } from "../services/authService";
 import type { AuditActor } from "../types";
+import { markBootPending, clearBootPending } from "../features/boot/appBootStorage";
 
 export type Role = "leader" | "coordinator" | "admin";
 
@@ -25,10 +28,13 @@ type StoredAuth = {
   expiresAt?: number;
 };
 
+type LoginMethod = "google" | "dev-email";
+
 interface AuthContextValue {
   user: AuthUser | null;
   isReady: boolean;
   loginWithGoogle: (accessToken: string) => Promise<AuthUser>;
+  loginWithEmailOnly: (email: string) => Promise<AuthUser>;
   logout: () => void;
   updateUser: (patch: Partial<AuthUser>) => void;
 }
@@ -80,6 +86,20 @@ function readStoredAuth(): StoredAuth | null {
   }
 }
 
+function buildAuthUser(backendUser: LoginResponseUser): AuthUser {
+  const uiRole = mapBackendRoleToUiRole(backendUser.role);
+
+  return {
+    id: backendUser.id,
+    email: backendUser.email,
+    name: backendUser.fullName || backendUser.email.split("@")[0],
+    role: uiRole,
+    backendRole: backendUser.role,
+    schoolId: backendUser.schoolId,
+    googlePicture: backendUser.googlePicture ?? null,
+  };
+}
+
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
   children,
 }) => {
@@ -87,6 +107,43 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
 
   const [user, setUser] = useState<AuthUser | null>(() => boot?.user ?? null);
   const [isReady, setIsReady] = useState<boolean>(() => true);
+
+  const applyLoginSuccess = useCallback(
+    (jwt: string, backendUser: LoginResponseUser, method: LoginMethod): AuthUser => {
+      const authUser = buildAuthUser(backendUser);
+
+      setAxiosAuthHeader(jwt);
+
+      const expDate = getTokenExpiration(jwt);
+      const expiresAt = expDate ? expDate.getTime() : null;
+
+      localStorage.setItem(
+        AUTH_STORAGE_KEY,
+        JSON.stringify({ accessToken: jwt, user: authUser, expiresAt } satisfies StoredAuth)
+      );
+
+      const actor: AuditActor = {
+        id: authUser.id,
+        name: authUser.name,
+        email: authUser.email,
+        role: authUser.role,
+      };
+
+      auditAppend({
+        type: "LOGIN",
+        actor,
+        metadata: { email: authUser.email, role: authUser.role, method },
+      });
+
+      // Activa el splash post-login (AppBootProvider lo mostrara al detectar user + flag).
+      markBootPending();
+
+      setUser(authUser);
+      setIsReady(true);
+      return authUser;
+    },
+    []
+  );
 
   const updateUser = (patch: Partial<AuthUser>) => {
     setUser((prev) => {
@@ -120,21 +177,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
   };
 
   const loginWithGoogle = async (accessToken: string): Promise<AuthUser> => {
-    let data: {
-      accessToken?: string;
-      user?: {
-        id: string;
-        email: string;
-        role: BackendRole;
-        schoolId: string | null;
-        fullName?: string;
-        googlePicture?: string | null;
-      };
-    };
-
     try {
-      const resp = await api.post<typeof data>("/auth/google", { accessToken });
-      data = resp.data;
+      const data = await authService.loginWithGoogle(accessToken);
+      return applyLoginSuccess(data.accessToken, data.user, "google");
     } catch (error: any) {
       console.error(
         "[AuthContext] Error en /auth/google:",
@@ -142,51 +187,21 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
       );
       throw error;
     }
+  };
 
-    const { accessToken: jwt, user: backendUser } = data;
+  const loginWithEmailOnly = async (email: string): Promise<AuthUser> => {
+    const normalizedEmail = email.trim().toLowerCase();
 
-    if (!jwt || !backendUser) {
-      throw new Error("Respuesta de Google login inválida");
+    try {
+      const data = await authService.loginWithEmailOnly(normalizedEmail);
+      return applyLoginSuccess(data.accessToken, data.user, "dev-email");
+    } catch (error: any) {
+      console.error(
+        "[AuthContext] Error en /auth/dev/email:",
+        error?.response?.data || error
+      );
+      throw error;
     }
-
-    const uiRole = mapBackendRoleToUiRole(backendUser.role);
-
-    const authUser: AuthUser = {
-      id: backendUser.id,
-      email: backendUser.email,
-      name: backendUser.fullName || backendUser.email.split("@")[0],
-      role: uiRole,
-      backendRole: backendUser.role,
-      schoolId: backendUser.schoolId,
-      googlePicture: backendUser.googlePicture ?? null,
-    };
-
-    setAxiosAuthHeader(jwt);
-
-    const expDate = getTokenExpiration(jwt);
-    const expiresAt = expDate ? expDate.getTime() : null;
-
-    localStorage.setItem(
-      AUTH_STORAGE_KEY,
-      JSON.stringify({ accessToken: jwt, user: authUser, expiresAt } satisfies StoredAuth)
-    );
-
-    const actor: AuditActor = {
-      id: authUser.id,
-      name: authUser.name,
-      email: authUser.email,
-      role: authUser.role,
-    };
-
-    auditAppend({
-      type: "LOGIN",
-      actor,
-      metadata: { email: authUser.email, role: authUser.role, method: "google" },
-    });
-
-    setUser(authUser);
-    setIsReady(true);
-    return authUser;
   };
 
   const logout = useCallback(() => {
@@ -205,6 +220,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
 
     setUser(null);
     clearAuthStorage();
+    clearBootPending();
     setAxiosAuthHeader(undefined);
     setIsReady(true);
   }, [user]);
@@ -215,7 +231,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
   }, [logout]);
 
   return (
-    <AuthContext.Provider value={{ user, isReady, loginWithGoogle, logout, updateUser }}>
+    <AuthContext.Provider
+      value={{ user, isReady, loginWithGoogle, loginWithEmailOnly, logout, updateUser }}
+    >
       {children}
     </AuthContext.Provider>
   );

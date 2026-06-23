@@ -26,10 +26,10 @@ export default function AdminTimeToDecisionCard({ avgHours, medianHours, decided
   return (
     <div
       className={[
-        "relative flex h-full min-h-[220px] w-full min-w-0 flex-col overflow-hidden rounded-xl border p-5",
+        "relative flex h-full min-h-[220px] w-full min-w-0 flex-col overflow-hidden rounded-xl border border-t-2 border-t-brand-500 p-5",
         isDark
-          ? "border-white/10 bg-white/[0.03]"
-          : "border-slate-200 bg-white shadow-sm",
+          ? "border-brand-500/25 bg-white/[0.03]"
+          : "border-brand-500/20 bg-white shadow-[0_8px_30px_-12px_rgba(15,23,42,0.08)]",
       ].join(" ")}
     >
       <div className="flex items-start justify-between mb-4">
@@ -72,13 +72,13 @@ export default function AdminTimeToDecisionCard({ avgHours, medianHours, decided
           className={[
             "relative group flex min-h-0 flex-col justify-center rounded-[16px] border p-5 transition-all duration-300 overflow-hidden sm:h-full",
             isDark
-              ? "border-white/[0.03] bg-white/[0.01] hover:bg-white/[0.02] hover:border-cyan-500/20"
-              : "border-slate-100 bg-slate-50 hover:bg-white hover:border-cyan-200 hover:shadow-sm",
+              ? "border-white/[0.03] bg-white/[0.01] hover:bg-white/[0.02] hover:border-brand-500/20"
+              : "border-slate-100 bg-slate-50 hover:bg-white hover:border-brand-200 hover:shadow-sm",
           ].join(" ")}
         >
           {/* Resplandor Hover Esmeralda */}
           {isDark && (
-            <div className="absolute inset-0 bg-gradient-to-br from-cyan-500/0 to-cyan-500/0 group-hover:from-cyan-500/5 transition-all duration-500" />
+            <div className="absolute inset-0 bg-gradient-to-br from-brand-500/0 to-brand-500/0 group-hover:from-brand-500/5 transition-all duration-500" />
           )}
           
           <div className={["text-[10px] uppercase tracking-[0.2em] font-bold relative z-10", isDark ? "text-neutral-500" : "text-slate-400"].join(" ")}>
@@ -88,8 +88,8 @@ export default function AdminTimeToDecisionCard({ avgHours, medianHours, decided
             className={[
               "mt-2 text-4xl font-black tracking-tighter relative z-10",
               isDark
-                ? show ? "text-transparent bg-clip-text bg-gradient-to-br from-cyan-400 to-cyan-200" : "text-neutral-700"
-                : show ? "text-cyan-700" : "text-slate-300",
+                ? show ? "text-transparent bg-clip-text bg-gradient-to-br from-brand-400 to-brand-200" : "text-neutral-700"
+                : show ? "text-brand-700" : "text-slate-300",
             ].join(" ")}
           >
             {show ? avgLabel : "—"}
@@ -101,13 +101,13 @@ export default function AdminTimeToDecisionCard({ avgHours, medianHours, decided
           className={[
             "relative group flex min-h-0 flex-col justify-center rounded-[16px] border p-5 transition-all duration-300 overflow-hidden sm:h-full",
             isDark
-              ? "border-white/[0.03] bg-white/[0.01] hover:bg-white/[0.02] hover:border-cyan-500/20"
-              : "border-slate-100 bg-slate-50 hover:bg-white hover:border-cyan-200 hover:shadow-sm",
+              ? "border-white/[0.03] bg-white/[0.01] hover:bg-white/[0.02] hover:border-brand-500/20"
+              : "border-slate-100 bg-slate-50 hover:bg-white hover:border-brand-200 hover:shadow-sm",
           ].join(" ")}
         >
           {/* Resplandor Hover Cyan */}
           {isDark && (
-            <div className="absolute inset-0 bg-gradient-to-br from-cyan-500/0 to-cyan-500/0 group-hover:from-cyan-500/5 transition-all duration-500" />
+            <div className="absolute inset-0 bg-gradient-to-br from-brand-500/0 to-brand-500/0 group-hover:from-brand-500/5 transition-all duration-500" />
           )}
 
           <div className={["text-[10px] uppercase tracking-[0.2em] font-bold relative z-10", isDark ? "text-neutral-500" : "text-slate-400"].join(" ")}>
@@ -117,8 +117,8 @@ export default function AdminTimeToDecisionCard({ avgHours, medianHours, decided
             className={[
               "mt-2 text-4xl font-black tracking-tighter relative z-10",
               isDark
-                ? show ? "text-transparent bg-clip-text bg-gradient-to-br from-cyan-400 to-cyan-200" : "text-neutral-700"
-                : show ? "text-cyan-700" : "text-slate-300",
+                ? show ? "text-transparent bg-clip-text bg-gradient-to-br from-brand-400 to-brand-200" : "text-neutral-700"
+                : show ? "text-brand-700" : "text-slate-300",
             ].join(" ")}
           >
             {show ? medianLabel : "—"}

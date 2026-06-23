@@ -58,12 +58,12 @@ const getBadgeStyles = (key: HireRecommendationKey, isDark: boolean) => {
   switch (key) {
     case "CONTRATACION_INMEDIATA":
       return isDark
-        ? "bg-cyan-500/10 text-cyan-300 border-cyan-500/25"
-        : "bg-cyan-50 text-cyan-700 border-cyan-200";
+        ? "bg-brand-500/10 text-brand-300 border-brand-500/25"
+        : "bg-brand-50 text-brand-700 border-brand-200";
     case "RECOMENDAR_CONTRATACION":
       return isDark
-        ? "bg-cyan-500/8 text-cyan-400 border-cyan-500/20"
-        : "bg-cyan-50 text-cyan-600 border-cyan-200";
+        ? "bg-brand-500/8 text-brand-400 border-brand-500/20"
+        : "bg-brand-50 text-brand-600 border-brand-200";
     case "RECOMENDACION_CON_PRECAUCION":
       return isDark
         ? "bg-amber-500/10 text-amber-300 border-amber-500/25"
@@ -79,7 +79,7 @@ const getScoreColor = (key: HireRecommendationKey, isDark: boolean) => {
   switch (key) {
     case "CONTRATACION_INMEDIATA":
     case "RECOMENDAR_CONTRATACION":
-      return isDark ? "text-cyan-400" : "text-cyan-600";
+      return isDark ? "text-brand-400" : "text-brand-600";
     case "RECOMENDACION_CON_PRECAUCION":
       return isDark ? "text-amber-400" : "text-amber-600";
     case "NO_RECOMENDAR_CONTRATACION":
@@ -167,10 +167,10 @@ const EvaluationsHistory: React.FC<EvaluationsHistoryProps> = ({
       {/* HEADER */}
       <div
         className={[
-          "rounded-3xl border p-5 md:p-6 mb-8 backdrop-blur-xl",
+          "rounded-3xl border border-t-2 border-t-brand-500 p-5 md:p-6 mb-8 backdrop-blur-xl",
           isDark
-            ? "bg-[#0B1220]/30 border-white/[0.06] shadow-[0_16px_50px_-24px_rgba(6,182,212,0.15)]"
-            : "bg-white/80 border-slate-200/80 shadow-[0_16px_40px_-18px_rgba(15,23,42,0.10)]",
+            ? "bg-[#0B1220]/30 border-brand-500/25 shadow-[0_16px_50px_-24px_rgba(16,185,129,0.20)]"
+            : "bg-white/80 border-brand-500/20 shadow-[0_16px_40px_-18px_rgba(15,23,42,0.10)]",
         ].join(" ")}
       >
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
@@ -179,8 +179,8 @@ const EvaluationsHistory: React.FC<EvaluationsHistoryProps> = ({
               onClick={onBackToAnalyze}
               className={`flex items-center gap-2 text-[11px] font-bold mb-3 transition-all uppercase tracking-[0.16em] ${
                 isDark
-                  ? "text-slate-500 hover:text-cyan-400"
-                  : "text-slate-400 hover:text-cyan-600"
+                  ? "text-slate-500 hover:text-brand-400"
+                  : "text-slate-400 hover:text-brand-600"
               }`}
             >
               <ArrowLeft className="w-3 h-3" />
@@ -209,8 +209,8 @@ const EvaluationsHistory: React.FC<EvaluationsHistoryProps> = ({
                 <Search
                   className={`h-4 w-4 transition-colors ${
                     isDark
-                      ? "text-slate-600 group-focus-within:text-cyan-400"
-                      : "text-slate-400 group-focus-within:text-cyan-500"
+                      ? "text-slate-600 group-focus-within:text-brand-400"
+                      : "text-slate-400 group-focus-within:text-brand-500"
                   }`}
                 />
               </div>
@@ -221,8 +221,8 @@ const EvaluationsHistory: React.FC<EvaluationsHistoryProps> = ({
                 className={[
                   "block w-full pl-10 pr-4 py-2.5 rounded-xl text-sm outline-none transition-all duration-300",
                   isDark
-                    ? "bg-[#080D14] border border-white/[0.08] text-slate-200 placeholder-slate-500 focus:border-cyan-500/40 focus:ring-1 focus:ring-cyan-500/20 focus:shadow-[0_0_20px_-8px_rgba(6,182,212,0.18)] hover:border-white/[0.15] hover:bg-[#0A1018]"
-                    : "bg-white border border-slate-200 text-slate-900 placeholder-slate-400 focus:border-cyan-500/60 focus:ring-1 focus:ring-cyan-500/20 focus:shadow-[0_0_0_3px_rgba(6,182,212,0.12)] hover:border-slate-300",
+                    ? "bg-[#080D14] border border-white/[0.08] text-slate-200 placeholder-slate-500 focus:border-brand-500/40 focus:ring-1 focus:ring-brand-500/20 focus:shadow-[0_0_20px_-8px_rgba(16,185,129,0.18)] hover:border-white/[0.15] hover:bg-[#0A1018]"
+                    : "bg-white border border-slate-200 text-slate-900 placeholder-slate-400 focus:border-brand-500/60 focus:ring-1 focus:ring-brand-500/20 focus:shadow-[0_0_0_3px_rgba(16,185,129,0.12)] hover:border-slate-300",
                 ].join(" ")}
                 placeholder="Buscar por nombre, ID, programa..."
               />
@@ -244,10 +244,10 @@ const EvaluationsHistory: React.FC<EvaluationsHistoryProps> = ({
       {/* TABLE CARD */}
       <div
         className={[
-          "rounded-3xl overflow-hidden border transition-all duration-300 backdrop-blur-xl",
+          "rounded-3xl overflow-hidden border border-t-2 border-t-brand-500 transition-all duration-300 backdrop-blur-xl",
           isDark
-            ? "bg-[#0B1220]/25 border-white/[0.06] shadow-[0_18px_55px_-28px_rgba(6,182,212,0.15)]"
-            : "bg-white/80 border-slate-200/80 shadow-[0_8px_30px_-10px_rgba(15,23,42,0.06)]",
+            ? "bg-[#0B1220]/25 border-brand-500/25 shadow-[0_18px_55px_-28px_rgba(16,185,129,0.20)]"
+            : "bg-white/80 border-brand-500/20 shadow-[0_8px_30px_-10px_rgba(15,23,42,0.06)]",
         ].join(" ")}
       >
         {/* TABLE HEADER */}
@@ -273,7 +273,7 @@ const EvaluationsHistory: React.FC<EvaluationsHistoryProps> = ({
               isDark ? "text-slate-500" : "text-slate-500"
             }`}
           >
-            <Loader2 className="w-6 h-6 animate-spin text-cyan-500" />
+            <Loader2 className="w-6 h-6 animate-spin text-brand-500" />
             <span className="text-sm">Sincronizando registros...</span>
           </div>
         )}
@@ -306,7 +306,7 @@ const EvaluationsHistory: React.FC<EvaluationsHistoryProps> = ({
             {search && (
               <button
                 onClick={handleClearSearch}
-                className="mt-2 text-xs text-cyan-500 hover:text-cyan-400 font-bold uppercase tracking-wider"
+                className="mt-2 text-xs text-brand-500 hover:text-brand-400 font-bold uppercase tracking-wider"
               >
                 Limpiar filtros
               </button>
@@ -333,8 +333,8 @@ const EvaluationsHistory: React.FC<EvaluationsHistoryProps> = ({
                   key={ev.id}
                   className={`group relative md:grid md:grid-cols-12 gap-4 px-6 py-4 items-center transition-all duration-200 cursor-pointer ${
                     isDark
-                      ? "hover:bg-cyan-500/[0.03]"
-                      : "hover:bg-cyan-50/50"
+                      ? "hover:bg-brand-500/[0.03]"
+                      : "hover:bg-brand-50/50"
                   }`}
                   onClick={() => onOpenEvaluation(ev.id)}
                 >
@@ -343,13 +343,13 @@ const EvaluationsHistory: React.FC<EvaluationsHistoryProps> = ({
                     <div
                       className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 border transition-colors duration-200 ${
                         isDark
-                          ? "bg-white/[0.03] border-white/[0.06] group-hover:border-cyan-500/25 group-hover:bg-cyan-500/5"
-                          : "bg-slate-50 border-slate-200 group-hover:border-cyan-200 group-hover:bg-cyan-50"
+                          ? "bg-white/[0.03] border-white/[0.06] group-hover:border-brand-500/25 group-hover:bg-brand-500/5"
+                          : "bg-slate-50 border-slate-200 group-hover:border-brand-200 group-hover:bg-brand-50"
                       }`}
                     >
                       <User
                         className={`w-4.5 h-4.5 transition-colors duration-200 ${
-                          isDark ? "text-slate-500 group-hover:text-cyan-400" : "text-slate-400 group-hover:text-cyan-600"
+                          isDark ? "text-slate-500 group-hover:text-brand-400" : "text-slate-400 group-hover:text-brand-600"
                         }`}
                       />
                     </div>
@@ -357,8 +357,8 @@ const EvaluationsHistory: React.FC<EvaluationsHistoryProps> = ({
                       <p
                         className={`text-sm font-bold truncate transition-colors duration-200 ${
                           isDark
-                            ? "text-white group-hover:text-cyan-300"
-                            : "text-slate-900 group-hover:text-cyan-700"
+                            ? "text-white group-hover:text-brand-300"
+                            : "text-slate-900 group-hover:text-brand-700"
                         }`}
                       >
                         {ev.candidate?.fullName || "Sin Nombre"}
@@ -446,8 +446,8 @@ const EvaluationsHistory: React.FC<EvaluationsHistoryProps> = ({
                     <div
                       className={`p-2 rounded-lg transition-all duration-200 ${
                         isDark
-                          ? "text-slate-500 group-hover:text-cyan-400 group-hover:bg-cyan-500/10"
-                          : "text-slate-400 group-hover:text-cyan-600 group-hover:bg-cyan-50"
+                          ? "text-slate-500 group-hover:text-brand-400 group-hover:bg-brand-500/10"
+                          : "text-slate-400 group-hover:text-brand-600 group-hover:bg-brand-50"
                       }`}
                     >
                       <ChevronRight className="w-4 h-4" />

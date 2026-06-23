@@ -3,11 +3,8 @@ import React, { useEffect, useMemo, useRef, useState } from "react";
 import {
   Activity,
   AlertCircle,
-  FileText,
   Loader2,
   ShieldAlert,
-  UserCheck,
-  LogOut,
   TrendingUp,
   Sparkles,
 } from "lucide-react";
@@ -16,20 +13,17 @@ import { useNavigate } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
 import { useTheme } from "../../context/ThemeContext";
 import { actorFromUser } from "../../services/auditActor";
-import { AUTH_STORAGE_KEY } from "../../services/apiClient";
-
 import { useCoordinatorEvaluations } from "./hooks/useCoordinatorEvaluations";
 
 import EvaluationsListPanel from "./components/EvaluationsListPanel";
 import CoordinatorUsersPanel from "./components/users/CoordinatorUsersPanel";
 import { CoordinatorKpiStrip } from "./components/CoordinatorKpiStrip";
 import AnimatedBackground from "../../components/AnimatedBackground";
+import { CoordinatorModeHeader } from "../../features/coordinator/components/CoordinatorModeHeader";
 
 import type { CandidateGroup } from "./types";
 import { getCandidateKey } from "./utils/candidateKey";
 import api from "../../services/apiClient";
-import ThemeToggle from "../../components/ThemeToggle";
-import { UserHeaderProfile } from "../../components/UserHeaderProfile";
 
 // -------------------- API BASE --------------------
 const API_BASE =
@@ -210,7 +204,7 @@ function getIaVerdictShort(verdict: string) {
       v.includes("excepcional");
     return {
       short: strong ? "Recomendacion fuerte" : "Recomendado",
-      cls: "border-cyan-400/25 bg-cyan-400/10 text-cyan-100",
+      cls: "border-brand-400/25 bg-brand-400/10 text-brand-100",
       full: full || "Recomendado",
     };
   }
@@ -284,7 +278,7 @@ type ScopedSchool = {
 type ProgramOption = { id: string; name: string };
 
 const CoordinatorConsole: React.FC = () => {
-  const { user } = useAuth();
+  const { user, logout } = useAuth();
   actorFromUser(user);
   const navigate = useNavigate();
   const { theme } = useTheme();
@@ -433,9 +427,7 @@ const CoordinatorConsole: React.FC = () => {
 
   // Logout
   const handleLogout = () => {
-    localStorage.removeItem(AUTH_STORAGE_KEY);
-    localStorage.removeItem("token");
-    localStorage.removeItem("user");
+    logout();
     navigate("/login", { replace: true });
   };
 
@@ -593,425 +585,474 @@ const CoordinatorConsole: React.FC = () => {
   const showError = !evals.loading && !!evals.error;
   const metrics = evals.metrics;
 
+  const statusLabel = useMemo(() => {
+    if (evals.loading) return "Cargando...";
+    if (evals.error) return "Error";
+    return "Listo";
+  }, [evals.loading, evals.error]);
+
   return (
     <div
       className={[
-        "min-h-screen w-full font-sans relative overflow-x-hidden",
-        isDark ? "bg-[#060A12] text-slate-200" : "bg-[#F4F7FC] text-slate-900",
+        "min-h-screen w-full font-sans overflow-x-hidden flex flex-col",
+        isDark ? "bg-[#020308] text-white" : "bg-[#F4F7FC] text-slate-900",
       ].join(" ")}
     >
-      <AnimatedBackground />
+      <CoordinatorModeHeader
+        mode={mainTab}
+        onChangeMode={setMainTab}
+        onLogout={handleLogout}
+        statusLabel={statusLabel}
+      />
 
-      <div className="relative z-10 max-w-[1380px] mx-auto px-6 py-8 md:py-12 space-y-8">
-        {/* HEADER */}
-        <header className="space-y-5">
-          <div className="flex items-center justify-between gap-4">
+      <main className="flex-1 relative z-10 w-full">
+        <AnimatedBackground />
+
+        <div className="max-w-7xl mx-auto px-4 md:px-8 py-6 md:py-8 relative z-10 space-y-6">
+          {/* HERO */}
+          <section className="relative overflow-hidden rounded-2xl border border-t-2 border-t-brand-500">
+            {isDark && (
+              <div className="absolute inset-0 pointer-events-none">
+                <div className="absolute -top-32 -right-16 w-[400px] h-[400px] rounded-full bg-gradient-to-br from-brand-500/8 via-brand-500/4 to-transparent blur-[100px]" />
+                <div className="absolute -bottom-24 -left-12 w-[300px] h-[300px] rounded-full bg-gradient-to-tr from-brand-500/5 to-transparent blur-[80px]" />
+              </div>
+            )}
+
             <div
-              className={[
-                "inline-flex items-center gap-2.5 px-4 py-1.5 rounded-full border text-[10px] font-bold uppercase tracking-[0.2em] backdrop-blur-md",
+              className={`relative px-6 py-4 md:px-8 md:py-5 rounded-2xl ${
                 isDark
-                  ? "border-cyan-500/20 bg-cyan-500/5 text-cyan-400"
-                  : "border-cyan-200 bg-cyan-50 text-cyan-700",
-              ].join(" ")}
-            >
-              <ShieldAlert className="w-3.5 h-3.5" />
-              <span>Consola de Coordinacion</span>
-            </div>
-
-            {/* Tabs principales */}
-            <div className="flex items-center gap-2">
-              <button
-                type="button"
-                onClick={() => setMainTab("evaluations")}
-                className={[
-                  "px-4 py-2 rounded-xl text-[11px] font-bold uppercase tracking-[0.16em] border transition-all duration-200 inline-flex items-center gap-2",
-                  mainTab === "evaluations"
-                    ? isDark
-                      ? "border-cyan-500/30 text-cyan-300 bg-cyan-500/10 shadow-[0_0_16px_-4px_rgba(6,182,212,0.2)]"
-                      : "border-cyan-400/40 bg-cyan-500 text-white shadow-[0_8px_22px_rgba(6,182,212,0.3)]"
-                    : isDark
-                      ? "border-white/[0.08] text-slate-400 hover:border-white/20 hover:text-white hover:bg-white/[0.04]"
-                      : "border-slate-200 text-slate-500 hover:border-slate-300 hover:bg-slate-50",
-                ].join(" ")}
-                title="Ver evaluaciones"
-              >
-                <FileText className="w-4 h-4" />
-                Evaluaciones
-              </button>
-
-              <button
-                type="button"
-                onClick={() => setMainTab("users")}
-                className={[
-                  "px-4 py-2 rounded-xl text-[11px] font-bold uppercase tracking-[0.16em] border transition-all duration-200 inline-flex items-center gap-2",
-                  mainTab === "users"
-                    ? isDark
-                      ? "border-cyan-500/30 text-cyan-300 bg-cyan-500/10 shadow-[0_0_16px_-4px_rgba(6,182,212,0.2)]"
-                      : "border-cyan-400/40 bg-cyan-500 text-white shadow-[0_8px_22px_rgba(6,182,212,0.3)]"
-                    : isDark
-                      ? "border-white/[0.08] text-slate-400 hover:border-white/20 hover:text-white hover:bg-white/[0.04]"
-                      : "border-slate-200 text-slate-500 hover:border-slate-300 hover:bg-slate-50",
-                ].join(" ")}
-                title="Gestionar lideres de mi escuela"
-              >
-                <UserCheck className="w-4 h-4" />
-                Usuarios
-              </button>
-
-              <UserHeaderProfile />
-
-              <ThemeToggle />
-
-              <button
-                type="button"
-                onClick={handleLogout}
-                className={[
-                  "px-4 py-2 rounded-xl text-[11px] font-bold uppercase tracking-[0.16em] border transition-all duration-200 inline-flex items-center gap-2",
-                  isDark
-                    ? "border-white/[0.08] text-slate-400 hover:border-rose-500/30 hover:text-rose-400 hover:bg-rose-500/5"
-                    : "border-slate-200 bg-white text-slate-600 hover:border-rose-300 hover:text-rose-500 hover:bg-rose-50",
-                ].join(" ")}
-                title="Cerrar sesion"
-              >
-                <LogOut className="w-4 h-4" />
-                Cerrar sesion
-              </button>
-            </div>
-          </div>
-
-          {/* Hero */}
-          <div className="flex items-center gap-4 max-w-2xl">
-            <div
-              className={`shrink-0 w-9 h-9 rounded-xl flex items-center justify-center ${
-                isDark
-                  ? "bg-gradient-to-br from-cyan-500/15 to-blue-500/10 border border-cyan-500/20"
-                  : "bg-gradient-to-br from-cyan-50 to-blue-50 border border-cyan-200"
+                  ? "bg-gradient-to-b from-[#080D16]/90 via-[#0A1018]/80 to-[#060A12] border-brand-500/25 shadow-[0_0_40px_-12px_rgba(16,185,129,0.10)]"
+                  : "bg-gradient-to-b from-white via-slate-50/80 to-white border-brand-500/20 shadow-[0_12px_40px_-12px_rgba(15,23,42,0.06)]"
               }`}
             >
-              <ShieldAlert className={`w-4 h-4 ${isDark ? "text-cyan-400" : "text-cyan-600"}`} />
-            </div>
-            <div className="space-y-0.5">
-              <h2
-                className={`text-xl md:text-2xl font-black tracking-tight leading-tight ${
-                  isDark ? "text-white" : "text-slate-900"
-                }`}
-              >
-                Bandeja de{" "}
-                <span className="text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-blue-400">
-                  Revision
-                </span>
-              </h2>
-              <p
-                className={`text-sm max-w-lg leading-relaxed ${
-                  isDark ? "text-slate-400" : "text-slate-500"
-                }`}
-              >
-                Evalua candidatos, valida riesgos y toma decisiones con trazabilidad.
-              </p>
-            </div>
-          </div>
-        </header>
-
-        {/* ESTADO CARGA / ERROR */}
-        {showLoading && (
-          <div className="flex flex-col items-center justify-center py-20 gap-3">
-            <Loader2 className={`w-8 h-8 animate-spin ${isDark ? "text-cyan-400" : "text-cyan-500"}`} />
-            <p className={`text-sm ${isDark ? "text-slate-400" : "text-slate-500"}`}>Cargando historial...</p>
-          </div>
-        )}
-
-        {showError && (
-          <div className="flex flex-col items-center justify-center py-16 gap-2">
-            <div className={`p-3 rounded-xl ${isDark ? "bg-rose-500/10" : "bg-rose-50"}`}>
-              <AlertCircle className="w-6 h-6 text-rose-500" />
-            </div>
-            <p className={`text-sm text-center max-w-md ${isDark ? "text-slate-400" : "text-slate-600"}`}>{evals.error}</p>
-          </div>
-        )}
-
-        {!showLoading && !showError && (
-          <>
-            {mainTab === "evaluations" && (
-              <section className="space-y-6">
-                  {/* KPI Strip - Full Width */}
-                  <CoordinatorKpiStrip
-                    total={metrics.total}
-                    avgScore={metrics.avgScore}
-                    isScoped={!!userSchoolId}
-                  />
-
-                  {/* 3-Panel Dashboard Grid */}
-                  <div className="grid grid-cols-12 gap-5 items-start">
-                    {/* PANEL 1: Prioridad de revision (Compact Sidebar) */}
-                    <div className="col-span-12 lg:col-span-4 xl:col-span-3">
+              <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_280px] gap-5 lg:gap-6 items-start">
+                <div className="min-w-0 space-y-4">
+                  <div className="flex flex-row items-center gap-5 md:gap-7">
+                    <div
+                      className="relative shrink-0 flex items-center justify-center overflow-visible pointer-events-none h-16 w-16 md:h-20 md:w-20"
+                      aria-hidden
+                    >
                       <div
-                        className={[
-                          "relative overflow-hidden rounded-2xl border transition-all duration-300 flex flex-col",
+                        className={`absolute inset-0 rounded-full blur-xl ${
+                          isDark ? "bg-brand-500/20" : "bg-brand-500/15"
+                        }`}
+                      />
+                      <div
+                        className={`relative z-[1] flex h-14 w-14 items-center justify-center rounded-2xl border backdrop-blur-sm md:h-16 md:w-16 ${
                           isDark
-                            ? "border-white/[0.06] bg-gradient-to-b from-white/[0.02] to-transparent"
-                            : "border-slate-200 bg-white shadow-[0_4px_20px_-6px_rgba(15,23,42,0.06)]",
-                        ].join(" ")}
+                            ? "border-brand-400/25 bg-brand-500/10"
+                            : "border-brand-400/30 bg-brand-500/10"
+                        }`}
                       >
-                        {isDark && (
-                          <div className="pointer-events-none absolute top-0 right-0 -mt-20 -mr-20 h-72 w-72 rounded-full bg-cyan-500/5 blur-[80px]" />
-                        )}
-
-                        <div className="relative p-5 flex flex-col">
-                          {/* Header */}
-                          <div className="flex items-center gap-3 mb-4">
-                            <div
-                              className={[
-                                "shrink-0 w-8 h-8 rounded-lg flex items-center justify-center border",
-                                isDark
-                                  ? "border-cyan-500/25 bg-cyan-500/10"
-                                  : "border-cyan-200 bg-cyan-50",
-                              ].join(" ")}
-                            >
-                              <TrendingUp className={`w-4 h-4 ${isDark ? "text-cyan-400" : "text-cyan-600"}`} />
-                            </div>
-                            <div className="min-w-0">
-                              <h3 className={`text-xs font-bold tracking-tight truncate ${isDark ? "text-white" : "text-slate-900"}`}>
-                                Prioridad
-                              </h3>
-                              <p className={`text-[10px] truncate ${isDark ? "text-slate-500" : "text-slate-400"}`}>
-                                Ranking por score
-                              </p>
-                            </div>
-                          </div>
-
-                          {/* Card list */}
-                          <div className="space-y-2.5">
-                            {topPageItems.length === 0 ? (
-                              <div
-                                className={`flex flex-col items-center justify-center rounded-xl border border-dashed p-8 text-center ${
-                                  isDark
-                                    ? "border-white/10 bg-white/[0.02]"
-                                    : "border-slate-200 bg-slate-50"
-                                }`}
-                              >
-                                <div className="text-slate-500 mb-2">
-                                  <TrendingUp className="h-6 w-6 opacity-30" />
-                                </div>
-                                <p className={`text-xs font-medium ${isDark ? "text-slate-500" : "text-slate-600"}`}>
-                                  Sin datos suficientes.
-                                </p>
-                              </div>
-                            ) : (
-                              topPageItems.map((c) => {
-                                const rank = topStart + topPageItems.indexOf(c) + 1;
-                                const score = Number.isFinite(Number(c.score))
-                                  ? Math.max(0, Math.min(100, Number(c.score)))
-                                  : 0;
-
-                                const isHigh = score >= 85;
-                                const isMed = score >= 70 && score < 85;
-
-                                let toneColor = isDark ? "text-slate-400" : "text-slate-500";
-                                let toneBg = "bg-slate-500";
-
-                                if (isHigh) {
-                                  toneColor = isDark ? "text-cyan-400" : "text-cyan-600";
-                                  toneBg = "bg-cyan-500";
-                                } else if (isMed) {
-                                  toneColor = isDark ? "text-blue-400" : "text-blue-600";
-                                  toneBg = "bg-blue-500";
-                                }
-
-                                return (
-                                  <button
-                                    key={c.id}
-                                    type="button"
-                                    onClick={() =>
-                                      navigate(
-                                        `/coordinator/evaluations/${encodeURIComponent(c.id)}/report`,
-                                      )
-                                    }
-                                    className={`group w-full flex items-center gap-3 rounded-xl border p-3 text-left transition-all duration-200 hover:-translate-y-0.5 ${
-                                      isDark
-                                        ? "border-white/5 bg-[#15191E] hover:border-cyan-500/30 hover:shadow-[0_4px_15px_-5px_rgba(6,182,212,0.2)]"
-                                        : "border-slate-200 bg-white hover:border-cyan-300 hover:shadow-[0_8px_25px_-8px_rgba(15,23,42,0.1)]"
-                                    }`}
-                                  >
-                                    <span
-                                      className={`shrink-0 flex h-7 w-7 items-center justify-center rounded-lg text-[10px] font-bold font-mono ${toneColor} ${
-                                        isDark ? "bg-white/5" : "bg-slate-50 border border-slate-200"
-                                      }`}
-                                    >
-                                      #{rank}
-                                    </span>
-
-                                    <div className="min-w-0 flex-1">
-                                      <p className={`text-xs font-bold truncate group-hover:text-emerald-400 ${isDark ? "text-white" : "text-slate-900"}`}>
-                                        {c.name}
-                                      </p>
-                                      <div className="flex items-center gap-2 mt-1">
-                                        <div className={`h-1.5 flex-1 rounded-full overflow-hidden ${isDark ? "bg-white/10" : "bg-slate-100"}`}>
-                                          <div
-                                            className={`h-full rounded-full ${toneBg} ${isHigh ? "shadow-[0_0_8px_rgba(16,185,129,0.3)]" : ""}`}
-                                            style={{ width: `${score}%` }}
-                                          />
-                                        </div>
-                                        <span className={`text-[10px] font-bold shrink-0 ${toneColor}`}>
-                                          {Math.round(score)}
-                                        </span>
-                                      </div>
-                                    </div>
-
-                                    <span
-                                      className={`shrink-0 rounded-md border px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wider ${
-                                        isHigh
-                                          ? isDark ? "border-cyan-500/25 bg-cyan-500/10 text-cyan-300" : "border-cyan-200 bg-cyan-50 text-cyan-700"
-                                          : isMed
-                                            ? isDark ? "border-blue-500/25 bg-blue-500/10 text-blue-300" : "border-blue-200 bg-blue-50 text-blue-700"
-                                            : isDark ? "border-white/10 bg-white/5 text-slate-400" : "border-slate-200 bg-slate-50 text-slate-600"
-                                      }`}
-                                    >
-                                      {c.verdictShort === "Sin veredicto" ? "Pend." : c.verdictShort?.slice(0, 8)}
-                                    </span>
-                                  </button>
-                                );
-                              })
-                            )}
-                          </div>
-
-                          {/* Pagination */}
-                          {topTotal > TOP_PAGE_SIZE && (
-                            <div
-                              className={`mt-4 pt-3 border-t flex items-center justify-between ${
-                                isDark ? "border-white/5" : "border-slate-200"
-                              }`}
-                            >
-                              <span className={`text-[10px] ${isDark ? "text-slate-500" : "text-slate-400"}`}>
-                                {topStart + 1}–{topEnd} de {topTotal}
-                              </span>
-                              <div className="flex items-center gap-1">
-                                <button
-                                  type="button"
-                                  onClick={() => setTopPage((p) => Math.max(1, p - 1))}
-                                  disabled={safeTopPage <= 1}
-                                  className={`grid h-6 w-6 place-items-center rounded-md border text-[10px] transition ${
-                                    safeTopPage <= 1
-                                      ? isDark ? "border-transparent text-slate-700 cursor-not-allowed" : "border-transparent text-slate-300 cursor-not-allowed"
-                                      : isDark ? "border-white/10 bg-white/5 text-slate-300 hover:bg-white/10" : "border-slate-200 bg-white text-slate-600 hover:bg-slate-50"
-                                  }`}
-                                >
-                                  ‹
-                                </button>
-                                <span className={`text-[10px] font-medium min-w-[2rem] text-center ${isDark ? "text-slate-400" : "text-slate-500"}`}>
-                                  {safeTopPage}/{topTotalPages}
-                                </span>
-                                <button
-                                  type="button"
-                                  onClick={() => setTopPage((p) => Math.min(topTotalPages, p + 1))}
-                                  disabled={safeTopPage >= topTotalPages}
-                                  className={`grid h-6 w-6 place-items-center rounded-md border text-[10px] transition ${
-                                    safeTopPage >= topTotalPages
-                                      ? isDark ? "border-transparent text-slate-700 cursor-not-allowed" : "border-transparent text-slate-300 cursor-not-allowed"
-                                      : isDark ? "border-white/10 bg-white/5 text-slate-300 hover:bg-white/10" : "border-slate-200 bg-white text-slate-600 hover:bg-slate-50"
-                                  }`}
-                                >
-                                  ›
-                                </button>
-                              </div>
-                            </div>
-                          )}
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* PANEL 2: Bandeja de candidatos (Main Content) */}
-                    <div className="col-span-12 lg:col-span-8 xl:col-span-6">
-                      <div id="evaluaciones-registradas" className="scroll-mt-28">
-                        <EvaluationsListPanel
-                          schoolFilter={schoolFilter}
-                          setSchoolFilter={setSchoolFilter}
-                          programFilter={programFilter}
-                          setProgramFilter={setProgramFilter}
-                          schoolOptions={schoolOptions}
-                          programOptions={programOptions}
-                          mustChooseScope={mustChooseScope}
-                          groupedCandidates={groupedCandidates}
-                          selectedId={null}
-                          search={String(evals.search ?? "")}
-                          setSearch={(v) => evals.setSearch(String(v ?? ""))}
-                          decisionFilter={evals.decisionFilter}
-                          setDecisionFilter={evals.setDecisionFilter}
-                          localDecisions={evals.localDecisions}
-                          lockedSchool={!!userSchoolId}
-                          schoolHint={
-                            scopeLoading
-                              ? "Cargando programas de tu escuela…"
-                              : userSchoolId
-                                ? "Escuela asignada por tu usuario."
-                                : undefined
-                          }
+                        <ShieldAlert
+                          className={`h-7 w-7 md:h-8 md:w-8 ${
+                            isDark ? "text-brand-200" : "text-brand-700"
+                          }`}
                         />
                       </div>
                     </div>
 
-                    {/* PANEL 3: Guia rapida (Compact Sidebar) */}
-                    <aside className="col-span-12 xl:col-span-3">
-                      <div
-                        className={`relative overflow-hidden rounded-2xl border p-5 ${
-                          isDark
-                            ? "border-white/[0.06] bg-gradient-to-b from-white/[0.02] to-transparent"
-                            : "border-slate-200 bg-white shadow-[0_4px_20px_-6px_rgba(15,23,42,0.06)]"
+                    <div className="min-w-0 space-y-0.5">
+                      <h1
+                        className={`text-xl md:text-2xl font-black leading-tight tracking-tight ${
+                          isDark ? "text-white" : "text-slate-900"
                         }`}
                       >
-                        {isDark && (
-                          <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_85%_0%,rgba(6,182,212,0.06),transparent_55%)]" />
-                        )}
-                        <div className="relative">
-                          <div
-                            className={`inline-flex items-center gap-2 rounded-full border px-3 py-1 text-[10px] font-bold uppercase tracking-[0.16em] ${
-                              isDark
-                                ? "border-white/[0.08] bg-white/[0.03] text-slate-300"
-                                : "border-cyan-100 bg-cyan-50 text-cyan-700"
-                            }`}
-                          >
-                            <Sparkles className={`h-3.5 w-3.5 ${isDark ? "text-cyan-400" : "text-cyan-600"}`} />
-                            Guia
-                          </div>
+                        Bandeja de{" "}
+                        <span className="bg-gradient-to-r from-brand-400 to-brand-400 bg-clip-text text-transparent">
+                          Revision
+                        </span>
+                      </h1>
+                      <p
+                        className={`text-sm max-w-lg leading-relaxed ${
+                          isDark ? "text-slate-400" : "text-slate-500"
+                        }`}
+                      >
+                        Evalua candidatos, valida riesgos y toma decisiones con trazabilidad.
+                      </p>
+                    </div>
+                  </div>
 
-                          <div className={`mt-3 text-xs font-semibold ${isDark ? "text-white" : "text-slate-900"}`}>
-                            Flujo recomendado
-                          </div>
+                  <div className="flex flex-wrap items-center gap-2">
+                    <span
+                      className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-[10px] font-bold uppercase tracking-[0.18em] ${
+                        isDark
+                          ? "border-brand-400/30 bg-brand-500/10 text-brand-200"
+                          : "border-brand-200 bg-brand-50 text-brand-700"
+                      }`}
+                    >
+                      <Activity className="h-3.5 w-3.5" />
+                      Coordinacion activa
+                    </span>
+                    <span
+                      className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-[10px] font-bold uppercase tracking-[0.18em] ${
+                        isDark
+                          ? "border-white/10 bg-white/[0.03] text-slate-300"
+                          : "border-slate-200 bg-white text-slate-600"
+                      }`}
+                    >
+                      Trazabilidad total
+                    </span>
+                  </div>
+                </div>
 
-                          <ul className={`mt-3 space-y-3 text-[11px] leading-relaxed ${isDark ? "text-slate-400" : "text-slate-500"}`}>
-                            <li className="flex gap-2.5">
-                              <span className={`shrink-0 flex h-5 w-5 items-center justify-center rounded-md text-[9px] font-bold ${isDark ? "bg-cyan-500/10 text-cyan-400" : "bg-cyan-100 text-cyan-700"}`}>1</span>
-                              <span>Revisa <b className={isDark ? "text-white" : "text-slate-800"}>Prioridad</b> para decisiones rapidas.</span>
-                            </li>
-                            <li className="flex gap-2.5">
-                              <span className={`shrink-0 flex h-5 w-5 items-center justify-center rounded-md text-[9px] font-bold ${isDark ? "bg-cyan-500/10 text-cyan-400" : "bg-cyan-100 text-cyan-700"}`}>2</span>
-                              <span>En <b className={isDark ? "text-white" : "text-slate-800"}>Bandeja</b>, filtra por programa.</span>
-                            </li>
-                            <li className="flex gap-2.5">
-                              <span className={`shrink-0 flex h-5 w-5 items-center justify-center rounded-md text-[9px] font-bold ${isDark ? "bg-cyan-500/10 text-cyan-400" : "bg-cyan-100 text-cyan-700"}`}>3</span>
-                              <span>Abre detalle: apruebas/rechazas y exportas PDF.</span>
-                            </li>
-                          </ul>
+                <div
+                  className={`rounded-xl border border-t-2 border-t-brand-500 p-3 space-y-2.5 ${
+                    isDark ? "bg-white/[0.02] border-brand-500/25" : "bg-white/80 border-brand-500/20"
+                  }`}
+                >
+                  <p
+                    className={`text-[10px] font-bold uppercase tracking-[0.2em] ${
+                      isDark ? "text-brand-300" : "text-brand-700"
+                    }`}
+                  >
+                    Recomendado para iniciar
+                  </p>
+                  <div className="space-y-2">
+                    {[
+                      "Selecciona escuela y programa para acotar la bandeja.",
+                      "Abre el detalle de cada candidato para validar el analisis.",
+                      "Aprueba o rechaza con un comentario trazable.",
+                    ].map((item) => (
+                      <div key={item} className="flex items-start gap-2">
+                        <span
+                          className={`mt-0.5 h-1.5 w-1.5 rounded-full shrink-0 ${
+                            isDark ? "bg-brand-400/80" : "bg-brand-500/80"
+                          }`}
+                        />
+                        <p
+                          className={`text-[11px] leading-snug ${
+                            isDark ? "text-slate-300" : "text-slate-600"
+                          }`}
+                        >
+                          {item}
+                        </p>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </div>
+          </section>
 
-                          <div
-                            className={`mt-4 rounded-xl border p-3 text-[10px] leading-relaxed ${
-                              isDark
-                                ? "border-white/[0.06] bg-white/[0.02] text-slate-500"
-                                : "border-slate-200 bg-slate-50 text-slate-500"
-                            }`}
-                          >
-                            Tip: usa <b className={isDark ? "text-slate-300" : "text-slate-700"}>Comparativa</b> solo cuando haya 2+ entrevistas.
+          {/* ESTADO CARGA / ERROR */}
+          {showLoading && (
+            <div className="flex flex-col items-center justify-center py-20 gap-3">
+              <Loader2 className={`w-8 h-8 animate-spin ${isDark ? "text-brand-400" : "text-brand-500"}`} />
+              <p className={`text-sm ${isDark ? "text-slate-400" : "text-slate-500"}`}>Cargando historial...</p>
+            </div>
+          )}
+
+          {showError && (
+            <div className="flex flex-col items-center justify-center py-16 gap-2">
+              <div className={`p-3 rounded-xl ${isDark ? "bg-rose-500/10" : "bg-rose-50"}`}>
+                <AlertCircle className="w-6 h-6 text-rose-500" />
+              </div>
+              <p className={`text-sm text-center max-w-md ${isDark ? "text-slate-400" : "text-slate-600"}`}>{evals.error}</p>
+            </div>
+          )}
+
+          {!showLoading && !showError && (
+            <>
+              {mainTab === "evaluations" && (
+                <section className="space-y-6 animate-[fadeInUp_400ms_ease-out]">
+                    {/* KPI Strip - Full Width */}
+                    <CoordinatorKpiStrip
+                      total={metrics.total}
+                      avgScore={metrics.avgScore}
+                      isScoped={!!userSchoolId}
+                    />
+
+                    {/* 3-Panel Dashboard Grid */}
+                    <div className="grid grid-cols-12 gap-5 items-start">
+                      {/* PANEL 1: Prioridad de revision (Compact Sidebar) */}
+                      <div className="col-span-12 lg:col-span-4 xl:col-span-3">
+                        <div
+                          className={[
+                            "relative overflow-hidden rounded-2xl border border-t-2 border-t-brand-500 transition-all duration-300 flex flex-col",
+                            isDark
+                              ? "bg-gradient-to-b from-[#080D16] to-[#0A1018] border-brand-500/25 shadow-[0_0_40px_-12px_rgba(16,185,129,0.10)]"
+                              : "bg-white border-brand-500/20 shadow-[0_4px_20px_-6px_rgba(15,23,42,0.06)]",
+                          ].join(" ")}
+                        >
+                          {isDark && (
+                            <div className="pointer-events-none absolute top-0 right-0 -mt-20 -mr-20 h-72 w-72 rounded-full bg-brand-500/5 blur-[80px]" />
+                          )}
+
+                          <div className="relative p-5 flex flex-col">
+                            {/* Header */}
+                            <div className="flex items-center gap-3 mb-4">
+                              <div
+                                className={[
+                                  "shrink-0 w-8 h-8 rounded-lg flex items-center justify-center border",
+                                  isDark
+                                    ? "border-brand-500/25 bg-brand-500/10"
+                                    : "border-brand-200 bg-brand-50",
+                                ].join(" ")}
+                              >
+                                <TrendingUp className={`w-4 h-4 ${isDark ? "text-brand-400" : "text-brand-600"}`} />
+                              </div>
+                              <div className="min-w-0">
+                                <h3 className={`text-xs font-bold tracking-tight truncate ${isDark ? "text-white" : "text-slate-900"}`}>
+                                  Prioridad
+                                </h3>
+                                <p className={`text-[10px] truncate ${isDark ? "text-slate-500" : "text-slate-400"}`}>
+                                  Ranking por score
+                                </p>
+                              </div>
+                            </div>
+
+                            {/* Card list */}
+                            <div className="space-y-2.5">
+                              {topPageItems.length === 0 ? (
+                                <div
+                                  className={`flex flex-col items-center justify-center rounded-xl border border-dashed p-8 text-center ${
+                                    isDark
+                                      ? "border-white/10 bg-white/[0.02]"
+                                      : "border-slate-200 bg-slate-50"
+                                  }`}
+                                >
+                                  <div className="text-slate-500 mb-2">
+                                    <TrendingUp className="h-6 w-6 opacity-30" />
+                                  </div>
+                                  <p className={`text-xs font-medium ${isDark ? "text-slate-500" : "text-slate-600"}`}>
+                                    Sin datos suficientes.
+                                  </p>
+                                </div>
+                              ) : (
+                                topPageItems.map((c) => {
+                                  const rank = topStart + topPageItems.indexOf(c) + 1;
+                                  const score = Number.isFinite(Number(c.score))
+                                    ? Math.max(0, Math.min(100, Number(c.score)))
+                                    : 0;
+
+                                  const isHigh = score >= 85;
+                                  const isMed = score >= 70 && score < 85;
+
+                                  let toneColor = isDark ? "text-slate-400" : "text-slate-500";
+                                  let toneBg = "bg-slate-500";
+
+                                  if (isHigh) {
+                                    toneColor = isDark ? "text-brand-400" : "text-brand-600";
+                                    toneBg = "bg-brand-500";
+                                  } else if (isMed) {
+                                    toneColor = isDark ? "text-brand-400" : "text-brand-600";
+                                    toneBg = "bg-brand-500";
+                                  }
+
+                                  return (
+                                    <button
+                                      key={c.id}
+                                      type="button"
+                                      onClick={() =>
+                                        navigate(
+                                          `/coordinator/evaluations/${encodeURIComponent(c.id)}/report`,
+                                        )
+                                      }
+                                      className={`group w-full flex items-center gap-3 rounded-xl border p-3 text-left transition-all duration-200 hover:-translate-y-0.5 ${
+                                        isDark
+                                          ? "border-white/5 bg-[#15191E] hover:border-brand-500/30 hover:shadow-[0_4px_15px_-5px_rgba(16,185,129,0.2)]"
+                                          : "border-slate-200 bg-white hover:border-brand-300 hover:shadow-[0_8px_25px_-8px_rgba(15,23,42,0.1)]"
+                                      }`}
+                                    >
+                                      <span
+                                        className={`shrink-0 flex h-7 w-7 items-center justify-center rounded-lg text-[10px] font-bold font-mono ${toneColor} ${
+                                          isDark ? "bg-white/5" : "bg-slate-50 border border-slate-200"
+                                        }`}
+                                      >
+                                        #{rank}
+                                      </span>
+
+                                      <div className="min-w-0 flex-1">
+                                        <p className={`text-xs font-bold truncate group-hover:text-brand-400 ${isDark ? "text-white" : "text-slate-900"}`}>
+                                          {c.name}
+                                        </p>
+                                        <div className="flex items-center gap-2 mt-1">
+                                          <div className={`h-1.5 flex-1 rounded-full overflow-hidden ${isDark ? "bg-white/10" : "bg-slate-100"}`}>
+                                            <div
+                                              className={`h-full rounded-full ${toneBg} ${isHigh ? "shadow-[0_0_8px_rgba(16,185,129,0.3)]" : ""}`}
+                                              style={{ width: `${score}%` }}
+                                            />
+                                          </div>
+                                          <span className={`text-[10px] font-bold shrink-0 ${toneColor}`}>
+                                            {Math.round(score)}
+                                          </span>
+                                        </div>
+                                      </div>
+
+                                      <span
+                                        className={`shrink-0 rounded-md border px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wider ${
+                                          isHigh
+                                            ? isDark ? "border-brand-500/25 bg-brand-500/10 text-brand-300" : "border-brand-200 bg-brand-50 text-brand-700"
+                                            : isMed
+                                              ? isDark ? "border-brand-500/25 bg-brand-500/10 text-brand-300" : "border-brand-200 bg-brand-50 text-brand-700"
+                                              : isDark ? "border-white/10 bg-white/5 text-slate-400" : "border-slate-200 bg-slate-50 text-slate-600"
+                                        }`}
+                                      >
+                                        {c.verdictShort === "Sin veredicto" ? "Pend." : c.verdictShort?.slice(0, 8)}
+                                      </span>
+                                    </button>
+                                  );
+                                })
+                              )}
+                            </div>
+
+                            {/* Pagination */}
+                            {topTotal > TOP_PAGE_SIZE && (
+                              <div
+                                className={`mt-4 pt-3 border-t flex items-center justify-between ${
+                                  isDark ? "border-white/5" : "border-slate-200"
+                                }`}
+                              >
+                                <span className={`text-[10px] ${isDark ? "text-slate-500" : "text-slate-400"}`}>
+                                  {topStart + 1}–{topEnd} de {topTotal}
+                                </span>
+                                <div className="flex items-center gap-1">
+                                  <button
+                                    type="button"
+                                    onClick={() => setTopPage((p) => Math.max(1, p - 1))}
+                                    disabled={safeTopPage <= 1}
+                                    className={`grid h-6 w-6 place-items-center rounded-md border text-[10px] transition ${
+                                      safeTopPage <= 1
+                                        ? isDark ? "border-transparent text-slate-700 cursor-not-allowed" : "border-transparent text-slate-300 cursor-not-allowed"
+                                        : isDark ? "border-white/10 bg-white/5 text-slate-300 hover:bg-white/10" : "border-slate-200 bg-white text-slate-600 hover:bg-slate-50"
+                                    }`}
+                                  >
+                                    ‹
+                                  </button>
+                                  <span className={`text-[10px] font-medium min-w-[2rem] text-center ${isDark ? "text-slate-400" : "text-slate-500"}`}>
+                                    {safeTopPage}/{topTotalPages}
+                                  </span>
+                                  <button
+                                    type="button"
+                                    onClick={() => setTopPage((p) => Math.min(topTotalPages, p + 1))}
+                                    disabled={safeTopPage >= topTotalPages}
+                                    className={`grid h-6 w-6 place-items-center rounded-md border text-[10px] transition ${
+                                      safeTopPage >= topTotalPages
+                                        ? isDark ? "border-transparent text-slate-700 cursor-not-allowed" : "border-transparent text-slate-300 cursor-not-allowed"
+                                        : isDark ? "border-white/10 bg-white/5 text-slate-300 hover:bg-white/10" : "border-slate-200 bg-white text-slate-600 hover:bg-slate-50"
+                                    }`}
+                                  >
+                                    ›
+                                  </button>
+                                </div>
+                              </div>
+                            )}
                           </div>
                         </div>
                       </div>
-                    </aside>
-                  </div>
-                </section>
-            )}
 
-            {mainTab === "users" && <CoordinatorUsersPanel />}
-          </>
-        )}
-      </div>
+                      {/* PANEL 2: Bandeja de candidatos (Main Content) */}
+                      <div className="col-span-12 lg:col-span-8 xl:col-span-6">
+                        <div id="evaluaciones-registradas" className="scroll-mt-28">
+                          <EvaluationsListPanel
+                            schoolFilter={schoolFilter}
+                            setSchoolFilter={setSchoolFilter}
+                            programFilter={programFilter}
+                            setProgramFilter={setProgramFilter}
+                            schoolOptions={schoolOptions}
+                            programOptions={programOptions}
+                            mustChooseScope={mustChooseScope}
+                            groupedCandidates={groupedCandidates}
+                            selectedId={null}
+                            search={String(evals.search ?? "")}
+                            setSearch={(v) => evals.setSearch(String(v ?? ""))}
+                            decisionFilter={evals.decisionFilter}
+                            setDecisionFilter={evals.setDecisionFilter}
+                            localDecisions={evals.localDecisions}
+                            lockedSchool={!!userSchoolId}
+                            schoolHint={
+                              scopeLoading
+                                ? "Cargando programas de tu escuela…"
+                                : userSchoolId
+                                  ? "Escuela asignada por tu usuario."
+                                  : undefined
+                            }
+                          />
+                        </div>
+                      </div>
+
+                      {/* PANEL 3: Guia rapida (Compact Sidebar) */}
+                      <aside className="col-span-12 xl:col-span-3">
+                        <div
+                          className={`relative overflow-hidden rounded-2xl border border-t-2 border-t-brand-500 p-5 ${
+                            isDark
+                              ? "bg-gradient-to-b from-[#080D16] to-[#0A1018] border-brand-500/25 shadow-[0_0_40px_-12px_rgba(16,185,129,0.10)]"
+                              : "bg-white border-brand-500/20 shadow-[0_4px_20px_-6px_rgba(15,23,42,0.06)]"
+                          }`}
+                        >
+                          {isDark && (
+                            <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_85%_0%,rgba(16,185,129,0.06),transparent_55%)]" />
+                          )}
+                          <div className="relative">
+                            <div
+                              className={`inline-flex items-center gap-2 rounded-full border px-3 py-1 text-[10px] font-bold uppercase tracking-[0.16em] ${
+                                isDark
+                                  ? "border-brand-400/30 bg-brand-500/10 text-brand-200"
+                                  : "border-brand-100 bg-brand-50 text-brand-700"
+                              }`}
+                            >
+                              <Sparkles className={`h-3.5 w-3.5 ${isDark ? "text-brand-400" : "text-brand-600"}`} />
+                              Guia
+                            </div>
+
+                            <div className={`mt-3 text-xs font-semibold ${isDark ? "text-white" : "text-slate-900"}`}>
+                              Flujo recomendado
+                            </div>
+
+                            <ul className={`mt-3 space-y-3 text-[11px] leading-relaxed ${isDark ? "text-slate-400" : "text-slate-500"}`}>
+                              <li className="flex gap-2.5">
+                                <span className={`shrink-0 flex h-5 w-5 items-center justify-center rounded-md text-[9px] font-bold ${isDark ? "bg-brand-500/10 text-brand-400" : "bg-brand-100 text-brand-700"}`}>1</span>
+                                <span>Revisa <b className={isDark ? "text-white" : "text-slate-800"}>Prioridad</b> para decisiones rapidas.</span>
+                              </li>
+                              <li className="flex gap-2.5">
+                                <span className={`shrink-0 flex h-5 w-5 items-center justify-center rounded-md text-[9px] font-bold ${isDark ? "bg-brand-500/10 text-brand-400" : "bg-brand-100 text-brand-700"}`}>2</span>
+                                <span>En <b className={isDark ? "text-white" : "text-slate-800"}>Bandeja</b>, filtra por programa.</span>
+                              </li>
+                              <li className="flex gap-2.5">
+                                <span className={`shrink-0 flex h-5 w-5 items-center justify-center rounded-md text-[9px] font-bold ${isDark ? "bg-brand-500/10 text-brand-400" : "bg-brand-100 text-brand-700"}`}>3</span>
+                                <span>Abre detalle: apruebas/rechazas y exportas PDF.</span>
+                              </li>
+                            </ul>
+
+                            <div
+                              className={`mt-4 rounded-xl border p-3 text-[10px] leading-relaxed ${
+                                isDark
+                                  ? "border-white/[0.06] bg-white/[0.02] text-slate-500"
+                                  : "border-slate-200 bg-slate-50 text-slate-500"
+                              }`}
+                            >
+                              Tip: usa <b className={isDark ? "text-slate-300" : "text-slate-700"}>Comparativa</b> solo cuando haya 2+ entrevistas.
+                            </div>
+                          </div>
+                        </div>
+                      </aside>
+                    </div>
+                  </section>
+              )}
+
+              {mainTab === "users" && (
+                <div className="animate-[fadeInUp_400ms_ease-out]">
+                  <CoordinatorUsersPanel />
+                </div>
+              )}
+            </>
+          )}
+        </div>
+      </main>
+
+      <footer className="py-6 text-center border-t border-white/5 mt-auto">
+        <p className="text-[10px] text-white/20 uppercase tracking-widest">
+          Sistema de Evaluación Docente · CUN © {new Date().getFullYear()}
+        </p>
+      </footer>
+
+      <style>{`
+        @keyframes fadeInUp {
+          from { opacity: 0; transform: translateY(20px); }
+          to { opacity: 1; transform: translateY(0); }
+        }
+      `}</style>
     </div>
   );
 };

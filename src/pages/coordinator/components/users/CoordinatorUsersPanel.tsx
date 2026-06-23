@@ -1,6 +1,12 @@
 // src/pages/coordinator/components/users/CoordinatorUsersPanel.tsx
 import React, { useMemo, useState } from "react";
-import { AlertCircle, Loader2, Users } from "lucide-react";
+import {
+  AlertCircle,
+  CheckCircle2,
+  Loader2,
+  UserPlus,
+  Users,
+} from "lucide-react";
 import { useAuth } from "../../../../context/AuthContext";
 import { useTheme } from "../../../../context/ThemeContext";
 
@@ -14,6 +20,8 @@ import type { AdminUser } from "../../../admin/adminTypes";
 const CoordinatorUsersPanel: React.FC = () => {
   const users = useCoordinatorUsers();
   const { user } = useAuth();
+  const { theme } = useTheme();
+  const isDark = theme === "dark";
 
   const coordinatorSchoolId = useMemo(() => {
     const raw =
@@ -55,159 +63,278 @@ const CoordinatorUsersPanel: React.FC = () => {
     !users.error &&
     (users.users?.length ?? 0) === 0;
 
-  const { theme } = useTheme();
-  const isDark = theme === "dark";
-
   return (
-    <section
-      className={[
-        "rounded-3xl p-5 md:p-6 shadow-xl border",
-        isDark
-          ? "bg-[#050505]/70 border-white/10"
-          : "bg-white border-slate-200 shadow-[0_18px_60px_rgba(15,23,42,0.10)]",
-      ].join(" ")}
-    >
-      <div className="flex items-center justify-between gap-3 mb-4">
-        <div className="flex items-center gap-2">
-          <div
-            className={[
-              "w-10 h-10 rounded-2xl flex items-center justify-center",
-              isDark
-                ? "bg-white/5 border border-white/10"
-                : "bg-cyan-50 border border-cyan-100",
-            ].join(" ")}
-          >
-            <Users
-              className={`w-5 h-5 ${
-                isDark ? "text-cyan-400" : "text-cyan-600"
-              }`}
-            />
+    <section className="space-y-6">
+      {/* HEADER HERO */}
+      <div className="relative overflow-hidden rounded-2xl border border-t-2 border-t-brand-500">
+        {isDark && (
+          <div className="absolute inset-0 pointer-events-none">
+            <div className="absolute -top-32 -right-16 w-[400px] h-[400px] rounded-full bg-gradient-to-br from-brand-500/8 via-brand-500/4 to-transparent blur-[100px]" />
+            <div className="absolute -bottom-24 -left-12 w-[300px] h-[300px] rounded-full bg-gradient-to-tr from-brand-500/5 to-transparent blur-[80px]" />
           </div>
-          <div>
-            <h2
-              className={[
-                "text-sm font-bold uppercase tracking-widest",
-                isDark ? "text-gray-300" : "text-slate-900",
-              ].join(" ")}
-            >
-              Líderes de mi escuela
-            </h2>
-            <p
-              className={[
-                "text-xs",
-                isDark ? "text-gray-500" : "text-slate-600",
-              ].join(" ")}
-            >
-              Crea líderes; acceden con Google @cun.edu.co (usuario dado de alta por administración).
-            </p>
+        )}
+
+        <div
+          className={`relative px-6 py-4 md:px-8 md:py-5 rounded-2xl ${
+            isDark
+              ? "bg-gradient-to-b from-[#080D16]/90 via-[#0A1018]/80 to-[#060A12] border-brand-500/25 shadow-[0_0_40px_-12px_rgba(16,185,129,0.10)]"
+              : "bg-gradient-to-b from-white via-slate-50/80 to-white border-brand-500/20 shadow-[0_12px_40px_-12px_rgba(15,23,42,0.06)]"
+          }`}
+        >
+          <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_auto] gap-5 lg:gap-6 items-center">
+            <div className="min-w-0 flex items-center gap-5">
+              <div
+                className="relative shrink-0 flex items-center justify-center overflow-visible pointer-events-none h-16 w-16"
+                aria-hidden
+              >
+                <div
+                  className={`absolute inset-0 rounded-full blur-xl ${
+                    isDark ? "bg-brand-500/20" : "bg-brand-500/15"
+                  }`}
+                />
+                <div
+                  className={`relative z-[1] flex h-12 w-12 items-center justify-center rounded-2xl border backdrop-blur-sm md:h-14 md:w-14 ${
+                    isDark
+                      ? "border-brand-400/25 bg-brand-500/10"
+                      : "border-brand-400/30 bg-brand-500/10"
+                  }`}
+                >
+                  <Users
+                    className={`h-6 w-6 md:h-7 md:w-7 ${
+                      isDark ? "text-brand-200" : "text-brand-700"
+                    }`}
+                  />
+                </div>
+              </div>
+
+              <div className="min-w-0 space-y-0.5">
+                <h2
+                  className={`text-xl md:text-2xl font-black leading-tight tracking-tight ${
+                    isDark ? "text-white" : "text-slate-900"
+                  }`}
+                >
+                  Lideres de{" "}
+                  <span className="bg-gradient-to-r from-brand-400 to-brand-400 bg-clip-text text-transparent">
+                    mi escuela
+                  </span>
+                </h2>
+                <p
+                  className={`text-sm max-w-xl leading-relaxed ${
+                    isDark ? "text-slate-400" : "text-slate-500"
+                  }`}
+                >
+                  Crea y gestiona los lideres de tu escuela. Acceden con Google
+                  <span className={`mx-1 font-semibold ${isDark ? "text-slate-300" : "text-slate-700"}`}>@cun.edu.co</span>
+                  una vez dados de alta.
+                </p>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={openCreate}
+                disabled={!hasSchool}
+                title={!hasSchool ? "Tu usuario no tiene escuela asignada. Pide al administrador que la configure." : "Crear un nuevo lider"}
+                className={[
+                  "inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-[11px] font-bold uppercase tracking-[0.18em] border transition-all duration-200",
+                  hasSchool
+                    ? isDark
+                      ? "bg-gradient-to-r from-brand-500 to-brand-600 text-white border-brand-400/40 shadow-[0_8px_22px_rgba(16,185,129,0.30)] hover:from-brand-400 hover:to-brand-500 hover:shadow-[0_10px_28px_rgba(16,185,129,0.40)]"
+                      : "bg-gradient-to-r from-brand-500 to-brand-600 text-white border-brand-500 shadow-[0_8px_22px_rgba(16,185,129,0.30)] hover:from-brand-600 hover:to-brand-700 hover:shadow-[0_10px_28px_rgba(16,185,129,0.40)]"
+                    : isDark
+                      ? "border-white/10 bg-white/[0.03] text-white/30 cursor-not-allowed"
+                      : "border-slate-200 bg-slate-100 text-slate-400 cursor-not-allowed",
+                ].join(" ")}
+              >
+                <UserPlus className="w-4 h-4" />
+                Crear lider
+              </button>
+            </div>
           </div>
         </div>
-
-
-        <button
-          type="button"
-          onClick={openCreate}
-          disabled={!hasSchool}
-          title={!hasSchool ? "Tu usuario no tiene escuela asignada. Pide al administrador que la configure." : ""}
-          className={[
-            "px-4 py-2 rounded-xl font-bold text-xs uppercase tracking-widest shadow-md transition-colors",
-            hasSchool
-              ? "bg-cyan-600 hover:bg-cyan-500 text-white shadow-cyan-900/20"
-              : isDark
-                ? "bg-white/5 text-white/30 border border-white/10 cursor-not-allowed"
-                : "bg-slate-100 text-slate-400 border border-slate-200 cursor-not-allowed",
-          ].join(" ")}
-        >
-          + Crear líder
-        </button>
       </div>
+
+      {/* WARNING IF NO SCHOOL */}
       {!hasSchool && (
         <div
           className={[
-            "mb-4 rounded-2xl border px-4 py-3 text-xs",
+            "rounded-xl border px-5 py-4 flex items-start gap-3",
             isDark
-              ? "border-amber-500/20 bg-amber-500/10 text-amber-200"
-              : "border-amber-200 bg-amber-50 text-amber-700",
+              ? "border-amber-500/25 bg-amber-500/10 text-amber-200"
+              : "border-amber-200 bg-amber-50 text-amber-800",
           ].join(" ")}
         >
-          Tu usuario coordinador no tiene una <b>escuela asignada</b>.
-          <br />
-          No podrás crear líderes hasta que un administrador configure tu
-          escuela.
+          <AlertCircle className="w-4 h-4 mt-0.5 shrink-0" />
+          <div className="text-xs leading-relaxed">
+            <p className="font-bold mb-1">Sin escuela asignada</p>
+            <p>
+              Tu usuario coordinador no tiene una{" "}
+              <b>escuela asignada</b>. No podras crear lideres hasta que un
+              administrador configure tu escuela.
+            </p>
+          </div>
         </div>
       )}
 
-      {users.loading && (
-        <div className="flex flex-col items-center justify-center py-16 gap-3">
-          <Loader2
-            className={`w-8 h-8 animate-spin ${
-              isDark ? "text-cyan-400" : "text-cyan-600"
-            }`}
-          />
-          <p
-            className={`text-sm ${
-              isDark ? "text-neutral-500" : "text-slate-600"
-            }`}
+      {/* MAIN CARD: TABLE / LOADING / ERROR / EMPTY */}
+      <div
+        className={[
+          "rounded-2xl border border-t-2 border-t-brand-500 overflow-hidden",
+          isDark
+            ? "bg-[#0B0F14]/70 border-brand-500/25 backdrop-blur-xl shadow-[0_24px_80px_-70px_rgba(16,185,129,0.20)]"
+            : "bg-white border-brand-500/20 shadow-[0_18px_60px_rgba(15,23,42,0.08)]",
+        ].join(" ")}
+      >
+        {/* TABLE HEADER STRIP */}
+        {!users.loading && !users.error && !showEmpty && (
+          <div
+            className={[
+              "px-5 md:px-6 py-3 border-b text-[10px] font-bold uppercase tracking-[0.16em] flex items-center justify-between",
+              isDark
+                ? "border-brand-500/20 bg-white/[0.02] text-slate-400"
+                : "border-brand-500/15 bg-brand-50/40 text-slate-500",
+            ].join(" ")}
           >
-            Cargando líderes…
-          </p>
-        </div>
-      )}
+            <div className="flex items-center gap-2">
+              <Users
+                className={`w-3.5 h-3.5 ${isDark ? "text-brand-400" : "text-brand-600"}`}
+              />
+              <span>Listado de lideres</span>
+            </div>
+            <span
+              className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
+                isDark
+                  ? "bg-brand-500/10 text-brand-300 border border-brand-500/20"
+                  : "bg-brand-50 text-brand-700 border border-brand-200"
+              }`}
+            >
+              {users.users?.length ?? 0} registros
+            </span>
+          </div>
+        )}
 
-      {!users.loading && users.error && (
-        <div
-          className={[
-            "flex flex-col items-center justify-center py-14 gap-3 rounded-2xl border",
-            isDark
-              ? "text-red-400 bg-red-500/5 border-red-500/10"
-              : "text-red-600 bg-red-50 border-red-200",
-          ].join(" ")}
-        >
-          <AlertCircle className="w-8 h-8" />
-          <p className="text-sm text-center max-w-md">{users.error}</p>
-        </div>
-      )}
+        {users.loading && (
+          <div className="flex flex-col items-center justify-center py-20 gap-3">
+            <Loader2
+              className={`w-8 h-8 animate-spin ${
+                isDark ? "text-brand-400" : "text-brand-600"
+              }`}
+            />
+            <p
+              className={`text-sm font-medium ${
+                isDark ? "text-slate-400" : "text-slate-600"
+              }`}
+            >
+              Cargando lideres…
+            </p>
+          </div>
+        )}
 
-      {!users.loading && !users.error && !showEmpty && (
-        <AdminUsersTable
-          users={users.users}
-          onEdit={openEdit}
-          onToggleActive={users.toggleActive}
-        />
-      )}
-
-      {showEmpty && (
-        <div
-          className={[
-            "mt-4 rounded-2xl border p-6",
-            isDark
-              ? "border-white/10 bg-black/20"
-              : "border-slate-200 bg-slate-50",
-          ].join(" ")}
-        >
-          <p
-            className={`text-sm font-semibold ${
-              isDark ? "text-white" : "text-slate-900"
-            }`}
+        {!users.loading && users.error && (
+          <div
+            className={[
+              "flex flex-col items-center justify-center py-14 gap-3",
+              isDark ? "text-rose-300" : "text-rose-600",
+            ].join(" ")}
           >
-            Sin líderes
-          </p>
-          <p
-            className={`text-xs mt-1 ${
-              isDark ? "text-neutral-400" : "text-slate-600"
-            }`}
-          >
-            Aún no hay líderes creados para tu escuela.
-          </p>
-          <div className="mt-4">
+            <div
+              className={[
+                "p-3 rounded-2xl border",
+                isDark
+                  ? "bg-rose-500/10 border-rose-500/20"
+                  : "bg-rose-50 border-rose-200",
+              ].join(" ")}
+            >
+              <AlertCircle className="w-7 h-7" />
+            </div>
+            <p className="text-sm text-center max-w-md font-medium">
+              {users.error}
+            </p>
+          </div>
+        )}
+
+        {!users.loading && !users.error && !showEmpty && (
+          <div className="p-2 md:p-3">
+            <AdminUsersTable
+              users={users.users}
+              onEdit={openEdit}
+              onToggleActive={users.toggleActive}
+            />
+          </div>
+        )}
+
+        {showEmpty && (
+          <div className="flex flex-col items-center justify-center py-20 px-6 text-center">
+            <div
+              className={[
+                "relative h-16 w-16 rounded-2xl flex items-center justify-center mb-5",
+                isDark
+                  ? "bg-brand-500/10 border border-brand-500/25"
+                  : "bg-brand-50 border border-brand-200",
+              ].join(" ")}
+            >
+              <Users
+                className={`h-7 w-7 ${isDark ? "text-brand-300" : "text-brand-600"}`}
+              />
+            </div>
+            <p
+              className={`text-sm font-bold mb-1 ${
+                isDark ? "text-white" : "text-slate-900"
+              }`}
+            >
+              Aun no hay lideres
+            </p>
+            <p
+              className={`text-xs max-w-sm mb-5 ${
+                isDark ? "text-slate-400" : "text-slate-500"
+              }`}
+            >
+              Cuando un administrador te asigne una escuela, podras dar de alta
+              a los lideres que contratan y evaluan docentes.
+            </p>
             <button
               type="button"
               onClick={openCreate}
-              className="px-3 py-2 rounded-xl bg-cyan-600 hover:bg-cyan-500 text-white text-xs font-bold uppercase tracking-widest shadow-cyan-900/20 transition-colors"
+              disabled={!hasSchool}
+              className={[
+                "inline-flex items-center gap-2 px-4 py-2 rounded-xl text-[11px] font-bold uppercase tracking-[0.18em] border transition-all duration-200",
+                hasSchool
+                  ? isDark
+                    ? "bg-gradient-to-r from-brand-500 to-brand-600 text-white border-brand-400/40 hover:from-brand-400 hover:to-brand-500"
+                    : "bg-gradient-to-r from-brand-500 to-brand-600 text-white border-brand-500 hover:from-brand-600 hover:to-brand-700"
+                  : isDark
+                    ? "border-white/10 bg-white/[0.03] text-white/30 cursor-not-allowed"
+                    : "border-slate-200 bg-slate-100 text-slate-400 cursor-not-allowed",
+              ].join(" ")}
             >
-              Crear líder
+              <UserPlus className="w-4 h-4" />
+              Crear primer lider
             </button>
           </div>
+        )}
+      </div>
+
+      {/* FOOTER INFO */}
+      {!showEmpty && !users.loading && !users.error && (
+        <div
+          className={[
+            "rounded-xl border px-4 py-3 flex items-start gap-3",
+            isDark
+              ? "border-brand-500/15 bg-brand-500/[0.04] text-slate-400"
+              : "border-brand-500/15 bg-brand-50/40 text-slate-600",
+          ].join(" ")}
+        >
+          <CheckCircle2
+            className={`w-4 h-4 mt-0.5 shrink-0 ${
+              isDark ? "text-brand-400" : "text-brand-600"
+            }`}
+          />
+          <p className="text-[11px] leading-relaxed">
+            Los lideres dados de alta aqui recibiran un correo para completar
+            su activacion con Google. La gestion de permisos y baja la realiza
+            un administrador.
+          </p>
         </div>
       )}
 

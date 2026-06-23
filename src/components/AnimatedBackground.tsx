@@ -1,188 +1,219 @@
 // src/components/AnimatedBackground.tsx
 import React from "react";
 import { useTheme } from "../context/ThemeContext";
+import { cn } from "../utils/cn";
+
+const LIGHT_DOTS = [
+  { top: "14%", left: "8%", size: 3, delay: "0s" },
+  { top: "22%", right: "12%", size: 4, delay: "1.2s" },
+  { top: "58%", left: "6%", size: 3, delay: "2.4s" },
+  { top: "72%", right: "18%", size: 3, delay: "0.8s" },
+  { bottom: "18%", left: "42%", size: 4, delay: "1.8s" },
+] as const;
+
+const DARK_DOTS = [
+  { top: "16%", left: "10%", size: 2 },
+  { top: "34%", right: "14%", size: 2 },
+  { bottom: "24%", left: "22%", size: 2 },
+] as const;
 
 const AnimatedBackground: React.FC = () => {
   const { theme } = useTheme();
   const isDark = theme === "dark";
 
-  if (!isDark) {
-    return (
-      <div className="fixed inset-0 overflow-hidden pointer-events-none z-0">
-        {/* Light mode - gradient mesh base */}
-        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_15%_15%,rgba(6,182,212,0.12),transparent_45%)]" />
-        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_85%_85%,rgba(59,130,246,0.10),transparent_45%)]" />
-        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_50%_40%,rgba(20,184,166,0.07),transparent_55%)]" />
-        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_70%_20%,rgba(99,102,241,0.06),transparent_50%)]" />
+  return (
+    <div className="fixed inset-0 overflow-hidden pointer-events-none z-0" aria-hidden>
+      {/* Base surface */}
+      <div
+        className={cn(
+          "absolute inset-0 transition-colors duration-700",
+          isDark
+            ? "bg-[radial-gradient(ellipse_at_18%_0%,#031a14_0%,#020308_50%,#010205_100%)]"
+            : "bg-[radial-gradient(ellipse_at_12%_0%,#f0fdf4_0%,#f8fafc_42%,#eef2f7_100%)]"
+        )}
+      />
 
-        {/* Floating orbs - light mode */}
-        <div
-          className="absolute -top-[8%] left-[5%] w-[650px] h-[650px] rounded-full animate-float-slow"
-          style={{
-            background: "radial-gradient(circle, rgba(6,182,212,0.16) 0%, rgba(6,182,212,0.05) 40%, transparent 70%)",
-            filter: "blur(40px)",
-          }}
-        />
-        <div
-          className="absolute top-[25%] -right-[10%] w-[750px] h-[750px] rounded-full animate-float-medium"
-          style={{
-            background: "radial-gradient(circle, rgba(59,130,246,0.13) 0%, rgba(59,130,246,0.04) 40%, transparent 70%)",
-            filter: "blur(50px)",
-          }}
-        />
-        <div
-          className="absolute -bottom-[8%] left-[20%] w-[600px] h-[600px] rounded-full animate-float-reverse"
-          style={{
-            background: "radial-gradient(circle, rgba(20,184,166,0.11) 0%, rgba(20,184,166,0.03) 40%, transparent 70%)",
-            filter: "blur(40px)",
-          }}
-        />
-        <div
-          className="absolute top-[10%] left-[50%] w-[400px] h-[400px] rounded-full animate-pulse-glow"
-          style={{
-            background: "radial-gradient(circle, rgba(6,182,212,0.10) 0%, transparent 55%)",
-            filter: "blur(30px)",
-          }}
-        />
-        <div
-          className="absolute top-[5%] right-[15%] w-[300px] h-[300px] rounded-full animate-float-medium"
-          style={{
-            background: "radial-gradient(circle, rgba(99,102,241,0.10) 0%, transparent 60%)",
-            filter: "blur(25px)",
-            animationDelay: "-5s",
-          }}
-        />
+      {/* Soft mesh accent */}
+      <div
+        className={cn(
+          "absolute inset-0 transition-opacity duration-700",
+          isDark
+            ? "bg-[radial-gradient(ellipse_at_82%_88%,rgba(16,185,129,0.06)_0%,transparent_52%)]"
+            : "bg-[radial-gradient(ellipse_at_82%_88%,rgba(16,185,129,0.08)_0%,transparent_48%)]"
+        )}
+      />
 
-        {/* Grid pattern - light */}
-        <div
-          className="absolute inset-0 opacity-[0.04]"
-          style={{
-            backgroundImage: `linear-gradient(rgba(0,0,0,0.06) 1px, transparent 1px), linear-gradient(90deg, rgba(0,0,0,0.06) 1px, transparent 1px)`,
-            backgroundSize: "60px 60px",
-          }}
-        />
+      {/* Dot grid */}
+      <div
+        className={cn(
+          "absolute inset-0 dot-grid transition-opacity duration-700",
+          isDark ? "opacity-[0.06]" : "opacity-[0.35]"
+        )}
+      />
 
-        {/* Floating particles - light mode */}
-        {[...Array(6)].map((_, i) => (
-          <div
+      {/* Fine structural grid */}
+      <div
+        className={cn(
+          "absolute inset-0",
+          isDark ? "opacity-[0.018]" : "opacity-[0.04]"
+        )}
+        style={{
+          backgroundImage: `
+            linear-gradient(${isDark ? "rgba(255,255,255,0.06)" : "rgba(15,23,42,0.06)"} 1px, transparent 1px),
+            linear-gradient(90deg, ${isDark ? "rgba(255,255,255,0.06)" : "rgba(15,23,42,0.06)"} 1px, transparent 1px)
+          `,
+          backgroundSize: "80px 80px",
+        }}
+      />
+
+      {/* Diagonal accent lines */}
+      <svg
+        className={cn(
+          "absolute -right-6 top-0 h-full w-[55%] transition-opacity duration-700",
+          isDark ? "opacity-[0.025]" : "opacity-[0.07]"
+        )}
+        viewBox="0 0 600 900"
+        preserveAspectRatio="xMaxYMid slice"
+      >
+        {[0, 1, 2, 3, 4, 5].map((i) => (
+          <line
             key={i}
-            className="absolute rounded-full"
-            style={{
-              width: `${3 + (i % 3) * 2}px`,
-              height: `${3 + (i % 3) * 2}px`,
-              left: `${12 + i * 14}%`,
-              top: `${8 + (i * 15) % 80}%`,
-              background: i % 3 === 0 ? "rgba(6,182,212,0.35)" : i % 3 === 1 ? "rgba(59,130,246,0.3)" : "rgba(20,184,166,0.3)",
-              animation: `drift ${16 + i * 3}s linear infinite`,
-              animationDelay: `${i * 2.5}s`,
-            }}
+            x1={100 + i * 72}
+            y1="0"
+            x2={260 + i * 72}
+            y2="900"
+            stroke={isDark ? "#34D399" : "#10B981"}
+            strokeWidth="0.75"
           />
         ))}
+      </svg>
 
-        {/* Top shimmer line */}
-        <div
-          className="absolute top-0 left-0 right-0 h-px animate-shimmer opacity-40"
-          style={{
-            background: "linear-gradient(90deg, transparent, rgba(6,182,212,0.5), rgba(59,130,246,0.5), transparent)",
-          }}
-        />
-      </div>
-    );
-  }
+      {/* Corner arcs — top left */}
+      <svg
+        className={cn(
+          "absolute -left-16 -top-16 h-80 w-80 transition-opacity duration-700",
+          isDark ? "opacity-[0.045]" : "opacity-[0.18]"
+        )}
+        viewBox="0 0 200 200"
+        fill="none"
+      >
+        <circle cx="100" cy="100" r="92" stroke={isDark ? "#34D399" : "#10B981"} strokeWidth="0.75" />
+        <circle cx="100" cy="100" r="68" stroke={isDark ? "#10B981" : "#059669"} strokeWidth="0.5" strokeOpacity="0.6" />
+        <circle cx="100" cy="100" r="44" stroke={isDark ? "#34D399" : "#10B981"} strokeWidth="0.5" strokeOpacity="0.35" />
+      </svg>
 
-  return (
-    <div className="fixed inset-0 overflow-hidden pointer-events-none z-0">
-      {/* Gradient mesh base */}
-      <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_20%_20%,rgba(6,182,212,0.15),transparent_50%)]" />
-      <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_80%_80%,rgba(59,130,246,0.12),transparent_50%)]" />
-      <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_50%_50%,rgba(16,185,129,0.08),transparent_60%)]" />
+      {/* Corner arcs — bottom right */}
+      <svg
+        className={cn(
+          "absolute -bottom-20 -right-20 h-96 w-96 transition-opacity duration-700",
+          isDark ? "opacity-[0.035]" : "opacity-[0.12]"
+        )}
+        viewBox="0 0 240 240"
+        fill="none"
+      >
+        <circle cx="120" cy="120" r="108" stroke={isDark ? "#10B981" : "#059669"} strokeWidth="0.75" />
+        <circle cx="120" cy="120" r="78" stroke={isDark ? "#34D399" : "#10B981"} strokeWidth="0.5" strokeOpacity="0.5" />
+      </svg>
 
-      {/* Floating orb 1 - Cyan large */}
+      {/* Concentric rings */}
       <div
-        className="absolute -top-[5%] left-[10%] w-[600px] h-[600px] rounded-full animate-float-slow"
-        style={{
-          background: "radial-gradient(circle, rgba(6,182,212,0.22) 0%, rgba(6,182,212,0.08) 40%, transparent 70%)",
-          filter: "blur(50px)",
-        }}
+        className={cn(
+          "absolute right-[8%] top-[18%] h-64 w-64 rounded-full border transition-colors duration-700",
+          isDark ? "border-brand-400/[0.07]" : "border-brand-400/25"
+        )}
+      />
+      <div
+        className={cn(
+          "absolute right-[10%] top-[20%] h-48 w-48 rounded-full border transition-colors duration-700",
+          isDark ? "border-brand-500/[0.05]" : "border-brand-400/18"
+        )}
+      />
+      <div
+        className={cn(
+          "absolute left-[4%] bottom-[22%] h-28 w-28 rounded-full border transition-colors duration-700",
+          isDark ? "border-white/[0.04]" : "border-brand-300/30"
+        )}
       />
 
-      {/* Floating orb 2 - Blue large */}
+      {/* Ambient light pools */}
       <div
-        className="absolute top-[30%] -right-[8%] w-[700px] h-[700px] rounded-full animate-float-medium"
-        style={{
-          background: "radial-gradient(circle, rgba(59,130,246,0.18) 0%, rgba(59,130,246,0.06) 40%, transparent 70%)",
-          filter: "blur(60px)",
-        }}
+        className={cn(
+          "absolute rounded-full blur-[120px]",
+          isDark
+            ? "-left-32 top-[4%] h-[360px] w-[360px] bg-brand-500/[0.07]"
+            : "-left-24 top-[6%] h-[420px] w-[420px] bg-brand-300/30 animate-float-slow"
+        )}
+      />
+      <div
+        className={cn(
+          "absolute rounded-full blur-[100px]",
+          isDark
+            ? "right-[2%] top-[12%] h-[240px] w-[240px] bg-emerald-400/[0.04]"
+            : "right-[2%] top-[12%] h-[280px] w-[280px] bg-brand-200/45 animate-float-reverse"
+        )}
+      />
+      {!isDark && (
+        <div className="absolute bottom-[8%] left-[28%] h-[180px] w-[180px] rounded-full blur-[90px] bg-brand-100/70 animate-float-medium" />
+      )}
+
+      {/* Accent dots */}
+      {isDark
+        ? DARK_DOTS.map((dot, i) => (
+            <div
+              key={i}
+              className="absolute rounded-full bg-brand-400/25"
+              style={{
+                top: dot.top,
+                left: "left" in dot ? dot.left : undefined,
+                right: "right" in dot ? dot.right : undefined,
+                bottom: "bottom" in dot ? dot.bottom : undefined,
+                width: dot.size,
+                height: dot.size,
+              }}
+            />
+          ))
+        : LIGHT_DOTS.map((dot, i) => (
+            <div
+              key={i}
+              className="absolute rounded-full animate-pulse-glow bg-brand-500/40"
+              style={{
+                top: dot.top,
+                left: "left" in dot ? dot.left : undefined,
+                right: "right" in dot ? dot.right : undefined,
+                bottom: "bottom" in dot ? dot.bottom : undefined,
+                width: dot.size,
+                height: dot.size,
+                animationDelay: dot.delay,
+              }}
+            />
+          ))}
+
+      {/* Vignette for depth */}
+      <div
+        className={cn(
+          "absolute inset-x-0 top-0 h-40 transition-opacity duration-700",
+          isDark
+            ? "bg-gradient-to-b from-[#010205]/50 to-transparent"
+            : "bg-gradient-to-b from-white/50 to-transparent"
+        )}
+      />
+      <div
+        className={cn(
+          "absolute inset-x-0 bottom-0 h-32 transition-opacity duration-700",
+          isDark
+            ? "bg-gradient-to-t from-[#010205]/45 to-transparent"
+            : "bg-gradient-to-t from-slate-100/80 to-transparent"
+        )}
       />
 
-      {/* Floating orb 3 - Teal */}
+      {/* Noise texture */}
       <div
-        className="absolute -bottom-[5%] left-[25%] w-[550px] h-[550px] rounded-full animate-float-reverse"
+        className={cn(
+          "absolute inset-0 mix-blend-overlay",
+          isDark ? "opacity-[0.022]" : "opacity-[0.025]"
+        )}
         style={{
-          background: "radial-gradient(circle, rgba(20,184,166,0.15) 0%, rgba(20,184,166,0.05) 40%, transparent 70%)",
-          filter: "blur(45px)",
-        }}
-      />
-
-      {/* Floating orb 4 - Cyan accent center */}
-      <div
-        className="absolute top-[15%] left-[55%] w-[400px] h-[400px] rounded-full animate-pulse-glow"
-        style={{
-          background: "radial-gradient(circle, rgba(6,182,212,0.14) 0%, transparent 55%)",
-          filter: "blur(35px)",
-        }}
-      />
-
-      {/* Floating orb 5 - Blue small top-right */}
-      <div
-        className="absolute top-[5%] right-[20%] w-[250px] h-[250px] rounded-full animate-float-medium"
-        style={{
-          background: "radial-gradient(circle, rgba(99,102,241,0.16) 0%, transparent 60%)",
-          filter: "blur(30px)",
-          animationDelay: "-5s",
-        }}
-      />
-
-      {/* Subtle grid pattern */}
-      <div
-        className="absolute inset-0 opacity-[0.03]"
-        style={{
-          backgroundImage: `linear-gradient(rgba(255,255,255,0.1) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.1) 1px, transparent 1px)`,
-          backgroundSize: "60px 60px",
-        }}
-      />
-
-      {/* Floating particles */}
-      {[...Array(8)].map((_, i) => (
-        <div
-          key={i}
-          className="absolute rounded-full"
-          style={{
-            width: `${3 + (i % 3) * 2}px`,
-            height: `${3 + (i % 3) * 2}px`,
-            left: `${10 + i * 12}%`,
-            top: `${5 + (i * 13) % 85}%`,
-            background: i % 3 === 0 ? "rgba(6,182,212,0.6)" : i % 3 === 1 ? "rgba(59,130,246,0.5)" : "rgba(20,184,166,0.5)",
-            animation: `drift ${14 + i * 3}s linear infinite`,
-            animationDelay: `${i * 2}s`,
-          }}
-        />
-      ))}
-
-      {/* Top edge shimmer line */}
-      <div
-        className="absolute top-0 left-0 right-0 h-px animate-shimmer opacity-50"
-        style={{
-          background: "linear-gradient(90deg, transparent, rgba(6,182,212,0.7), rgba(59,130,246,0.7), transparent)",
-        }}
-      />
-
-      {/* Bottom edge shimmer line */}
-      <div
-        className="absolute bottom-0 left-0 right-0 h-px animate-shimmer opacity-30"
-        style={{
-          background: "linear-gradient(90deg, transparent, rgba(20,184,166,0.6), rgba(6,182,212,0.6), transparent)",
-          animationDelay: "-4s",
+          backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E")`,
         }}
       />
     </div>

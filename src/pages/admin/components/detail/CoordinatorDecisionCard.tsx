@@ -86,10 +86,10 @@ export default function CoordinatorDecisionCard({
       {/* Header */}
       <div className={`px-5 py-3 border-b ${isDark ? "border-white/10 bg-white/[0.02]" : "border-slate-200 bg-slate-50"}`}>
         <div className="flex items-center gap-2">
-          <div className={`w-7 h-7 rounded-lg flex items-center justify-center ${isDark ? "bg-cyan-500/10" : "bg-cyan-100"}`}>
-            <ShieldCheck className={`w-4 h-4 ${isDark ? "text-cyan-400" : "text-cyan-600"}`} />
+          <div className={`w-7 h-7 rounded-lg flex items-center justify-center ${isDark ? "bg-brand-500/10" : "bg-brand-100"}`}>
+            <ShieldCheck className={`w-4 h-4 ${isDark ? "text-brand-400" : "text-brand-600"}`} />
           </div>
-          <span className={`text-[10px] font-black uppercase tracking-[0.2em] ${isDark ? "text-cyan-300" : "text-cyan-700"}`}>
+          <span className={`text-[10px] font-black uppercase tracking-[0.2em] ${isDark ? "text-brand-300" : "text-brand-700"}`}>
             Decisión oficial del coordinador
           </span>
         </div>

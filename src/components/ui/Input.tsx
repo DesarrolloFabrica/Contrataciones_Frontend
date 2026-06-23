@@ -29,10 +29,10 @@ export const Input = React.forwardRef<HTMLInputElement, InputProps>(
           className={cn(
             "w-full rounded-xl px-4 py-3 text-sm outline-none transition-all duration-200",
             "bg-white border border-slate-200 text-slate-900 placeholder:text-slate-400",
-            "focus:border-emerald-500/60 focus:ring-1 focus:ring-emerald-500/30",
+            "focus:border-brand-500/60 focus:ring-1 focus:ring-brand-500/30",
             "hover:border-slate-300",
             "dark:bg-[#07090B] dark:border-white/[0.10] dark:text-gray-200 dark:placeholder:text-gray-500",
-            "dark:focus:bg-[#0F1216] dark:focus:border-emerald-500/25 dark:focus:ring-emerald-500/20",
+            "dark:focus:bg-[#0F1216] dark:focus:border-brand-500/25 dark:focus:ring-brand-500/20",
             "dark:hover:border-white/[0.14] dark:hover:bg-[#0C0F12]",
             props.disabled &&
               "opacity-60 cursor-not-allowed bg-slate-50 dark:bg-[#07090B]/50",

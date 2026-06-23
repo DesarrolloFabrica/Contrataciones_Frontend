@@ -16,13 +16,13 @@ export const SectionHeader: React.FC<SectionHeaderProps> = React.memo(
     return (
       <div className="flex items-start gap-4 mb-8">
         <div className="relative group">
-          <div className="absolute inset-0 bg-cyan-500 blur-xl opacity-10 group-hover:opacity-20 transition-opacity duration-500" />
+          <div className="absolute inset-0 bg-brand-500 blur-xl opacity-10 group-hover:opacity-20 transition-opacity duration-500" />
           <div
             className={[
               "relative flex items-center justify-center h-11 w-11 rounded-xl border transition-all duration-300",
               isDark
-                ? "bg-gradient-to-br from-cyan-500/20 via-blue-500/10 to-transparent border-cyan-500/25 text-cyan-300 shadow-[0_0_24px_rgba(6,182,212,0.15)]"
-                : "bg-gradient-to-br from-cyan-50 via-white to-blue-50 border-cyan-200 text-cyan-600",
+                ? "bg-gradient-to-br from-brand-500/20 via-brand-500/10 to-transparent border-brand-500/25 text-brand-300 shadow-[0_0_24px_rgba(16,185,129,0.15)]"
+                : "bg-gradient-to-br from-brand-50 via-white to-brand-50 border-brand-200 text-brand-600",
             ].join(" ")}
           >
             {icon}
@@ -35,8 +35,8 @@ export const SectionHeader: React.FC<SectionHeaderProps> = React.memo(
               className={[
                 "inline-flex h-6 w-6 items-center justify-center rounded-md border text-[10px] font-bold",
                 isDark
-                  ? "border-cyan-500/30 bg-cyan-500/10 text-cyan-300"
-                  : "border-cyan-200 bg-cyan-50 text-cyan-700",
+                  ? "border-brand-500/30 bg-brand-500/10 text-brand-300"
+                  : "border-brand-200 bg-brand-50 text-brand-700",
               ].join(" ")}
             >
               {step}
@@ -61,7 +61,7 @@ export const SectionHeader: React.FC<SectionHeaderProps> = React.memo(
           )}
           <div
             className={[
-              "h-px w-16 mt-2 rounded-full bg-gradient-to-r from-cyan-500/50 via-cyan-400/10 to-transparent",
+              "h-px w-16 mt-2 rounded-full bg-gradient-to-r from-brand-500/50 via-brand-400/10 to-transparent",
               !isDark ? "opacity-60" : "",
             ].join(" ")}
           />

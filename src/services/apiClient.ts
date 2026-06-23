@@ -61,7 +61,7 @@ const api = axios.create({
   headers: { "Content-Type": "application/json" },
 });
 
-const NO_AUTH_PATHS = ["/auth/google", "/auth/register", "/auth/refresh"];
+const NO_AUTH_PATHS = ["/auth/google", "/auth/register", "/auth/refresh", "/auth/dev/email"];
 
 function isNoAuthRoute(url?: string) {
   if (!url) return false;

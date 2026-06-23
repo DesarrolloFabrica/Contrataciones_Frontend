@@ -11,15 +11,15 @@ export function LeaderHero() {
     <section className="relative overflow-hidden rounded-2xl">
       {isDark && (
         <div className="absolute inset-0 pointer-events-none">
-          <div className="absolute -top-32 -right-16 w-[400px] h-[400px] rounded-full bg-gradient-to-br from-cyan-500/6 via-blue-500/4 to-transparent blur-[100px]" />
-          <div className="absolute -bottom-24 -left-12 w-[300px] h-[300px] rounded-full bg-gradient-to-tr from-blue-500/5 to-transparent blur-[80px]" />
+          <div className="absolute -top-32 -right-16 w-[400px] h-[400px] rounded-full bg-gradient-to-br from-brand-500/6 via-brand-500/4 to-transparent blur-[100px]" />
+          <div className="absolute -bottom-24 -left-12 w-[300px] h-[300px] rounded-full bg-gradient-to-tr from-brand-500/5 to-transparent blur-[80px]" />
         </div>
       )}
 
       <div
         className={`relative px-6 py-4 md:px-8 md:py-5 ${
           isDark
-            ? "bg-gradient-to-b from-[#080D16]/90 via-[#0A1018]/80 to-[#060A12] border border-white/[0.06] shadow-[0_0_40px_-12px_rgba(6,182,212,0.06)]"
+            ? "bg-gradient-to-b from-[#080D16]/90 via-[#0A1018]/80 to-[#060A12] border border-white/[0.06] shadow-[0_0_40px_-12px_rgba(16,185,129,0.06)]"
             : "bg-gradient-to-b from-white via-slate-50/80 to-white border border-slate-200/60 shadow-[0_12px_40px_-12px_rgba(15,23,42,0.06)]"
         } rounded-2xl`}
       >
@@ -33,7 +33,7 @@ export function LeaderHero() {
                 <motion.div
                   className={[
                     "absolute inset-0 rounded-full blur-xl",
-                    isDark ? "bg-cyan-400/20" : "bg-cyan-500/15",
+                    isDark ? "bg-brand-400/20" : "bg-brand-500/15",
                   ].join(" ")}
                   animate={{ scale: [0.92, 1.08, 0.92], opacity: [0.45, 0.9, 0.45] }}
                   transition={{ duration: 2.6, repeat: Infinity, ease: "easeInOut" }}
@@ -43,14 +43,14 @@ export function LeaderHero() {
                   className={[
                     "relative z-[1] flex h-14 w-14 items-center justify-center rounded-2xl border backdrop-blur-sm md:h-16 md:w-16",
                     isDark
-                      ? "border-cyan-300/25 bg-cyan-400/10"
-                      : "border-cyan-400/30 bg-cyan-500/10",
+                      ? "border-brand-300/25 bg-brand-400/10"
+                      : "border-brand-400/30 bg-brand-500/10",
                   ].join(" ")}
                   animate={{ y: [0, -4, 0], rotate: [0, -2, 0, 2, 0], scale: [1, 1.04, 1] }}
                   transition={{ duration: 3.8, repeat: Infinity, ease: "easeInOut" }}
                 >
                   <BookOpenCheck
-                    className={["h-7 w-7 md:h-8 md:w-8", isDark ? "text-cyan-200" : "text-cyan-700"].join(" ")}
+                    className={["h-7 w-7 md:h-8 md:w-8", isDark ? "text-brand-200" : "text-brand-700"].join(" ")}
                   />
                 </motion.div>
               </div>
@@ -62,7 +62,7 @@ export function LeaderHero() {
                   }`}
                 >
                   Evaluacion de{" "}
-                  <span className="bg-gradient-to-r from-cyan-400 to-blue-400 bg-clip-text text-transparent">
+                  <span className="bg-gradient-to-r from-brand-400 to-brand-400 bg-clip-text text-transparent">
                     Talento Docente
                   </span>
                 </h1>
@@ -81,8 +81,8 @@ export function LeaderHero() {
                 className={[
                   "inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-[10px] font-bold uppercase tracking-[0.18em]",
                   isDark
-                    ? "border-cyan-400/30 bg-cyan-500/10 text-cyan-200"
-                    : "border-cyan-200 bg-cyan-50 text-cyan-700",
+                    ? "border-brand-400/30 bg-brand-500/10 text-brand-200"
+                    : "border-brand-200 bg-brand-50 text-brand-700",
                 ].join(" ")}
               >
                 <ListChecks className="h-3.5 w-3.5" />
@@ -115,13 +115,13 @@ export function LeaderHero() {
 
           <div
             className={[
-              "rounded-xl border p-3 space-y-2.5",
-              isDark ? "bg-white/[0.02] border-white/[0.08]" : "bg-white/70 border-slate-200/80",
+              "rounded-xl border border-t-2 border-t-brand-500 p-3 space-y-2.5",
+              isDark ? "bg-white/[0.02] border-brand-500/25" : "bg-white/80 border-brand-500/20",
             ].join(" ")}
           >
             <p
               className={`text-[10px] font-bold uppercase tracking-[0.2em] ${
-                isDark ? "text-cyan-300" : "text-cyan-700"
+                isDark ? "text-brand-300" : "text-brand-700"
               }`}
             >
               Recomendado para iniciar
@@ -134,7 +134,7 @@ export function LeaderHero() {
               ].map((item) => (
                 <div key={item} className="flex items-start gap-2">
                   <CheckCircle2
-                    className={`mt-0.5 h-3.5 w-3.5 shrink-0 ${isDark ? "text-cyan-300" : "text-cyan-600"}`}
+                    className={`mt-0.5 h-3.5 w-3.5 shrink-0 ${isDark ? "text-brand-300" : "text-brand-600"}`}
                   />
                   <p className={`text-[11px] leading-snug ${isDark ? "text-slate-300" : "text-slate-600"}`}>
                     {item}

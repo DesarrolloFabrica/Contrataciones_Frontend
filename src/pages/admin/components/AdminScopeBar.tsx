@@ -33,14 +33,14 @@ export default function AdminScopeBar({
   return (
     <div
       className={[
-        "w-full rounded-2xl border flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 px-4 py-3 transition-colors",
+        "w-full rounded-2xl border border-t-2 border-t-brand-500 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 px-4 py-3 transition-colors",
         isGlobal
           ? isDark
-            ? "bg-white/[0.03] border-white/[0.08]"
-            : "bg-slate-50 border-slate-200"
+            ? "bg-white/[0.03] border-brand-500/20"
+            : "bg-slate-50 border-brand-500/15"
           : isDark
-            ? "bg-cyan-500/[0.07] border-cyan-500/30"
-            : "bg-cyan-50 border-cyan-200",
+            ? "bg-brand-500/[0.07] border-brand-500/30"
+            : "bg-brand-50 border-brand-200",
       ].join(" ")}
     >
       {/* Left: scope status */}
@@ -54,8 +54,8 @@ export default function AdminScopeBar({
                 ? "bg-white/[0.06] border-white/10"
                 : "bg-white border-slate-200"
               : isDark
-                ? "bg-cyan-500/20 border-cyan-500/30"
-                : "bg-cyan-100 border-cyan-200",
+                ? "bg-brand-500/20 border-brand-500/30"
+                : "bg-brand-100 border-brand-200",
           ].join(" ")}
         >
           {isGlobal ? (
@@ -69,14 +69,14 @@ export default function AdminScopeBar({
             <GraduationCap
               className={[
                 "w-4 h-4",
-                isDark ? "text-cyan-300" : "text-cyan-600",
+                isDark ? "text-brand-300" : "text-brand-600",
               ].join(" ")}
             />
           ) : (
             <Building2
               className={[
                 "w-4 h-4",
-                isDark ? "text-cyan-300" : "text-cyan-600",
+                isDark ? "text-brand-300" : "text-brand-600",
               ].join(" ")}
             />
           )}
@@ -89,7 +89,7 @@ export default function AdminScopeBar({
               "text-[10px] uppercase tracking-[0.18em] font-bold",
               isGlobal
                 ? isDark ? "text-neutral-400" : "text-slate-600"
-                : isDark ? "text-cyan-400" : "text-cyan-600",
+                : isDark ? "text-brand-400" : "text-brand-600",
             ].join(" ")}
           >
             Filtro activo
@@ -146,7 +146,7 @@ export default function AdminScopeBar({
               <span
                 className={[
                   "text-sm font-semibold",
-                  isDark ? "text-cyan-200" : "text-cyan-700",
+                  isDark ? "text-brand-200" : "text-brand-700",
                 ].join(" ")}
               >
                 {selectedProgram}
@@ -184,11 +184,11 @@ export default function AdminScopeBar({
             "inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold uppercase tracking-widest border transition-all",
             isGlobal
               ? isDark
-                ? "bg-cyan-500/15 border-cyan-500/35 text-cyan-200 hover:bg-cyan-500/25"
-                : "bg-cyan-600 border-cyan-500 text-white hover:bg-cyan-500 shadow-[0_6px_18px_rgba(6,182,212,0.35)]"
+                ? "bg-brand-500/15 border-brand-500/35 text-brand-200 hover:bg-brand-500/25"
+                : "bg-brand-600 border-brand-500 text-white hover:bg-brand-500 shadow-[0_6px_18px_rgba(16,185,129,0.35)]"
               : isDark
-                ? "bg-cyan-500/20 border-cyan-500/40 text-cyan-100 hover:bg-cyan-500/30"
-                : "bg-cyan-600 border-cyan-500 text-white hover:bg-cyan-500 shadow-[0_6px_18px_rgba(6,182,212,0.35)]",
+                ? "bg-brand-500/20 border-brand-500/40 text-brand-100 hover:bg-brand-500/30"
+                : "bg-brand-600 border-brand-500 text-white hover:bg-brand-500 shadow-[0_6px_18px_rgba(16,185,129,0.35)]",
           ].join(" ")}
         >
           <SlidersHorizontal className="w-3.5 h-3.5" />

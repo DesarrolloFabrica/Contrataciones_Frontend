@@ -45,7 +45,7 @@ export const EvaluationSummaryCard: React.FC<EvaluationSummaryCardProps> = ({
         className={`absolute -inset-0.5 rounded-[32px] blur opacity-50 group-hover:opacity-100 transition duration-500 ${
           isDark
             ? "bg-gradient-to-r from-emerald-500/20 to-teal-500/20"
-            : "bg-gradient-to-r from-emerald-300/40 to-cyan-300/30"
+            : "bg-gradient-to-r from-emerald-300/40 to-brand-300/30"
         }`}
       />
       <div

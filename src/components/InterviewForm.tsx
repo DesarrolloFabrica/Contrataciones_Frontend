@@ -91,6 +91,16 @@ const InterviewForm: React.FC<InterviewFormProps> = ({
     (user as any)?.profile?.id ??
     undefined;
 
+  const readDraftStep = (field: "currentStep" | "maxReachedStep"): WizardStep => {
+    if (typeof window === "undefined") return 1;
+    const d = safeParseDraft(localStorage.getItem(draftKey(ORG_ID, userIdForDraft)));
+    const value = d?.[field];
+    if (typeof value === "number" && value >= 1 && value <= 5) {
+      return value as WizardStep;
+    }
+    return 1;
+  };
+
   // ── Draft ──
   const [formData, setFormData] = useState<InterviewData>(() => {
     if (typeof window === "undefined") return initialFormData;
@@ -128,6 +138,13 @@ const InterviewForm: React.FC<InterviewFormProps> = ({
     return d?.candidateDocuments ?? createInitialCandidateDocuments();
   });
 
+  const [currentStep, setCurrentStep] = useState<WizardStep>(() => readDraftStep("currentStep"));
+  const [maxReachedStep, setMaxReachedStep] = useState<WizardStep>(() => {
+    const savedMax = readDraftStep("maxReachedStep");
+    const savedCurrent = readDraftStep("currentStep");
+    return Math.max(savedMax, savedCurrent) as WizardStep;
+  });
+
   const { clearDraft } = useInterviewDraft(
     ORG_ID,
     userIdForDraft,
@@ -135,6 +152,8 @@ const InterviewForm: React.FC<InterviewFormProps> = ({
     selectedCandidateId,
     hiringContext,
     candidateDocuments,
+    currentStep,
+    maxReachedStep,
   );
 
   // ── Schools / Programs ──
@@ -224,7 +243,10 @@ const InterviewForm: React.FC<InterviewFormProps> = ({
   const [candidateStatus, setCandidateStatus] = useState<string | null>("Busca el candidato por cédula.");
   const [isCreateCandidateModalOpen, setIsCreateCandidateModalOpen] = useState(false);
   const [createCandidateError, setCreateCandidateError] = useState<string | null>(null);
-  const [currentStep, setCurrentStep] = useState<WizardStep>(1);
+
+  const advanceMaxReached = useCallback((step: WizardStep) => {
+    setMaxReachedStep((prev) => (step > prev ? step : prev));
+  }, []);
 
   // Clear selected candidate when document changes
   useEffect(() => {
@@ -438,7 +460,7 @@ const InterviewForm: React.FC<InterviewFormProps> = ({
     }
   }, [resetSearch]);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
     if (!isCedulaValid) return;
@@ -447,6 +469,7 @@ const InterviewForm: React.FC<InterviewFormProps> = ({
       setIdentityError("Busca o crea el candidato antes de ejecutar el análisis.");
       setCandidateStatus("Candidato no seleccionado.");
       setCurrentStep(3);
+      advanceMaxReached(3);
       return;
     }
 
@@ -454,20 +477,24 @@ const InterviewForm: React.FC<InterviewFormProps> = ({
     if (!resumeItem?.file) {
       setResumeError("La hoja de vida es el documento principal y es obligatoria.");
       setCurrentStep(2);
+      advanceMaxReached(2);
       return;
     }
 
-    clearDraft();
-
-    onSubmit({
-      ...(formData as any),
-      candidateId: selectedCandidateId,
-      schoolId: resolvedSchoolId,
-      programId: resolvedProgramId,
-      hiringRequestId: hiringContext.hiringRequestId ?? null,
-      hiringContext,
-      candidateDocuments,
-    } as any);
+    try {
+      await onSubmit({
+        ...(formData as any),
+        candidateId: selectedCandidateId,
+        schoolId: resolvedSchoolId,
+        programId: resolvedProgramId,
+        hiringRequestId: hiringContext.hiringRequestId ?? null,
+        hiringContext,
+        candidateDocuments,
+      } as any);
+      clearDraft();
+    } catch {
+      // Conservar borrador y paso actual si el análisis falla.
+    }
   };
 
   const loadExample = (example: InterviewExampleProfile) => {
@@ -502,6 +529,7 @@ const InterviewForm: React.FC<InterviewFormProps> = ({
     });
 
     setCurrentStep(1);
+    setMaxReachedStep(5);
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
@@ -533,6 +561,8 @@ const InterviewForm: React.FC<InterviewFormProps> = ({
     setCandidateStatus("Busca el candidato por cédula.");
     setIsCreateCandidateModalOpen(false);
     setCreateCandidateError(null);
+    setCurrentStep(1);
+    setMaxReachedStep(1);
 
     clearDraft();
 
@@ -569,11 +599,19 @@ const InterviewForm: React.FC<InterviewFormProps> = ({
       }
       setIdentityError(null);
     }
-    setCurrentStep((prev) => (prev < 5 ? ((prev + 1) as WizardStep) : prev));
+
+    setCurrentStep((prev) => {
+      if (prev >= 5) return prev;
+      const next = (prev + 1) as WizardStep;
+      setMaxReachedStep((max) => (next > max ? next : max));
+      return next;
+    });
   }, [currentStep, formData.program, formData.school, resolvedProgramId, resolvedSchoolId, selectedCandidateId]);
 
   const goToStep = useCallback((step: WizardStep) => {
     setCurrentStep(step);
+    setMaxReachedStep((prev) => (step > prev ? step : prev));
+    window.scrollTo({ top: 0, behavior: "smooth" });
   }, []);
 
   const renderStepContent = () => {
@@ -661,6 +699,7 @@ const InterviewForm: React.FC<InterviewFormProps> = ({
         <form onSubmit={handleSubmit} className="space-y-6">
           <InterviewWizardShell
             currentStep={currentStep}
+            maxReachedStep={maxReachedStep}
             onStepClick={goToStep}
             navigation={(
               <InterviewWizardNavigation

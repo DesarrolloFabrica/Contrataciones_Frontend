@@ -12,7 +12,7 @@ import {
 import { useTheme } from "../../../../context/ThemeContext";
 import type { AdminMetrics } from "../../adminTypes";
 import type { TeacherEvaluationSummary } from "../../../../types";
-import type { AdminView } from "../AdminSidebar";
+import type { AdminView } from "../../../../features/admin/components/AdminModeHeader";
 
 type Props = {
   metrics: AdminMetrics;
@@ -84,32 +84,32 @@ export default function AdminHomeView({
   // ── Accent palette ──────────────────────────────────────────────────────────
   const accents: Record<AccentKey, AccentStyle> = {
     cyan: {
-      cardBg: isDark ? "hover:bg-cyan-500/[0.07]" : "hover:bg-cyan-50",
+      cardBg: isDark ? "hover:bg-brand-500/[0.07]" : "hover:bg-brand-50",
       cardBorder: isDark
-        ? "border-white/[0.07] hover:border-cyan-500/40"
-        : "border-slate-200 hover:border-cyan-200",
+        ? "border-white/[0.07] hover:border-brand-500/40"
+        : "border-slate-200 hover:border-brand-200",
       iconBox: isDark
-        ? "bg-cyan-500/15 border-cyan-500/25 text-cyan-400"
-        : "bg-cyan-50 border-cyan-100 text-cyan-600",
-      iconText: isDark ? "text-cyan-400" : "text-cyan-600",
+        ? "bg-brand-500/15 border-brand-500/25 text-brand-400"
+        : "bg-brand-50 border-brand-100 text-brand-600",
+      iconText: isDark ? "text-brand-400" : "text-brand-600",
       badgeCls: isDark
-        ? "bg-cyan-500/15 text-cyan-300 border-cyan-500/20"
-        : "bg-cyan-50 text-cyan-700 border-cyan-100",
-      arrowCls: isDark ? "text-cyan-400" : "text-cyan-600",
+        ? "bg-brand-500/15 text-brand-300 border-brand-500/20"
+        : "bg-brand-50 text-brand-700 border-brand-100",
+      arrowCls: isDark ? "text-brand-400" : "text-brand-600",
     },
     blue: {
-      cardBg: isDark ? "hover:bg-blue-500/[0.07]" : "hover:bg-blue-50",
+      cardBg: isDark ? "hover:bg-brand-500/[0.07]" : "hover:bg-brand-50",
       cardBorder: isDark
-        ? "border-white/[0.07] hover:border-blue-500/40"
-        : "border-slate-200 hover:border-blue-200",
+        ? "border-white/[0.07] hover:border-brand-500/40"
+        : "border-slate-200 hover:border-brand-200",
       iconBox: isDark
-        ? "bg-blue-500/15 border-blue-500/25 text-blue-400"
-        : "bg-blue-50 border-blue-100 text-blue-600",
-      iconText: isDark ? "text-blue-400" : "text-blue-600",
+        ? "bg-brand-500/15 border-brand-500/25 text-brand-400"
+        : "bg-brand-50 border-brand-100 text-brand-600",
+      iconText: isDark ? "text-brand-400" : "text-brand-600",
       badgeCls: isDark
-        ? "bg-blue-500/15 text-blue-300 border-blue-500/20"
-        : "bg-blue-50 text-blue-700 border-blue-100",
-      arrowCls: isDark ? "text-blue-400" : "text-blue-600",
+        ? "bg-brand-500/15 text-brand-300 border-brand-500/20"
+        : "bg-brand-50 text-brand-700 border-brand-100",
+      arrowCls: isDark ? "text-brand-400" : "text-brand-600",
     },
   };
 
@@ -118,7 +118,7 @@ export default function AdminHomeView({
     {
       label: "Total evaluaciones",
       value: String(metrics.total),
-      icon: <FileText className="w-5 h-5 text-cyan-400" />,
+      icon: <FileText className="w-5 h-5 text-brand-400" />,
     },
     {
       label: "Promedio IA",
@@ -168,8 +168,8 @@ export default function AdminHomeView({
 
   // ── Shared class helpers ────────────────────────────────────────────────────
   const shellCls = isDark
-    ? "bg-white/[0.03] border border-white/[0.08] rounded-3xl"
-    : "bg-white border border-slate-200 rounded-3xl shadow-sm";
+    ? "bg-white/[0.03] border border-brand-500/25 border-t-2 border-t-brand-500 rounded-3xl"
+    : "bg-white border border-brand-500/20 border-t-2 border-t-brand-500 rounded-3xl shadow-[0_8px_30px_-12px_rgba(15,23,42,0.08)]";
 
   const sectionLabel = [
     "text-[11px] uppercase tracking-[0.22em] font-bold mb-4",
@@ -178,69 +178,130 @@ export default function AdminHomeView({
 
   // ── Render ──────────────────────────────────────────────────────────────────
   return (
-    <div className="space-y-8">
+    <div className="space-y-6">
       {/* ── Welcome header ── */}
-      <div>
-        <p
-          className={[
-            "text-[11px] uppercase tracking-[0.22em] font-bold mb-1",
-            isDark ? "text-neutral-400" : "text-slate-600",
-          ].join(" ")}
-        >
-          {today}
-        </p>
-        <h2
-          className={[
-            "text-2xl md:text-3xl font-black tracking-tight",
-            isDark ? "text-white" : "text-slate-900",
-          ].join(" ")}
-        >
-          Panel de administración
-        </h2>
-        <p className={["mt-2 text-sm", isDark ? "text-neutral-300" : "text-slate-700"].join(" ")}>
-          Scope activo:{" "}
-          <span className={isDark ? "text-neutral-100" : "text-slate-900"}>
-            {scopeLabel}
-          </span>
-        </p>
-        {loading && (
-          <div
-            className={[
-              "mt-4 inline-flex items-start gap-3 rounded-2xl border px-4 py-3",
-              isDark
-                ? "border-cyan-400/20 bg-cyan-500/[0.06]"
-                : "border-cyan-200 bg-cyan-50",
-            ].join(" ")}
-            role="status"
-            aria-live="polite"
-          >
-            <Loader2
-              className={[
-                "w-4 h-4 mt-0.5 animate-spin shrink-0",
-                isDark ? "text-cyan-300" : "text-cyan-700",
-              ].join(" ")}
-            />
-            <div className="leading-tight">
-              <p
-                className={[
-                  "text-xs font-semibold",
-                  isDark ? "text-cyan-100" : "text-cyan-900",
-                ].join(" ")}
-              >
-                Cargando datos del panel...
-              </p>
-              <p
-                className={[
-                  "text-[11px] mt-1",
-                  isDark ? "text-neutral-300" : "text-cyan-800",
-                ].join(" ")}
-              >
-                Estamos sincronizando métricas y módulos para mostrar la información actualizada.
-              </p>
-            </div>
+      <section className="relative overflow-hidden rounded-2xl border border-t-2 border-t-brand-500">
+        {isDark && (
+          <div className="absolute inset-0 pointer-events-none">
+            <div className="absolute -top-32 -right-16 w-[400px] h-[400px] rounded-full bg-gradient-to-br from-brand-500/8 via-brand-500/4 to-transparent blur-[100px]" />
+            <div className="absolute -bottom-24 -left-12 w-[300px] h-[300px] rounded-full bg-gradient-to-tr from-brand-500/5 to-transparent blur-[80px]" />
           </div>
         )}
-      </div>
+
+        <div
+          className={`relative px-6 py-4 md:px-8 md:py-5 rounded-2xl ${
+            isDark
+              ? "bg-gradient-to-b from-[#080D16]/90 via-[#0A1018]/80 to-[#060A12] border-brand-500/25 shadow-[0_0_40px_-12px_rgba(16,185,129,0.10)]"
+              : "bg-gradient-to-b from-white via-slate-50/80 to-white border-brand-500/20 shadow-[0_12px_40px_-12px_rgba(15,23,42,0.06)]"
+          }`}
+        >
+          <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_280px] gap-5 lg:gap-6 items-start">
+            <div className="min-w-0 space-y-3">
+              <p
+                className={[
+                  "text-[11px] uppercase tracking-[0.22em] font-bold",
+                  isDark ? "text-neutral-400" : "text-slate-600",
+                ].join(" ")}
+              >
+                {today}
+              </p>
+              <h2
+                className={[
+                  "text-xl md:text-2xl font-black tracking-tight leading-tight",
+                  isDark ? "text-white" : "text-slate-900",
+                ].join(" ")}
+              >
+                Panel de{" "}
+                <span className="bg-gradient-to-r from-brand-400 to-brand-400 bg-clip-text text-transparent">
+                  administracion
+                </span>
+              </h2>
+              <p className={["text-sm max-w-lg leading-relaxed", isDark ? "text-neutral-300" : "text-slate-700"].join(" ")}>
+                Scope activo:{" "}
+                <span className={isDark ? "text-neutral-100 font-semibold" : "text-slate-900 font-semibold"}>
+                  {scopeLabel}
+                </span>
+              </p>
+              {loading && (
+                <div
+                  className={[
+                    "inline-flex items-start gap-3 rounded-2xl border px-4 py-3",
+                    isDark
+                      ? "border-brand-400/20 bg-brand-500/[0.06]"
+                      : "border-brand-200 bg-brand-50",
+                  ].join(" ")}
+                  role="status"
+                  aria-live="polite"
+                >
+                  <Loader2
+                    className={[
+                      "w-4 h-4 mt-0.5 animate-spin shrink-0",
+                      isDark ? "text-brand-300" : "text-brand-700",
+                    ].join(" ")}
+                  />
+                  <div className="leading-tight">
+                    <p
+                      className={[
+                        "text-xs font-semibold",
+                        isDark ? "text-brand-100" : "text-brand-900",
+                      ].join(" ")}
+                    >
+                      Cargando datos del panel...
+                    </p>
+                    <p
+                      className={[
+                        "text-[11px] mt-1",
+                        isDark ? "text-neutral-300" : "text-brand-800",
+                      ].join(" ")}
+                    >
+                      Estamos sincronizando metricas y modulos para mostrar la informacion actualizada.
+                    </p>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            <div
+              className={[
+                "rounded-xl border border-t-2 border-t-brand-500 p-3 space-y-2.5",
+                isDark ? "bg-white/[0.02] border-brand-500/25" : "bg-white/80 border-brand-500/20",
+              ].join(" ")}
+            >
+              <p
+                className={[
+                  "text-[10px] font-bold uppercase tracking-[0.2em]",
+                  isDark ? "text-brand-300" : "text-brand-700",
+                ].join(" ")}
+              >
+                Modulos del sistema
+              </p>
+              <div className="space-y-2">
+                {[
+                  "Revisa y gestiona todas las evaluaciones.",
+                  "Administra coordinadores, lideres y accesos.",
+                ].map((item) => (
+                  <div key={item} className="flex items-start gap-2">
+                    <span
+                      className={[
+                        "mt-0.5 h-1.5 w-1.5 rounded-full shrink-0",
+                        isDark ? "bg-brand-400/80" : "bg-brand-500/80",
+                      ].join(" ")}
+                    />
+                    <p
+                      className={[
+                        "text-[11px] leading-snug",
+                        isDark ? "text-slate-300" : "text-slate-600",
+                      ].join(" ")}
+                    >
+                      {item}
+                    </p>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
 
       {/* ── KPI strip ── */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
@@ -294,7 +355,7 @@ export default function AdminHomeView({
 
       {/* ── Module cards ── */}
       <div>
-        <p className={sectionLabel}>Módulos del sistema</p>
+        <p className={sectionLabel}>Accesos rapidos</p>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {moduleCards.map((mod) => {
             const ac = accents[mod.accent];
@@ -305,7 +366,7 @@ export default function AdminHomeView({
                 onClick={() => onNavigate(mod.id)}
                 disabled={loading}
                 className={[
-                  "text-left rounded-3xl border p-6 transition-all duration-200 group",
+                  "text-left rounded-3xl border border-t-2 border-t-brand-500 p-6 transition-all duration-200 group",
                   loading ? "cursor-wait" : "",
                   isDark ? "bg-white/[0.02]" : "bg-white",
                   ac.cardBg,

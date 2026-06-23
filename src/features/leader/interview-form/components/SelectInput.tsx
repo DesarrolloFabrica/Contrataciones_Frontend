@@ -60,8 +60,8 @@ export const SelectInput: React.FC<SelectInputProps> = ({
       <div
         className={`absolute inset-y-0 right-0 flex items-center px-4 pointer-events-none transition-colors ${
           isDark
-            ? "text-slate-500 group-focus-within/select:text-cyan-400"
-            : "text-slate-400 group-focus-within/select:text-cyan-500"
+            ? "text-slate-500 group-focus-within/select:text-brand-400"
+            : "text-slate-400 group-focus-within/select:text-brand-500"
         }`}
       >
         <ChevronDown className="w-4 h-4" />

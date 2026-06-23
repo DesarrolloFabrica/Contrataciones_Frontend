@@ -17,6 +17,7 @@ env:
   VITE_ORG_ID: dda9f974-f7d2-4d63-a002-ba6bc9b5f115
   VITE_APP_URL: https://contrataciones-frontend-1003984285704.us-central1.run.app
   VITE_GOOGLE_CLIENT_ID: 1003984285704-r6660cirdvts0mh1du0c080ol0ukh90e.apps.googleusercontent.com
+  VITE_DEV_EMAIL_LOGIN_ENABLED: false
 
 jobs:
   deploy:
@@ -49,6 +50,7 @@ jobs:
             --build-arg VITE_ORG_ID=${{ env.VITE_ORG_ID }} \
             --build-arg VITE_APP_URL=${{ env.VITE_APP_URL }} \
             --build-arg VITE_GOOGLE_CLIENT_ID=${{ env.VITE_GOOGLE_CLIENT_ID }} \
+            --build-arg VITE_DEV_EMAIL_LOGIN_ENABLED=${{ env.VITE_DEV_EMAIL_LOGIN_ENABLED }} \
             -t ${{ env.GAR_HOST }}/${{ env.PROJECT_ID }}/${{ env.GAR_REPOSITORY }}/${{ env.IMAGE_NAME }}:${{ github.sha }} \
             .
 
@@ -70,4 +72,4 @@ jobs:
             --cpu 1 \
             --port 8080 \
             --service-account ${{ env.RUNTIME_SERVICE_ACCOUNT }} \
-            --set-env-vars VITE_API_URL=${{ env.VITE_API_URL }},VITE_ORG_ID=${{ env.VITE_ORG_ID }},VITE_APP_URL=${{ env.VITE_APP_URL }},VITE_GOOGLE_CLIENT_ID=${{ env.VITE_GOOGLE_CLIENT_ID }}
+            --set-env-vars VITE_API_URL=${{ env.VITE_API_URL }},VITE_ORG_ID=${{ env.VITE_ORG_ID }},VITE_APP_URL=${{ env.VITE_APP_URL }},VITE_GOOGLE_CLIENT_ID=${{ env.VITE_GOOGLE_CLIENT_ID }},VITE_DEV_EMAIL_LOGIN_ENABLED=${{ env.VITE_DEV_EMAIL_LOGIN_ENABLED }}

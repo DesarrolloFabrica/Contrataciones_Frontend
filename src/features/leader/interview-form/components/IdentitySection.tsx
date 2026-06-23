@@ -85,7 +85,7 @@ export const IdentitySection: React.FC<IdentitySectionProps> = ({
                 name="documentNumber"
                 placeholder="Ej. 1030123456"
                 className={`rounded-xl px-4 py-3 outline-none ${
-                  isDark ? "w-full bg-[#07090B] border border-white/[0.10] text-gray-200 text-sm rounded-xl px-4 py-3.5 outline-none transition-all duration-300 placeholder:text-gray-500 focus:bg-[#0F1216] focus:border-cyan-500/25 focus:ring-1 focus:ring-cyan-500/20 focus:shadow-[0_0_18px_-10px_rgba(6,182,212,0.14)] hover:border-white/[0.14] hover:bg-[#0C0F12]" : "w-full bg-white border border-slate-200 text-slate-900 text-sm rounded-xl px-4 py-3.5 outline-none transition-all duration-200 placeholder:text-slate-400 focus:bg-white focus:border-cyan-500/60 focus:ring-1 focus:ring-cyan-500/30 focus:shadow-[0_0_0_1px_rgba(6,182,212,0.20)] hover:border-slate-300"
+                  isDark ? "w-full bg-[#07090B] border border-white/[0.10] text-gray-200 text-sm rounded-xl px-4 py-3.5 outline-none transition-all duration-300 placeholder:text-gray-500 focus:bg-[#0F1216] focus:border-brand-500/25 focus:ring-1 focus:ring-brand-500/20 focus:shadow-[0_0_18px_-10px_rgba(16,185,129,0.14)] hover:border-white/[0.14] hover:bg-[#0C0F12]" : "w-full bg-white border border-slate-200 text-slate-900 text-sm rounded-xl px-4 py-3.5 outline-none transition-all duration-200 placeholder:text-slate-400 focus:bg-white focus:border-brand-500/60 focus:ring-1 focus:ring-brand-500/30 focus:shadow-[0_0_0_1px_rgba(16,185,129,0.20)] hover:border-slate-300"
                 }`}
               />
 
@@ -201,7 +201,7 @@ export const IdentitySection: React.FC<IdentitySectionProps> = ({
       )}
 
       {candidateStatus && (
-        <div className={`rounded-xl border px-4 py-3 text-sm ${isDark ? "bg-cyan-500/10 border-cyan-400/30 text-cyan-200" : "bg-cyan-50 border-cyan-200 text-cyan-700"}`}>
+        <div className={`rounded-xl border px-4 py-3 text-sm ${isDark ? "bg-brand-500/10 border-brand-400/30 text-brand-200" : "bg-brand-50 border-brand-200 text-brand-700"}`}>
           {candidateStatus}
         </div>
       )}
@@ -210,8 +210,19 @@ export const IdentitySection: React.FC<IdentitySectionProps> = ({
         <div className="space-y-2">
           {missingScopeForCreate &&
             (formData.documentNumber?.trim()?.length ?? 0) >= 3 && (
-              <div className="rounded-2xl border border-white/10 bg-white/[0.03] px-4 py-3 flex items-center gap-2 text-xs text-white/60">
-                <svg className="w-4 h-4 text-white/40" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <div
+                className={`rounded-2xl border px-4 py-3 flex items-center gap-2 text-xs ${
+                  isDark
+                    ? "border-white/10 bg-white/[0.03] text-white/60"
+                    : "border-amber-200 bg-amber-50 text-amber-800"
+                }`}
+              >
+                <svg
+                  className={`w-4 h-4 shrink-0 ${isDark ? "text-white/40" : "text-amber-500"}`}
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                 </svg>
                 <span>
@@ -222,17 +233,35 @@ export const IdentitySection: React.FC<IdentitySectionProps> = ({
             )}
 
           {canCreateCandidate && (
-            <div className="rounded-2xl border border-sky-500/35 bg-sky-950/15 px-4 py-3 flex items-center justify-between gap-3">
-              <div>
-                <div className="text-sky-200/90 font-semibold">
+            <div
+              className={`rounded-2xl border px-4 py-3 flex flex-col sm:flex-row sm:items-center justify-between gap-3 ${
+                isDark
+                  ? "border-brand-500/35 bg-brand-950/15"
+                  : "border-brand-200 bg-white shadow-sm"
+              }`}
+            >
+              <div className="min-w-0">
+                <div
+                  className={`font-semibold truncate ${
+                    isDark ? "text-brand-200/90" : "text-slate-900"
+                  }`}
+                >
                   {(
                     formData.candidateName || "Nuevo candidato"
                   ).toUpperCase()}
                 </div>
-                <div className="text-[11px] text-white/45 font-mono">
+                <div
+                  className={`text-[11px] font-mono ${
+                    isDark ? "text-white/45" : "text-slate-500"
+                  }`}
+                >
                   CC: {formData.documentNumber}
                 </div>
-                <div className="text-[11px] text-white/45 mt-1">
+                <div
+                  className={`text-[11px] mt-1 truncate ${
+                    isDark ? "text-white/45" : "text-slate-500"
+                  }`}
+                >
                   {formData.school} · {formData.program}
                 </div>
               </div>
@@ -241,7 +270,11 @@ export const IdentitySection: React.FC<IdentitySectionProps> = ({
                 type="button"
                 onClick={onOpenCreateCandidate}
                 disabled={isCreatingCandidate}
-                className="px-4 py-2 rounded-xl border border-cyan-500/35 bg-cyan-500/10 text-cyan-200 text-[11px] font-extrabold uppercase tracking-[0.22em] hover:bg-cyan-500/15 transition disabled:opacity-60 disabled:cursor-wait"
+                className={`shrink-0 px-4 py-2 rounded-xl border text-[11px] font-extrabold uppercase tracking-[0.22em] transition disabled:opacity-60 disabled:cursor-wait ${
+                  isDark
+                    ? "border-brand-500/35 bg-brand-500/10 text-brand-200 hover:bg-brand-500/15"
+                    : "border-brand-600 bg-brand-600 text-white hover:bg-brand-700 shadow-sm"
+                }`}
               >
                 Crear candidato
               </button>

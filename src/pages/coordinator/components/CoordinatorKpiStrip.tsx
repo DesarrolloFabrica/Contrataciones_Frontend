@@ -43,10 +43,10 @@ export const CoordinatorKpiStrip: React.FC<CoordinatorKpiStripProps> = ({
         <div
           key={card.label}
           className={[
-            "group relative overflow-hidden rounded-xl p-4 transition-all duration-300 border",
+            "group relative overflow-hidden rounded-xl p-4 transition-all duration-300 border border-t-2 border-t-brand-500",
             isDark
-              ? "bg-white/[0.02] border-white/[0.06] hover:border-white/[0.12]"
-              : "bg-white border-slate-200 shadow-[0_2px_12px_-4px_rgba(15,23,42,0.06)]",
+              ? "bg-white/[0.02] border-brand-500/25 hover:border-brand-400/45"
+              : "bg-white border-brand-500/20 hover:border-brand-500/40 shadow-[0_2px_12px_-4px_rgba(15,23,42,0.06)]",
           ].join(" ")}
         >
           <div className="relative flex items-center justify-between gap-3">
@@ -79,8 +79,8 @@ export const CoordinatorKpiStrip: React.FC<CoordinatorKpiStripProps> = ({
             <div
               className={`flex h-9 w-9 items-center justify-center rounded-xl border transition-colors duration-200 ${
                 isDark
-                  ? "bg-white/[0.03] border-white/[0.06] text-cyan-400 group-hover:bg-cyan-500/10 group-hover:border-cyan-500/25"
-                  : "bg-cyan-50 border-cyan-200 text-cyan-600 group-hover:bg-cyan-100"
+                  ? "bg-white/[0.03] border-white/[0.06] text-brand-400 group-hover:bg-brand-500/10 group-hover:border-brand-500/25"
+                  : "bg-brand-50 border-brand-200 text-brand-600 group-hover:bg-brand-100"
               }`}
             >
               <card.icon className="w-4 h-4" />

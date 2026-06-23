@@ -37,7 +37,7 @@ export const InterviewReviewStep: React.FC<InterviewReviewStepProps> = ({
     <div className="space-y-4">
       <div className="grid md:grid-cols-2 gap-4">
         <div className={isDark ? "rounded-xl border border-white/[0.06] bg-white/[0.02] p-4" : "rounded-xl border border-slate-200 bg-slate-50/50 p-4"}>
-          <h4 className={isDark ? "text-[11px] font-bold uppercase tracking-[0.14em] text-cyan-300 mb-3" : "text-[11px] font-bold uppercase tracking-[0.14em] text-cyan-700 mb-3"}>Contexto</h4>
+          <h4 className={isDark ? "text-[11px] font-bold uppercase tracking-[0.14em] text-brand-300 mb-3" : "text-[11px] font-bold uppercase tracking-[0.14em] text-brand-700 mb-3"}>Contexto</h4>
           <div className="space-y-3">
             <Item label="Rol objetivo" value={hiringContext.targetRole} />
             <Item label="Tipo de proceso" value={hiringContext.processType} />
@@ -46,7 +46,7 @@ export const InterviewReviewStep: React.FC<InterviewReviewStepProps> = ({
         </div>
 
         <div className={isDark ? "rounded-xl border border-white/[0.06] bg-white/[0.02] p-4" : "rounded-xl border border-slate-200 bg-slate-50/50 p-4"}>
-          <h4 className={isDark ? "text-[11px] font-bold uppercase tracking-[0.14em] text-cyan-300 mb-3" : "text-[11px] font-bold uppercase tracking-[0.14em] text-cyan-700 mb-3"}>Candidato</h4>
+          <h4 className={isDark ? "text-[11px] font-bold uppercase tracking-[0.14em] text-brand-300 mb-3" : "text-[11px] font-bold uppercase tracking-[0.14em] text-brand-700 mb-3"}>Candidato</h4>
           <div className="space-y-3">
             <Item label="Nombre" value={formData.candidateName} />
             <Item label="Documento" value={formData.documentNumber} />
@@ -57,7 +57,7 @@ export const InterviewReviewStep: React.FC<InterviewReviewStepProps> = ({
       </div>
 
       <div className={isDark ? "rounded-xl border border-white/[0.06] bg-white/[0.02] p-4" : "rounded-xl border border-slate-200 bg-slate-50/50 p-4"}>
-        <h4 className={isDark ? "text-[11px] font-bold uppercase tracking-[0.14em] text-cyan-300 mb-3" : "text-[11px] font-bold uppercase tracking-[0.14em] text-cyan-700 mb-3"}>Checklist previo</h4>
+        <h4 className={isDark ? "text-[11px] font-bold uppercase tracking-[0.14em] text-brand-300 mb-3" : "text-[11px] font-bold uppercase tracking-[0.14em] text-brand-700 mb-3"}>Checklist previo</h4>
         <div className="grid md:grid-cols-3 gap-3">
           <Item label="Docs disponibles" value={`${availableDocs} de ${candidateDocuments.items.length}`} />
           <Item label="Experiencia" value={formData.previousExperience} />

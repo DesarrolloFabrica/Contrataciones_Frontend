@@ -46,8 +46,8 @@ const GlassCard = ({
       ${
         glowing
           ? isDark
-            ? "bg-[#0A1014]/80 border-cyan-500/20 shadow-[0_0_40px_-10px_rgba(6,182,212,0.1)]"
-            : "bg-cyan-50 border-cyan-200 shadow-[0_18px_50px_rgba(6,182,212,0.20)]"
+            ? "bg-[#0A1014]/80 border-brand-500/20 shadow-[0_0_40px_-10px_rgba(16,185,129,0.1)]"
+            : "bg-brand-50 border-brand-200 shadow-[0_18px_50px_rgba(16,185,129,0.20)]"
           : isDark
             ? "bg-[#0A0C10]/60 border-white/[0.06] shadow-2xl"
             : "bg-white border-slate-200 shadow-[0_18px_50px_rgba(15,23,42,0.10)]"
@@ -73,8 +73,8 @@ function StatusBadge({ status }: { status?: string }) {
       ${
         isApproved
           ? isDark
-            ? "bg-cyan-500/10 border-cyan-500/25 text-cyan-400 shadow-[0_0_15px_-3px_rgba(6,182,212,0.2)]"
-            : "bg-cyan-50 border-cyan-200 text-cyan-700 shadow-[0_0_15px_-3px_rgba(6,182,212,0.25)]"
+            ? "bg-brand-500/10 border-brand-500/25 text-brand-400 shadow-[0_0_15px_-3px_rgba(16,185,129,0.2)]"
+            : "bg-brand-50 border-brand-200 text-brand-700 shadow-[0_0_15px_-3px_rgba(16,185,129,0.25)]"
           : isRejected
             ? isDark
               ? "bg-rose-500/10 border-rose-500/20 text-rose-400 shadow-[0_0_15px_-3px_rgba(244,63,94,0.2)]"
@@ -288,14 +288,14 @@ export default function CoordinatorEvaluationDetailPage() {
   // Background sofisticado
   const BackgroundEffects = () => (
     <div className="fixed inset-0 pointer-events-none overflow-hidden -z-10 bg-[#060A12]">
-      <div className="absolute top-[-20%] left-[-10%] w-[800px] h-[800px] bg-cyan-900/10 rounded-full blur-[120px] mix-blend-screen opacity-40" />
-      <div className="absolute bottom-[-10%] right-[-10%] w-[600px] h-[600px] bg-blue-900/10 rounded-full blur-[100px] mix-blend-screen opacity-30" />
+      <div className="absolute top-[-20%] left-[-10%] w-[800px] h-[800px] bg-brand-900/10 rounded-full blur-[120px] mix-blend-screen opacity-40" />
+      <div className="absolute bottom-[-10%] right-[-10%] w-[600px] h-[600px] bg-brand-900/10 rounded-full blur-[100px] mix-blend-screen opacity-30" />
     </div>
   );
 
   return (
     <div
-      className={`min-h-screen w-full font-sans selection:bg-cyan-500/30 ${
+      className={`min-h-screen w-full font-sans selection:bg-brand-500/30 ${
         isDark ? "bg-[#060A12] text-slate-200" : "bg-[#F4F7FC] text-slate-900"
       }`}
     >
@@ -308,15 +308,15 @@ export default function CoordinatorEvaluationDetailPage() {
             onClick={() => navigate("/coordinator")}
             className={`group flex items-center gap-3 text-sm font-medium transition-colors pl-1 ${
               isDark
-                ? "text-slate-400 hover:text-cyan-400"
-                : "text-slate-600 hover:text-cyan-700"
+                ? "text-slate-400 hover:text-brand-400"
+                : "text-slate-600 hover:text-brand-700"
             }`}
           >
             <div
               className={`flex items-center justify-center w-8 h-8 rounded-xl border transition-all ${
                 isDark
-                  ? "bg-white/[0.03] border-white/[0.06] group-hover:border-cyan-500/25 group-hover:bg-cyan-500/5"
-                  : "bg-white border-slate-200 group-hover:border-cyan-300 group-hover:bg-cyan-50 shadow-sm"
+                  ? "bg-white/[0.03] border-white/[0.06] group-hover:border-brand-500/25 group-hover:bg-brand-500/5"
+                  : "bg-white border-slate-200 group-hover:border-brand-300 group-hover:bg-brand-50 shadow-sm"
               }`}
             >
               <ArrowLeft className="w-4 h-4" />
@@ -344,8 +344,8 @@ export default function CoordinatorEvaluationDetailPage() {
                 ${
                   canExport
                     ? isDark
-                      ? "bg-[#0A0D14] border-cyan-500/30 text-cyan-400 hover:bg-cyan-500 hover:text-black hover:border-transparent hover:shadow-[0_0_20px_rgba(6,182,212,0.4)]"
-                      : "bg-cyan-500 border-cyan-500 text-white hover:bg-cyan-600 hover:shadow-[0_18px_40px_rgba(6,182,212,0.45)]"
+                      ? "bg-[#0A0D14] border-brand-500/30 text-brand-400 hover:bg-brand-500 hover:text-black hover:border-transparent hover:shadow-[0_0_20px_rgba(16,185,129,0.4)]"
+                      : "bg-brand-500 border-brand-500 text-white hover:bg-brand-600 hover:shadow-[0_18px_40px_rgba(16,185,129,0.45)]"
                     : isDark
                       ? "bg-white/[0.02] border-white/5 text-white/10 cursor-not-allowed"
                       : "bg-slate-100 border-slate-200 text-slate-400 cursor-not-allowed"
@@ -360,10 +360,10 @@ export default function CoordinatorEvaluationDetailPage() {
         {loading ? (
           <div className="h-[60vh] flex flex-col items-center justify-center space-y-6">
             <div className="relative w-16 h-16">
-              <div className="absolute inset-0 rounded-full border-2 border-cyan-500/20"></div>
-              <div className="absolute inset-0 rounded-full border-t-2 border-cyan-500 animate-spin"></div>
+              <div className="absolute inset-0 rounded-full border-2 border-brand-500/20"></div>
+              <div className="absolute inset-0 rounded-full border-t-2 border-brand-500 animate-spin"></div>
             </div>
-            <p className="text-sm font-medium text-cyan-500/50 animate-pulse tracking-widest uppercase">
+            <p className="text-sm font-medium text-brand-500/50 animate-pulse tracking-widest uppercase">
               Cargando Analisis...
             </p>
           </div>
@@ -442,8 +442,8 @@ export default function CoordinatorEvaluationDetailPage() {
                     className={`pb-3 text-sm font-semibold tracking-wide transition-colors relative ${
                       activeTab === "details"
                         ? isDark
-                          ? "text-cyan-400"
-                          : "text-cyan-600"
+                          ? "text-brand-400"
+                          : "text-brand-600"
                         : isDark
                           ? "text-slate-500 hover:text-slate-300"
                           : "text-slate-500 hover:text-slate-700"
@@ -452,10 +452,10 @@ export default function CoordinatorEvaluationDetailPage() {
                     Analisis Inteligente
                     {activeTab === "details" && (
                       <div
-                        className={`absolute bottom-0 left-0 w-full h-0.5 bg-cyan-500 ${
+                        className={`absolute bottom-0 left-0 w-full h-0.5 bg-brand-500 ${
                           isDark
-                            ? "shadow-[0_0_12px_#06b6d4]"
-                            : "shadow-[0_0_8px_rgba(6,182,212,0.6)]"
+                            ? "shadow-[0_0_12px_#10B981]"
+                            : "shadow-[0_0_8px_rgba(16,185,129,0.6)]"
                         }`}
                       />
                     )}
@@ -466,8 +466,8 @@ export default function CoordinatorEvaluationDetailPage() {
                     className={`pb-3 text-sm font-semibold tracking-wide transition-colors relative ${
                       activeTab === "interviews"
                         ? isDark
-                          ? "text-cyan-400"
-                          : "text-cyan-600"
+                          ? "text-brand-400"
+                          : "text-brand-600"
                         : isDark
                           ? "text-slate-500 hover:text-slate-300"
                           : "text-slate-500 hover:text-slate-700"
@@ -476,10 +476,10 @@ export default function CoordinatorEvaluationDetailPage() {
                     Historial Entrevistas
                     {activeTab === "interviews" && (
                       <div
-                        className={`absolute bottom-0 left-0 w-full h-0.5 bg-cyan-500 ${
+                        className={`absolute bottom-0 left-0 w-full h-0.5 bg-brand-500 ${
                           isDark
-                            ? "shadow-[0_0_12px_#06b6d4]"
-                            : "shadow-[0_0_8px_rgba(6,182,212,0.6)]"
+                            ? "shadow-[0_0_12px_#10B981]"
+                            : "shadow-[0_0_8px_rgba(16,185,129,0.6)]"
                         }`}
                       />
                     )}

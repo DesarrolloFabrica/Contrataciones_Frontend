@@ -1,12 +1,12 @@
 // src/components/Header.tsx
 import React from "react";
 import { useNavigate } from "react-router-dom";
-import LogoCUN from "../assets/images/LogoCUN.png";
 import { History, LayoutGrid, LogOut } from "lucide-react";
 
 import { useAuth } from "../context/AuthContext";
 import { useTheme } from "../context/ThemeContext";
 import ThemeToggle from "./ThemeToggle";
+import { AppLogo } from "./brand";
 
 type ViewMode = "analyze" | "history";
 
@@ -33,12 +33,12 @@ const Header: React.FC<HeaderProps> = ({ mode, onChangeMode }) => {
       <div className="absolute inset-0 z-0 overflow-hidden pointer-events-none">
         {isDark ? (
           <>
-            <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[800px] h-[300px] bg-emerald-500/10 blur-[120px] rounded-full mix-blend-screen" />
-            <div className="absolute inset-0 bg-gradient-to-b from-[#050505]/80 to-[#020202]/0" />
+            <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[800px] h-[300px] bg-brand-500/10 blur-[120px] rounded-full mix-blend-screen" />
+            <div className="absolute inset-0 bg-gradient-to-b from-[#021A0F]/80 to-[#020202]/0" />
           </>
         ) : (
           <>
-            <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[700px] h-[260px] bg-emerald-500/10 blur-[110px] rounded-full opacity-70" />
+            <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[700px] h-[260px] bg-brand-500/10 blur-[110px] rounded-full opacity-70" />
             <div className="absolute inset-0 bg-gradient-to-b from-white to-transparent" />
           </>
         )}
@@ -57,23 +57,7 @@ const Header: React.FC<HeaderProps> = ({ mode, onChangeMode }) => {
           {/* A. SECCIÓN IZQUIERDA: LOGO E IDENTIDAD */}
           <div className="flex items-center gap-5">
             {/* Logo Container con efecto "Inset" */}
-            <div className="relative group">
-              <div className="absolute inset-0 bg-emerald-500/20 blur-lg rounded-xl opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
-              <div
-                className={[
-                  "relative h-10 w-10 flex items-center justify-center rounded-xl border shadow-inner",
-                  isDark
-                    ? "bg-gradient-to-br from-white/10 to-white/5 border-white/10"
-                    : "bg-gradient-to-br from-[#020617] to-[#111827] border-[#00B894]/35 shadow-[0_10px_30px_rgba(0,0,0,0.40)]",
-                ].join(" ")}
-              >
-                <img
-                  src={LogoCUN}
-                  alt="CUN"
-                  className="h-6 w-6 object-contain opacity-100 drop-shadow-[0_0_8px_rgba(0,0,0,0.35)]"
-                />
-              </div>
-            </div>
+            <AppLogo variant="icon" className="shadow-[0_10px_30px_rgba(16,185,129,0.18)]" />
 
             {/* Separador vertical sutil */}
             <div
@@ -91,7 +75,7 @@ const Header: React.FC<HeaderProps> = ({ mode, onChangeMode }) => {
                   isDark ? "text-white" : "text-neutral-900",
                 ].join(" ")}
               >
-                IA para Facilitadores
+                Contratación Académica CUN
               </h1>
               <p
                 className={[
@@ -118,12 +102,12 @@ const Header: React.FC<HeaderProps> = ({ mode, onChangeMode }) => {
               <span className="relative flex h-2 w-2">
                 <span
                   className={`animate-ping absolute inline-flex h-full w-full rounded-full opacity-75 ${
-                    mode === "analyze" ? "bg-emerald-500" : "bg-cyan-500"
+                    mode === "analyze" ? "bg-brand-500" : "bg-brand-500"
                   }`}
                 ></span>
                 <span
                   className={`relative inline-flex rounded-full h-2 w-2 ${
-                    mode === "analyze" ? "bg-emerald-500" : "bg-cyan-500"
+                    mode === "analyze" ? "bg-brand-500" : "bg-brand-500"
                   }`}
                 ></span>
               </span>
@@ -151,8 +135,8 @@ const Header: React.FC<HeaderProps> = ({ mode, onChangeMode }) => {
                 className={`relative px-4 py-2 rounded-lg text-xs font-bold transition-all duration-300 flex items-center gap-2 ${
                   mode === "analyze"
                     ? isDark
-                      ? "bg-[#1f2937] text-emerald-400 shadow-sm ring-1 ring-emerald-500/20"
-                      : "bg-gradient-to-r from-[#00B894] to-[#16a34a] text-white shadow-sm ring-1 ring-[#00B894]/45"
+                      ? "bg-[#1f2937] text-brand-400 shadow-sm ring-1 ring-brand-500/20"
+                      : "bg-gradient-to-r from-brand-500 to-brand-600 text-white shadow-sm ring-1 ring-brand-500/45"
                     : "text-neutral-500 hover:text-neutral-700"
                 }`}
               >
@@ -161,7 +145,7 @@ const Header: React.FC<HeaderProps> = ({ mode, onChangeMode }) => {
                   className={
                     mode === "analyze"
                       ? isDark
-                        ? "text-emerald-400"
+                        ? "text-brand-400"
                         : "text-white"
                       : "text-neutral-600"
                   }
@@ -174,8 +158,8 @@ const Header: React.FC<HeaderProps> = ({ mode, onChangeMode }) => {
                 className={`relative px-4 py-2 rounded-lg text-xs font-bold transition-all duration-300 flex items-center gap-2 ${
                   mode === "history"
                     ? isDark
-                      ? "bg-[#1f2937] text-cyan-400 shadow-sm ring-1 ring-cyan-500/20"
-                      : "bg-gradient-to-r from-[#10b981] to-[#06b6d4] text-white shadow-sm ring-1 ring-[#10b981]/45"
+                      ? "bg-[#1f2937] text-brand-400 shadow-sm ring-1 ring-brand-500/20"
+                      : "bg-gradient-to-r from-brand-500 to-brand-600 text-white shadow-sm ring-1 ring-brand-500/45"
                     : "text-neutral-500 hover:text-neutral-700"
                 }`}
               >
@@ -184,7 +168,7 @@ const Header: React.FC<HeaderProps> = ({ mode, onChangeMode }) => {
                   className={
                     mode === "history"
                       ? isDark
-                        ? "text-cyan-400"
+                        ? "text-brand-400"
                         : "text-white"
                       : "text-neutral-600"
                   }

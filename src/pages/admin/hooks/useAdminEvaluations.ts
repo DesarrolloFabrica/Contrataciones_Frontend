@@ -172,5 +172,6 @@ export function useAdminEvaluations() {
     schoolsSummary,
     recommendedPct,
     highRiskPct,
+    allSchools: schools,
   };
 }

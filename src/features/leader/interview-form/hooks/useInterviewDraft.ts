@@ -9,6 +9,8 @@ interface UseInterviewDraftReturn {
     selectedCandidateId: string | null;
     hiringContext: HiringContextDraft | null;
     candidateDocuments: CandidateDocumentsDraft | null;
+    currentStep: number | null;
+    maxReachedStep: number | null;
   };
   clearDraft: () => void;
 }
@@ -20,6 +22,8 @@ export function useInterviewDraft(
   selectedCandidateId: string | null,
   hiringContext?: HiringContextDraft,
   candidateDocuments?: CandidateDocumentsDraft,
+  currentStep?: number,
+  maxReachedStep?: number,
 ): UseInterviewDraftReturn {
   const saveTimer = useRef<number | null>(null);
 
@@ -28,14 +32,27 @@ export function useInterviewDraft(
     selectedCandidateId: string | null;
     hiringContext: HiringContextDraft | null;
     candidateDocuments: CandidateDocumentsDraft | null;
+    currentStep: number | null;
+    maxReachedStep: number | null;
   } => {
-    if (typeof window === "undefined") return { formData: null, selectedCandidateId: null, hiringContext: null, candidateDocuments: null };
+    if (typeof window === "undefined") {
+      return {
+        formData: null,
+        selectedCandidateId: null,
+        hiringContext: null,
+        candidateDocuments: null,
+        currentStep: null,
+        maxReachedStep: null,
+      };
+    }
     const d = safeParseDraft(localStorage.getItem(draftKey(orgId, userId)));
     return {
       formData: d?.formData ?? null,
       selectedCandidateId: d?.selectedCandidateId ?? null,
       hiringContext: d?.hiringContext ?? null,
       candidateDocuments: d?.candidateDocuments ?? null,
+      currentStep: d?.currentStep ?? null,
+      maxReachedStep: d?.maxReachedStep ?? null,
     };
   }, [orgId, userId]);
 
@@ -67,13 +84,19 @@ export function useInterviewDraft(
           })),
         };
       }
+      if (currentStep !== undefined) {
+        payload.currentStep = currentStep;
+      }
+      if (maxReachedStep !== undefined) {
+        payload.maxReachedStep = maxReachedStep;
+      }
       localStorage.setItem(draftKey(orgId, userId), JSON.stringify(payload));
     }, 250);
 
     return () => {
       if (saveTimer.current) window.clearTimeout(saveTimer.current);
     };
-  }, [formData, selectedCandidateId, userId, orgId, hiringContext, candidateDocuments]);
+  }, [formData, selectedCandidateId, userId, orgId, hiringContext, candidateDocuments, currentStep, maxReachedStep]);
 
   return { loadDraft, clearDraft };
 }

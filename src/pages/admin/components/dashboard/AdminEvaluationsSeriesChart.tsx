@@ -93,10 +93,10 @@ export default function AdminEvaluationsSeriesChart({ points }: Props) {
   return (
     <div
       className={[
-        "relative flex h-full min-h-0 w-full min-w-0 flex-col overflow-hidden rounded-xl border p-5",
+        "relative flex h-full min-h-0 w-full min-w-0 flex-col overflow-hidden rounded-xl border border-t-2 border-t-brand-500 p-5",
         isDark
-          ? "border-white/10 bg-white/[0.03]"
-          : "border-slate-200 bg-white shadow-sm",
+          ? "border-brand-500/25 bg-white/[0.03]"
+          : "border-brand-500/20 bg-white shadow-[0_8px_30px_-12px_rgba(15,23,42,0.08)]",
       ].join(" ")}
     >
       <div className="flex items-center justify-between mb-4">

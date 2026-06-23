@@ -72,8 +72,8 @@ export default function AdminAuditTimelinePreview() {
               "px-3 py-1.5 rounded-lg text-[11px] font-semibold transition border",
               hideAdmin
                 ? isDark
-                  ? "bg-cyan-500/10 border-cyan-500/30 text-cyan-300"
-                  : "bg-cyan-50 border-cyan-200 text-cyan-700"
+                  ? "bg-brand-500/10 border-brand-500/30 text-brand-300"
+                  : "bg-brand-50 border-brand-200 text-brand-700"
                 : isDark
                   ? "border-white/10 bg-white/5 text-neutral-300 hover:border-white/20"
                   : "border-slate-200 bg-white text-slate-600 hover:border-slate-300",

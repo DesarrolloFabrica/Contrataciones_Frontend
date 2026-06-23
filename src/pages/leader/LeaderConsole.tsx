@@ -89,7 +89,7 @@ async function resolveSchoolAndProgramIds(
 
 const LeaderConsole: React.FC = () => {
   const [mode, setMode] = useState<ViewMode>("analyze");
-  const { user } = useAuth();
+  const { user, logout } = useAuth();
   const { theme } = useTheme();
   const isDark = theme === "dark";
 
@@ -331,9 +331,12 @@ const LeaderConsole: React.FC = () => {
         setAnalysisResult(null);
         setEvaluationId(null);
         setError(
-          err?.response?.data?.message ??
+          (Array.isArray(err?.response?.data?.message)
+            ? err.response.data.message.join(". ")
+            : err?.response?.data?.message) ??
             (err instanceof Error ? err.message : "Ocurrió un error durante el proceso.")
         );
+        throw err;
       } finally {
         setIsLoading(false);
       }
@@ -391,6 +394,11 @@ const LeaderConsole: React.FC = () => {
     handleOpenEvaluationFromHistory(evaluationIdFromUrl);
   }, [location.search]);
 
+  const handleRetryAnalysis = useCallback(() => {
+    setError(null);
+    setIsLoading(false);
+  }, []);
+
   const handleReset = useCallback(() => {
     setInterviewData(null);
     setAnalysisResult(null);
@@ -398,18 +406,13 @@ const LeaderConsole: React.FC = () => {
     setIsLoading(false);
     setError(null);
     setWarning(null);
+    setWizardStep(1);
   }, []);
 
   const handleLogout = useCallback(() => {
-    localStorage.removeItem("token");
-    localStorage.removeItem("access_token");
-    localStorage.removeItem("AUTH_TOKEN");
-    try {
-      window.location.href = "/login";
-    } catch {
-      window.location.href = "/login";
-    }
-  }, []);
+    logout();
+    window.location.href = "/login";
+  }, [logout]);
 
   const statusLabel = useMemo(() => {
     if (isLoading) return "Procesando...";
@@ -421,13 +424,14 @@ const LeaderConsole: React.FC = () => {
   return (
     <div
       className={`min-h-screen w-full font-sans overflow-x-hidden flex flex-col ${
-        isDark ? "bg-[#020308] text-white" : "bg-[#F4F7FC] text-slate-900"
+        isDark ? "bg-transparent text-white" : "bg-transparent text-slate-900"
       }`}
     >
       <LeaderModeHeader
         mode={mode}
         onChangeMode={setMode}
         onLogout={handleLogout}
+        onOpenHelp={() => setIsFlowHelpOpen(true)}
         statusLabel={statusLabel}
       />
 
@@ -439,15 +443,34 @@ const LeaderConsole: React.FC = () => {
             <div className="space-y-6 md:space-y-8 animate-[fadeInUp_400ms_ease-out]">
               <LeaderHero />
 
-              {!analysisResult && !isLoading && !error && (
+              {!analysisResult && (
                 <div className="grid grid-cols-1 lg:grid-cols-[1fr_300px] gap-6 items-start">
-                  <div className="animate-[fadeIn_300ms_ease-out]">
-                    <InterviewForm
-                      onSubmit={handleFormSubmit}
-                      onStepChange={setWizardStep}
-                      examplePreset={examplePreset}
-                      onExampleApplied={() => setExamplePreset(null)}
-                    />
+                  <div className="animate-[fadeIn_300ms_ease-out] relative space-y-4">
+                    {error && (
+                      <LeaderErrorState error={error} onRetry={handleRetryAnalysis} variant="banner" />
+                    )}
+
+                    {isLoading && (
+                      <div
+                        className={`absolute inset-0 z-20 flex flex-col items-center justify-center rounded-2xl backdrop-blur-sm ${
+                          isDark ? "bg-[#020308]/70" : "bg-white/70"
+                        }`}
+                      >
+                        <LoadingState />
+                        <p className="mt-6 text-sm text-brand-400/80 font-medium animate-pulse">
+                          Analizando patrones pedagógicos y éticos...
+                        </p>
+                      </div>
+                    )}
+
+                    <div className={isLoading ? "pointer-events-none opacity-60" : undefined}>
+                      <InterviewForm
+                        onSubmit={handleFormSubmit}
+                        onStepChange={setWizardStep}
+                        examplePreset={examplePreset}
+                        onExampleApplied={() => setExamplePreset(null)}
+                      />
+                    </div>
                   </div>
 
                   <aside className="hidden lg:block space-y-4 sticky top-28">
@@ -456,21 +479,21 @@ const LeaderConsole: React.FC = () => {
                       onOpenFlowHelp={() => setIsFlowHelpOpen(true)}
                     />
                     <div
-                      className={`rounded-2xl border p-4 space-y-3 ${
+                      className={`rounded-2xl border border-t-2 border-t-brand-500 p-4 space-y-3 ${
                         isDark
-                          ? "bg-gradient-to-b from-[#080D16] to-[#0A1018] border-white/[0.06]"
-                          : "bg-white border-slate-200/80 shadow-[0_4px_24px_-8px_rgba(15,23,42,0.06)]"
+                          ? "bg-gradient-to-b from-[#080D16] to-[#0A1018] border-brand-500/25"
+                          : "bg-white border-brand-500/20 shadow-[0_4px_24px_-8px_rgba(15,23,42,0.06)]"
                       }`}
                     >
                       <div className="flex items-center gap-2">
                         <div
                           className={`h-8 w-8 rounded-lg flex items-center justify-center ${
                             isDark
-                              ? "bg-cyan-500/10 border border-cyan-500/20"
-                              : "bg-cyan-50 border border-cyan-200"
+                              ? "bg-brand-500/10 border border-brand-500/20"
+                              : "bg-brand-50 border border-brand-200"
                           }`}
                         >
-                          <FlaskConical className={`h-4 w-4 ${isDark ? "text-cyan-400" : "text-cyan-600"}`} />
+                          <FlaskConical className={`h-4 w-4 ${isDark ? "text-brand-400" : "text-brand-600"}`} />
                         </div>
                         <div>
                           <p className={`text-[11px] font-bold uppercase tracking-[0.16em] ${isDark ? "text-white" : "text-slate-900"}`}>
@@ -531,20 +554,7 @@ const LeaderConsole: React.FC = () => {
                 </div>
               )}
 
-              {isLoading && (
-                <div className="py-24 flex flex-col items-center justify-center">
-                  <LoadingState />
-                  <p className="mt-6 text-sm text-cyan-400/80 font-medium animate-pulse">
-                    Analizando patrones pedagógicos y éticos...
-                  </p>
-                </div>
-              )}
-
-              {error && (
-                <LeaderErrorState error={error} onReset={handleReset} />
-              )}
-
-              {analysisResult && interviewData && !error && (
+              {analysisResult && interviewData && (
                 <div className="animate-[slideUp_400ms_ease-out] w-full">
                   <AnalysisResults
                     result={analysisResult}
@@ -560,7 +570,7 @@ const LeaderConsole: React.FC = () => {
           {mode === "history" && (
             <div className="animate-[fadeInUp_400ms_ease-out]">
               {isDark && (
-                <div className="absolute inset-0 bg-gradient-to-b from-cyan-500/5 to-transparent blur-3xl -z-10 pointer-events-none" />
+                <div className="absolute inset-0 bg-gradient-to-b from-brand-500/5 to-transparent blur-3xl -z-10 pointer-events-none" />
               )}
               <EvaluationsHistory
                 onBackToAnalyze={() => setMode("analyze")}

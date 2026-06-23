@@ -139,8 +139,8 @@ function useOutsideClose(open: boolean, refs: Array<React.RefObject<HTMLElement>
           className={[
             "px-3 py-2 rounded-xl text-xs font-medium transition-all min-w-[130px] text-left border outline-none",
             isDark
-              ? "bg-white/5 border-white/10 hover:bg-white/10 hover:border-white/20 text-neutral-200 focus:border-cyan-500/50"
-              : "bg-slate-50 border-slate-200 hover:bg-white hover:border-slate-300 text-slate-800 shadow-sm focus:border-cyan-400 focus:ring-2 focus:ring-cyan-100",
+              ? "bg-white/5 border-white/10 hover:bg-white/10 hover:border-white/20 text-neutral-200 focus:border-brand-500/50"
+              : "bg-slate-50 border-slate-200 hover:bg-white hover:border-slate-300 text-slate-800 shadow-sm focus:border-brand-400 focus:ring-2 focus:ring-brand-100",
           ].join(" ")}
           title="Cambiar mes"
         >
@@ -174,8 +174,8 @@ function useOutsideClose(open: boolean, refs: Array<React.RefObject<HTMLElement>
                     "w-full text-left px-3 py-2 rounded-xl text-xs transition-all flex items-center justify-between group",
                     active
                       ? isDark
-                        ? "bg-cyan-500/10 text-cyan-400 font-bold"
-                        : "bg-cyan-50 text-cyan-700 font-bold"
+                        ? "bg-brand-500/10 text-brand-400 font-bold"
+                        : "bg-brand-50 text-brand-700 font-bold"
                       : isDark
                         ? "bg-transparent hover:bg-white/10 text-neutral-300"
                         : "bg-transparent hover:bg-slate-100 text-slate-700",
@@ -257,8 +257,8 @@ function useOutsideClose(open: boolean, refs: Array<React.RefObject<HTMLElement>
             className={[
               "h-10 px-3.5 rounded-xl text-xs font-medium text-left transition-all flex items-center justify-between gap-2 border outline-none min-w-[160px]",
               isDark
-                ? "bg-white/[0.03] border-white/10 text-neutral-200 hover:border-white/20 focus:border-cyan-500/40"
-                : "bg-white border-slate-300 text-slate-700 hover:border-slate-400 focus:border-cyan-400 focus:ring-2 focus:ring-cyan-300/40",
+                ? "bg-white/[0.03] border-white/10 text-neutral-200 hover:border-white/20 focus:border-brand-500/40"
+                : "bg-white border-slate-300 text-slate-700 hover:border-slate-400 focus:border-brand-400 focus:ring-2 focus:ring-brand-300/40",
             ].join(" ")}
           >
             <div className="flex items-center gap-2 overflow-hidden">
@@ -298,8 +298,8 @@ function useOutsideClose(open: boolean, refs: Array<React.RefObject<HTMLElement>
                   className={[
                     "w-[70px] px-3 py-2 rounded-xl text-xs font-medium border outline-none text-center transition-all",
                     isDark
-                      ? "bg-white/5 border-white/10 text-neutral-200 focus:border-cyan-500/50"
-                      : "bg-slate-50 border-slate-200 text-slate-900 focus:border-cyan-400 focus:bg-white",
+                      ? "bg-white/5 border-white/10 text-neutral-200 focus:border-brand-500/50"
+                      : "bg-slate-50 border-slate-200 text-slate-900 focus:border-brand-400 focus:bg-white",
                   ].join(" ")}
                   inputMode="numeric"
                 />
@@ -336,11 +336,11 @@ function useOutsideClose(open: boolean, refs: Array<React.RefObject<HTMLElement>
                         ? isDark ? "text-neutral-700 cursor-not-allowed" : "text-slate-300 cursor-not-allowed"
                         : isSelected
                           ? isDark
-                            ? "bg-cyan-500 text-black shadow-[0_0_16px_rgba(16,185,129,0.4)] scale-105 z-20"
-                            : "bg-cyan-500 text-white shadow-[0_6px_16px_rgba(16,185,129,0.35)] scale-105 z-20"
+                            ? "bg-brand-500 text-black shadow-[0_0_16px_rgba(16,185,129,0.4)] scale-105 z-20"
+                            : "bg-brand-500 text-white shadow-[0_6px_16px_rgba(16,185,129,0.35)] scale-105 z-20"
                           : isDark
                             ? "hover:bg-white/10 text-neutral-300 hover:scale-110"
-                            : "hover:bg-cyan-50 text-slate-700 hover:text-cyan-700 hover:scale-110",
+                            : "hover:bg-brand-50 text-slate-700 hover:text-brand-700 hover:scale-110",
                     ].join(" ")}
                   >
                     {c.day}
@@ -353,7 +353,7 @@ function useOutsideClose(open: boolean, refs: Array<React.RefObject<HTMLElement>
               <button
                 type="button"
                 onClick={() => onPick(toYmd(new Date()))}
-                className={["px-4 py-2 rounded-xl text-xs font-bold uppercase tracking-widest transition-all hover:scale-[1.02]", isDark ? "bg-cyan-500/10 text-cyan-400 hover:bg-cyan-500/20" : "bg-cyan-50 text-cyan-700 hover:bg-cyan-100"].join(" ")}
+                className={["px-4 py-2 rounded-xl text-xs font-bold uppercase tracking-widest transition-all hover:scale-[1.02]", isDark ? "bg-brand-500/10 text-brand-400 hover:bg-brand-500/20" : "bg-brand-50 text-brand-700 hover:bg-brand-100"].join(" ")}
               >
                 Hoy
               </button>
@@ -432,8 +432,8 @@ function useOutsideClose(open: boolean, refs: Array<React.RefObject<HTMLElement>
                   ? "bg-white/[0.02] border-white/5 text-neutral-600 cursor-not-allowed"
                   : "bg-slate-50 border-slate-200 text-slate-400 cursor-not-allowed"
                 : isDark
-                  ? "bg-white/[0.03] border-white/10 text-neutral-200 hover:border-white/20 focus:border-cyan-500/40"
-                  : "bg-white border-slate-300 text-slate-700 hover:border-slate-400 focus:border-cyan-400 focus:ring-2 focus:ring-cyan-300/40",
+                  ? "bg-white/[0.03] border-white/10 text-neutral-200 hover:border-white/20 focus:border-brand-500/40"
+                  : "bg-white border-slate-300 text-slate-700 hover:border-slate-400 focus:border-brand-400 focus:ring-2 focus:ring-brand-300/40",
             ].join(" ")}
           >
             <div className="flex items-center gap-2 overflow-hidden">
@@ -467,7 +467,7 @@ function useOutsideClose(open: boolean, refs: Array<React.RefObject<HTMLElement>
                   className={[
                     "w-full text-left px-3 py-2.5 rounded-xl text-sm transition-all flex items-center justify-between",
                     !valueId
-                      ? isDark ? "bg-cyan-500/10 text-cyan-400 font-bold" : "bg-cyan-50 text-cyan-700 font-bold"
+                      ? isDark ? "bg-brand-500/10 text-brand-400 font-bold" : "bg-brand-50 text-brand-700 font-bold"
                       : isDark ? "hover:bg-white/10 text-neutral-400" : "hover:bg-slate-50 text-slate-500",
                   ].join(" ")}
                 >
@@ -490,7 +490,7 @@ function useOutsideClose(open: boolean, refs: Array<React.RefObject<HTMLElement>
                   className={[
                     "w-full text-left px-3 py-2.5 rounded-xl text-sm transition-all flex items-center justify-between group",
                     active
-                      ? isDark ? "bg-cyan-500/10 text-cyan-400 font-bold" : "bg-cyan-50 text-cyan-700 font-bold"
+                      ? isDark ? "bg-brand-500/10 text-brand-400 font-bold" : "bg-brand-50 text-brand-700 font-bold"
                       : isDark ? "hover:bg-white/10 text-neutral-200" : "hover:bg-slate-50 text-slate-700",
                   ].join(" ")}
                 >
@@ -675,7 +675,7 @@ function useOutsideClose(open: boolean, refs: Array<React.RefObject<HTMLElement>
           <div className="flex items-center gap-3">
             <div className={[
               "flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border",
-              isDark ? "bg-white/[0.05] border-white/10 text-cyan-400" : "bg-cyan-50 border-cyan-100 text-cyan-600"
+              isDark ? "bg-white/[0.05] border-white/10 text-brand-400" : "bg-brand-50 border-brand-100 text-brand-600"
             ].join(" ")}>
               <LayoutDashboard className="h-5 w-5" />
             </div>
@@ -705,10 +705,10 @@ function useOutsideClose(open: boolean, refs: Array<React.RefObject<HTMLElement>
         {/* 2. FILTERS & CONTROLS - Compact row */}
         <div
           className={[
-            "rounded-2xl border p-4 flex flex-wrap items-end gap-4 relative z-50",
+            "rounded-2xl border border-t-2 border-t-brand-500 p-4 flex flex-wrap items-end gap-4 relative z-50",
             isDark
-              ? "border-white/10 bg-white/[0.03]"
-              : "border-slate-200 bg-white/80 shadow-sm",
+              ? "border-brand-500/25 bg-white/[0.03]"
+              : "border-brand-500/20 bg-white/80 shadow-[0_8px_30px_-12px_rgba(15,23,42,0.08)]",
           ].join(" ")}
         >
           <DatePicker label="Fecha Inicio" value={safeFrom} max={safeTo} onChange={setFromDate} />
@@ -811,7 +811,7 @@ function useOutsideClose(open: boolean, refs: Array<React.RefObject<HTMLElement>
   
         {loading && (
           <div className={["flex flex-col items-center justify-center p-12 rounded-3xl border border-dashed", isDark ? "border-white/10 bg-[#0a0c0b]/50" : "border-slate-200 bg-slate-50/50"].join(" ")}>
-            <Loader2 className={["w-8 h-8 animate-spin mb-4", isDark ? "text-cyan-500" : "text-cyan-600"].join(" ")} />
+            <Loader2 className={["w-8 h-8 animate-spin mb-4", isDark ? "text-brand-500" : "text-brand-600"].join(" ")} />
             <span className={["text-sm font-medium tracking-wide animate-pulse", isDark ? "text-neutral-400" : "text-slate-500"].join(" ")}>
               Recopilando métricas del dashboard...
             </span>

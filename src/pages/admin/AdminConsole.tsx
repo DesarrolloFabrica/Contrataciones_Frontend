@@ -3,10 +3,8 @@ import React, { useCallback, useMemo, useState } from "react";
 import { AlertCircle, Loader2, X, Download } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 
-import AdminHeader from "./components/AdminHeader";
+import { AdminModeHeader, type AdminView } from "../../features/admin/components/AdminModeHeader";
 import AdminScopeBar from "./components/AdminScopeBar";
-import AdminSidebar from "./components/AdminSidebar";
-import type { AdminView } from "./components/AdminSidebar";
 import AdminHomeView from "./components/home/AdminHomeView";
 import AdminEvaluationsPanel from "./components/evaluations/AdminEvaluationsPanel";
 import AdminDetailPanel from "./components/evaluations/AdminDetailPanel";
@@ -30,6 +28,7 @@ import {
 } from "../../services/adminScopeService";
 import AdminDashboardPanel from "./components/dashboard/AdminDashboardPanel";
 import { useTheme } from "../../context/ThemeContext";
+import { useAuth } from "../../context/AuthContext";
 
 // ── Scope helpers ─────────────────────────────────────────────────────────────
 
@@ -76,6 +75,7 @@ const norm = (s: string) =>
 
 const AdminConsole: React.FC = () => {
   const navigate = useNavigate();
+  const { logout } = useAuth();
   const { theme } = useTheme();
   const isDark = theme === "dark";
 
@@ -202,17 +202,10 @@ const AdminConsole: React.FC = () => {
   // ── Logout ──────────────────────────────────────────────────────────────────
 
   const handleLogout = useCallback(() => {
-    localStorage.removeItem("token");
-    localStorage.removeItem("access_token");
-    localStorage.removeItem("AUTH_TOKEN");
-    localStorage.removeItem("ADMIN_TOKEN");
     detail.clearSelection();
-    try {
-      navigate("/login", { replace: true });
-    } catch {
-      window.location.href = "/login";
-    }
-  }, [detail, navigate]);
+    logout();
+    navigate("/login", { replace: true });
+  }, [detail, logout, navigate]);
 
   // ── Audit hook (per selected evaluation) ───────────────────────────────────
 
@@ -295,24 +288,22 @@ const AdminConsole: React.FC = () => {
   return (
     <div
       className={[
-        "min-h-screen w-full font-sans relative overflow-x-hidden selection:bg-cyan-500/30 flex",
-        isDark ? "bg-[#020202] text-white" : "bg-gray-50 text-gray-900",
+        "min-h-screen w-full font-sans overflow-x-hidden flex flex-col",
+        isDark ? "bg-[#020308] text-white" : "bg-[#F4F7FC] text-slate-900",
       ].join(" ")}
     >
-      <AnimatedBackground />
+      <AdminModeHeader
+        mode={view}
+        onChangeMode={handleSwitchView}
+        onLogout={handleLogout}
+        statusLabel={admin.loading ? "Sincronizando..." : "Listo"}
+      />
 
-      {/* ── Sidebar (fixed left) ── */}
-      <AdminSidebar view={view} onNavigate={handleSwitchView} />
+      <main className="flex-1 relative z-10 w-full">
+        <AnimatedBackground />
 
-      {/* ── Main area (offset by sidebar width) ── */}
-      <div className="flex-1 min-h-screen pl-16 xl:pl-60 relative z-10 flex flex-col">
-        {/* Sticky header */}
-        <div className="sticky top-0 z-30 px-4 md:px-10 pt-6 pb-4 space-y-3">
-          <AdminHeader
-            hasSelection={hasSelection}
-            onClearSelection={detail.clearSelection}
-            onLogout={handleLogout}
-          />
+        <div className="max-w-7xl mx-auto px-4 md:px-8 py-6 md:py-8 relative z-10 space-y-6">
+          {/* ANALYTICS view: ScopeBar aparece en el contenido, no en el navbar */}
           {view === "ANALYTICS" && (
             <AdminScopeBar
               selectedSchool={selectedSchoolName}
@@ -321,100 +312,118 @@ const AdminConsole: React.FC = () => {
               onResetScope={resetScope}
             />
           )}
-        </div>
 
-        {/* Content */}
-        <div className="flex-1 px-4 md:px-10 pb-12 relative">
-          {view === "EVALUATIONS" && (
-            <div
-              className={[
-                "pointer-events-none absolute inset-0 rounded-3xl",
-                isDark
-                  ? "bg-[radial-gradient(ellipse_at_50%_10%,rgba(2,6,23,0.28),rgba(2,6,23,0.56))]"
-                  : "bg-[radial-gradient(ellipse_at_50%_10%,rgba(255,255,255,0.4),rgba(241,245,249,0.72))]",
-              ].join(" ")}
-            />
-          )}
-          <div className="space-y-8 max-w-[1460px] mx-auto relative z-10">
-
-            {/* ── HOME ── */}
-            {view === "HOME" && (
-              <AdminHomeView
-                metrics={admin.metrics}
-                evaluations={admin.evaluations}
-                scopeLabel={scopeLabel}
-                recommendedPct={admin.recommendedPct}
-                loading={admin.loading}
-                onNavigate={handleSwitchView}
-              />
-            )}
-
-            {/* ── EVALUATIONS ── */}
+          {/* Content */}
+          <div className="space-y-6 relative">
             {view === "EVALUATIONS" && (
-              <>
-                {admin.loading && (
-                  <div className="flex flex-col items-center justify-center py-24 text-neutral-500 gap-4">
-                    <Loader2 className="w-10 h-10 animate-spin text-cyan-500" />
-                    <p className="text-sm font-medium animate-pulse">
-                      Sincronizando evaluaciones...
-                    </p>
-                  </div>
-                )}
-
-                {!admin.loading && admin.error && (
-                  <div className="flex flex-col items-center justify-center py-20 text-red-400 gap-4 bg-red-500/5 rounded-3xl border border-red-500/10">
-                    <AlertCircle className="w-10 h-10" />
-                    <p className="text-sm text-center max-w-md">{admin.error}</p>
-                  </div>
-                )}
-
-                {!admin.loading && !admin.error && (
-                  <AdminEvaluationsPanel
-                    evaluations={admin.evaluations}
-                    selectedId={detail.selectedId}
-                    onSelect={handleOpenDetail}
-                    metrics={admin.metrics}
-                  />
-                )}
-              </>
-            )}
-
-            {/* ── USERS ── */}
-            {view === "USERS" && (
-              <div className="max-w-7xl w-full">
-                <AdminUsersPanel
-                  scope={{
-                    selectedSchool: selectedSchoolName,
-                    selectedProgram: selectedProgramName,
-                  }}
-                />
-              </div>
-            )}
-
-            {/* ── ANALYTICS (formerly DASHBOARD) ── */}
-            {view === "ANALYTICS" && (
-              <AdminDashboardPanel
-                scope={{
-                  orgId: (admin as any)?.orgId ?? null,
-                  selectedSchoolId,
-                  selectedProgramId,
-                }}
+              <div
+                className={[
+                  "pointer-events-none absolute -inset-x-4 -top-6 h-72 rounded-3xl",
+                  isDark
+                    ? "bg-[radial-gradient(ellipse_at_50%_10%,rgba(2,6,23,0.28),rgba(2,6,23,0.56))]"
+                    : "bg-[radial-gradient(ellipse_at_50%_10%,rgba(255,255,255,0.4),rgba(241,245,249,0.72))]",
+                ].join(" ")}
               />
             )}
+            <div className="relative z-10">
 
-            {/* ── AUDIT ── */}
-            {view === "AUDIT" && (
-              <div className="space-y-6">
-                <AdminAuditGlobalPanel
-                  selectedSchool={selectedSchoolName}
-                  selectedProgram={selectedProgramName}
-                />
-                <AdminAuditTimelinePreview />
-              </div>
-            )}
+              {/* ── HOME ── */}
+              {view === "HOME" && (
+                <div className="animate-[fadeInUp_400ms_ease-out]">
+                  <AdminHomeView
+                    metrics={admin.metrics}
+                    evaluations={admin.evaluations}
+                    scopeLabel={scopeLabel}
+                    recommendedPct={admin.recommendedPct}
+                    loading={admin.loading}
+                    onNavigate={handleSwitchView}
+                  />
+                </div>
+              )}
+
+              {/* ── EVALUATIONS ── */}
+              {view === "EVALUATIONS" && (
+                <div className="animate-[fadeInUp_400ms_ease-out]">
+                  {admin.loading && (
+                    <div className="flex flex-col items-center justify-center py-24 text-neutral-500 gap-4">
+                      <Loader2 className="w-10 h-10 animate-spin text-brand-500" />
+                      <p className="text-sm font-medium animate-pulse">
+                        Sincronizando evaluaciones...
+                      </p>
+                    </div>
+                  )}
+
+                  {!admin.loading && admin.error && (
+                    <div className="flex flex-col items-center justify-center py-20 text-red-400 gap-4 bg-red-500/5 rounded-3xl border border-red-500/10">
+                      <AlertCircle className="w-10 h-10" />
+                      <p className="text-sm text-center max-w-md">{admin.error}</p>
+                    </div>
+                  )}
+
+                  {!admin.loading && !admin.error && (
+                    <AdminEvaluationsPanel
+                      evaluations={admin.evaluations}
+                      schools={admin.allSchools}
+                      selectedId={detail.selectedId}
+                      onSelect={handleOpenDetail}
+                      metrics={admin.metrics}
+                    />
+                  )}
+                </div>
+              )}
+
+              {/* ── USERS ── */}
+              {view === "USERS" && (
+                <div className="animate-[fadeInUp_400ms_ease-out]">
+                  <AdminUsersPanel
+                    scope={{
+                      selectedSchool: selectedSchoolName,
+                      selectedProgram: selectedProgramName,
+                    }}
+                  />
+                </div>
+              )}
+
+              {/* ── ANALYTICS (formerly DASHBOARD) ── */}
+              {view === "ANALYTICS" && (
+                <div className="animate-[fadeInUp_400ms_ease-out]">
+                  <AdminDashboardPanel
+                    scope={{
+                      orgId: (admin as any)?.orgId ?? null,
+                      selectedSchoolId,
+                      selectedProgramId,
+                    }}
+                  />
+                </div>
+              )}
+
+              {/* ── AUDIT ── */}
+              {view === "AUDIT" && (
+                <div className="space-y-6 animate-[fadeInUp_400ms_ease-out]">
+                  <AdminAuditGlobalPanel
+                    selectedSchool={selectedSchoolName}
+                    selectedProgram={selectedProgramName}
+                  />
+                  <AdminAuditTimelinePreview />
+                </div>
+              )}
+            </div>
           </div>
         </div>
-      </div>
+      </main>
+
+      <footer className="py-6 text-center border-t border-white/5 mt-auto">
+        <p className="text-[10px] text-white/20 uppercase tracking-widest">
+          Sistema de Evaluación Docente · CUN © {new Date().getFullYear()}
+        </p>
+      </footer>
+
+      <style>{`
+        @keyframes fadeInUp {
+          from { opacity: 0; transform: translateY(20px); }
+          to { opacity: 1; transform: translateY(0); }
+        }
+      `}</style>
 
       {/* ── Modal: evaluation detail ── */}
       {showDetailModal && view === "EVALUATIONS" && (
@@ -466,8 +475,8 @@ const AdminConsole: React.FC = () => {
                       className={[
                         "inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold uppercase tracking-widest transition-colors shadow-lg",
                         isDark
-                          ? "bg-cyan-600 hover:bg-cyan-500 text-white shadow-cyan-900/30"
-                          : "bg-cyan-600 hover:bg-cyan-500 text-white shadow-[0_10px_30px_rgba(16,185,129,0.45)]",
+                          ? "bg-brand-600 hover:bg-brand-500 text-white shadow-brand-900/30"
+                          : "bg-brand-600 hover:bg-brand-500 text-white shadow-[0_10px_30px_rgba(16,185,129,0.45)]",
                       ].join(" ")}
                     >
                       <Download className="w-4 h-4" />
@@ -524,7 +533,7 @@ const AdminConsole: React.FC = () => {
                   </p>
                   {(scopeLoadingSchools || scopeLoadingPrograms) && (
                     <div className="mt-3 flex items-center gap-2 text-xs text-neutral-400">
-                      <Loader2 className="w-4 h-4 animate-spin text-cyan-400" />
+                      <Loader2 className="w-4 h-4 animate-spin text-brand-400" />
                       Cargando opciones desde la base de datos...
                     </div>
                   )}
@@ -588,7 +597,7 @@ const AdminConsole: React.FC = () => {
                       resetScope();
                       setShowScopePicker(false);
                     }}
-                    className="px-4 py-2 rounded-xl border border-cyan-500/15 bg-cyan-500/5 text-xs font-bold uppercase tracking-widest text-cyan-200 hover:bg-cyan-500/10 transition"
+                    className="px-4 py-2 rounded-xl border border-brand-500/15 bg-brand-500/5 text-xs font-bold uppercase tracking-widest text-brand-200 hover:bg-brand-500/10 transition"
                     title="Volver a vista global"
                   >
                     Volver a Global

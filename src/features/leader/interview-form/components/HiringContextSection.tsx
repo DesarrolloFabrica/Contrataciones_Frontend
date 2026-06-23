@@ -264,8 +264,8 @@ export const HiringContextSection: React.FC<HiringContextSectionProps> = ({
         className={[
           "rounded-xl border px-5 py-4 text-xs leading-relaxed",
           isDark
-            ? "bg-cyan-500/5 border-cyan-500/15 text-cyan-300/70"
-            : "bg-cyan-50 border-cyan-200 text-cyan-700",
+            ? "bg-brand-500/5 border-brand-500/15 text-brand-300/70"
+            : "bg-brand-50 border-brand-200 text-brand-700",
         ].join(" ")}
       >
         Esta informacion prepara la trazabilidad del proceso y podra conectarse

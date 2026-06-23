@@ -73,8 +73,8 @@ export default function AdminAuditGlobalPanel({
       {/* Section 2: Main card */}
       <div
         className={[
-          "rounded-2xl border overflow-hidden",
-          isDark ? "border-white/10 bg-white/[0.03]" : "border-slate-200 bg-white shadow-sm",
+          "rounded-2xl border border-t-2 border-t-brand-500 overflow-hidden",
+          isDark ? "border-brand-500/25 bg-white/[0.03]" : "border-brand-500/20 bg-white shadow-[0_8px_30px_-12px_rgba(15,23,42,0.08)]",
         ].join(" ")}
       >
         {/* Header bar */}
@@ -107,8 +107,8 @@ export default function AdminAuditGlobalPanel({
                 pill,
                 hideSystem
                   ? isDark
-                    ? "border-cyan-500/40 bg-cyan-500/10 text-cyan-300"
-                    : "border-cyan-200 bg-cyan-50 text-cyan-700"
+                    ? "border-brand-500/40 bg-brand-500/10 text-brand-300"
+                    : "border-brand-200 bg-brand-50 text-brand-700"
                   : isDark
                     ? "border-white/10 bg-white/5 text-neutral-300 hover:border-white/20"
                     : "border-slate-200 bg-white text-slate-600 hover:border-slate-300",

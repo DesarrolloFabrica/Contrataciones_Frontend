@@ -73,8 +73,8 @@ function getIaBadge(verdict: string, isDark: boolean) {
       v.includes("fuerte") || v.includes("altamente") || v.includes("excepcional");
     return {
       cls: isDark
-        ? "bg-cyan-500/10 text-cyan-300 border-cyan-500/30"
-        : "bg-cyan-50 text-cyan-700 border-cyan-200",
+        ? "bg-brand-500/10 text-brand-300 border-brand-500/30"
+        : "bg-brand-50 text-brand-700 border-brand-200",
       short: isStrong ? "Recomendación fuerte" : "Recomendado",
       full: full || "Recomendado",
     };
@@ -95,8 +95,8 @@ function getDecisionBadge(decisionStatus: LocalDecision | undefined, isDark: boo
   if (decisionStatus === "APROBADO") {
     return {
       cls: isDark
-        ? "bg-cyan-600/15 text-cyan-300 border-cyan-500/40"
-        : "bg-cyan-50 text-cyan-700 border-cyan-200",
+        ? "bg-brand-600/15 text-brand-300 border-brand-500/40"
+        : "bg-brand-50 text-brand-700 border-brand-200",
       label: "Aprobado coordinación",
     };
   }
@@ -149,8 +149,8 @@ const TeacherEvaluationItem: React.FC<TeacherEvaluationItemProps> = ({
   );
 
   const score = Math.round(evaluation.aiTeachingSuitabilityScore || 0);
-  const scoreColor = score >= 70 ? "text-cyan-400" : score >= 50 ? "text-amber-400" : "text-rose-400";
-  const scoreBg = score >= 70 ? "bg-cyan-500" : score >= 50 ? "bg-amber-500" : "bg-rose-500";
+  const scoreColor = score >= 70 ? "text-brand-400" : score >= 50 ? "text-amber-400" : "text-rose-400";
+  const scoreBg = score >= 70 ? "bg-brand-500" : score >= 50 ? "bg-amber-500" : "bg-rose-500";
   const scoreWidth = `${score}%`;
   const clickableCls = onClick ? "cursor-pointer" : "cursor-default";
 
@@ -172,16 +172,16 @@ const TeacherEvaluationItem: React.FC<TeacherEvaluationItemProps> = ({
         }
       }}
       className={[
-        "w-full text-left px-4 py-3 rounded-2xl border transition-all duration-300",
+        "w-full text-left px-4 py-3 rounded-2xl border border-t-2 border-t-brand-500 transition-all duration-300",
         "flex flex-col gap-2.5",
-        "focus:outline-none focus-visible:ring-2 focus-visible:ring-cyan-500/30 focus-visible:ring-offset-0",
+        "focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-500/30 focus-visible:ring-offset-0",
         selected
           ? isDark
-            ? "border-cyan-500/60 bg-cyan-500/5 shadow-[0_0_30px_-10px_rgba(6,182,212,0.2)]"
-            : "border-cyan-400 bg-cyan-50 shadow-[0_18px_40px_rgba(6,182,212,0.25)]"
+            ? "border-brand-500/60 bg-brand-500/5 shadow-[0_0_30px_-10px_rgba(16,185,129,0.2)]"
+            : "border-brand-400 bg-brand-50 shadow-[0_18px_40px_rgba(16,185,129,0.25)]"
           : isDark
-            ? "border-white/[0.06] bg-[#0D1117]/80 hover:border-white/10 hover:bg-[#111820] hover:shadow-lg"
-            : "border-slate-200 bg-white hover:border-slate-300 hover:shadow-[0_18px_50px_rgba(15,23,42,0.08)]",
+            ? "border-brand-500/25 bg-[#0D1117]/80 hover:border-brand-400/50 hover:bg-[#111820] hover:shadow-lg"
+            : "border-brand-500/20 bg-white hover:border-brand-500/40 hover:shadow-[0_18px_50px_rgba(15,23,42,0.08)]",
         clickableCls,
       ].join(" ")}
     >

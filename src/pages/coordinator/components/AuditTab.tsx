@@ -35,8 +35,8 @@ const AuditTab: React.FC<Props> = ({ timelineTab, setTimelineTab, activityByEval
             onClick={() => setTimelineTab("GLOBAL")}
             className={`px-3 py-1 rounded-full border ${
               timelineTab === "GLOBAL"
-                ? "border-cyan-500 bg-cyan-500/10 text-cyan-300"
-                : "border-white/10 text-gray-400 hover:border-cyan-500/40"
+                ? "border-brand-500 bg-brand-500/10 text-brand-300"
+                : "border-white/10 text-gray-400 hover:border-brand-500/40"
             }`}
           >
             Global

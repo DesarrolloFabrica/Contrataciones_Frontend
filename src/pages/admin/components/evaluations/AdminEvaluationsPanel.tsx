@@ -1,5 +1,5 @@
 // src/pages/admin/components/evaluations/AdminEvaluationsPanel.tsx
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import {
   Search,
   X,
@@ -12,9 +12,18 @@ import {
   CheckCircle2,
   AlertTriangle,
   ShieldAlert,
+  GraduationCap,
+  Building2,
+  CalendarDays,
+  IdCard,
+  Eye,
+  Filter as FilterIcon,
+  TrendingUp,
+  Clock,
 } from "lucide-react";
 import type { TeacherEvaluationSummary } from "../../../../types";
 import type { AdminMetrics } from "../../adminTypes";
+import type { SchoolOption } from "../../../../services/adminScopeService";
 import { useTheme } from "../../../../context/ThemeContext";
 import { filterEvaluations, getAiRecommendationStatus, aiRecommendationLabel, type AiRecommendationStatus } from "../../utils/adminSelectors";
 
@@ -37,31 +46,26 @@ function getProgramName(ev: TeacherEvaluationSummary) {
   return (ev as any).candidate?.programNameSnapshot ?? (ev as any).candidate?.programName ?? (ev as any).programName ?? "";
 }
 
+function getDocNumber(ev: TeacherEvaluationSummary) {
+  return (ev as any)?.candidate?.documentNumber ?? (ev as any)?.candidate?.document_number ?? "";
+}
+
 function getDateLabel(iso?: string | null) {
+  if (!iso) return "—";
+  const d = new Date(iso);
+  if (isNaN(d.getTime())) return "—";
+  return d.toLocaleDateString("es-CO", { year: "numeric", month: "short", day: "2-digit" });
+}
+
+function getTimeLabel(iso?: string | null) {
   if (!iso) return "";
   const d = new Date(iso);
   if (isNaN(d.getTime())) return "";
-  return d.toLocaleDateString("es-CO", { year: "numeric", month: "short", day: "2-digit" });
+  return d.toLocaleTimeString("es-CO", { hour: "2-digit", minute: "2-digit" });
 }
 
 function getCoordinatorDecisionStatus(ev: TeacherEvaluationSummary): string | null {
   return (ev as any)?.coordinatorDecisionStatus ?? null;
-}
-
-function coordinatorDecisionBadge(status: string | null, isDark: boolean): string | null {
-  if (!status) return null;
-  const s = status.toUpperCase();
-  if (s === "APPROVED") {
-    return isDark
-      ? "bg-emerald-500/10 text-emerald-300 border-emerald-500/20"
-      : "bg-emerald-50 text-emerald-700 border-emerald-200";
-  }
-  if (s === "REJECTED") {
-    return isDark
-      ? "bg-rose-500/10 text-rose-300 border-rose-500/20"
-      : "bg-rose-50 text-rose-700 border-rose-200";
-  }
-  return null;
 }
 
 function coordinatorDecisionLabel(status: string | null): string | null {
@@ -77,7 +81,7 @@ type ScoreRange = "all" | "high" | "medium" | "low";
 type SortKey = "RECENT" | "SCORE_DESC" | "SCORE_ASC";
 
 const statusOptions: { value: StatusFilter; label: string }[] = [
-  { value: "all", label: "Todos" },
+  { value: "all", label: "Todos los estados" },
   { value: "RECOMMENDED", label: "Recomendados" },
   { value: "RESERVED", label: "Con reservas" },
   { value: "NOT_RECOMMENDED", label: "No recomendados" },
@@ -85,42 +89,11 @@ const statusOptions: { value: StatusFilter; label: string }[] = [
 ];
 
 const scoreOptions: { value: ScoreRange; label: string }[] = [
-  { value: "all", label: "Todos" },
-  { value: "high", label: "70+" },
-  { value: "medium", label: "50-69" },
-  { value: "low", label: "0-49" },
+  { value: "all", label: "Todos los scores" },
+  { value: "high", label: "70 — 100" },
+  { value: "medium", label: "50 — 69" },
+  { value: "low", label: "0 — 49" },
 ];
-
-const statusConfig: Record<EvalStatus, { side: string; badge: string; text: string; bar: string; label: string }> = {
-  RECOMMENDED: {
-    side: "bg-emerald-500",
-    badge: "bg-emerald-100 text-emerald-700 border-emerald-200 dark:bg-emerald-500/15 dark:text-emerald-300 dark:border-emerald-500/30",
-    text: "text-emerald-600 dark:text-emerald-400",
-    bar: "bg-emerald-500",
-    label: "Recomendado",
-  },
-  RESERVED: {
-    side: "bg-amber-500",
-    badge: "bg-amber-100 text-amber-700 border-amber-200 dark:bg-amber-500/15 dark:text-amber-300 dark:border-amber-500/30",
-    text: "text-amber-600 dark:text-amber-400",
-    bar: "bg-amber-500",
-    label: "Recomendado con reservas",
-  },
-  NOT_RECOMMENDED: {
-    side: "bg-red-500",
-    badge: "bg-red-100 text-red-700 border-red-200 dark:bg-red-500/15 dark:text-red-300 dark:border-red-500/30",
-    text: "text-red-600 dark:text-red-400",
-    bar: "bg-red-500",
-    label: "No recomendado",
-  },
-  NO_ANALYSIS: {
-    side: "bg-slate-400",
-    badge: "bg-slate-100 text-slate-600 border-slate-200 dark:bg-slate-500/15 dark:text-slate-300 dark:border-slate-500/30",
-    text: "text-slate-500 dark:text-slate-400",
-    bar: "bg-slate-400",
-    label: "Pendiente de decisión",
-  },
-};
 
 const sortOptions: { value: SortKey; label: string }[] = [
   { value: "RECENT", label: "Más recientes" },
@@ -128,20 +101,85 @@ const sortOptions: { value: SortKey; label: string }[] = [
   { value: "SCORE_ASC", label: "Score (menor a mayor)" },
 ];
 
+const statusConfig: Record<EvalStatus, {
+  side: string;
+  badge: string;
+  text: string;
+  bar: string;
+  pill: string;
+  dot: string;
+  label: string;
+  shortLabel: string;
+}> = {
+  RECOMMENDED: {
+    side: "bg-emerald-500",
+    badge: "bg-emerald-100 text-emerald-700 border-emerald-200 dark:bg-emerald-500/15 dark:text-emerald-300 dark:border-emerald-500/30",
+    text: "text-emerald-600 dark:text-emerald-400",
+    bar: "bg-emerald-500",
+    pill: "bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-500/10 dark:text-emerald-300 dark:border-emerald-500/25",
+    dot: "bg-emerald-500",
+    label: "Recomendado",
+    shortLabel: "Recomendado",
+  },
+  RESERVED: {
+    side: "bg-amber-500",
+    badge: "bg-amber-100 text-amber-700 border-amber-200 dark:bg-amber-500/15 dark:text-amber-300 dark:border-amber-500/30",
+    text: "text-amber-600 dark:text-amber-400",
+    bar: "bg-amber-500",
+    pill: "bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-500/10 dark:text-amber-300 dark:border-amber-500/25",
+    dot: "bg-amber-500",
+    label: "Recomendado con reservas",
+    shortLabel: "Con reservas",
+  },
+  NOT_RECOMMENDED: {
+    side: "bg-rose-500",
+    badge: "bg-rose-100 text-rose-700 border-rose-200 dark:bg-rose-500/15 dark:text-rose-300 dark:border-rose-500/30",
+    text: "text-rose-600 dark:text-rose-400",
+    bar: "bg-rose-500",
+    pill: "bg-rose-50 text-rose-700 border-rose-200 dark:bg-rose-500/10 dark:text-rose-300 dark:border-rose-500/25",
+    dot: "bg-rose-500",
+    label: "No recomendado",
+    shortLabel: "No recomendado",
+  },
+  NO_ANALYSIS: {
+    side: "bg-slate-400",
+    badge: "bg-slate-100 text-slate-600 border-slate-200 dark:bg-slate-500/15 dark:text-slate-300 dark:border-slate-500/30",
+    text: "text-slate-500 dark:text-slate-400",
+    bar: "bg-slate-400",
+    pill: "bg-slate-100 text-slate-600 border-slate-200 dark:bg-slate-500/15 dark:text-slate-300 dark:border-slate-500/30",
+    dot: "bg-slate-400",
+    label: "Pendiente de decisión",
+    shortLabel: "Pendiente",
+  },
+};
+
 const PAGE_SIZE = 10;
 
 // ── Derive unique values from evaluations ──────────────────────────────
 
-function buildSchoolOptions(evaluations: TeacherEvaluationSummary[]) {
+function buildSchoolOptions(
+  evaluations: TeacherEvaluationSummary[],
+  schoolsFromApi: SchoolOption[] = []
+) {
   const set = new Set<string>();
+
+  for (const s of schoolsFromApi) {
+    const n = String(s?.name ?? "").trim();
+    if (n) set.add(n);
+  }
+
   for (const ev of evaluations) {
     const n = getSchoolName(ev).trim();
     if (n) set.add(n);
   }
+
   return Array.from(set).sort((a, b) => a.localeCompare(b, "es"));
 }
 
-function buildProgramOptions(evaluations: TeacherEvaluationSummary[], schoolFilter: string | null) {
+function buildProgramOptions(
+  evaluations: TeacherEvaluationSummary[],
+  schoolFilter: string | null
+) {
   if (!schoolFilter) return [];
   const set = new Set<string>();
   const target = schoolFilter.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
@@ -158,6 +196,7 @@ function buildProgramOptions(evaluations: TeacherEvaluationSummary[], schoolFilt
 
 interface AdminEvaluationsPanelProps {
   evaluations: TeacherEvaluationSummary[];
+  schools?: SchoolOption[];
   selectedId: string | null;
   onSelect: (id: string) => void;
   metrics: AdminMetrics;
@@ -165,6 +204,7 @@ interface AdminEvaluationsPanelProps {
 
 export default function AdminEvaluationsPanel({
   evaluations,
+  schools = [],
   selectedId,
   onSelect,
   metrics,
@@ -182,7 +222,7 @@ export default function AdminEvaluationsPanel({
   const [page, setPage] = useState(1);
 
   // ── Derived options ─────────────────────────────────────────────────
-  const schoolOptions = useMemo(() => buildSchoolOptions(evaluations), [evaluations]);
+  const schoolOptions = useMemo(() => buildSchoolOptions(evaluations, schools), [evaluations, schools]);
   const programOptions = useMemo(() => buildProgramOptions(evaluations, schoolFilter), [evaluations, schoolFilter]);
 
   // Reset program when school changes
@@ -224,6 +264,9 @@ export default function AdminEvaluationsPanel({
     return filtered.slice(start, start + PAGE_SIZE);
   }, [filtered, safePage]);
 
+  const startIdx = (safePage - 1) * PAGE_SIZE;
+  const endIdx = Math.min(startIdx + PAGE_SIZE, total);
+
   // ── Active filter chips ─────────────────────────────────────────────
   const activeChips: { key: string; label: string; onRemove: () => void }[] = [];
 
@@ -239,7 +282,7 @@ export default function AdminEvaluationsPanel({
   }
   if (scoreRange !== "all") {
     const lbl = scoreOptions.find((o) => o.value === scoreRange)?.label ?? "";
-    activeChips.push({ key: "score", label: `Score: ${lbl}`, onRemove: () => { setScoreRange("all"); setPage(1); } });
+    activeChips.push({ key: "score", label: `Score ${lbl}`, onRemove: () => { setScoreRange("all"); setPage(1); } });
   }
 
   // ── Dropdown helpers ────────────────────────────────────────────────
@@ -249,138 +292,239 @@ export default function AdminEvaluationsPanel({
   const [scoreOpen, setScoreOpen] = useState(false);
   const [sortOpen, setSortOpen] = useState(false);
 
-  const ddCls = (open: boolean) =>
-    [
-      "absolute left-0 top-full mt-1.5 z-30 w-56 rounded-xl border p-1.5 backdrop-blur-xl shadow-xl animate-in fade-in zoom-in-95 duration-150",
-      isDark
-        ? "border-white/10 bg-[#0a0c0b]/95"
-        : "border-slate-200 bg-white/95",
-    ].join(" ");
+  // Close dropdowns on outside click
+  const ddRootRef = useRef<HTMLDivElement | null>(null);
+  useEffect(() => {
+    const onDown = (e: MouseEvent) => {
+      if (!ddRootRef.current) return;
+      if (!ddRootRef.current.contains(e.target as Node)) {
+        setStatusOpen(false);
+        setSchoolOpen(false);
+        setProgramOpen(false);
+        setScoreOpen(false);
+        setSortOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", onDown);
+    return () => document.removeEventListener("mousedown", onDown);
+  }, []);
+
+  const ddCls = [
+    "absolute left-0 right-0 top-full mt-1.5 z-30 rounded-xl border p-1.5 backdrop-blur-xl shadow-xl animate-in fade-in zoom-in-95 duration-150",
+    isDark
+      ? "border-white/10 bg-[#0a0c0b]/95"
+      : "border-slate-200 bg-white/95",
+  ].join(" ");
 
   const ddItem = (active: boolean) =>
     [
-      "w-full text-left px-3 py-2 rounded-lg text-xs font-medium transition flex items-center justify-between",
+      "w-full text-left px-3 py-2 rounded-lg text-xs font-medium transition flex items-center justify-between gap-2",
       active
         ? isDark
-          ? "bg-cyan-500/10 text-cyan-300"
-          : "bg-cyan-50 text-cyan-700"
+          ? "bg-brand-500/15 text-brand-300"
+          : "bg-brand-50 text-brand-700"
         : isDark
           ? "text-neutral-300 hover:bg-white/5"
           : "text-slate-700 hover:bg-slate-50",
     ].join(" ");
 
   const selectButtonCls = [
-    "h-11 px-3.5 rounded-xl text-xs font-medium border outline-none flex items-center gap-2 transition min-w-[120px]",
+    "h-10 px-3.5 rounded-xl text-xs font-medium border outline-none flex items-center gap-2 transition w-full",
     isDark
       ? "bg-white/[0.03] border-white/10 text-neutral-200 hover:border-white/20"
-      : "bg-white border-slate-300 text-slate-700 hover:border-slate-400",
+      : "bg-white border-slate-200 text-slate-700 hover:border-slate-300",
   ].join(" ");
+
+  // ── KPI cards data ─────────────────────────────────────────────────
+  const kpiCards = [
+    {
+      label: "Total",
+      value: metrics.total,
+      icon: Users,
+      tone: isDark ? "text-brand-300 bg-brand-500/10 border-brand-500/20" : "text-brand-700 bg-brand-50 border-brand-100",
+    },
+    {
+      label: "Promedio IA",
+      value: metrics.avgScore.toFixed(1),
+      icon: Gauge,
+      tone: isDark ? "text-violet-300 bg-violet-500/10 border-violet-500/20" : "text-violet-700 bg-violet-50 border-violet-100",
+    },
+    {
+      label: "Recomendados",
+      value: metrics.recommended,
+      icon: TrendingUp,
+      tone: isDark ? "text-emerald-300 bg-emerald-500/10 border-emerald-500/20" : "text-emerald-700 bg-emerald-50 border-emerald-100",
+    },
+    {
+      label: "Con reservas",
+      value: metrics.caution,
+      icon: AlertTriangle,
+      tone: isDark ? "text-amber-300 bg-amber-500/10 border-amber-500/20" : "text-amber-700 bg-amber-50 border-amber-100",
+    },
+    {
+      label: "No recomendados",
+      value: metrics.notRecommended,
+      icon: ShieldAlert,
+      tone: isDark ? "text-rose-300 bg-rose-500/10 border-rose-500/20" : "text-rose-700 bg-rose-50 border-rose-100",
+    },
+    {
+      label: "Pendientes",
+      value: metrics.noAnalysis,
+      icon: Clock,
+      tone: isDark ? "text-slate-300 bg-slate-500/10 border-slate-500/20" : "text-slate-600 bg-slate-50 border-slate-200",
+    },
+  ];
 
   // ── Render ──────────────────────────────────────────────────────────
   return (
-    <div className="space-y-5">
-      {/* ═══ SECTION 1: CONTEXT ═══ */}
-      <div>
-        <h1 className={`text-2xl font-black tracking-tight ${isDark ? "text-white" : "text-slate-900"}`}>
-          Evaluaciones
-        </h1>
-        <p className={`text-sm mt-1 ${isDark ? "text-neutral-400" : "text-slate-500"}`}>
-          Explora y analiza candidatos evaluados
-        </p>
+    <div className="space-y-6">
+      {/* ═══ SECTION 1: HEADER ═══ */}
+      <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-4">
+        <div>
+          <h1 className={`text-2xl font-black tracking-tight ${isDark ? "text-white" : "text-slate-900"}`}>
+            Evaluaciones
+          </h1>
+          <p className={`text-sm mt-1 ${isDark ? "text-neutral-400" : "text-slate-500"}`}>
+            Explora y analiza candidatos evaluados
+          </p>
+        </div>
       </div>
 
+      {/* ═══ SECTION 2: KPI GRID ═══ */}
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
+        {kpiCards.map((k) => {
+          const Icon = k.icon;
+          return (
+            <div
+              key={k.label}
+              className={[
+                "rounded-xl border p-3.5 flex items-center gap-3 transition-all duration-200",
+                isDark
+                  ? "bg-white/[0.02] border-white/[0.08] hover:border-white/[0.14]"
+                  : "bg-white border-slate-200 shadow-[0_2px_12px_-4px_rgba(15,23,42,0.05)] hover:border-slate-300",
+              ].join(" ")}
+            >
+              <div className={`shrink-0 w-9 h-9 rounded-lg border flex items-center justify-center ${k.tone}`}>
+                <Icon className="w-4 h-4" />
+              </div>
+              <div className="min-w-0">
+                <p
+                  className={`text-[10px] font-bold uppercase tracking-[0.12em] ${
+                    isDark ? "text-neutral-500" : "text-slate-500"
+                  }`}
+                >
+                  {k.label}
+                </p>
+                <p
+                  className={`text-lg font-black tracking-tight leading-tight ${
+                    isDark ? "text-white" : "text-slate-900"
+                  }`}
+                >
+                  {k.value}
+                </p>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+
+      {/* ═══ SECTION 3: FILTERS ═══ */}
       <div
         className={[
-          "rounded-2xl border p-5 md:p-6 space-y-5",
-          isDark ? "bg-white/[0.03] border-white/10" : "bg-white border-slate-200",
+          "rounded-2xl border border-t-2 border-t-brand-500 p-5 md:p-6 space-y-4",
+          isDark
+            ? "bg-white/[0.03] border-brand-500/25"
+            : "bg-white border-brand-500/20 shadow-[0_8px_30px_-12px_rgba(15,23,42,0.08)]",
         ].join(" ")}
       >
-        {/* ═══ SECTION 2: COMPACT KPIs ═══ */}
-        <div className={`flex flex-wrap items-center gap-x-5 gap-y-2 text-sm ${isDark ? "text-neutral-300" : "text-slate-700"}`}>
-          <span className="inline-flex items-center gap-1.5">
-            <Users className={`w-3.5 h-3.5 ${isDark ? "text-neutral-500" : "text-slate-400"}`} />
-            <span className={`${isDark ? "text-neutral-400" : "text-slate-500"}`}>
-              <span className={`font-semibold ${isDark ? "text-white" : "text-slate-900"}`}>{metrics.total}</span> evaluaciones
-            </span>
-          </span>
-          <span className="inline-flex items-center gap-1.5">
-            <Gauge className={`w-3.5 h-3.5 ${isDark ? "text-neutral-500" : "text-slate-400"}`} />
-            <span className={`${isDark ? "text-neutral-400" : "text-slate-500"}`}>
-              <span className={`font-semibold ${isDark ? "text-white" : "text-slate-900"}`}>{metrics.avgScore.toFixed(1)}</span> promedio
-            </span>
-          </span>
-          <span className="inline-flex items-center gap-1.5 text-emerald-600 dark:text-emerald-400">
-            <CheckCircle2 className="w-3.5 h-3.5" />
-            <span><span className="font-semibold">{metrics.recommended}</span> recomendados</span>
-          </span>
-          <span className="inline-flex items-center gap-1.5 text-amber-600 dark:text-amber-400">
-            <AlertTriangle className="w-3.5 h-3.5" />
-            <span><span className="font-semibold">{metrics.caution}</span> con reservas</span>
-          </span>
-          <span className="inline-flex items-center gap-1.5 text-red-600 dark:text-red-400">
-            <ShieldAlert className="w-3.5 h-3.5" />
-            <span><span className="font-semibold">{metrics.notRecommended}</span> no recomendados</span>
-          </span>
-          {metrics.noAnalysis > 0 && (
-            <span className="inline-flex items-center gap-1.5 text-slate-500 dark:text-slate-400">
-              <span className="w-3.5 h-3.5 rounded-full bg-slate-400 dark:bg-slate-500" />
-              <span><span className="font-semibold">{metrics.noAnalysis}</span> pendientes</span>
-            </span>
-          )}
+        <div className="flex items-center gap-2">
+          <FilterIcon className={`w-3.5 h-3.5 ${isDark ? "text-brand-400" : "text-brand-600"}`} />
+          <p
+            className={`text-[10px] font-bold uppercase tracking-[0.18em] ${
+              isDark ? "text-neutral-400" : "text-slate-600"
+            }`}
+          >
+            Filtros
+          </p>
         </div>
 
-        <div className={`border-t ${isDark ? "border-white/5" : "border-slate-100"}`} />
-
-        {/* ═══ SECTION 3: FILTERS ═══ */}
-        <div className="space-y-3">
-          {/* Filter row */}
-          <div className="flex flex-col lg:flex-row lg:items-center gap-3">
+        <div ref={ddRootRef} className="flex flex-col lg:flex-row lg:items-center gap-3">
           {/* Search */}
           <div className="relative group w-full lg:basis-1/2">
             <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none">
-              <Search className={`h-4 w-4 ${isDark ? "text-white/30" : "text-slate-400"}`} />
+              <Search
+                className={`h-4 w-4 transition-colors ${
+                  isDark
+                    ? "text-white/30 group-focus-within:text-brand-400"
+                    : "text-slate-400 group-focus-within:text-brand-500"
+                }`}
+              />
             </div>
             <input
               type="text"
-              placeholder="Buscar candidato..."
+              placeholder="Buscar candidato por nombre o documento..."
               value={search}
-              onChange={(e) => { setSearch(e.target.value); setPage(1); }}
+              onChange={(e) => {
+                setSearch(e.target.value);
+                setPage(1);
+              }}
               className={[
-                "w-full h-11 rounded-xl pl-10 pr-10 text-sm outline-none transition-all",
+                "w-full h-10 rounded-xl pl-10 pr-10 text-sm outline-none transition-all",
                 isDark
-                  ? "bg-white/[0.03] border border-white/10 placeholder:text-white/25 text-white focus:border-cyan-500/40 focus:ring-2 focus:ring-cyan-500/10"
-                  : "bg-white border border-slate-300 placeholder:text-slate-400 text-slate-900 focus:border-cyan-400 focus:ring-2 focus:ring-cyan-300/40",
+                  ? "bg-white/[0.03] border border-white/10 placeholder:text-white/25 text-white focus:border-brand-500/40 focus:ring-2 focus:ring-brand-500/10"
+                  : "bg-white border border-slate-200 placeholder:text-slate-400 text-slate-900 focus:border-brand-400 focus:ring-2 focus:ring-brand-300/30",
               ].join(" ")}
             />
             {search && (
               <button
                 type="button"
-                onClick={() => { setSearch(""); setPage(1); }}
-                className="absolute right-2.5 top-1/2 -translate-y-1/2 p-1 rounded-lg hover:bg-white/10 text-neutral-400"
+                onClick={() => {
+                  setSearch("");
+                  setPage(1);
+                }}
+                className={`absolute right-2.5 top-1/2 -translate-y-1/2 p-1 rounded-lg transition ${
+                  isDark ? "hover:bg-white/10 text-neutral-400" : "hover:bg-slate-100 text-slate-400"
+                }`}
               >
                 <X className="w-3.5 h-3.5" />
               </button>
             )}
           </div>
 
-            <div className="grid grid-cols-2 lg:grid-cols-4 w-full lg:basis-1/2 gap-3">
+          <div className="grid grid-cols-2 lg:grid-cols-4 w-full lg:basis-1/2 gap-3">
             {/* Status filter */}
             <div className="relative">
               <button
                 type="button"
-                onClick={() => setStatusOpen((o) => !o)}
-                className={`${selectButtonCls} w-full`}
+                onClick={() => {
+                  setStatusOpen((o) => !o);
+                  setSchoolOpen(false);
+                  setProgramOpen(false);
+                  setScoreOpen(false);
+                  setSortOpen(false);
+                }}
+                className={selectButtonCls}
               >
-                <span className="truncate flex-1 text-left">{statusOptions.find((o) => o.value === statusFilter)?.label ?? "Estado"}</span>
-                <ChevronDown className={`w-3.5 h-3.5 transition ${statusOpen ? "rotate-180" : ""} ${isDark ? "text-neutral-500" : "text-slate-400"}`} />
+                <span className="truncate flex-1 text-left">
+                  {statusOptions.find((o) => o.value === statusFilter)?.label ?? "Estado"}
+                </span>
+                <ChevronDown
+                  className={`w-3.5 h-3.5 transition shrink-0 ${
+                    statusOpen ? "rotate-180" : ""
+                  } ${isDark ? "text-neutral-500" : "text-slate-400"}`}
+                />
               </button>
               {statusOpen && (
-                <div className={ddCls(true)}>
+                <div className={ddCls}>
                   {statusOptions.map((opt) => (
                     <button
                       key={opt.value}
                       type="button"
-                      onClick={() => { setStatusFilter(opt.value); setStatusOpen(false); setPage(1); }}
+                      onClick={() => {
+                        setStatusFilter(opt.value);
+                        setStatusOpen(false);
+                        setPage(1);
+                      }}
                       className={ddItem(opt.value === statusFilter)}
                     >
                       {opt.label}
@@ -394,17 +538,32 @@ export default function AdminEvaluationsPanel({
             <div className="relative">
               <button
                 type="button"
-                onClick={() => setSchoolOpen((o) => !o)}
-                className={`${selectButtonCls} w-full`}
+                onClick={() => {
+                  setSchoolOpen((o) => !o);
+                  setStatusOpen(false);
+                  setProgramOpen(false);
+                  setScoreOpen(false);
+                  setSortOpen(false);
+                }}
+                className={selectButtonCls}
               >
-                <span className="truncate flex-1 text-left">{schoolFilter ?? "Escuela"}</span>
-                <ChevronDown className={`w-3.5 h-3.5 transition ${schoolOpen ? "rotate-180" : ""} ${isDark ? "text-neutral-500" : "text-slate-400"}`} />
+                <span className="truncate flex-1 text-left">
+                  {schoolFilter ?? "Escuela"}
+                </span>
+                <ChevronDown
+                  className={`w-3.5 h-3.5 transition shrink-0 ${
+                    schoolOpen ? "rotate-180" : ""
+                  } ${isDark ? "text-neutral-500" : "text-slate-400"}`}
+                />
               </button>
               {schoolOpen && (
-                <div className={ddCls(true)}>
+                <div className={ddCls}>
                   <button
                     type="button"
-                    onClick={() => { handleSchoolChange(null); setSchoolOpen(false); }}
+                    onClick={() => {
+                      handleSchoolChange(null);
+                      setSchoolOpen(false);
+                    }}
                     className={ddItem(!schoolFilter)}
                   >
                     Todas las escuelas
@@ -413,7 +572,10 @@ export default function AdminEvaluationsPanel({
                     <button
                       key={name}
                       type="button"
-                      onClick={() => { handleSchoolChange(name); setSchoolOpen(false); }}
+                      onClick={() => {
+                        handleSchoolChange(name);
+                        setSchoolOpen(false);
+                      }}
                       className={ddItem(schoolFilter === name)}
                     >
                       {name}
@@ -428,9 +590,16 @@ export default function AdminEvaluationsPanel({
               <button
                 type="button"
                 disabled={!schoolFilter}
-                onClick={() => schoolFilter && setProgramOpen((o) => !o)}
+                onClick={() => {
+                  if (!schoolFilter) return;
+                  setProgramOpen((o) => !o);
+                  setStatusOpen(false);
+                  setSchoolOpen(false);
+                  setScoreOpen(false);
+                  setSortOpen(false);
+                }}
                 className={[
-                  `${selectButtonCls} w-full`,
+                  selectButtonCls,
                   !schoolFilter
                     ? isDark
                       ? "bg-white/[0.01] border-white/5 text-neutral-600 cursor-not-allowed hover:border-white/5"
@@ -439,14 +608,24 @@ export default function AdminEvaluationsPanel({
                 ].join(" ")}
                 title={!schoolFilter ? "Seleccione una escuela primero" : "Filtrar por programa"}
               >
-                <span className="truncate flex-1 text-left">{programFilter ?? "Programa"}</span>
-                <ChevronDown className={`w-3.5 h-3.5 transition ${programOpen ? "rotate-180" : ""} ${isDark ? "text-neutral-500" : "text-slate-400"}`} />
+                <span className="truncate flex-1 text-left">
+                  {programFilter ?? "Programa"}
+                </span>
+                <ChevronDown
+                  className={`w-3.5 h-3.5 transition shrink-0 ${
+                    programOpen ? "rotate-180" : ""
+                  } ${isDark ? "text-neutral-500" : "text-slate-400"}`}
+                />
               </button>
               {programOpen && schoolFilter && (
-                <div className={ddCls(true)}>
+                <div className={ddCls}>
                   <button
                     type="button"
-                    onClick={() => { setProgramFilter(null); setProgramOpen(false); setPage(1); }}
+                    onClick={() => {
+                      setProgramFilter(null);
+                      setProgramOpen(false);
+                      setPage(1);
+                    }}
                     className={ddItem(!programFilter)}
                   >
                     Todos los programas
@@ -455,7 +634,11 @@ export default function AdminEvaluationsPanel({
                     <button
                       key={name}
                       type="button"
-                      onClick={() => { setProgramFilter(name); setProgramOpen(false); setPage(1); }}
+                      onClick={() => {
+                        setProgramFilter(name);
+                        setProgramOpen(false);
+                        setPage(1);
+                      }}
                       className={ddItem(programFilter === name)}
                     >
                       {name}
@@ -469,19 +652,35 @@ export default function AdminEvaluationsPanel({
             <div className="relative">
               <button
                 type="button"
-                onClick={() => setScoreOpen((o) => !o)}
-                className={`${selectButtonCls} w-full`}
+                onClick={() => {
+                  setScoreOpen((o) => !o);
+                  setStatusOpen(false);
+                  setSchoolOpen(false);
+                  setProgramOpen(false);
+                  setSortOpen(false);
+                }}
+                className={selectButtonCls}
               >
-                <span className="truncate flex-1 text-left">{scoreOptions.find((o) => o.value === scoreRange)?.label ?? "Score"}</span>
-                <ChevronDown className={`w-3.5 h-3.5 transition ${scoreOpen ? "rotate-180" : ""} ${isDark ? "text-neutral-500" : "text-slate-400"}`} />
+                <span className="truncate flex-1 text-left">
+                  {scoreOptions.find((o) => o.value === scoreRange)?.label ?? "Score"}
+                </span>
+                <ChevronDown
+                  className={`w-3.5 h-3.5 transition shrink-0 ${
+                    scoreOpen ? "rotate-180" : ""
+                  } ${isDark ? "text-neutral-500" : "text-slate-400"}`}
+                />
               </button>
               {scoreOpen && (
-                <div className={ddCls(true)}>
+                <div className={ddCls}>
                   {scoreOptions.map((opt) => (
                     <button
                       key={opt.value}
                       type="button"
-                      onClick={() => { setScoreRange(opt.value); setScoreOpen(false); setPage(1); }}
+                      onClick={() => {
+                        setScoreRange(opt.value);
+                        setScoreOpen(false);
+                        setPage(1);
+                      }}
                       className={ddItem(opt.value === scoreRange)}
                     >
                       {opt.label}
@@ -490,88 +689,168 @@ export default function AdminEvaluationsPanel({
                 </div>
               )}
             </div>
-            </div>
-
-            {/* Active filter chips */}
-            {activeChips.length > 0 && (
-              <div className="flex flex-wrap items-center gap-2">
-                {activeChips.map((chip) => (
-                  <span
-                    key={chip.key}
-                    className={[
-                      "inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-semibold border transition",
-                      isDark
-                        ? "bg-cyan-500/10 border-cyan-500/25 text-cyan-300"
-                        : "bg-cyan-50 border-cyan-200 text-cyan-700",
-                    ].join(" ")}
-                  >
-                    {chip.label}
-                    <button
-                      type="button"
-                      onClick={chip.onRemove}
-                      className="hover:bg-white/20 rounded-full p-0.5"
-                    >
-                      <X className="w-3 h-3" />
-                    </button>
-                  </span>
-                ))}
-              </div>
-            )}
           </div>
         </div>
 
-        <div className={`border-t ${isDark ? "border-white/5" : "border-slate-100"}`} />
-
-        {/* ═══ SECTION 4: EVALUATION LIST ═══ */}
-        <div className="space-y-4">
-        {/* Header bar */}
-        <div className="flex items-center justify-between gap-4">
-          <div className="flex items-center gap-2 text-xs">
-            <span className={isDark ? "text-neutral-400" : "text-slate-500"}>
-              {total} {total === 1 ? "resultado" : "resultados"}
+        {/* Active filter chips */}
+        {activeChips.length > 0 && (
+          <div className="flex flex-wrap items-center gap-2">
+            <span
+              className={`text-[10px] font-bold uppercase tracking-[0.16em] ${
+                isDark ? "text-neutral-500" : "text-slate-500"
+              }`}
+            >
+              Activos:
             </span>
-            {activeChips.length > 0 && (
-              <button
-                type="button"
-                onClick={() => {
-                  setSearch("");
-                  setStatusFilter("all");
-                  setSchoolFilter(null);
-                  setProgramFilter(null);
-                  setScoreRange("all");
-                  setSort("RECENT");
-                  setPage(1);
-                }}
-                className={`underline ${isDark ? "text-neutral-500 hover:text-neutral-300" : "text-slate-400 hover:text-slate-700"}`}
+            {activeChips.map((chip) => (
+              <span
+                key={chip.key}
+                className={[
+                  "inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-semibold border transition",
+                  isDark
+                    ? "bg-brand-500/10 border-brand-500/25 text-brand-300"
+                    : "bg-brand-50 border-brand-200 text-brand-700",
+                ].join(" ")}
               >
-                Limpiar filtros
-              </button>
-            )}
+                {chip.label}
+                <button
+                  type="button"
+                  onClick={chip.onRemove}
+                  className={`rounded-full p-0.5 transition ${
+                    isDark ? "hover:bg-white/10" : "hover:bg-white/60"
+                  }`}
+                >
+                  <X className="w-3 h-3" />
+                </button>
+              </span>
+            ))}
+            <button
+              type="button"
+              onClick={() => {
+                setSearch("");
+                setStatusFilter("all");
+                setSchoolFilter(null);
+                setProgramFilter(null);
+                setScoreRange("all");
+                setSort("RECENT");
+                setPage(1);
+              }}
+              className={`ml-auto text-[11px] font-semibold underline transition ${
+                isDark
+                  ? "text-neutral-500 hover:text-neutral-200"
+                  : "text-slate-400 hover:text-slate-700"
+              }`}
+            >
+              Limpiar filtros
+            </button>
+          </div>
+        )}
+      </div>
+
+      {/* ═══ SECTION 4: TABLE ═══ */}
+      <div
+        className={[
+          "rounded-2xl border border-t-2 border-t-brand-500 overflow-hidden",
+          isDark
+            ? "bg-white/[0.02] border-brand-500/25"
+            : "bg-white border-brand-500/20 shadow-[0_8px_30px_-12px_rgba(15,23,42,0.08)]",
+        ].join(" ")}
+      >
+        {/* Table toolbar */}
+        <div
+          className={[
+            "px-5 py-3.5 border-b flex flex-wrap items-center justify-between gap-3",
+            isDark
+              ? "border-white/[0.06] bg-white/[0.015]"
+              : "border-brand-500/15 bg-gradient-to-r from-brand-50/40 to-transparent",
+          ].join(" ")}
+        >
+          <div className="flex items-center gap-2.5">
+            <div
+              className={[
+                "shrink-0 w-7 h-7 rounded-lg border flex items-center justify-center",
+                isDark
+                  ? "bg-brand-500/10 border-brand-500/20 text-brand-300"
+                  : "bg-brand-500/10 border-brand-200 text-brand-700",
+              ].join(" ")}
+            >
+              <Users className="w-3.5 h-3.5" />
+            </div>
+            <div>
+              <p
+                className={`text-[10px] font-bold uppercase tracking-[0.18em] ${
+                  isDark ? "text-neutral-400" : "text-slate-500"
+                }`}
+              >
+                Listado de evaluaciones
+              </p>
+              <p
+                className={`text-xs font-semibold ${
+                  isDark ? "text-white" : "text-slate-900"
+                }`}
+              >
+                {total === 0
+                  ? "Sin resultados"
+                  : total === 1
+                    ? "1 candidato"
+                    : `${total} candidatos`}
+                {filtered.length !== evaluations.length && (
+                  <span
+                    className={`ml-1 font-normal ${
+                      isDark ? "text-neutral-500" : "text-slate-400"
+                    }`}
+                  >
+                    (de {evaluations.length})
+                  </span>
+                )}
+              </p>
+            </div>
           </div>
 
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2">
             {/* Sort */}
             <div className="relative">
               <button
                 type="button"
-                onClick={() => setSortOpen((o) => !o)}
+                onClick={() => {
+                  setSortOpen((o) => !o);
+                  setStatusOpen(false);
+                  setSchoolOpen(false);
+                  setProgramOpen(false);
+                  setScoreOpen(false);
+                }}
                 className={[
-                  "h-8 px-3 rounded-lg text-[11px] font-medium border outline-none flex items-center gap-1.5 transition",
+                  "h-9 px-3 rounded-lg text-[11px] font-semibold border outline-none flex items-center gap-1.5 transition",
                   isDark
-                    ? "bg-black/30 border-white/10 text-neutral-300 hover:border-white/20"
+                    ? "bg-white/[0.03] border-white/10 text-neutral-300 hover:border-white/20"
                     : "bg-white border-slate-200 text-slate-600 hover:border-slate-300",
                 ].join(" ")}
               >
                 <SlidersHorizontal className="w-3 h-3" />
                 {sortOptions.find((o) => o.value === sort)?.label}
+                <ChevronDown
+                  className={`w-3 h-3 transition ${
+                    sortOpen ? "rotate-180" : ""
+                  } ${isDark ? "text-neutral-500" : "text-slate-400"}`}
+                />
               </button>
               {sortOpen && (
-                <div className={["absolute right-0 top-full mt-1.5 z-30 w-52 rounded-xl border p-1.5 backdrop-blur-xl shadow-xl", isDark ? "border-white/10 bg-[#0a0c0b]/95" : "border-slate-200 bg-white/95"].join(" ")}>
+                <div
+                  className={[
+                    "absolute right-0 top-full mt-1.5 z-30 w-56 rounded-xl border p-1.5 backdrop-blur-xl shadow-xl",
+                    isDark
+                      ? "border-white/10 bg-[#0a0c0b]/95"
+                      : "border-slate-200 bg-white/95",
+                  ].join(" ")}
+                >
                   {sortOptions.map((opt) => (
                     <button
                       key={opt.value}
                       type="button"
-                      onClick={() => { setSort(opt.value); setSortOpen(false); }}
+                      onClick={() => {
+                        setSort(opt.value);
+                        setSortOpen(false);
+                      }}
                       className={ddItem(opt.value === sort)}
                     >
                       {opt.label}
@@ -580,156 +859,418 @@ export default function AdminEvaluationsPanel({
                 </div>
               )}
             </div>
-
-            {/* Pagination */}
-            {totalPages > 1 && (
-              <div className="flex items-center gap-2">
-                <button
-                  type="button"
-                  onClick={() => setPage((p) => Math.max(1, p - 1))}
-                  disabled={safePage <= 1}
-                  className={[
-                    "h-8 px-2.5 rounded-lg border text-[11px] font-medium transition flex items-center gap-1",
-                    safePage <= 1
-                      ? isDark
-                        ? "border-white/5 text-neutral-600 cursor-not-allowed"
-                        : "border-slate-200 text-slate-300 cursor-not-allowed"
-                      : isDark
-                        ? "border-white/10 text-neutral-300 hover:bg-white/5"
-                        : "border-slate-200 text-slate-600 hover:bg-slate-50",
-                  ].join(" ")}
-                >
-                  <ChevronLeft className="w-3.5 h-3.5" />
-                </button>
-                <span className={`text-[11px] min-w-[40px] text-center ${isDark ? "text-neutral-400" : "text-slate-500"}`}>
-                  {safePage}/{totalPages}
-                </span>
-                <button
-                  type="button"
-                  onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
-                  disabled={safePage >= totalPages}
-                  className={[
-                    "h-8 px-2.5 rounded-lg border text-[11px] font-medium transition flex items-center gap-1",
-                    safePage >= totalPages
-                      ? isDark
-                        ? "border-white/5 text-neutral-600 cursor-not-allowed"
-                        : "border-slate-200 text-slate-300 cursor-not-allowed"
-                      : isDark
-                        ? "border-white/10 text-neutral-300 hover:bg-white/5"
-                        : "border-slate-200 text-slate-600 hover:bg-slate-50",
-                  ].join(" ")}
-                >
-                  <ChevronRight className="w-3.5 h-3.5" />
-                </button>
-              </div>
-            )}
           </div>
         </div>
 
-        {/* List items */}
-          {pageItems.length > 0 ? (
-            <div className="space-y-4">
-            {pageItems.map((ev) => {
+        {/* Table header (column titles) */}
+        {pageItems.length > 0 && (
+          <div
+            className={[
+              "hidden md:grid grid-cols-[20px_minmax(0,1.6fr)_minmax(0,1.4fr)_160px_150px_120px_44px] gap-3 px-5 py-2.5 border-b text-[10px] font-bold uppercase tracking-[0.14em]",
+              isDark
+                ? "border-white/[0.05] bg-white/[0.01] text-neutral-500"
+                : "border-slate-100 bg-slate-50/50 text-slate-500",
+            ].join(" ")}
+          >
+            <div></div>
+            <div>Candidato</div>
+            <div>Programa · Escuela</div>
+            <div className="text-center">Score IA</div>
+            <div>Decisión IA</div>
+            <div>Fecha</div>
+            <div></div>
+          </div>
+        )}
+
+        {/* Table rows */}
+        {pageItems.length > 0 ? (
+          <div>
+            {pageItems.map((ev, idx) => {
               const status = getAiRecommendationStatus(ev);
               const cfg = statusConfig[status];
               const score = getScore(ev);
               const isSelected = selectedId === ev.id;
+              const coordStatus = getCoordinatorDecisionStatus(ev);
+              const coordLabel = coordinatorDecisionLabel(coordStatus);
+              const coordTone =
+                coordStatus?.toUpperCase() === "APPROVED"
+                  ? isDark
+                    ? "bg-emerald-500/10 text-emerald-300 border-emerald-500/25"
+                    : "bg-emerald-50 text-emerald-700 border-emerald-200"
+                  : coordStatus?.toUpperCase() === "REJECTED"
+                    ? isDark
+                      ? "bg-rose-500/10 text-rose-300 border-rose-500/25"
+                      : "bg-rose-50 text-rose-700 border-rose-200"
+                    : "";
 
               return (
                 <div
                   key={ev.id}
                   className={[
-                    "group relative flex rounded-xl overflow-hidden border transition-all duration-200 cursor-pointer",
+                    "group relative grid grid-cols-[20px_minmax(0,1.6fr)_minmax(0,1.4fr)_160px_150px_120px_44px] gap-3 px-5 py-3.5 items-center transition-all duration-200 cursor-pointer",
+                    idx > 0
+                      ? isDark
+                        ? "border-t border-white/[0.05]"
+                        : "border-t border-slate-100"
+                      : "",
                     isSelected
                       ? isDark
-                        ? "border-cyan-400/50 bg-cyan-500/[0.07]"
-                        : "border-cyan-400 bg-cyan-50"
+                        ? "bg-brand-500/[0.08]"
+                        : "bg-brand-50/70"
                       : isDark
-                        ? "border-white/10 bg-white/[0.04] hover:border-cyan-400/40 hover:bg-white/[0.07]"
-                        : "border-slate-200 bg-white hover:border-cyan-300/70 hover:bg-slate-50",
+                        ? "hover:bg-white/[0.035]"
+                        : "hover:bg-slate-50/60",
                   ].join(" ")}
                   role="button"
                   tabIndex={0}
                   onClick={() => onSelect(ev.id)}
                   onKeyDown={(e) => {
-                    if (e.key === "Enter" || e.key === " ") { e.preventDefault(); onSelect(ev.id); }
+                    if (e.key === "Enter" || e.key === " ") {
+                      e.preventDefault();
+                      onSelect(ev.id);
+                    }
                   }}
                 >
-                  {/* Left status bar */}
-                  <div className={`w-2 shrink-0 self-stretch ${cfg.side}`} />
+                  {/* Status indicator dot */}
+                  <div className="flex justify-center">
+                    <span
+                      className={[
+                        "w-2.5 h-2.5 rounded-full shrink-0 transition-transform duration-200",
+                        cfg.dot,
+                        isSelected ? "scale-125 ring-2 ring-offset-2 ring-offset-transparent" : "group-hover:scale-110",
+                        isSelected
+                          ? isDark
+                            ? "ring-brand-400/50"
+                            : "ring-brand-500/40"
+                          : "",
+                      ].join(" ")}
+                      title={cfg.label}
+                    />
+                  </div>
 
-                  {/* Content */}
-                  <div className="flex-1 flex flex-col md:flex-row md:items-center gap-3 px-5 py-4 min-w-0">
-                    {/* Left info */}
-                    <div className="flex-1 min-w-0 space-y-1">
-                      <div className="flex items-center gap-2">
-                        <h3 className={`text-base md:text-lg font-semibold tracking-tight truncate ${isDark ? "text-white" : "text-slate-900"}`}>
-                          {getCandidateName(ev)}
-                        </h3>
-                        <span className={["inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-semibold border", cfg.badge].join(" ")}>
-                          {cfg.label}
-                        </span>
-                        {(() => {
-                          const coordStatus = getCoordinatorDecisionStatus(ev);
-                          const coordBadge = coordinatorDecisionBadge(coordStatus, isDark);
-                          const coordLabel = coordinatorDecisionLabel(coordStatus);
-                          if (!coordBadge || !coordLabel) return null;
-                          return (
-                            <span className={["inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-semibold border", coordBadge].join(" ")}>
-                              {coordLabel}
-                            </span>
-                          );
-                        })()}
-                      </div>
-                      <div className={`flex flex-wrap items-center gap-x-2 gap-y-0.5 text-xs ${isDark ? "text-neutral-500" : "text-slate-500"}`}>
-                        {getProgramName(ev) && <span>{getProgramName(ev)}</span>}
-                        {getProgramName(ev) && getSchoolName(ev) && (
-                          <span className={`w-1 h-1 rounded-full ${isDark ? "bg-neutral-600" : "bg-slate-300"}`} />
-                        )}
-                        {getSchoolName(ev) && <span>{getSchoolName(ev)}</span>}
-                        {getSchoolName(ev) && getDateLabel(ev.createdAt) && (
-                          <span className={`w-1 h-1 rounded-full ${isDark ? "bg-neutral-600" : "bg-slate-300"}`} />
-                        )}
-                        {getDateLabel(ev.createdAt) && <span>{getDateLabel(ev.createdAt)}</span>}
-                      </div>
-                    </div>
-
-                    {/* Score + button */}
-                    <div className="flex items-center justify-end gap-3 shrink-0 w-[220px]">
-                      <div className="flex flex-col items-end gap-1 min-w-[120px]">
-                        <span className={`text-lg font-bold leading-none ${cfg.text}`}>{score}</span>
-                        <div className={`w-full h-1.5 rounded-full overflow-hidden ${isDark ? "bg-white/10" : "bg-slate-200"}`}>
-                          <div className={`h-full rounded-full transition-all duration-500 ease-out ${cfg.bar}`} style={{ width: `${Math.min(100, score)}%` }} />
-                        </div>
-                      </div>
-                      <button
-                        type="button"
-                        onClick={(e) => { e.stopPropagation(); onSelect(ev.id); }}
+                  {/* Candidato */}
+                  <div className="min-w-0">
+                    <div className="flex items-center gap-2 min-w-0">
+                      <h3
                         className={[
-                          "inline-flex items-center gap-1 px-3 py-1.5 rounded-lg border text-[11px] font-bold uppercase tracking-wider transition-all duration-200",
-                          "opacity-0 group-hover:opacity-100",
-                          isDark
-                            ? "bg-cyan-500/15 border-cyan-400/25 text-cyan-300 hover:bg-cyan-500/25"
-                            : "bg-cyan-600 border-cyan-500 text-white hover:bg-cyan-500 shadow-sm",
+                          "text-[13px] font-bold tracking-tight truncate",
+                          isDark ? "text-white" : "text-slate-900",
                         ].join(" ")}
                       >
-                        Ver detalle
-                        <ChevronRight className="w-3 h-3" />
-                      </button>
+                        {getCandidateName(ev)}
+                      </h3>
+                      {coordLabel && coordTone && (
+                        <span
+                          className={[
+                            "hidden lg:inline-flex shrink-0 items-center gap-1 px-1.5 py-0.5 rounded text-[9px] font-bold uppercase tracking-wider border",
+                            coordTone,
+                          ].join(" ")}
+                        >
+                          <CheckCircle2 className="w-2.5 h-2.5" />
+                          {coordLabel}
+                        </span>
+                      )}
                     </div>
+                    {getDocNumber(ev) && (
+                      <div
+                        className={[
+                          "flex items-center gap-1 mt-0.5 text-[11px] font-mono",
+                          isDark ? "text-neutral-500" : "text-slate-400",
+                        ].join(" ")}
+                      >
+                        <IdCard className="w-3 h-3 shrink-0" />
+                        <span className="truncate">{getDocNumber(ev)}</span>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Programa · Escuela */}
+                  <div className="min-w-0">
+                    {getProgramName(ev) && (
+                      <div
+                        className={[
+                          "flex items-center gap-1.5 text-[12px] font-semibold truncate",
+                          isDark ? "text-neutral-200" : "text-slate-800",
+                        ].join(" ")}
+                      >
+                        <GraduationCap
+                          className={`w-3.5 h-3.5 shrink-0 ${
+                            isDark ? "text-neutral-500" : "text-slate-400"
+                          }`}
+                        />
+                        <span className="truncate">{getProgramName(ev)}</span>
+                      </div>
+                    )}
+                    {getSchoolName(ev) && (
+                      <div
+                        className={[
+                          "flex items-center gap-1.5 text-[11px] truncate mt-0.5",
+                          isDark ? "text-neutral-500" : "text-slate-500",
+                        ].join(" ")}
+                      >
+                        <Building2
+                          className={`w-3 h-3 shrink-0 ${
+                            isDark ? "text-neutral-600" : "text-slate-400"
+                          }`}
+                        />
+                        <span className="truncate">{getSchoolName(ev)}</span>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Score IA */}
+                  <div className="flex flex-col items-center justify-center gap-1">
+                    <div className="flex items-baseline gap-0.5">
+                      <span
+                        className={[
+                          "text-lg font-black leading-none tabular-nums",
+                          cfg.text,
+                        ].join(" ")}
+                      >
+                        {Math.round(score)}
+                      </span>
+                      <span
+                        className={`text-[10px] font-medium ${
+                          isDark ? "text-neutral-500" : "text-slate-400"
+                        }`}
+                      >
+                        /100
+                      </span>
+                    </div>
+                    <div
+                      className={[
+                        "w-full max-w-[110px] h-1 rounded-full overflow-hidden",
+                        isDark ? "bg-white/[0.08]" : "bg-slate-200",
+                      ].join(" ")}
+                    >
+                      <div
+                        className={[
+                          "h-full rounded-full transition-all duration-700 ease-out",
+                          cfg.bar,
+                        ].join(" ")}
+                        style={{ width: `${Math.min(100, Math.max(0, score))}%` }}
+                      />
+                    </div>
+                  </div>
+
+                  {/* Decisión IA pill */}
+                  <div className="flex justify-start">
+                    <span
+                      className={[
+                        "inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[10px] font-bold uppercase tracking-wider border",
+                        cfg.pill,
+                      ].join(" ")}
+                    >
+                      {status === "RECOMMENDED" && <CheckCircle2 className="w-3 h-3" />}
+                      {status === "RESERVED" && <AlertTriangle className="w-3 h-3" />}
+                      {status === "NOT_RECOMMENDED" && <ShieldAlert className="w-3 h-3" />}
+                      <span className="hidden xl:inline">{cfg.label}</span>
+                      <span className="xl:hidden">{cfg.shortLabel}</span>
+                    </span>
+                  </div>
+
+                  {/* Fecha */}
+                  <div
+                    className={[
+                      "flex items-center gap-1.5 text-[11px] font-medium tabular-nums",
+                      isDark ? "text-neutral-400" : "text-slate-500",
+                    ].join(" ")}
+                  >
+                    <CalendarDays
+                      className={`w-3.5 h-3.5 shrink-0 ${
+                        isDark ? "text-neutral-600" : "text-slate-400"
+                      }`}
+                    />
+                    <div className="flex flex-col leading-tight">
+                      <span>{getDateLabel(ev.createdAt)}</span>
+                      {getTimeLabel(ev.createdAt) && (
+                        <span
+                          className={`text-[10px] ${
+                            isDark ? "text-neutral-600" : "text-slate-400"
+                          }`}
+                        >
+                          {getTimeLabel(ev.createdAt)}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Acción */}
+                  <div className="flex items-center justify-end">
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onSelect(ev.id);
+                      }}
+                      className={[
+                        "inline-flex items-center justify-center w-9 h-9 rounded-lg border transition-all duration-200",
+                        "opacity-60 group-hover:opacity-100",
+                        isDark
+                          ? "border-white/10 bg-white/[0.04] text-neutral-400 hover:bg-brand-500/15 hover:border-brand-400/30 hover:text-brand-300"
+                          : "border-slate-200 bg-white text-slate-500 hover:bg-brand-600 hover:border-brand-600 hover:text-white",
+                      ].join(" ")}
+                      title="Ver detalle"
+                    >
+                      <Eye className="w-4 h-4" />
+                    </button>
                   </div>
                 </div>
               );
             })}
+          </div>
+        ) : (
+          <div
+            className={[
+              "flex flex-col items-center justify-center gap-3 py-20",
+              isDark ? "text-neutral-500" : "text-slate-500",
+            ].join(" ")}
+          >
+            <div
+              className={[
+                "p-3 rounded-2xl border",
+                isDark
+                  ? "bg-white/[0.02] border-white/[0.08]"
+                  : "bg-slate-50 border-slate-200",
+              ].join(" ")}
+            >
+              <Search className="w-6 h-6 opacity-50" />
             </div>
-          ) : (
-            <div className={`flex flex-col items-center justify-center gap-4 rounded-2xl border border-dashed py-16 ${isDark ? "border-white/10 bg-black/10 text-neutral-400" : "border-slate-200 bg-slate-50 text-slate-500"}`}>
-              <Search className="w-8 h-8 opacity-50" />
-              <p className="text-sm font-medium">No se encontraron evaluaciones</p>
-              <p className="text-xs opacity-60">Ajusta los filtros o limpia la búsqueda para ver más resultados.</p>
+            <div className="text-center">
+              <p
+                className={`text-sm font-semibold ${
+                  isDark ? "text-white" : "text-slate-900"
+                }`}
+              >
+                No se encontraron evaluaciones
+              </p>
+              <p className="text-xs opacity-70 mt-0.5 max-w-sm">
+                Ajusta los filtros o limpia la búsqueda para ver más resultados.
+              </p>
             </div>
-          )}
-        </div>
+            <button
+              type="button"
+              onClick={() => {
+                setSearch("");
+                setStatusFilter("all");
+                setSchoolFilter(null);
+                setProgramFilter(null);
+                setScoreRange("all");
+                setSort("RECENT");
+                setPage(1);
+              }}
+              className={[
+                "mt-1 inline-flex items-center gap-1.5 px-4 py-1.5 rounded-lg text-[11px] font-semibold border transition",
+                isDark
+                  ? "border-brand-500/25 bg-brand-500/10 text-brand-300 hover:bg-brand-500/15"
+                  : "border-brand-200 bg-brand-50 text-brand-700 hover:bg-brand-100",
+              ].join(" ")}
+            >
+              <X className="w-3 h-3" />
+              Limpiar filtros
+            </button>
+          </div>
+        )}
+
+        {/* Pagination footer */}
+        {pageItems.length > 0 && totalPages > 1 && (
+          <div
+            className={[
+              "px-5 py-3 border-t flex flex-wrap items-center justify-between gap-3",
+              isDark
+                ? "border-white/[0.05] bg-white/[0.015]"
+                : "border-slate-100 bg-slate-50/40",
+            ].join(" ")}
+          >
+            <span
+              className={`text-[11px] font-medium ${
+                isDark ? "text-neutral-400" : "text-slate-500"
+              }`}
+            >
+              Mostrando{" "}
+              <span
+                className={`font-bold ${isDark ? "text-white" : "text-slate-900"}`}
+              >
+                {startIdx + 1}
+              </span>
+              –
+              <span
+                className={`font-bold ${isDark ? "text-white" : "text-slate-900"}`}
+              >
+                {endIdx}
+              </span>{" "}
+              de{" "}
+              <span
+                className={`font-bold ${isDark ? "text-white" : "text-slate-900"}`}
+              >
+                {total}
+              </span>
+            </span>
+
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={() => setPage((p) => Math.max(1, p - 1))}
+                disabled={safePage <= 1}
+                className={[
+                  "h-8 px-2.5 rounded-lg border text-[11px] font-semibold transition flex items-center gap-1",
+                  safePage <= 1
+                    ? isDark
+                      ? "border-white/5 text-neutral-600 cursor-not-allowed"
+                      : "border-slate-200 text-slate-300 cursor-not-allowed"
+                    : isDark
+                      ? "border-white/10 bg-white/[0.03] text-neutral-300 hover:bg-white/[0.06] hover:border-white/20"
+                      : "border-slate-200 bg-white text-slate-600 hover:bg-slate-50 hover:border-slate-300",
+                ].join(" ")}
+              >
+                <ChevronLeft className="w-3.5 h-3.5" />
+                Anterior
+              </button>
+              <div className="flex items-center gap-1">
+                {Array.from({ length: totalPages }, (_, i) => i + 1).map((p) => {
+                  const isActive = p === safePage;
+                  return (
+                    <button
+                      key={p}
+                      type="button"
+                      onClick={() => setPage(p)}
+                      className={[
+                        "h-8 min-w-[2rem] rounded-lg text-[11px] font-bold transition",
+                        isActive
+                          ? isDark
+                            ? "bg-brand-500 text-white shadow-[0_0_16px_rgba(16,185,129,0.30)]"
+                            : "bg-brand-600 text-white shadow-[0_4px_14px_rgba(16,185,129,0.30)]"
+                          : isDark
+                            ? "border border-white/10 bg-transparent text-neutral-400 hover:bg-white/[0.04] hover:text-white"
+                            : "border border-slate-200 bg-transparent text-slate-500 hover:bg-slate-50 hover:text-slate-900",
+                      ].join(" ")}
+                    >
+                      {p}
+                    </button>
+                  );
+                })}
+              </div>
+              <button
+                type="button"
+                onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+                disabled={safePage >= totalPages}
+                className={[
+                  "h-8 px-2.5 rounded-lg border text-[11px] font-semibold transition flex items-center gap-1",
+                  safePage >= totalPages
+                    ? isDark
+                      ? "border-white/5 text-neutral-600 cursor-not-allowed"
+                      : "border-slate-200 text-slate-300 cursor-not-allowed"
+                    : isDark
+                      ? "border-white/10 bg-white/[0.03] text-neutral-300 hover:bg-white/[0.06] hover:border-white/20"
+                      : "border-slate-200 bg-white text-slate-600 hover:bg-slate-50 hover:border-slate-300",
+                ].join(" ")}
+              >
+                Siguiente
+                <ChevronRight className="w-3.5 h-3.5" />
+              </button>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

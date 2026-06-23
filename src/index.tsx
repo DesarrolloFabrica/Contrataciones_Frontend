@@ -9,6 +9,7 @@ import App from "./App";
 import { AuthProvider } from "./context/AuthContext";
 import { ThemeProvider } from "./context/ThemeContext";
 import { ToastProvider } from "./context/ToastContext";
+import { AppBootProvider } from "./features/boot/AppBootProvider";
 import { queryClient } from "./services/queryClient";
 
 const GOOGLE_CLIENT_ID =
@@ -20,11 +21,13 @@ ReactDOM.createRoot(document.getElementById("root") as HTMLElement).render(
       <BrowserRouter>
         <ThemeProvider>
           <GoogleOAuthProvider clientId={GOOGLE_CLIENT_ID}>
-            <AuthProvider>
+          <AuthProvider>
+            <AppBootProvider>
               <ToastProvider>
                 <App />
               </ToastProvider>
-            </AuthProvider>
+            </AppBootProvider>
+          </AuthProvider>
           </GoogleOAuthProvider>
         </ThemeProvider>
       </BrowserRouter>

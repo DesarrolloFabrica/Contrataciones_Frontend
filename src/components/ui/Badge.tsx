@@ -9,7 +9,7 @@ interface BadgeProps extends React.HTMLAttributes<HTMLSpanElement> {
 
 const variantStyles: Record<BadgeVariant, string> = {
   default:
-    "bg-emerald-500/15 text-emerald-600 border-emerald-500/25 dark:text-emerald-300 dark:border-emerald-500/40",
+    "bg-brand-500/15 text-brand-600 border-brand-500/25 dark:text-brand-300 dark:border-brand-500/40",
   success:
     "bg-green-500/15 text-green-600 border-green-500/25 dark:text-green-300 dark:border-green-500/40",
   warning:
@@ -17,7 +17,7 @@ const variantStyles: Record<BadgeVariant, string> = {
   danger:
     "bg-red-500/15 text-red-600 border-red-500/25 dark:text-red-300 dark:border-red-500/40",
   info:
-    "bg-cyan-500/15 text-cyan-600 border-cyan-500/25 dark:text-cyan-300 dark:border-cyan-500/40",
+    "bg-brand-500/15 text-brand-600 border-brand-500/25 dark:text-brand-300 dark:border-brand-500/40",
   neutral:
     "bg-neutral-100 text-neutral-600 border-neutral-200 dark:bg-white/10 dark:text-neutral-300 dark:border-white/15",
 };

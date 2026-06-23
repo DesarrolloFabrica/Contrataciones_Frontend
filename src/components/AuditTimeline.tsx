@@ -112,7 +112,7 @@ function pillClass(type: string, metadata?: Record<string, any> | null) {
   if (type.includes("FINISHED") || type.includes("CREATED") || type.includes("UPLOADED"))
     return "bg-emerald-500/10 text-emerald-300 border-emerald-500/20";
   if (type.includes("OPENED") || type.includes("DOWNLOADED"))
-    return "bg-cyan-500/10 text-cyan-300 border-cyan-500/20";
+    return "bg-brand-500/10 text-brand-300 border-brand-500/20";
   return "bg-white/5 text-gray-300 border-white/10";
 }
 

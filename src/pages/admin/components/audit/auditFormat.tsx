@@ -96,7 +96,7 @@ export function severityBadge(sev: Severity) {
   if (sev === "INFO") {
     return (
       <span
-        className={`${base} border-cyan-200 dark:border-cyan-500/30 bg-cyan-50 dark:bg-cyan-500/10 text-cyan-700 dark:text-cyan-300`}
+        className={`${base} border-brand-200 dark:border-brand-500/30 bg-brand-50 dark:bg-brand-500/10 text-brand-700 dark:text-brand-300`}
       >
         informativo
       </span>

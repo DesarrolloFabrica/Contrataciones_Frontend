@@ -11,8 +11,8 @@ export const InterviewFormHeader: React.FC = () => {
       <div
         className={`inline-flex items-center gap-2 px-4 py-1.5 rounded-full border text-[10px] font-bold uppercase tracking-widest ${
           isDark
-            ? "border-cyan-500/15 bg-cyan-500/5 text-cyan-400/70"
-            : "border-cyan-200 bg-cyan-50 text-cyan-600"
+            ? "border-brand-500/15 bg-brand-500/5 text-brand-400/70"
+            : "border-brand-200 bg-brand-50 text-brand-600"
         }`}
       >
         <BrainCircuit className="w-3.5 h-3.5" />

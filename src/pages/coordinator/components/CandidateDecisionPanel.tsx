@@ -59,7 +59,7 @@ export const CandidateDecisionPanel: React.FC<CandidateDecisionPanelProps> = ({
       className={`relative rounded-2xl p-[1px] shadow-2xl ${
         isDark
           ? "bg-gradient-to-b from-white/10 to-transparent"
-          : "bg-gradient-to-b from-cyan-200/40 via-transparent to-transparent"
+          : "bg-gradient-to-b from-brand-200/40 via-transparent to-transparent"
       }`}
     >
       <div
@@ -79,8 +79,8 @@ export const CandidateDecisionPanel: React.FC<CandidateDecisionPanelProps> = ({
               <div className={`w-2.5 h-2.5 rounded-full ${isDark ? "bg-emerald-400" : "bg-emerald-500"}`} />
             ) : (
               <div className="relative flex h-2.5 w-2.5">
-                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-cyan-400 opacity-75" />
-                <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-cyan-500" />
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-brand-400 opacity-75" />
+                <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-brand-500" />
               </div>
             )}
             <h2

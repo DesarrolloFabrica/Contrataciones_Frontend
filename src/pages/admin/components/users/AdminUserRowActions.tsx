@@ -95,7 +95,7 @@ const AdminUserRowActions: React.FC<Props> = ({
       base.push({
         id: "security",
         label: "Estado y seguridad",
-        icon: <ShieldCheck className={iconCls("text-cyan-300")} />,
+        icon: <ShieldCheck className={iconCls("text-brand-300")} />,
         onClick: handleViewSecurity,
         disabled: busy !== null,
       });
@@ -104,7 +104,7 @@ const AdminUserRowActions: React.FC<Props> = ({
       {
         id: "edit",
         label: "Editar",
-        icon: <Pencil className={iconCls("text-cyan-300")} />,
+        icon: <Pencil className={iconCls("text-brand-300")} />,
         onClick: handleEdit,
         disabled: busy !== null,
       },
@@ -358,7 +358,7 @@ const AdminUserRowActions: React.FC<Props> = ({
                           : "bg-slate-200 text-slate-400 cursor-not-allowed border border-slate-200"
                         : isActive
                           ? "bg-rose-600 hover:bg-rose-500 text-white"
-                          : "bg-cyan-600 hover:bg-cyan-500 text-white",
+                          : "bg-brand-600 hover:bg-brand-500 text-white",
                     ].join(" ")}
                   >
                     {busy === "toggle" ? "Procesando..." : isActive ? "Desactivar" : "Activar"}

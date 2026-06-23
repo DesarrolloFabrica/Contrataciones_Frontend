@@ -84,8 +84,8 @@ const AdminUsersHeader: React.FC<Props> = ({
       "w-full text-left px-3 py-2 rounded-lg text-xs font-medium transition flex items-center justify-between",
       active
         ? isDark
-          ? "bg-cyan-500/10 text-cyan-300"
-          : "bg-cyan-50 text-cyan-700"
+          ? "bg-brand-500/10 text-brand-300"
+          : "bg-brand-50 text-brand-700"
         : isDark
           ? "text-neutral-300 hover:bg-white/5"
           : "text-slate-700 hover:bg-slate-50",
@@ -101,7 +101,7 @@ const AdminUsersHeader: React.FC<Props> = ({
             <span className={`font-semibold ${isDark ? "text-white" : "text-slate-900"}`}>{metrics.total}</span> usuarios
           </span>
         </span>
-        <span className="inline-flex items-center gap-1.5 text-cyan-600 dark:text-cyan-400">
+        <span className="inline-flex items-center gap-1.5 text-brand-600 dark:text-brand-400">
           <UserCheck className="w-3.5 h-3.5" />
           <span><span className="font-semibold">{metrics.active}</span> activos</span>
         </span>
@@ -132,8 +132,8 @@ const AdminUsersHeader: React.FC<Props> = ({
             className={[
               "w-full h-10 rounded-xl pl-10 pr-10 text-sm outline-none transition-all",
               isDark
-                ? "bg-white/[0.03] border border-white/10 placeholder:text-white/25 text-white focus:border-cyan-500/40 focus:ring-2 focus:ring-cyan-500/10"
-                : "bg-white border border-slate-300 placeholder:text-slate-400 text-slate-900 focus:border-cyan-400 focus:ring-2 focus:ring-cyan-300/40",
+                ? "bg-white/[0.03] border border-white/10 placeholder:text-white/25 text-white focus:border-brand-500/40 focus:ring-2 focus:ring-brand-500/10"
+                : "bg-white border border-slate-300 placeholder:text-slate-400 text-slate-900 focus:border-brand-400 focus:ring-2 focus:ring-brand-300/40",
             ].join(" ")}
           />
           {search && (
@@ -210,8 +210,8 @@ const AdminUsersHeader: React.FC<Props> = ({
               className={[
                 "inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-semibold border transition",
                 isDark
-                  ? "bg-cyan-500/10 border-cyan-500/25 text-cyan-300"
-                  : "bg-cyan-50 border-cyan-200 text-cyan-700",
+                  ? "bg-brand-500/10 border-brand-500/25 text-brand-300"
+                  : "bg-brand-50 border-brand-200 text-brand-700",
               ].join(" ")}
             >
               Búsqueda: <b className="font-semibold">{search.trim()}</b>
@@ -225,8 +225,8 @@ const AdminUsersHeader: React.FC<Props> = ({
               className={[
                 "inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-semibold border transition",
                 isDark
-                  ? "bg-cyan-500/10 border-cyan-500/25 text-cyan-300"
-                  : "bg-cyan-50 border-cyan-200 text-cyan-700",
+                  ? "bg-brand-500/10 border-brand-500/25 text-brand-300"
+                  : "bg-brand-50 border-brand-200 text-brand-700",
               ].join(" ")}
             >
               Rol: {roles.find((o) => o.value === roleFilter)?.label}
@@ -241,8 +241,8 @@ const AdminUsersHeader: React.FC<Props> = ({
                 "inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-semibold border transition",
                 statusFilter === "ACTIVE"
                   ? isDark
-                    ? "bg-cyan-500/10 border-cyan-500/25 text-cyan-300"
-                    : "bg-cyan-50 border-cyan-200 text-cyan-700"
+                    ? "bg-brand-500/10 border-brand-500/25 text-brand-300"
+                    : "bg-brand-50 border-brand-200 text-brand-700"
                   : isDark
                     ? "bg-rose-500/10 border-rose-500/25 text-rose-300"
                     : "bg-rose-50 border-rose-200 text-rose-700",

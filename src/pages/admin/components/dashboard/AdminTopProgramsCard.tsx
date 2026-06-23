@@ -84,8 +84,8 @@ export default function AdminTopProgramsCard({ mode, byVolume, byAcceptance }: P
               className={[
                 "text-3xl font-black tracking-tight",
                 data.accent === "cyan" 
-                  ? (isDark ? "text-cyan-400" : "text-cyan-600")
-                  : (isDark ? "text-cyan-400" : "text-cyan-600"),
+                  ? (isDark ? "text-brand-400" : "text-brand-600")
+                  : (isDark ? "text-brand-400" : "text-brand-600"),
               ].join(" ")}
             >
               {data.value}
@@ -106,10 +106,10 @@ export default function AdminTopProgramsCard({ mode, byVolume, byAcceptance }: P
   return (
     <div
       className={[
-        "relative flex h-full min-h-[420px] w-full min-w-0 flex-col overflow-hidden rounded-xl border p-5",
+        "relative flex h-full min-h-[420px] w-full min-w-0 flex-col overflow-hidden rounded-xl border border-t-2 border-t-brand-500 p-5",
         isDark
-          ? "border-white/10 bg-white/[0.03]"
-          : "border-slate-200 bg-white shadow-sm",
+          ? "border-brand-500/25 bg-white/[0.03]"
+          : "border-brand-500/20 bg-white shadow-[0_8px_30px_-12px_rgba(15,23,42,0.08)]",
       ].join(" ")}
     >
       <div className="flex items-start justify-between mb-4">
@@ -171,8 +171,8 @@ export default function AdminTopProgramsCard({ mode, byVolume, byAcceptance }: P
                   <stop offset="100%" stopColor={isDark ? "#34d399" : "#10b981"} stopOpacity={1} />
                 </linearGradient>
                 <linearGradient id="gradCyan" x1="0" y1="0" x2="1" y2="0">
-                  <stop offset="0%" stopColor={isDark ? "#0e7490" : "#22d3ee"} stopOpacity={0.8} />
-                  <stop offset="100%" stopColor={isDark ? "#22d3ee" : "#06b6d4"} stopOpacity={1} />
+                  <stop offset="0%" stopColor={isDark ? "#0e7490" : "#34D399"} stopOpacity={0.8} />
+                  <stop offset="100%" stopColor={isDark ? "#34D399" : "#10B981"} stopOpacity={1} />
                 </linearGradient>
               </defs>
 
