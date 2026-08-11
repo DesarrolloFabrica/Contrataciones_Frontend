@@ -66,7 +66,7 @@ function NavTabs({
                 className={cn(
                   "absolute inset-0 rounded-lg shadow-sm",
                   isDark
-                    ? "bg-gradient-to-r from-brand-600 to-brand-500 shadow-brand-500/20"
+                    ? "bg-gradient-to-r from-[#178b70] to-[#12645f] shadow-[0_6px_18px_-10px_rgba(44,143,119,0.55)]"
                     : "bg-gradient-to-r from-brand-500 to-brand-600 shadow-[0_4px_14px_rgba(16,185,129,0.35)]"
                 )}
               />
@@ -95,7 +95,7 @@ export function AdminModeHeader({
       className={cn(
         "sticky top-0 z-50 w-full border-b transition-colors duration-300",
         isDark
-          ? "bg-[#021A0F]/90 border-white/[0.06] backdrop-blur-xl shadow-[0_1px_0_0_rgba(255,255,255,0.04)]"
+          ? "bg-[#071a20]/92 border-[#579689]/20 backdrop-blur-xl shadow-[0_1px_0_0_rgba(255,255,255,0.035),0_14px_34px_-28px_rgba(0,4,8,0.9)]"
           : "bg-white/90 border-slate-200/70 backdrop-blur-xl shadow-[0_1px_3px_rgba(15,23,42,0.04)]"
       )}
     >
@@ -117,7 +117,7 @@ export function AdminModeHeader({
                   className={cn(
                     "inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[10px] font-medium",
                     isDark
-                      ? "bg-brand-500/10 text-brand-400"
+                      ? "bg-[#58bea1]/10 text-[#72c4ae]"
                       : "bg-brand-50 text-brand-700"
                   )}
                 >

@@ -77,15 +77,6 @@ export const InterviewWizardStepper: React.FC<InterviewWizardStepperProps> = ({
 
   return (
     <div className="w-full">
-      <p
-        className={cn(
-          "mb-2 text-[10px] font-medium",
-          isDark ? "text-slate-500" : "text-slate-400"
-        )}
-      >
-        Haz clic en cualquier paso para navegar. Tu progreso se guarda automáticamente.
-      </p>
-
       {/* Desktop */}
       <div className="hidden md:flex items-center gap-1.5">
         {STEPS.map((step, idx) => {
@@ -102,11 +93,11 @@ export const InterviewWizardStepper: React.FC<InterviewWizardStepperProps> = ({
               >
                 <span
                   className={cn(
-                    "w-7 h-7 rounded-lg border flex items-center justify-center text-[10px] font-black shrink-0 transition-all duration-300",
+                    "w-6 h-6 rounded-lg border flex items-center justify-center text-[10px] font-black shrink-0 transition-all duration-300",
                     badgeClass(step)
                   )}
                 >
-                  {visited ? <Check className="w-3.5 h-3.5" /> : step.id}
+                  {visited ? <Check className="w-3 h-3" /> : step.id}
                 </span>
 
                 <span
@@ -122,7 +113,7 @@ export const InterviewWizardStepper: React.FC<InterviewWizardStepperProps> = ({
               {idx < STEPS.length - 1 && (
                 <div
                   className={cn(
-                    "flex-1 h-px rounded-full min-w-[16px] transition-colors duration-300",
+                    "flex-1 h-px rounded-full min-w-[12px] transition-colors duration-300",
                     step.id < maxReachedStep
                       ? isDark
                         ? "bg-brand-500/30"
@@ -150,7 +141,7 @@ export const InterviewWizardStepper: React.FC<InterviewWizardStepperProps> = ({
               onClick={() => onStepClick(step.id)}
               title={step.label}
               className={cn(
-                "rounded-lg border px-1 py-2 text-[9px] font-bold uppercase tracking-wider transition-all duration-200",
+                "rounded-lg border px-1 py-1.5 text-[9px] font-bold uppercase tracking-wider transition-all duration-200",
                 visited
                   ? isDark
                     ? "bg-brand-500/15 border-brand-500/30 text-brand-300"

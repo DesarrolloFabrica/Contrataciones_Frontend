@@ -86,7 +86,7 @@ const AdminUsersTable: React.FC<Props> = ({
   if (!total) {
     return (
       <div className={`flex flex-col items-center justify-center gap-4 rounded-2xl border border-dashed py-16 ${
-        isDark ? "border-white/10 bg-black/10 text-neutral-400" : "border-slate-200 bg-slate-50 text-slate-500"
+        isDark ? "border-[#579689]/18 bg-[#07171c]/55 text-neutral-400" : "border-slate-200 bg-slate-50 text-slate-500"
       }`}>
         <Search className="w-8 h-8 opacity-50" />
         <p className="text-sm font-medium">No se encontraron usuarios</p>
@@ -100,7 +100,7 @@ const AdminUsersTable: React.FC<Props> = ({
       className={[
         "rounded-2xl overflow-hidden border",
         isDark
-          ? "border-white/10 bg-[#090909]"
+          ? "border-[#579689]/20 bg-[#091d22]"
           : "border-slate-200 bg-white shadow-sm",
       ].join(" ")}
     >
@@ -110,7 +110,7 @@ const AdminUsersTable: React.FC<Props> = ({
             className={[
               "sticky top-0 z-10 border-b",
               isDark
-                ? "bg-[#0B0B0B] border-white/10"
+                ? "bg-[#071a20] border-[#579689]/16"
                 : "bg-slate-50 border-slate-200",
             ].join(" ")}
           >
@@ -245,7 +245,7 @@ const AdminUsersTable: React.FC<Props> = ({
         className={[
           "flex flex-col md:flex-row items-center justify-between gap-3 px-4 py-3 border-t",
           isDark
-            ? "border-white/10 bg-[#0B0B0B]"
+            ? "border-[#579689]/16 bg-[#071a20]"
             : "border-slate-200 bg-slate-50",
         ].join(" ")}
       >

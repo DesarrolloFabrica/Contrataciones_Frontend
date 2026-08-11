@@ -64,13 +64,13 @@ export const CandidateDecisionPanel: React.FC<CandidateDecisionPanelProps> = ({
     >
       <div
         className={`rounded-2xl overflow-hidden ${
-          isDark ? "bg-[#0E1216]" : "bg-white"
+          isDark ? "bg-[#091d22]" : "bg-white"
         }`}
       >
         <div
           className={`px-8 py-5 border-b ${
             isDark
-              ? "bg-[#0A0D12] border-white/[0.06]"
+              ? "bg-[#071a20] border-[#579689]/14"
               : "bg-slate-50 border-slate-200"
           }`}
         >
@@ -220,7 +220,7 @@ export const CandidateDecisionPanel: React.FC<CandidateDecisionPanelProps> = ({
                 placeholder="Escribe tu justificación profesional aquí... (Mínimo 30 caracteres)"
                 className={`relative block w-full h-36 rounded-xl p-4 text-sm resize-none transition-all focus:outline-none ${
                   isDark
-                    ? "bg-[#13181E] border border-transparent text-slate-200 placeholder:text-slate-600 focus:bg-[#0A0C10]"
+                    ? "bg-[#0a2025] border border-[#579689]/16 text-slate-200 placeholder:text-slate-600 focus:bg-[#102a30]"
                     : "bg-white border border-slate-200 text-slate-800 placeholder:text-slate-400 focus:bg-slate-50"
                 }`}
               />

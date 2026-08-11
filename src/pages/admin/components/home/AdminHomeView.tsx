@@ -191,7 +191,7 @@ export default function AdminHomeView({
         <div
           className={`relative px-6 py-4 md:px-8 md:py-5 rounded-2xl ${
             isDark
-              ? "bg-gradient-to-b from-[#080D16]/90 via-[#0A1018]/80 to-[#060A12] border-brand-500/25 shadow-[0_0_40px_-12px_rgba(16,185,129,0.10)]"
+              ? "bg-gradient-to-b from-[#0b232a]/92 via-[#091d22]/88 to-[#07171c] border-[#579689]/22 shadow-[0_22px_60px_-45px_rgba(88,190,161,0.28)]"
               : "bg-gradient-to-b from-white via-slate-50/80 to-white border-brand-500/20 shadow-[0_12px_40px_-12px_rgba(15,23,42,0.06)]"
           }`}
         >

@@ -1,14 +1,14 @@
 import React, { useEffect, useState } from "react";
-import { useNavigate, useLocation } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import { useGoogleLogin } from "@react-oauth/google";
 import { motion } from "framer-motion";
+import { ArrowRight, Mail, ShieldCheck } from "lucide-react";
 
 import { useAuth } from "../../context/AuthContext";
-import { LoginBackground, BrandPanel, AppLogo } from "../../components/brand";
+import { AppLogo, BrandPanel, LoginBackground } from "../../components/brand";
 import ThemeToggle from "../../components/ThemeToggle";
 
-const devEmailLoginEnabled =
-  import.meta.env.VITE_DEV_EMAIL_LOGIN_ENABLED === "true";
+const devEmailLoginEnabled = import.meta.env.VITE_DEV_EMAIL_LOGIN_ENABLED === "true";
 
 function GoogleIcon() {
   return (
@@ -33,9 +33,9 @@ function GoogleIcon() {
   );
 }
 
-function LoadingSpinner() {
+function LoadingSpinner({ className = "text-current" }: { className?: string }) {
   return (
-    <svg className="h-5 w-5 animate-spin text-slate-400" fill="none" viewBox="0 0 24 24" aria-hidden>
+    <svg className={`h-5 w-5 animate-spin ${className}`} fill="none" viewBox="0 0 24 24" aria-hidden>
       <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
       <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
     </svg>
@@ -60,6 +60,7 @@ const LoginPage: React.FC = () => {
       navigate(from.pathname, { replace: true });
       return;
     }
+
     const role = (authUser.role || "").toLowerCase();
     if (role === "leader") navigate("/leader", { replace: true });
     else if (role === "coordinator") navigate("/coordinator", { replace: true });
@@ -67,9 +68,7 @@ const LoginPage: React.FC = () => {
   };
 
   useEffect(() => {
-    if (isReady && user) {
-      navigateRole(user);
-    }
+    if (isReady && user) navigateRole(user);
   }, [isReady, user]);
 
   const googleLogin = useGoogleLogin({
@@ -80,11 +79,11 @@ const LoginPage: React.FC = () => {
         navigateRole(authUser);
       } catch (err: unknown) {
         const apiErr = err as { response?: { data?: { message?: string } }; message?: string };
-        const msg =
+        setError(
           apiErr?.response?.data?.message ||
-          apiErr?.message ||
-          "No se pudo iniciar sesión con Google.";
-        setError(msg);
+            apiErr?.message ||
+            "No se pudo iniciar sesión con Google.",
+        );
         setGoogleLoading(false);
       }
     },
@@ -103,8 +102,8 @@ const LoginPage: React.FC = () => {
     googleLogin();
   };
 
-  const handleEmailSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleEmailSubmit = async (event: React.FormEvent) => {
+    event.preventDefault();
     if (!email.trim() || loading) return;
 
     setError(null);
@@ -115,70 +114,80 @@ const LoginPage: React.FC = () => {
       navigateRole(authUser);
     } catch (err: unknown) {
       const apiErr = err as { response?: { data?: { message?: string } }; message?: string };
-      const msg =
+      setError(
         apiErr?.response?.data?.message ||
-        apiErr?.message ||
-        "No se pudo iniciar sesión con el correo indicado.";
-      setError(msg);
+          apiErr?.message ||
+          "No se pudo iniciar sesión con el correo indicado.",
+      );
       setEmailLoading(false);
     }
   };
 
   if (!isReady) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-white dark:bg-brand-950">
+      <div className="flex min-h-screen items-center justify-center bg-white text-brand-600 dark:bg-brand-950 dark:text-brand-300">
         <LoadingSpinner />
       </div>
     );
   }
 
   return (
-    <div className="relative min-h-screen w-full overflow-hidden text-slate-950 selection:bg-brand-200/60 dark:text-white">
+    <div className="relative min-h-[100svh] w-full overflow-x-hidden text-slate-950 selection:bg-brand-200/60 dark:text-white">
       <LoginBackground />
 
-      <div className="absolute right-5 top-5 z-30 sm:right-6 sm:top-6">
-        <ThemeToggle />
+      <div className="absolute right-5 top-5 z-30 sm:right-8 sm:top-7 lg:right-10 lg:top-8">
+        <ThemeToggle variant="login" />
       </div>
 
-      <div className="relative z-10 flex min-h-screen items-center justify-center px-5 py-10 sm:px-8">
-        <div className="grid w-full max-w-5xl grid-cols-1 items-center gap-8 lg:grid-cols-2 lg:gap-12 xl:max-w-5xl">
-          <BrandPanel />
+      <div className="relative z-10 mx-auto grid min-h-[100svh] w-full max-w-[1480px] grid-cols-1 items-center gap-8 px-5 py-24 sm:px-8 lg:grid-cols-[1.04fr_0.96fr] lg:px-12 lg:py-16 xl:gap-14 2xl:px-3">
+        <BrandPanel />
 
-          <main className="w-full lg:justify-self-start lg:pl-0 xl:pl-2">
-            <div className="mx-auto w-full max-w-[460px] lg:mx-0">
-            {/* Mobile branding */}
+        <main className="w-full lg:justify-self-center">
+          <div className="mx-auto w-full max-w-[570px]">
             <motion.div
               initial={{ opacity: 0, y: 12 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.45 }}
-              className="mb-6 flex flex-col items-center lg:hidden"
+              className="mb-6 flex flex-col items-center text-center lg:hidden"
             >
               <AppLogo variant="login" bare />
+              <h1 className="mt-4 text-2xl font-black tracking-[-0.035em] text-slate-950 dark:text-white">
+                Contratación Académica <span className="text-brand-700 dark:text-[#58bea1]">CUN</span>
+              </h1>
             </motion.div>
 
-            {/* Login card */}
-            <motion.div
+            <motion.section
               initial={{ opacity: 0, y: 24 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.55, delay: 0.08, ease: [0.22, 1, 0.36, 1] }}
-              className="login-glass-card relative overflow-hidden rounded-[1.75rem] p-7 sm:p-8"
+              transition={{ duration: 0.58, delay: 0.08, ease: [0.22, 1, 0.36, 1] }}
+              className="login-glass-card relative overflow-hidden rounded-[1.8rem] px-6 py-8 sm:px-10 sm:py-10 xl:px-12 xl:py-11"
+              aria-labelledby="login-title"
             >
-              <div className="pointer-events-none absolute -right-8 -top-8 h-32 w-32 rounded-full bg-brand-400/10 blur-2xl dark:bg-brand-400/15" />
+              <div className="login-card-glow pointer-events-none absolute -right-14 -top-14 h-52 w-52 rounded-full blur-3xl" />
 
               <div className="relative">
-                <h2 className="text-2xl font-black leading-tight tracking-[-0.03em] text-slate-900 dark:text-white sm:text-[1.65rem]">
-                  Iniciar sesión
-                </h2>
-                <p className="mt-2 text-sm text-slate-500 dark:text-slate-400">
-                  Accede con tu cuenta institucional @cun.edu.co
-                </p>
+                <header className="text-center">
+                  <span className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl border border-brand-200/80 bg-brand-100/75 text-brand-800 shadow-[0_12px_30px_-14px_rgba(16,185,129,0.65)] dark:border-[#4d8e80]/35 dark:bg-[#132f34]/70 dark:text-[#79cdb4] dark:shadow-[0_14px_34px_-20px_rgba(0,0,0,0.9)]">
+                    <ShieldCheck className="h-8 w-8" strokeWidth={1.8} />
+                  </span>
+                  <h2
+                    id="login-title"
+                    className="mt-5 text-[1.75rem] font-black leading-tight tracking-[-0.035em] text-slate-950 dark:text-white sm:text-[2rem]"
+                  >
+                    Iniciar sesión
+                  </h2>
+                  <p className="mt-2 text-sm font-medium leading-6 text-slate-700 dark:text-slate-200 sm:text-[15px]">
+                    Accede con tu cuenta institucional{" "}
+                    <span className="font-bold text-brand-700 dark:text-[#58bea1]">@cun.edu.co</span>
+                  </p>
+                </header>
 
                 {error && (
                   <motion.div
                     role="alert"
                     initial={{ opacity: 0, scale: 0.98 }}
                     animate={{ opacity: 1, scale: 1 }}
-                    className="mt-5 rounded-xl border border-red-200/80 bg-red-50/90 px-4 py-3 text-sm font-medium text-red-700 backdrop-blur-sm dark:border-red-500/20 dark:bg-red-950/40 dark:text-red-300"
+                    className="mt-6 rounded-xl border border-red-200/80 bg-red-50/90 px-4 py-3 text-sm font-medium text-red-700 backdrop-blur-sm dark:border-red-500/20 dark:bg-red-950/40 dark:text-red-300"
                   >
                     {error}
                   </motion.div>
@@ -186,30 +195,42 @@ const LoginPage: React.FC = () => {
 
                 {devEmailLoginEnabled && (
                   <>
-                    <form onSubmit={handleEmailSubmit} className="mt-6 space-y-3">
-                      <input
-                        id="dev-email"
-                        type="email"
-                        value={email}
-                        onChange={(e) => setEmail(e.target.value)}
-                        placeholder="nombre.apellido@cun.edu.co"
-                        disabled={loading}
-                        autoComplete="email"
-                        className="w-full rounded-xl border border-slate-200/90 bg-white/90 px-4 py-3.5 text-sm text-slate-900 outline-none backdrop-blur-sm transition placeholder:text-slate-400 focus:border-brand-400 focus:ring-2 focus:ring-brand-500/20 disabled:cursor-not-allowed disabled:opacity-60 dark:border-brand-400/25 dark:bg-white/8 dark:text-white dark:placeholder:text-slate-400 dark:focus:border-brand-400/60 dark:focus:ring-brand-400/15"
-                      />
+                    <form onSubmit={handleEmailSubmit} className="mt-8 space-y-4">
+                      <label htmlFor="dev-email" className="sr-only">
+                        Correo institucional
+                      </label>
+                      <div className="login-email-field group relative flex items-center rounded-xl">
+                        <Mail className="absolute left-5 h-5 w-5 text-brand-700 transition-colors group-focus-within:text-brand-800 dark:text-[#72c4ae]" strokeWidth={1.8} />
+                        <input
+                          id="dev-email"
+                          type="email"
+                          value={email}
+                          onChange={(event) => setEmail(event.target.value)}
+                          placeholder="nombre.apellido@cun.edu.co"
+                          disabled={loading}
+                          autoComplete="email"
+                          className="h-14 w-full rounded-xl border-0 bg-transparent py-3 pl-14 pr-4 text-[15px] font-medium text-slate-950 outline-none placeholder:text-slate-600 focus:ring-0 disabled:cursor-not-allowed disabled:opacity-60 dark:text-white dark:placeholder:text-slate-400"
+                        />
+                      </div>
+
                       <button
                         type="submit"
                         disabled={loading || !email.trim()}
-                        className="flex w-full items-center justify-center rounded-xl bg-brand-600 px-4 py-3.5 text-sm font-bold text-white shadow-lg shadow-brand-900/15 transition-all duration-200 hover:bg-brand-700 focus:outline-none focus:ring-2 focus:ring-brand-500/40 focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 dark:focus:ring-offset-brand-950"
+                        className="login-primary-button group relative flex h-14 w-full items-center justify-center overflow-hidden rounded-xl px-14 text-[15px] font-extrabold text-white transition-all duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-400 focus-visible:ring-offset-2 focus-visible:ring-offset-white disabled:cursor-not-allowed disabled:opacity-80 dark:focus-visible:ring-offset-[#08251d]"
                       >
-                        {emailLoading ? "Ingresando..." : "Ingresar con correo"}
+                        <span className="relative z-10">
+                          {emailLoading ? "Ingresando..." : "Ingresar con correo"}
+                        </span>
+                        <span className="absolute right-3 flex h-9 w-9 items-center justify-center rounded-lg bg-white/10 transition-transform group-hover:translate-x-0.5">
+                          {emailLoading ? <LoadingSpinner /> : <ArrowRight className="h-5 w-5" strokeWidth={2.3} />}
+                        </span>
                       </button>
                     </form>
 
-                    <div className="my-5 flex items-center gap-3 text-xs text-slate-400 dark:text-slate-500">
-                      <div className="h-px flex-1 bg-gradient-to-r from-transparent to-slate-200 dark:to-white/10" />
-                      <span>o</span>
-                      <div className="h-px flex-1 bg-gradient-to-l from-transparent to-slate-200 dark:to-white/10" />
+                    <div className="my-7 flex items-center gap-4 text-xs font-semibold text-slate-600 dark:text-slate-300">
+                      <div className="h-px flex-1 bg-slate-400/70 dark:bg-white/15" />
+                      <span>o continúa con</span>
+                      <div className="h-px flex-1 bg-slate-400/70 dark:bg-white/15" />
                     </div>
                   </>
                 )}
@@ -219,28 +240,26 @@ const LoginPage: React.FC = () => {
                   onClick={handleGoogleClick}
                   disabled={loading}
                   className={[
-                    devEmailLoginEnabled ? "mt-0" : "mt-6",
-                    "group flex w-full items-center justify-center gap-3 rounded-xl border border-slate-200/90 bg-white px-5 py-4 text-sm font-bold text-slate-800",
-                    "shadow-[0_4px_20px_rgba(15,23,42,0.06)] transition-all duration-200",
-                    "hover:border-brand-300 hover:shadow-[0_8px_28px_rgba(16,185,129,0.14)] active:scale-[0.99]",
-                    "focus:outline-none focus:ring-2 focus:ring-brand-500/35 focus:ring-offset-2 dark:border-brand-400/25 dark:bg-white/10 dark:text-white dark:hover:border-brand-400/40 dark:hover:bg-white/14 dark:focus:ring-offset-transparent",
+                    devEmailLoginEnabled ? "mt-0" : "mt-8",
+                    "login-google-button group flex h-14 w-full items-center justify-center gap-3 rounded-xl px-5 text-[15px] font-extrabold",
+                    "transition-all duration-200 active:scale-[0.99] focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-500/45 focus-visible:ring-offset-2 focus-visible:ring-offset-white dark:focus-visible:ring-offset-[#08251d]",
                     loading ? "cursor-not-allowed opacity-60" : "",
                   ].join(" ")}
                 >
-                  {googleLoading ? <LoadingSpinner /> : <GoogleIcon />}
+                  {googleLoading ? <LoadingSpinner className="text-slate-400" /> : <GoogleIcon />}
                   <span>{googleLoading ? "Conectando..." : "Continuar con Google"}</span>
                 </button>
 
                 {devEmailLoginEnabled && (
-                  <p className="mt-5 text-center text-xs text-slate-400 dark:text-slate-500">
+                  <p className="mt-7 flex items-center justify-center gap-2 text-center text-xs font-semibold text-slate-600 dark:text-slate-300">
+                    <ShieldCheck className="h-5 w-5 text-brand-700 dark:text-[#58bea1]" strokeWidth={1.8} />
                     Entorno de pruebas · acceso local habilitado
                   </p>
                 )}
               </div>
-            </motion.div>
-            </div>
-          </main>
-        </div>
+            </motion.section>
+          </div>
+        </main>
       </div>
     </div>
   );

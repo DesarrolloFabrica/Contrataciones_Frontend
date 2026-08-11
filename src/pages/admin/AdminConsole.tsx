@@ -289,7 +289,7 @@ const AdminConsole: React.FC = () => {
     <div
       className={[
         "min-h-screen w-full font-sans overflow-x-hidden flex flex-col",
-        isDark ? "bg-[#020308] text-white" : "bg-[#F4F7FC] text-slate-900",
+        isDark ? "bg-[#061419] text-slate-100" : "bg-[#F4F7FB] text-slate-900",
       ].join(" ")}
     >
       <AdminModeHeader
@@ -437,7 +437,7 @@ const AdminConsole: React.FC = () => {
               className={[
                 "rounded-[28px] overflow-hidden flex flex-col max-h-[90vh] border",
                 isDark
-                  ? "border-white/15 bg-[#161c22] shadow-[0_30px_80px_rgba(0,0,0,0.5),0_0_0_1px_rgba(255,255,255,0.06)]"
+                  ? "border-[#579689]/25 bg-[#0d252b] shadow-[0_30px_80px_rgba(0,4,8,0.68),0_0_0_1px_rgba(255,255,255,0.035)]"
                   : "border-slate-300 bg-white shadow-[0_24px_80px_rgba(15,23,42,0.35)]",
               ].join(" ")}
             >
@@ -445,7 +445,7 @@ const AdminConsole: React.FC = () => {
                 className={[
                   "shrink-0 px-6 py-5 border-b flex items-center justify-between gap-4 backdrop-blur-sm",
                   isDark
-                    ? "border-white/10 bg-[#1a2028]/90"
+                    ? "border-[#579689]/20 bg-[#102c32]/92"
                     : "border-slate-200 bg-slate-50",
                 ].join(" ")}
               >
@@ -522,7 +522,7 @@ const AdminConsole: React.FC = () => {
             onClick={onCloseScope}
           />
           <div className="relative z-[81] w-full max-w-5xl">
-            <div className="rounded-3xl border border-white/10 bg-[#0b0d0c]/95 shadow-[0_30px_120px_rgba(0,0,0,0.8)] overflow-hidden flex flex-col h-[86vh] max-h-[86vh]">
+            <div className="rounded-3xl border border-[#579689]/25 bg-[#091d22]/96 shadow-[0_30px_120px_rgba(0,4,8,0.85)] overflow-hidden flex flex-col h-[86vh] max-h-[86vh]">
               <div className="p-5 md:p-6 border-b border-white/10 flex items-start justify-between shrink-0">
                 <div className="min-w-0">
                   <p className="text-[11px] uppercase tracking-[0.22em] text-neutral-500 font-bold">

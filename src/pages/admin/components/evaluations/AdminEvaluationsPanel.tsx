@@ -312,7 +312,7 @@ export default function AdminEvaluationsPanel({
   const ddCls = [
     "absolute left-0 right-0 top-full mt-1.5 z-30 rounded-xl border p-1.5 backdrop-blur-xl shadow-xl animate-in fade-in zoom-in-95 duration-150",
     isDark
-      ? "border-white/10 bg-[#0a0c0b]/95"
+      ? "border-[#579689]/20 bg-[#091d22]/95"
       : "border-slate-200 bg-white/95",
   ].join(" ");
 
@@ -839,7 +839,7 @@ export default function AdminEvaluationsPanel({
                   className={[
                     "absolute right-0 top-full mt-1.5 z-30 w-56 rounded-xl border p-1.5 backdrop-blur-xl shadow-xl",
                     isDark
-                      ? "border-white/10 bg-[#0a0c0b]/95"
+                      ? "border-[#579689]/20 bg-[#091d22]/95"
                       : "border-slate-200 bg-white/95",
                   ].join(" ")}
                 >

@@ -24,7 +24,7 @@ export const ExampleProfilesToolbar: React.FC<ExampleProfilesToolbarProps> = ({
         className={[
           "backdrop-blur-xl p-1.5 rounded-2xl border flex flex-wrap justify-center gap-1",
           isDark
-            ? "bg-[#0A0A0A]/90 border-white/10 shadow-2xl"
+            ? "bg-[#091d22]/92 border-[#579689]/20 shadow-2xl"
             : "bg-white border-slate-200 shadow-[0_14px_40px_rgba(15,23,42,0.16)]",
         ].join(" ")}
       >

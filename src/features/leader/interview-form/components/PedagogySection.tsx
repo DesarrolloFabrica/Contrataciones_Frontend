@@ -19,7 +19,7 @@ export const PedagogySection: React.FC<PedagogySectionProps> = ({
     <FormSection
       title="Estrategia Pedagógica"
       icon={<Users className="w-6 h-6" />}
-      step={3}
+      step="4.2"
       subtitle="Explora cómo el candidato enseña, evalúa y maneja retos en el aula."
     >
       <FormField
@@ -34,7 +34,7 @@ export const PedagogySection: React.FC<PedagogySectionProps> = ({
         />
       </FormField>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
         <FormField
           label="Plan de Retención (Alto Fracaso)"
           name="failureRatePlan"

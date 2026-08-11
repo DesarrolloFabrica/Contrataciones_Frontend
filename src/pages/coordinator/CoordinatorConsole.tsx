@@ -595,7 +595,7 @@ const CoordinatorConsole: React.FC = () => {
     <div
       className={[
         "min-h-screen w-full font-sans overflow-x-hidden flex flex-col",
-        isDark ? "bg-[#020308] text-white" : "bg-[#F4F7FC] text-slate-900",
+        isDark ? "bg-[#061419] text-slate-100" : "bg-[#F4F7FB] text-slate-900",
       ].join(" ")}
     >
       <CoordinatorModeHeader
@@ -621,7 +621,7 @@ const CoordinatorConsole: React.FC = () => {
             <div
               className={`relative px-6 py-4 md:px-8 md:py-5 rounded-2xl ${
                 isDark
-                  ? "bg-gradient-to-b from-[#080D16]/90 via-[#0A1018]/80 to-[#060A12] border-brand-500/25 shadow-[0_0_40px_-12px_rgba(16,185,129,0.10)]"
+                  ? "bg-gradient-to-b from-[#0b232a]/92 via-[#091d22]/88 to-[#07171c] border-[#579689]/22 shadow-[0_22px_60px_-45px_rgba(88,190,161,0.28)]"
                   : "bg-gradient-to-b from-white via-slate-50/80 to-white border-brand-500/20 shadow-[0_12px_40px_-12px_rgba(15,23,42,0.06)]"
               }`}
             >
@@ -771,7 +771,7 @@ const CoordinatorConsole: React.FC = () => {
                           className={[
                             "relative overflow-hidden rounded-2xl border border-t-2 border-t-brand-500 transition-all duration-300 flex flex-col",
                             isDark
-                              ? "bg-gradient-to-b from-[#080D16] to-[#0A1018] border-brand-500/25 shadow-[0_0_40px_-12px_rgba(16,185,129,0.10)]"
+                              ? "bg-gradient-to-b from-[#0b232a] to-[#091d22] border-[#579689]/22 shadow-[0_22px_60px_-45px_rgba(88,190,161,0.28)]"
                               : "bg-white border-brand-500/20 shadow-[0_4px_20px_-6px_rgba(15,23,42,0.06)]",
                           ].join(" ")}
                         >
@@ -851,7 +851,7 @@ const CoordinatorConsole: React.FC = () => {
                                       }
                                       className={`group w-full flex items-center gap-3 rounded-xl border p-3 text-left transition-all duration-200 hover:-translate-y-0.5 ${
                                         isDark
-                                          ? "border-white/5 bg-[#15191E] hover:border-brand-500/30 hover:shadow-[0_4px_15px_-5px_rgba(16,185,129,0.2)]"
+                                          ? "border-[#579689]/18 bg-[#102a30] hover:border-[#58bea1]/35 hover:shadow-[0_8px_22px_-12px_rgba(40,120,105,0.28)]"
                                           : "border-slate-200 bg-white hover:border-brand-300 hover:shadow-[0_8px_25px_-8px_rgba(15,23,42,0.1)]"
                                       }`}
                                     >
@@ -977,7 +977,7 @@ const CoordinatorConsole: React.FC = () => {
                         <div
                           className={`relative overflow-hidden rounded-2xl border border-t-2 border-t-brand-500 p-5 ${
                             isDark
-                              ? "bg-gradient-to-b from-[#080D16] to-[#0A1018] border-brand-500/25 shadow-[0_0_40px_-12px_rgba(16,185,129,0.10)]"
+                              ? "bg-gradient-to-b from-[#0b232a] to-[#091d22] border-[#579689]/22 shadow-[0_22px_60px_-45px_rgba(88,190,161,0.28)]"
                               : "bg-white border-brand-500/20 shadow-[0_4px_20px_-6px_rgba(15,23,42,0.06)]"
                           }`}
                         >

@@ -33,7 +33,7 @@ export const CandidateLookupPanel: React.FC<CandidateLookupPanelProps> = ({
         <div
           className={`rounded-2xl overflow-hidden border ${
             isDark
-              ? "border-brand-500/25 bg-[#061015]"
+              ? "border-[#579689]/22 bg-[#091d22]"
               : "border-brand-200 bg-white shadow-[0_10px_30px_rgba(15,23,42,0.12)]"
           }`}
         >

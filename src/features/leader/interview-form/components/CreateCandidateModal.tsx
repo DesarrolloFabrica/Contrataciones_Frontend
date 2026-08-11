@@ -174,7 +174,7 @@ export const CreateCandidateModal: React.FC<CreateCandidateModalProps> = ({
         className={cn(
           "relative flex w-full max-w-3xl max-h-[min(92vh,860px)] flex-col overflow-hidden rounded-2xl border shadow-2xl",
           isDark
-            ? "border-white/10 bg-[#0a1218] text-white shadow-black/50"
+            ? "border-[#579689]/20 bg-[#091d22] text-white shadow-black/50"
             : "border-slate-200 bg-white text-slate-900 shadow-slate-300/40"
         )}
       >

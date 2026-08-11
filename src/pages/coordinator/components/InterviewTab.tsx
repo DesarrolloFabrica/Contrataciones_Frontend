@@ -2,6 +2,7 @@
 import React, { useState } from "react";
 import type { CandidateGroup } from "../types";
 import ComparisonInlinePanel from "./ComparisonInlinePanel";
+import { useTheme } from "../../../context/ThemeContext";
 
 type Props = {
   /** Grupo del candidato seleccionado (trae interviews[]) */
@@ -23,13 +24,15 @@ export default function InterviewsTab({
   onOpenInterview,
   onOpenComparison,
 }: Props) {
+  const { theme } = useTheme();
+  const isDark = theme === "dark";
   const interviews = candidateGroup.interviews ?? [];
 
   const [showComparison, setShowComparison] = useState(false);
 
   if (interviews.length === 0) {
     return (
-      <div className="text-sm text-gray-400 bg-black/20 border border-white/10 rounded-2xl p-4">
+      <div className={`text-sm rounded-2xl border p-4 ${isDark ? "text-slate-400 bg-[#0b232a] border-[#579689]/18" : "text-slate-600 bg-slate-50 border-slate-200"}`}>
         Este candidato no tiene entrevistas registradas.
       </div>
     );
@@ -39,7 +42,7 @@ export default function InterviewsTab({
 
   return (
     <div className="space-y-3">
-      <div className="text-xs text-gray-500">
+      <div className="text-xs text-slate-500 [&_b]:!text-slate-700 dark:[&_b]:!text-slate-300">
         <b className="text-gray-300">{candidateGroup.candidateName}</b> •{" "}
         {interviews.length} entrevista(s)
       </div>
@@ -57,15 +60,17 @@ export default function InterviewsTab({
                 "w-full text-left rounded-2xl border px-4 py-3 transition",
                 active
                   ? "border-emerald-500/40 bg-emerald-500/10"
-                  : "border-white/10 bg-white/[0.03] hover:border-emerald-500/25 hover:bg-white/[0.06]",
+                  : isDark
+                    ? "border-[#579689]/18 bg-[#0b232a]/70 hover:border-[#58bea1]/30 hover:bg-[#102a30]"
+                    : "border-slate-200 bg-white hover:border-emerald-300 hover:bg-emerald-50/40",
               ].join(" ")}
             >
               <div className="flex items-center justify-between gap-3">
                 <div className="min-w-0">
-                  <div className="text-sm font-semibold text-white truncate">
+                  <div className={`text-sm font-semibold truncate ${isDark ? "text-white" : "text-slate-800"}`}>
                     Entrevista
                   </div>
-                  <div className="text-xs text-white/55 mt-0.5">
+                  <div className={`text-xs mt-0.5 ${isDark ? "text-white/55" : "text-slate-500"}`}>
                     {new Date(ev.createdAt).toLocaleString("es-CO")}
                   </div>
                 </div>
@@ -75,7 +80,9 @@ export default function InterviewsTab({
                     "text-[11px] px-3 py-1 rounded-full border",
                     active
                       ? "border-emerald-500/30 text-emerald-200 bg-emerald-500/10"
-                      : "border-white/10 text-gray-300 bg-white/[0.03]",
+                      : isDark
+                        ? "border-[#579689]/18 text-slate-300 bg-[#102a30]"
+                        : "border-slate-200 text-slate-600 bg-slate-50",
                   ].join(" ")}
                 >
                   Abrir
@@ -87,7 +94,7 @@ export default function InterviewsTab({
       </div>
 
       {canCompare && (
-        <div className="pt-3 border-t border-white/10 space-y-3">
+        <div className={`pt-3 border-t space-y-3 ${isDark ? "border-[#579689]/18" : "border-slate-200"}`}>
           <button
             type="button"
             onClick={() => setShowComparison((v) => !v)}
@@ -105,7 +112,7 @@ export default function InterviewsTab({
             Comparar entrevistas con IA
           </button>
 
-          <p className="text-xs text-white/45">
+          <p className={`text-xs ${isDark ? "text-white/45" : "text-slate-500"}`}>
             La IA detectará similitudes, diferencias y evolución entre reportes.
           </p>
 

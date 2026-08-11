@@ -88,20 +88,20 @@ export function UserAccountMenu({ onLogout, onOpenHelp }: Props) {
       src={user.googlePicture!.trim()}
       alt=""
       className={cn(
-        "w-9 h-9 shrink-0 rounded-full object-cover ring-2 ring-offset-1",
+        "w-10 h-10 shrink-0 rounded-full object-cover ring-2 ring-offset-2",
         isDark
-          ? "ring-brand-500/30 ring-offset-[#021A0F]"
-          : "ring-brand-500/20 ring-offset-white"
+          ? "ring-emerald-400/30 ring-offset-[#0a1518]"
+          : "ring-emerald-500/20 ring-offset-white"
       )}
       onError={() => setImgError(true)}
     />
   ) : (
     <div
       className={cn(
-        "w-9 h-9 shrink-0 rounded-full flex items-center justify-center text-sm font-semibold ring-2 ring-offset-1",
+        "w-10 h-10 shrink-0 rounded-full flex items-center justify-center text-sm font-semibold ring-2 ring-offset-2",
         isDark
-          ? "bg-brand-500/15 text-brand-300 ring-brand-500/30 ring-offset-[#021A0F]"
-          : "bg-brand-50 text-brand-700 ring-brand-500/20 ring-offset-white"
+          ? "bg-emerald-500/15 text-emerald-300 ring-emerald-400/25 ring-offset-[#0a1518]"
+          : "bg-emerald-50 text-emerald-700 ring-emerald-500/20 ring-offset-white"
       )}
       aria-hidden
     >
@@ -116,17 +116,17 @@ export function UserAccountMenu({ onLogout, onOpenHelp }: Props) {
         onClick={() => setOpen((prev) => !prev)}
         aria-expanded={open}
         aria-haspopup="menu"
-        className={cn(
-          "flex items-center gap-2.5 pl-1.5 pr-2.5 py-1.5 rounded-xl border transition-all duration-200",
-          "focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-500/50",
-          open
-            ? isDark
-              ? "bg-white/[0.08] border-white/15 shadow-[0_8px_24px_-8px_rgba(0,0,0,0.5)]"
-              : "bg-white border-slate-200 shadow-[0_8px_24px_-8px_rgba(15,23,42,0.12)]"
-            : isDark
-              ? "bg-white/[0.03] border-white/10 hover:bg-white/[0.06] hover:border-white/15"
-              : "bg-white/70 border-slate-200/80 hover:bg-white hover:border-slate-300 hover:shadow-sm"
-        )}
+      className={cn(
+        "flex items-center gap-2.5 rounded-2xl border py-2 pl-2 pr-3 transition-all duration-200",
+        "focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-500/50",
+        open
+          ? isDark
+            ? "border-white/15 bg-white/[0.08] shadow-[0_10px_28px_-12px_rgba(0,0,0,0.55)]"
+            : "border-slate-200 bg-white shadow-[0_10px_28px_-12px_rgba(15,23,42,0.14)]"
+          : isDark
+            ? "border-white/10 bg-white/[0.04] hover:border-white/15 hover:bg-white/[0.07]"
+            : "border-slate-200/90 bg-white hover:border-slate-300 hover:shadow-sm"
+      )}
       >
         {avatar}
         <div className="hidden md:block min-w-0 text-left max-w-[180px] lg:max-w-[220px]">
@@ -158,7 +158,7 @@ export function UserAccountMenu({ onLogout, onOpenHelp }: Props) {
             "absolute right-0 top-[calc(100%+8px)] w-72 rounded-2xl border shadow-xl overflow-hidden z-50",
             "animate-[fadeInUp_180ms_ease-out]",
             isDark
-              ? "bg-[#0a1f14]/95 border-white/10 shadow-black/40 backdrop-blur-xl"
+              ? "bg-[#091d22]/96 border-[#579689]/22 shadow-black/50 backdrop-blur-xl"
               : "bg-white border-slate-200/90 shadow-slate-200/60 backdrop-blur-xl"
           )}
         >
@@ -180,7 +180,7 @@ export function UserAccountMenu({ onLogout, onOpenHelp }: Props) {
                   className={cn(
                     "w-11 h-11 rounded-full flex items-center justify-center text-base font-semibold shrink-0",
                     isDark
-                      ? "bg-brand-500/15 text-brand-300"
+                      ? "bg-[#58bea1]/12 text-[#72c4ae]"
                       : "bg-brand-50 text-brand-700"
                   )}
                 >
@@ -218,7 +218,7 @@ export function UserAccountMenu({ onLogout, onOpenHelp }: Props) {
                 <span
                   className={cn(
                     "flex items-center justify-center w-8 h-8 rounded-lg",
-                    isDark ? "bg-brand-500/10 text-brand-400" : "bg-brand-50 text-brand-600"
+                    isDark ? "bg-[#58bea1]/10 text-[#72c4ae]" : "bg-brand-50 text-brand-600"
                   )}
                 >
                   <BookOpen className="w-4 h-4" />

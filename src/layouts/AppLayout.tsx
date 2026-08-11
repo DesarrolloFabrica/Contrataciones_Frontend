@@ -67,7 +67,7 @@ export const AppLayout: React.FC<AppLayoutProps> = ({ children, mode = "minimal"
       <div
         className={cn(
           "min-h-screen w-full font-sans",
-          isDark ? "bg-[#020202] text-white" : "bg-gray-50 text-gray-900"
+          isDark ? "bg-[#061419] text-slate-100" : "bg-[#F4F7FB] text-slate-900"
         )}
       >
         {children}
@@ -84,7 +84,7 @@ export const AppLayout: React.FC<AppLayoutProps> = ({ children, mode = "minimal"
     <div
       className={cn(
         "min-h-screen w-full font-sans",
-        isDark ? "bg-[#021A0F] text-white" : "bg-gray-50 text-gray-900"
+        isDark ? "bg-[#061419] text-slate-100" : "bg-[#F4F7FB] text-slate-900"
       )}
     >
       <div className="flex h-screen">
@@ -92,7 +92,7 @@ export const AppLayout: React.FC<AppLayoutProps> = ({ children, mode = "minimal"
         <aside
           className={cn(
         "w-64 flex-shrink-0 border-r flex flex-col",
-        isDark ? "bg-[#021A0F]/90 border-white/5" : "bg-white border-slate-200"
+        isDark ? "bg-[#071A20]/95 border-[#579689]/20" : "bg-white border-slate-200"
           )}
         >
           {/* Perfil */}

@@ -72,10 +72,10 @@ export const IdentitySection: React.FC<IdentitySectionProps> = ({
     <FormSection
       title="Identidad y Trayectoria"
       icon={<User className="w-6 h-6" />}
-      step={1}
+      step={3}
       subtitle="Recoge los datos básicos del candidato y su trayectoria profesional."
     >
-      <div className="grid grid-cols-1 md:grid-cols-6 gap-8">
+      <div className="grid grid-cols-1 md:grid-cols-6 gap-5">
         <div className="md:col-span-2">
           <FormField label="Cédula (CC)" name="documentNumber">
             <div className="relative">
@@ -85,7 +85,7 @@ export const IdentitySection: React.FC<IdentitySectionProps> = ({
                 name="documentNumber"
                 placeholder="Ej. 1030123456"
                 className={`rounded-xl px-4 py-3 outline-none ${
-                  isDark ? "w-full bg-[#07090B] border border-white/[0.10] text-gray-200 text-sm rounded-xl px-4 py-3.5 outline-none transition-all duration-300 placeholder:text-gray-500 focus:bg-[#0F1216] focus:border-brand-500/25 focus:ring-1 focus:ring-brand-500/20 focus:shadow-[0_0_18px_-10px_rgba(16,185,129,0.14)] hover:border-white/[0.14] hover:bg-[#0C0F12]" : "w-full bg-white border border-slate-200 text-slate-900 text-sm rounded-xl px-4 py-3.5 outline-none transition-all duration-200 placeholder:text-slate-400 focus:bg-white focus:border-brand-500/60 focus:ring-1 focus:ring-brand-500/30 focus:shadow-[0_0_0_1px_rgba(16,185,129,0.20)] hover:border-slate-300"
+                  isDark ? "w-full bg-[#0a2025] border border-[#579689]/20 text-slate-200 text-sm rounded-xl px-4 py-3.5 outline-none transition-all duration-300 placeholder:text-slate-500 focus:bg-[#102a30] focus:border-[#58bea1]/35 focus:ring-1 focus:ring-[#58bea1]/15 hover:border-[#579689]/32 hover:bg-[#0d252b]" : "w-full bg-white border border-slate-200 text-slate-900 text-sm rounded-xl px-4 py-3.5 outline-none transition-all duration-200 placeholder:text-slate-400 focus:bg-white focus:border-brand-500/60 focus:ring-1 focus:ring-brand-500/30 focus:shadow-[0_0_0_1px_rgba(16,185,129,0.20)] hover:border-slate-300"
                 }`}
               />
 
@@ -148,7 +148,7 @@ export const IdentitySection: React.FC<IdentitySectionProps> = ({
         </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
         <FormField label="Escuela o Coordinación" name="school">
           <SelectInput
             name="school"

@@ -13,7 +13,7 @@ export const Card = React.forwardRef<HTMLDivElement, CardProps>(
         className={cn(
           "rounded-2xl border backdrop-blur-sm transition-colors duration-200",
           "bg-white border-slate-200 shadow-[0_14px_40px_rgba(15,23,42,0.08)]",
-          "dark:bg-[#050505]/90 dark:border-white/10 dark:shadow-[0_24px_80px_rgba(0,0,0,0.85)]",
+          "dark:bg-[#091d22]/90 dark:border-[#579689]/20 dark:shadow-[0_24px_80px_rgba(0,4,8,0.78)]",
           !noPadding && "p-6",
           className
         )}

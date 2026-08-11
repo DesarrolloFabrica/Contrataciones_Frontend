@@ -200,7 +200,7 @@ export const CoordinatorDocumentsSection: React.FC<Props> = ({
     return (
       <div
         className={`rounded-2xl border p-6 ${
-          isDark ? "bg-[#0A0C10] border-white/5" : "bg-white border-slate-200"
+          isDark ? "bg-[#091d22] border-[#579689]/14" : "bg-white border-slate-200"
         }`}
       >
         <div className="flex items-center gap-3">
@@ -354,7 +354,7 @@ export const CoordinatorDocumentsSection: React.FC<Props> = ({
                   key={doc.id}
                   className={`flex items-center justify-between gap-4 rounded-xl border px-4 py-3 transition-all ${
                     isDark
-                      ? "bg-[#0A0C10] border-white/5 hover:border-white/10"
+                      ? "bg-[#091d22] border-[#579689]/14 hover:border-[#579689]/28"
                       : "bg-white border-slate-200 hover:border-slate-300"
                   }`}
                 >

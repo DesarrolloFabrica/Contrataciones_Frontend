@@ -21,10 +21,10 @@ export const AvailabilitySection: React.FC<AvailabilitySectionProps> = ({
     <FormSection
       title="Disponibilidad y Compromiso"
       icon={<Clock className="w-6 h-6" />}
-      step={2}
+      step="4.1"
       subtitle="Define la compatibilidad horaria y los posibles conflictos de interés."
     >
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
         <div className="md:col-span-2">
           <FormField
             label="Horario Disponible"

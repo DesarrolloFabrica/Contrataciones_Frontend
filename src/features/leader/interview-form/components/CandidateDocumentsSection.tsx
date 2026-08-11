@@ -30,7 +30,7 @@ export const CandidateDocumentsSection: React.FC<CandidateDocumentsSectionProps>
     <FormSection
       title="Repositorio documental del candidato"
       icon={<FileText className="w-6 h-6" />}
-      step={-1}
+      step={2}
       subtitle="Registra la hoja de vida como archivo principal y los demás soportes como links/observaciones opcionales."
     >
       <div className="grid grid-cols-1 gap-5">

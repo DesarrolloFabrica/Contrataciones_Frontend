@@ -137,7 +137,7 @@ export default function AdminScoreCard({ avg, median, min, max, count }: Props) 
               <div
                 className={[
                   "relative h-1.5 rounded-full overflow-hidden border",
-                  isDark ? "bg-neutral-900 border-white/5" : "bg-slate-100 border-slate-200/50",
+                  isDark ? "bg-[#102a30] border-[#579689]/12" : "bg-slate-100 border-slate-200/50",
                 ].join(" ")}
               >
                 {/* Gradient Fill (track) */}
@@ -167,7 +167,7 @@ export default function AdminScoreCard({ avg, median, min, max, count }: Props) 
                   className={[
                     "absolute -top-[5px] -translate-x-1/2 w-3.5 h-3.5 rounded-full border-[2.5px] transition-all",
                     isDark
-                      ? "bg-[#0c0c0e] border-brand-400 shadow-[0_0_10px_rgba(52,211,153,0.4)]"
+                      ? "bg-[#091d22] border-[#58bea1] shadow-[0_0_10px_rgba(88,190,161,0.28)]"
                       : "bg-white border-brand-500 shadow-sm",
                   ].join(" ")}
                   style={{ left: `${Math.max(0, Math.min(100, avgPct))}%` }}

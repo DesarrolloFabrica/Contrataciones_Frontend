@@ -83,7 +83,7 @@ export default function AdminAuditTimelinePreview() {
           </button>
         </div>
       </div>
-      <div className={isDark ? "bg-black/20" : "bg-slate-50/30"}>
+      <div className={isDark ? "bg-[#07171c]/55" : "bg-slate-50/30"}>
         <div className="p-5">
           <AdminAuditTimeline
             title={mode === "GLOBAL" ? "Historial global (mock)" : "Actividad de evaluaciones (mock)"}

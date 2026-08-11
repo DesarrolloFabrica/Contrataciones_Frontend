@@ -208,7 +208,7 @@ const AdminUserRowActions: React.FC<Props> = ({
                 className={[
                   "backdrop-blur-xl rounded-2xl shadow-2xl overflow-hidden",
                   isDark
-                    ? "bg-[#0B0B0B]/95 border border-white/10"
+                    ? "bg-[#091d22]/96 border border-[#579689]/20"
                     : "bg-white/95 border border-slate-200",
                 ].join(" ")}
               >
@@ -269,7 +269,7 @@ const AdminUserRowActions: React.FC<Props> = ({
               <div
                 className={[
                   "w-full max-w-md rounded-3xl shadow-2xl overflow-hidden",
-                  isDark ? "bg-[#070707] border border-white/10" : "bg-white border border-slate-200",
+                  isDark ? "bg-[#091d22] border border-[#579689]/20" : "bg-white border border-slate-200",
                 ].join(" ")}
               >
                 <div
@@ -312,7 +312,7 @@ const AdminUserRowActions: React.FC<Props> = ({
                   <div
                     className={[
                       "rounded-2xl border p-4",
-                      isDark ? "border-white/10 bg-black/30" : "border-slate-200 bg-slate-50",
+                      isDark ? "border-[#579689]/18 bg-[#07171c]/65" : "border-slate-200 bg-slate-50",
                     ].join(" ")}
                   >
                     <p className={`text-sm font-semibold ${isDark ? "text-white" : "text-slate-900"}`}>

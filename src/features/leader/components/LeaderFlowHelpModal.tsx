@@ -22,7 +22,7 @@ export const LeaderFlowHelpModal: React.FC<LeaderFlowHelpModalProps> = ({
         className={[
           "relative w-full max-w-2xl mx-4 rounded-3xl border shadow-[0_30px_120px_rgba(0,0,0,0.9)] overflow-hidden",
           isDark
-            ? "border-white/10 bg-[#050505]"
+            ? "border-[#579689]/22 bg-[#091d22]"
             : "border-slate-200 bg-white shadow-[0_30px_120px_rgba(15,23,42,0.35)]",
         ].join(" ")}
       >
@@ -52,16 +52,16 @@ export const LeaderFlowHelpModal: React.FC<LeaderFlowHelpModalProps> = ({
                   isDark ? "text-white" : "text-slate-900"
                 }`}
               >
-                Cómo usar este panel de evaluación
+                Cómo usar este panel de entrevistas
               </h3>
               <p
                 className={`text-sm ${
                   isDark ? "text-neutral-400" : "text-slate-600"
                 }`}
               >
-                Esta vista está pensada para que registres evaluaciones trazables de
-                cada docente y generes evidencia clara para quienes toman la decisión final,
-                combinando tu criterio con la analítica de IA.
+                Registra la charla con cada candidato para decidir si puede
+                contratarse. Combina tu criterio con la analítica de IA y deja
+                evidencia clara para quienes toman la decisión final.
               </p>
             </div>
 
@@ -101,7 +101,7 @@ export const LeaderFlowHelpModal: React.FC<LeaderFlowHelpModalProps> = ({
                   isDark ? "text-white" : "text-slate-900"
                 }`}
               >
-                Registra el contexto completo del docente.
+                Registra el contexto de la vacante y la entrevista.
               </p>
               <p
                 className={`text-xs leading-relaxed ${

@@ -145,13 +145,13 @@ function pickCandidateSchoolProgramLabel(
 // ==========================================
 const STYLES = {
   shellDark:
-    "relative rounded-[28px] overflow-hidden border border-brand-500/25 border-t-2 border-t-brand-500 bg-[#0B0E10] shadow-[0_30px_120px_rgba(0,0,0,0.70)]",
+    "relative rounded-[28px] overflow-hidden border border-[#579689]/22 border-t-2 border-t-[#58bea1] bg-[#091d22] shadow-[0_30px_120px_rgba(0,4,8,0.72)]",
   shellInnerDark: "relative p-5 sm:p-6",
   cardDark:
     "rounded-2xl border border-brand-500/20 border-t-2 border-t-brand-500 bg-white/[0.04] backdrop-blur-md shadow-[0_18px_60px_rgba(0,0,0,0.55)]",
   cardPad: "p-5",
   subCardDark:
-    "rounded-2xl border border-white/10 bg-black/25 backdrop-blur-sm p-4",
+    "rounded-2xl border border-[#579689]/18 bg-[#07171c]/60 backdrop-blur-sm p-4",
   labelDark:
     "text-[10px] uppercase tracking-[0.24em] text-white/35 font-bold",
   pillBase:
@@ -736,7 +736,7 @@ export default function AdminDetailContent({
                       className={[
                         "mt-4 rounded-2xl border p-4",
                         isDark
-                          ? "border-white/10 bg-black/25"
+                          ? "border-[#579689]/18 bg-[#07171c]/60"
                           : "border-slate-200 bg-slate-50",
                       ].join(" ")}
                     >

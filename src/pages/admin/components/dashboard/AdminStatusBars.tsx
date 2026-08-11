@@ -71,7 +71,7 @@ export default function AdminStatusBars({ approved, rejected, pending, noEval }:
           className={[
             "px-4 py-3 rounded-2xl border backdrop-blur-xl shadow-2xl transition-all duration-200",
             isDark
-              ? "bg-[#0a0a0a]/80 border-white/10 text-white shadow-black/50"
+              ? "bg-[#091d22]/88 border-[#579689]/18 text-white shadow-black/50"
               : "bg-white/90 border-slate-200/60 text-slate-900 shadow-slate-300/50",
           ].join(" ")}
         >

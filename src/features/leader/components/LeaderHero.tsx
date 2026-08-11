@@ -1,150 +1,140 @@
 import React from "react";
-import { motion } from "framer-motion";
-import { BookOpenCheck, CheckCircle2, Clock3, ListChecks, ShieldCheck } from "lucide-react";
+import {
+  AlertCircle,
+  CheckCircle2,
+  ChevronRight,
+  CircleHelp,
+  MessageSquareText,
+  ShieldAlert,
+} from "lucide-react";
 import { useTheme } from "../../../context/ThemeContext";
 
-export function LeaderHero() {
+type ExamplePreset = "approved" | "medium" | "rejected";
+
+type Props = {
+  currentStep?: number;
+  onOpenHelp?: () => void;
+  onLoadExample?: (preset: ExamplePreset) => void;
+};
+
+export function LeaderHero({ currentStep = 1, onOpenHelp, onLoadExample }: Props) {
   const { theme } = useTheme();
   const isDark = theme === "dark";
 
   return (
-    <section className="relative overflow-hidden rounded-2xl">
-      {isDark && (
-        <div className="absolute inset-0 pointer-events-none">
-          <div className="absolute -top-32 -right-16 w-[400px] h-[400px] rounded-full bg-gradient-to-br from-brand-500/6 via-brand-500/4 to-transparent blur-[100px]" />
-          <div className="absolute -bottom-24 -left-12 w-[300px] h-[300px] rounded-full bg-gradient-to-tr from-brand-500/5 to-transparent blur-[80px]" />
-        </div>
-      )}
-
+    <section
+      className={[
+        "relative overflow-hidden rounded-2xl border px-4 py-3.5 md:px-5 md:py-4",
+        isDark
+          ? "border-white/10 bg-gradient-to-r from-[#0f1f23]/95 via-[#0d1a1e]/90 to-[#102226]/80 shadow-[0_16px_40px_-28px_rgba(0,0,0,0.7),inset_0_1px_0_rgba(255,255,255,0.05)]"
+          : "border-slate-200/90 bg-gradient-to-r from-white via-white to-emerald-50/50 shadow-[0_14px_36px_-24px_rgba(15,23,42,0.22),inset_0_1px_0_rgba(255,255,255,1)]",
+      ].join(" ")}
+    >
       <div
-        className={`relative px-6 py-4 md:px-8 md:py-5 ${
-          isDark
-            ? "bg-gradient-to-b from-[#080D16]/90 via-[#0A1018]/80 to-[#060A12] border border-white/[0.06] shadow-[0_0_40px_-12px_rgba(16,185,129,0.06)]"
-            : "bg-gradient-to-b from-white via-slate-50/80 to-white border border-slate-200/60 shadow-[0_12px_40px_-12px_rgba(15,23,42,0.06)]"
-        } rounded-2xl`}
-      >
-        <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_280px] gap-5 lg:gap-6 items-start">
-          <div className="min-w-0 space-y-4">
-            <div className="flex flex-row items-center gap-5 md:gap-7">
+        className={[
+          "pointer-events-none absolute -right-8 -top-10 h-36 w-36 rounded-full blur-3xl",
+          isDark ? "bg-emerald-500/15" : "bg-emerald-400/20",
+        ].join(" ")}
+      />
+      <div
+        className={[
+          "pointer-events-none absolute bottom-0 left-24 h-20 w-40 rounded-full blur-2xl",
+          isDark ? "bg-teal-400/8" : "bg-teal-200/30",
+        ].join(" ")}
+      />
+
+      <div className="relative flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div className="min-w-0">
+          <nav className={`mb-1.5 flex flex-wrap items-center gap-1 text-xs ${isDark ? "text-slate-400" : "text-slate-500"}`} aria-label="Ruta de navegación">
+            <span>Inicio</span>
+            <ChevronRight className="h-3 w-3" />
+            <span>Entrevistas</span>
+            <ChevronRight className="h-3 w-3" />
+            <span className={isDark ? "text-slate-200" : "text-slate-700"}>Nueva entrevista</span>
+          </nav>
+
+          <div className="flex items-center gap-3">
+            <div className="relative">
+              <div className={`absolute -inset-1 rounded-xl blur-md ${isDark ? "bg-emerald-500/25" : "bg-emerald-400/30"}`} />
               <div
-                className="relative shrink-0 flex items-center justify-center overflow-visible pointer-events-none h-16 w-16 md:h-20 md:w-20"
-                aria-hidden
+                className={[
+                  "relative flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border",
+                  isDark
+                    ? "border-emerald-400/20 bg-gradient-to-br from-emerald-500/25 to-teal-700/20 text-emerald-300"
+                    : "border-emerald-200 bg-gradient-to-br from-emerald-50 to-white text-emerald-700",
+                ].join(" ")}
               >
-                <motion.div
-                  className={[
-                    "absolute inset-0 rounded-full blur-xl",
-                    isDark ? "bg-brand-400/20" : "bg-brand-500/15",
-                  ].join(" ")}
-                  animate={{ scale: [0.92, 1.08, 0.92], opacity: [0.45, 0.9, 0.45] }}
-                  transition={{ duration: 2.6, repeat: Infinity, ease: "easeInOut" }}
-                />
-
-                <motion.div
-                  className={[
-                    "relative z-[1] flex h-14 w-14 items-center justify-center rounded-2xl border backdrop-blur-sm md:h-16 md:w-16",
-                    isDark
-                      ? "border-brand-300/25 bg-brand-400/10"
-                      : "border-brand-400/30 bg-brand-500/10",
-                  ].join(" ")}
-                  animate={{ y: [0, -4, 0], rotate: [0, -2, 0, 2, 0], scale: [1, 1.04, 1] }}
-                  transition={{ duration: 3.8, repeat: Infinity, ease: "easeInOut" }}
-                >
-                  <BookOpenCheck
-                    className={["h-7 w-7 md:h-8 md:w-8", isDark ? "text-brand-200" : "text-brand-700"].join(" ")}
-                  />
-                </motion.div>
-              </div>
-
-              <div className="min-w-0 space-y-0.5">
-                <h1
-                  className={`text-xl md:text-2xl font-black leading-tight tracking-tight ${
-                    isDark ? "text-white" : "text-slate-900"
-                  }`}
-                >
-                  Evaluacion de{" "}
-                  <span className="bg-gradient-to-r from-brand-400 to-brand-400 bg-clip-text text-transparent">
-                    Talento Docente
-                  </span>
-                </h1>
-                <p
-                  className={`text-sm max-w-lg leading-relaxed ${
-                    isDark ? "text-slate-400" : "text-slate-500"
-                  }`}
-                >
-                  Flujo guiado para la contratacion de facilitadores.
-                </p>
+                <MessageSquareText className="h-5 w-5" />
               </div>
             </div>
-
-            <div className="flex flex-wrap items-center gap-2">
-              <span
-                className={[
-                  "inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-[10px] font-bold uppercase tracking-[0.18em]",
-                  isDark
-                    ? "border-brand-400/30 bg-brand-500/10 text-brand-200"
-                    : "border-brand-200 bg-brand-50 text-brand-700",
-                ].join(" ")}
-              >
-                <ListChecks className="h-3.5 w-3.5" />
-                5 pasos guiados
-              </span>
-              <span
-                className={[
-                  "inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-[10px] font-bold uppercase tracking-[0.18em]",
-                  isDark
-                    ? "border-white/10 bg-white/[0.03] text-slate-300"
-                    : "border-slate-200 bg-white text-slate-600",
-                ].join(" ")}
-              >
-                <Clock3 className="h-3.5 w-3.5" />
-                8-12 min
-              </span>
-              <span
-                className={[
-                  "inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-[10px] font-bold uppercase tracking-[0.18em]",
-                  isDark
-                    ? "border-white/10 bg-white/[0.03] text-slate-300"
-                    : "border-slate-200 bg-white text-slate-600",
-                ].join(" ")}
-              >
-                <ShieldCheck className="h-3.5 w-3.5" />
-                Trazabilidad activa
-              </span>
+            <div className="min-w-0">
+              <h1 className={`text-xl font-bold tracking-tight md:text-2xl ${isDark ? "text-white" : "text-slate-900"}`}>
+                Entrevista de contratación
+              </h1>
+              <p className={`text-sm ${isDark ? "text-slate-400" : "text-slate-500"}`}>
+                Charla guiada para decidir si el candidato puede contratarse · Paso {currentStep} de 5
+              </p>
             </div>
           </div>
+        </div>
 
-          <div
-            className={[
-              "rounded-xl border border-t-2 border-t-brand-500 p-3 space-y-2.5",
-              isDark ? "bg-white/[0.02] border-brand-500/25" : "bg-white/80 border-brand-500/20",
-            ].join(" ")}
-          >
-            <p
-              className={`text-[10px] font-bold uppercase tracking-[0.2em] ${
-                isDark ? "text-brand-300" : "text-brand-700"
-              }`}
+        <div className="relative flex flex-wrap items-center gap-2">
+          {onLoadExample && (
+            <div
+              className={[
+                "inline-flex items-center gap-0.5 rounded-xl border p-1 backdrop-blur-sm",
+                isDark
+                  ? "border-white/10 bg-black/20 shadow-[inset_0_1px_0_rgba(255,255,255,0.04)]"
+                  : "border-slate-200 bg-white/80 shadow-sm",
+              ].join(" ")}
+              title="Cargar datos de ejemplo"
             >
-              Recomendado para iniciar
-            </p>
-            <div className="space-y-2">
-              {[
-                "Define perfil y prioridad del cargo.",
-                "Completa documentos y datos del candidato.",
-                "Ejecuta el analisis y revisa el reporte final.",
-              ].map((item) => (
-                <div key={item} className="flex items-start gap-2">
-                  <CheckCircle2
-                    className={`mt-0.5 h-3.5 w-3.5 shrink-0 ${isDark ? "text-brand-300" : "text-brand-600"}`}
-                  />
-                  <p className={`text-[11px] leading-snug ${isDark ? "text-slate-300" : "text-slate-600"}`}>
-                    {item}
-                  </p>
-                </div>
-              ))}
+              <button
+                type="button"
+                onClick={() => onLoadExample("approved")}
+                className={`inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-medium transition ${isDark ? "text-slate-300 hover:bg-white/10" : "text-slate-600 hover:bg-slate-100"}`}
+              >
+                <CheckCircle2 className="h-3.5 w-3.5 text-emerald-500" />
+                Aprobado
+              </button>
+              <button
+                type="button"
+                onClick={() => onLoadExample("medium")}
+                className={`inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-medium transition ${isDark ? "text-slate-300 hover:bg-white/10" : "text-slate-600 hover:bg-slate-100"}`}
+              >
+                <AlertCircle className="h-3.5 w-3.5 text-amber-500" />
+                Medio
+              </button>
+              <button
+                type="button"
+                onClick={() => onLoadExample("rejected")}
+                className={`inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-medium transition ${isDark ? "text-slate-300 hover:bg-white/10" : "text-slate-600 hover:bg-slate-100"}`}
+              >
+                <ShieldAlert className="h-3.5 w-3.5 text-rose-500" />
+                Riesgo
+              </button>
             </div>
-          </div>
+          )}
+
+          {onOpenHelp && (
+            <button
+              type="button"
+              onClick={onOpenHelp}
+              className={[
+                "inline-flex items-center gap-2 rounded-xl border px-3 py-2 text-xs font-semibold transition",
+                isDark
+                  ? "border-white/10 bg-white/[0.04] text-slate-200 hover:bg-white/[0.08]"
+                  : "border-slate-200 bg-white text-slate-700 hover:bg-slate-50 shadow-sm",
+              ].join(" ")}
+            >
+              <CircleHelp className="h-3.5 w-3.5" />
+              Guía
+            </button>
+          )}
         </div>
       </div>
     </section>
   );
 }
+
+export default LeaderHero;

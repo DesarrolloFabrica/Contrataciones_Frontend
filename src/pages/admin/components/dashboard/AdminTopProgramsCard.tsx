@@ -72,7 +72,7 @@ export default function AdminTopProgramsCard({ mode, byVolume, byAcceptance }: P
           className={[
             "rounded-[16px] border p-4 shadow-2xl backdrop-blur-xl transition-all",
             isDark
-              ? "border-white/10 bg-[#0c0c0e]/95 shadow-black/50"
+              ? "border-[#579689]/18 bg-[#091d22]/95 shadow-black/50"
               : "border-slate-200 bg-white/95 shadow-slate-300/50",
           ].join(" ")}
         >

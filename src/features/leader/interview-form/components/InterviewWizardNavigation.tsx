@@ -1,12 +1,12 @@
 import React from "react";
-import type { WizardStep } from "./InterviewWizardStepper";
 import { useTheme } from "../../../../context/ThemeContext";
 
 interface InterviewWizardNavigationProps {
-  currentStep: WizardStep;
+  currentStep: 1 | 2 | 3 | 4 | 5;
   isCedulaValid: boolean;
   onBack: () => void;
   onNext: () => void;
+  onReset?: () => void;
 }
 
 export const InterviewWizardNavigation: React.FC<InterviewWizardNavigationProps> = ({
@@ -14,59 +14,50 @@ export const InterviewWizardNavigation: React.FC<InterviewWizardNavigationProps>
   isCedulaValid,
   onBack,
   onNext,
+  onReset,
 }) => {
   const { theme } = useTheme();
   const isDark = theme === "dark";
   const isFirstStep = currentStep === 1;
   const isLastStep = currentStep === 5;
 
+  const secondaryBtn = [
+    "rounded-xl border px-4 py-2 text-sm font-medium transition",
+    isDark
+      ? "border-white/10 bg-white/[0.03] text-slate-300 hover:bg-white/5 hover:text-white"
+      : "border-slate-200 bg-white text-slate-700 hover:bg-slate-50 shadow-sm",
+  ].join(" ");
+
+  const primaryBtn = [
+    "rounded-xl px-5 py-2 text-sm font-semibold text-white transition",
+    "bg-gradient-to-r from-emerald-500 to-emerald-600 shadow-[0_10px_24px_-12px_rgba(16,185,129,0.8)] hover:from-emerald-400 hover:to-emerald-500",
+  ].join(" ");
+
+  const disabledBtn = [
+    "rounded-lg border px-5 py-2 text-sm font-semibold cursor-not-allowed",
+    isDark
+      ? "border-white/10 bg-white/5 text-slate-500"
+      : "border-slate-200 bg-slate-100 text-slate-400",
+  ].join(" ");
+
   return (
     <div className="flex items-center justify-between gap-3">
       {isFirstStep ? (
-        <div />
+        <button type="button" onClick={onReset} className={secondaryBtn}>
+          Cancelar y limpiar
+        </button>
       ) : (
-        <button
-          type="button"
-          onClick={onBack}
-          className={[
-            "rounded-xl border px-5 py-2.5 text-xs font-bold uppercase tracking-wider transition-all duration-200",
-            isDark
-              ? "border-white/10 text-slate-400 hover:bg-white/[0.04] hover:text-white hover:border-white/20"
-              : "border-slate-200 text-slate-600 hover:bg-slate-50 hover:text-slate-800 hover:border-slate-300",
-          ].join(" ")}
-        >
-          Atras
+        <button type="button" onClick={onBack} className={secondaryBtn}>
+          Atrás
         </button>
       )}
 
       {isLastStep ? (
-        <button
-          type="submit"
-          disabled={!isCedulaValid}
-          className={[
-            "rounded-xl px-6 py-2.5 text-xs font-black uppercase tracking-[0.18em] transition-all duration-300",
-            !isCedulaValid
-              ? isDark
-                ? "bg-white/[0.04] text-slate-500 border border-white/10 cursor-not-allowed"
-                : "bg-slate-100 text-slate-400 border border-slate-200 cursor-not-allowed"
-              : isDark
-                ? "bg-gradient-to-r from-brand-500 via-brand-400 to-brand-500 text-white shadow-[0_0_24px_-4px_rgba(16,185,129,0.4)] hover:shadow-[0_0_32px_-4px_rgba(16,185,129,0.5)] hover:brightness-110"
-                : "bg-gradient-to-r from-brand-500 via-brand-400 to-brand-500 text-white shadow-[0_8px_25px_rgba(16,185,129,0.3)] hover:shadow-[0_12px_35px_rgba(16,185,129,0.35)] hover:brightness-110",
-          ].join(" ")}
-        >
-          Ejecutar Analisis IA
+        <button type="submit" disabled={!isCedulaValid} className={!isCedulaValid ? disabledBtn : primaryBtn}>
+          Analizar entrevista
         </button>
       ) : (
-        <button
-          type="button"
-          onClick={onNext}
-          className={[
-            "rounded-xl px-6 py-2.5 text-xs font-black uppercase tracking-[0.18em] transition-all duration-300",
-            isDark
-              ? "bg-gradient-to-r from-brand-500/20 to-brand-500/15 text-brand-200 border border-brand-500/30 hover:bg-brand-500/30 hover:border-brand-400/50 hover:text-brand-100 hover:shadow-[0_0_20px_-6px_rgba(16,185,129,0.25)]"
-              : "bg-gradient-to-r from-brand-50 to-brand-50 text-brand-700 border border-brand-300 hover:bg-brand-100 hover:border-brand-400 hover:text-brand-800",
-          ].join(" ")}
-        >
+        <button type="button" onClick={onNext} className={primaryBtn}>
           Continuar
         </button>
       )}

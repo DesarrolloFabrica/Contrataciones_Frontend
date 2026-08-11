@@ -135,7 +135,7 @@ const CoordinatorEvaluationReport: React.FC = () => {
       ref={rootRef}
       className={[
         "min-h-screen w-full font-sans relative overflow-x-hidden",
-        isDark ? "bg-[#020202] text-white" : "bg-gray-50 text-gray-900",
+        isDark ? "bg-[#061419] text-slate-100" : "bg-[#F4F7FB] text-slate-900",
       ].join(" ")}
     >
       {/* Fondo suave para coherencia visual */}

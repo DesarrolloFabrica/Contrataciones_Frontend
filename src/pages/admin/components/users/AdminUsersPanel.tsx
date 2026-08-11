@@ -234,7 +234,7 @@ const AdminUsersPanel: React.FC<Props> = ({ scope }) => {
               className={[
                 "absolute inset-y-0 right-0 w-full max-w-md border-l shadow-2xl",
                 isDark
-                  ? "bg-[#070707] border-white/10"
+                  ? "bg-[#091d22] border-[#579689]/18"
                   : "bg-white border-slate-200",
               ].join(" ")}
             >
@@ -342,7 +342,7 @@ const AdminUsersPanel: React.FC<Props> = ({ scope }) => {
                   className={[
                     "rounded-2xl border p-4",
                     isDark
-                      ? "border-white/10 bg-black/20"
+                      ? "border-[#579689]/18 bg-[#07171c]/55"
                       : "border-slate-200 bg-slate-50",
                   ].join(" ")}
                 >

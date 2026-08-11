@@ -249,7 +249,7 @@ const EvaluationsListPanel: React.FC<Props> = ({
   const shellClass = [
     "relative overflow-hidden rounded-[28px] backdrop-blur-xl border-t-2 border-t-brand-500",
     isDark
-      ? "border border-brand-500/25 bg-[#0B0F14]/70 shadow-[0_24px_80px_-70px_rgba(16,185,129,0.20)]"
+      ? "border border-[#579689]/22 bg-[#091d22]/82 shadow-[0_24px_80px_-70px_rgba(88,190,161,0.28)]"
       : "border border-brand-500/20 bg-white shadow-[0_18px_60px_rgba(15,23,42,0.08)]",
   ].join(" ");
 
@@ -269,7 +269,7 @@ const EvaluationsListPanel: React.FC<Props> = ({
     <div
       className={`relative flex flex-col rounded-[24px] border overflow-hidden ${
         isDark
-          ? "border-white/5 bg-[#0A0C10] shadow-2xl"
+          ? "border-[#579689]/14 bg-[#091d22] shadow-2xl"
           : "border-slate-200 bg-white shadow-[0_18px_60px_rgba(15,23,42,0.04)]"
       }`}
     >
@@ -353,8 +353,8 @@ const EvaluationsListPanel: React.FC<Props> = ({
                 className={`w-full appearance-none rounded-2xl border px-4 py-3.5 text-sm font-medium outline-none transition-all duration-300 ${
                   isDark
                     ? lockedSchool
-                      ? "bg-black/20 border-white/5 text-slate-500 cursor-not-allowed"
-                      : "bg-[#15191E]/80 border-white/10 text-slate-200 hover:border-white/20 focus:border-brand-500/50 focus:bg-[#1A1F26] focus:shadow-[0_0_15px_rgba(16,185,129,0.08)]"
+                      ? "bg-[#07171c]/55 border-[#579689]/12 text-slate-500 cursor-not-allowed"
+                      : "bg-[#0a2025]/85 border-[#579689]/18 text-slate-200 hover:border-[#579689]/35 focus:border-[#58bea1]/50 focus:bg-[#102a30] focus:shadow-[0_0_15px_rgba(88,190,161,0.08)]"
                     : lockedSchool
                       ? "bg-slate-100 border-slate-200 text-slate-400 cursor-not-allowed"
                       : "bg-white border-slate-200 text-slate-800 hover:border-brand-300 focus:border-brand-500/70 focus:shadow-[0_8px_25px_-5px_rgba(16,185,129,0.12)] shadow-sm"
@@ -416,8 +416,8 @@ const EvaluationsListPanel: React.FC<Props> = ({
                 className={`w-full appearance-none rounded-2xl border px-4 py-3.5 text-sm font-medium outline-none transition-all duration-300 ${
                   isDark
                     ? !schoolFilter
-                      ? "bg-black/20 border-white/5 text-slate-600 cursor-not-allowed"
-                      : "bg-[#15191E]/80 border-white/10 text-slate-200 hover:border-white/20 focus:border-brand-500/50 focus:bg-[#1A1F26] focus:shadow-[0_0_15px_rgba(16,185,129,0.08)]"
+                      ? "bg-[#07171c]/55 border-[#579689]/12 text-slate-600 cursor-not-allowed"
+                      : "bg-[#0a2025]/85 border-[#579689]/18 text-slate-200 hover:border-[#579689]/35 focus:border-[#58bea1]/50 focus:bg-[#102a30] focus:shadow-[0_0_15px_rgba(88,190,161,0.08)]"
                     : !schoolFilter
                       ? "bg-slate-100 border-slate-200 text-slate-400 cursor-not-allowed"
                       : "bg-white border-slate-200 text-slate-800 hover:border-brand-300 focus:border-brand-500/70 focus:shadow-[0_8px_25px_-5px_rgba(16,185,129,0.12)] shadow-sm"
@@ -486,8 +486,8 @@ const EvaluationsListPanel: React.FC<Props> = ({
               className={`w-full rounded-2xl border pl-12 pr-4 py-3.5 text-sm outline-none transition-all duration-300 ${
                 isDark
                   ? mustChooseScope
-                    ? "bg-black/40 border-white/5 text-slate-600 cursor-not-allowed"
-                    : "bg-[#15191E]/80 border-white/10 text-white placeholder-slate-500 hover:border-white/20 focus:border-brand-500/50 focus:bg-[#1A1F26] focus:shadow-[0_0_15px_rgba(16,185,129,0.1)]"
+                    ? "bg-[#07171c]/65 border-[#579689]/12 text-slate-600 cursor-not-allowed"
+                    : "bg-[#0a2025]/85 border-[#579689]/18 text-white placeholder-slate-500 hover:border-[#579689]/35 focus:border-[#58bea1]/50 focus:bg-[#102a30] focus:shadow-[0_0_15px_rgba(88,190,161,0.1)]"
                   : mustChooseScope
                     ? "bg-slate-100 border-slate-200 text-slate-400 cursor-not-allowed"
                     : "bg-white border-slate-200 text-slate-800 placeholder-slate-400 hover:border-brand-300 focus:border-brand-500/70 focus:shadow-[0_8px_25px_-5px_rgba(16,185,129,0.15)] shadow-sm"

@@ -34,7 +34,7 @@ const Header: React.FC<HeaderProps> = ({ mode, onChangeMode }) => {
         {isDark ? (
           <>
             <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[800px] h-[300px] bg-brand-500/10 blur-[120px] rounded-full mix-blend-screen" />
-            <div className="absolute inset-0 bg-gradient-to-b from-[#021A0F]/80 to-[#020202]/0" />
+            <div className="absolute inset-0 bg-gradient-to-b from-[#071A20]/85 to-[#061419]/0" />
           </>
         ) : (
           <>
@@ -49,7 +49,7 @@ const Header: React.FC<HeaderProps> = ({ mode, onChangeMode }) => {
         className={[
           "relative z-10 border-b backdrop-blur-md",
           isDark
-            ? "border-white/5 bg-[#020202]/60"
+            ? "border-[#579689]/18 bg-[#071A20]/78"
             : "border-neutral-200 bg-white/90",
         ].join(" ")}
       >
@@ -126,7 +126,7 @@ const Header: React.FC<HeaderProps> = ({ mode, onChangeMode }) => {
               className={[
                 "p-1 rounded-xl border shadow-inner flex items-center relative",
                 isDark
-                  ? "bg-[#0F0F0F] border-white/10"
+                  ? "bg-[#0d252b] border-[#579689]/20"
                   : "bg-neutral-100 border-neutral-300",
               ].join(" ")}
             >
@@ -135,7 +135,7 @@ const Header: React.FC<HeaderProps> = ({ mode, onChangeMode }) => {
                 className={`relative px-4 py-2 rounded-lg text-xs font-bold transition-all duration-300 flex items-center gap-2 ${
                   mode === "analyze"
                     ? isDark
-                      ? "bg-[#1f2937] text-brand-400 shadow-sm ring-1 ring-brand-500/20"
+                      ? "bg-[#15343b] text-[#72c4ae] shadow-sm ring-1 ring-[#58bea1]/20"
                       : "bg-gradient-to-r from-brand-500 to-brand-600 text-white shadow-sm ring-1 ring-brand-500/45"
                     : "text-neutral-500 hover:text-neutral-700"
                 }`}
@@ -158,7 +158,7 @@ const Header: React.FC<HeaderProps> = ({ mode, onChangeMode }) => {
                 className={`relative px-4 py-2 rounded-lg text-xs font-bold transition-all duration-300 flex items-center gap-2 ${
                   mode === "history"
                     ? isDark
-                      ? "bg-[#1f2937] text-brand-400 shadow-sm ring-1 ring-brand-500/20"
+                      ? "bg-[#15343b] text-[#72c4ae] shadow-sm ring-1 ring-[#58bea1]/20"
                       : "bg-gradient-to-r from-brand-500 to-brand-600 text-white shadow-sm ring-1 ring-brand-500/45"
                     : "text-neutral-500 hover:text-neutral-700"
                 }`}

@@ -17,7 +17,7 @@ export const DimensionCard: React.FC<DimensionCardProps> = ({ cat }) => {
       className={[
         "group relative rounded-2xl transition-all duration-300 overflow-hidden border border-t-2 border-t-brand-500",
         isDark
-          ? "bg-gradient-to-b from-[#111A2B]/90 via-[#0F1727]/78 to-[#0B1220]/68 border-brand-500/25 hover:border-brand-400/45"
+          ? "bg-gradient-to-b from-[#102a30]/90 via-[#0d252b]/82 to-[#0a2025]/74 border-[#579689]/22 hover:border-[#58bea1]/38"
           : "bg-white border-brand-500/20 hover:border-brand-500/40 shadow-[0_4px_20px_-6px_rgba(15,23,42,0.06)]",
       ].join(" ")}
     >

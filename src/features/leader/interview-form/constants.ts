@@ -47,10 +47,10 @@ export function safeParseDraft(raw: string | null): InterviewDraft | null {
 }
 
 export const darkInputStyles =
-  "w-full bg-[#080D14] border border-white/[0.08] text-slate-200 text-sm rounded-xl px-4 py-3 outline-none transition-all duration-300 placeholder:text-slate-500 focus:bg-[#0C1218] focus:border-brand-500/40 focus:ring-1 focus:ring-brand-500/20 focus:shadow-[0_0_20px_-8px_rgba(16,185,129,0.18)] hover:border-white/[0.15] hover:bg-[#0A1018]";
+  "w-full bg-[#132328] border border-white/10 text-slate-100 text-sm rounded-xl px-3.5 py-2.5 outline-none transition placeholder:text-slate-500 shadow-[inset_0_1px_0_rgba(255,255,255,0.04)] hover:border-white/15 focus:border-emerald-400/50 focus:ring-2 focus:ring-emerald-500/15 focus:bg-[#162a30]";
 
 export const lightInputStyles =
-  "w-full bg-white border border-slate-200 text-slate-900 text-sm rounded-xl px-4 py-3 outline-none transition-all duration-200 placeholder:text-slate-400 focus:bg-white focus:border-brand-500/60 focus:ring-1 focus:ring-brand-500/20 focus:shadow-[0_0_0_3px_rgba(16,185,129,0.12)] hover:border-slate-300";
+  "w-full bg-white border border-slate-200 text-slate-900 text-sm rounded-xl px-3.5 py-2.5 outline-none transition placeholder:text-slate-400 shadow-[0_1px_2px_rgba(15,23,42,0.04)] hover:border-slate-300 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/15";
 
 export const candidateDocumentDefaults: CandidateDocumentsDraft = {
   items: [

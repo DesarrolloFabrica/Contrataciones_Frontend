@@ -180,7 +180,7 @@ const TeacherEvaluationItem: React.FC<TeacherEvaluationItemProps> = ({
             ? "border-brand-500/60 bg-brand-500/5 shadow-[0_0_30px_-10px_rgba(16,185,129,0.2)]"
             : "border-brand-400 bg-brand-50 shadow-[0_18px_40px_rgba(16,185,129,0.25)]"
           : isDark
-            ? "border-brand-500/25 bg-[#0D1117]/80 hover:border-brand-400/50 hover:bg-[#111820] hover:shadow-lg"
+            ? "border-[#579689]/22 bg-[#091d22]/84 hover:border-[#58bea1]/38 hover:bg-[#102a30] hover:shadow-lg"
             : "border-brand-500/20 bg-white hover:border-brand-500/40 hover:shadow-[0_18px_50px_rgba(15,23,42,0.08)]",
         clickableCls,
       ].join(" ")}

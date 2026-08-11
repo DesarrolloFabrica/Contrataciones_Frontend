@@ -2,6 +2,7 @@
 import React, { useMemo } from "react";
 import { FileText, Loader2, Search } from "lucide-react";
 import type { AnalysisResult, InterviewData } from "../../../types";
+import { useTheme } from "../../../context/ThemeContext";
 
 import DetailTabs from "./DetailTabs";
 import DecisionTab from "./DecisionTab";
@@ -101,6 +102,8 @@ export default function EvaluationDetailPanel({
   avgError,
   variabilityInfo,
 }: Props) {
+  const { theme } = useTheme();
+  const isDark = theme === "dark";
   const hasDetail = !!selectedDetail && !loadingDetail;
 
   // ✅ Si existe promedio, lo usamos. Si no, caemos al análisis de la última entrevista.
@@ -117,13 +120,17 @@ export default function EvaluationDetailPanel({
   }, [detailTab, timelineTab, setTimelineTab, activityByEval, activityGlobal]);
 
   return (
-    <div className="bg-[#1F1F1F]/30 border border-white/10 rounded-3xl p-5 md:p-6 shadow-xl flex flex-col">
+    <div className={`rounded-3xl border p-5 md:p-6 shadow-xl flex flex-col ${
+      isDark
+        ? "bg-[#091d22]/82 border-[#579689]/20 shadow-black/25"
+        : "bg-white/90 border-slate-200 shadow-slate-900/5"
+    }`}>
       <div className="flex items-center justify-between mb-4">
         <div>
-          <h3 className="text-sm font-bold uppercase tracking-widest text-gray-400">
+          <h3 className={`text-sm font-bold uppercase tracking-widest ${isDark ? "text-slate-300" : "text-slate-700"}`}>
             Detalle de Evaluación Seleccionada
           </h3>
-          <p className="text-xs text-gray-500 mt-1">
+          <p className={`text-xs mt-1 ${isDark ? "text-slate-500" : "text-slate-500"}`}>
             Ver informe IA y prototipar la decisión de contratación.
           </p>
         </div>
@@ -132,7 +139,7 @@ export default function EvaluationDetailPanel({
           <button
             type="button"
             onClick={onExportPdf}
-            className="px-3 py-2 rounded-xl text-[px] font-bold uppercase tracking-widest bg-emerald-600 hover:bg-emerald-500 text-white flex items-center gap-2"
+            className="px-3 py-2 rounded-xl text-[11px] font-bold uppercase tracking-widest bg-gradient-to-r from-[#178b70] to-[#12645f] hover:brightness-110 text-white flex items-center gap-2 shadow-sm"
           >
             <FileText className="w-4 h-4" />
             Exportar PDF
@@ -144,14 +151,14 @@ export default function EvaluationDetailPanel({
       <DetailTabs value={detailTab} onChange={setDetailTab} />
 
       {loadingDetail && (
-        <div className="flex flex-1 items-center justify-center text-gray-400 gap-2">
+        <div className={`flex flex-1 items-center justify-center gap-2 ${isDark ? "text-slate-400" : "text-slate-500"}`}>
           <Loader2 className="w-5 h-5 animate-spin" />
           <span className="text-sm">Cargando informe de la evaluación…</span>
         </div>
       )}
 
       {!loadingDetail && !selectedDetail && (
-        <div className="flex flex-1 flex-col items-center justify-center text-gray-500 gap-3">
+        <div className={`flex flex-1 flex-col items-center justify-center gap-3 ${isDark ? "text-slate-500" : "text-slate-500"}`}>
           <Search className="w-8 h-8" />
           <p className="text-sm text-center max-w-sm">
             Selecciona una evaluación en el panel izquierdo para ver el informe completo
@@ -170,6 +177,8 @@ export default function EvaluationDetailPanel({
               setDecisionComment={setDecisionComment}
               onDecisionCommentBlur={onDecisionCommentBlur}
               onApplyDecision={onApplyDecision}
+              notes={notes}
+              criteria={criteria}
               canSubmitDecision={canSubmitDecision}
               missingReasons={missingReasons}
               onSubmitDecision={onSubmitDecision}
@@ -180,9 +189,11 @@ export default function EvaluationDetailPanel({
             <>
               {/* Variabilidad */}
               {variabilityInfo && (
-                <div className="mb-3 text-xs text-gray-300 bg-white/[0.03] border border-white/10 rounded-2xl p-4">
+                <div className={`mb-3 text-xs rounded-2xl border p-4 ${
+                  isDark ? "text-slate-300 bg-[#0b232a] border-[#579689]/18" : "text-slate-600 bg-slate-50 border-slate-200"
+                }`}>
                   <div className="flex items-center justify-between gap-3">
-                    <span className="uppercase tracking-widest text-[11px] text-gray-400">
+                    <span className={`uppercase tracking-widest text-[11px] ${isDark ? "text-slate-400" : "text-slate-500"}`}>
                       Variabilidad entre entrevistas
                     </span>
                     <span
@@ -200,7 +211,7 @@ export default function EvaluationDetailPanel({
                   </div>
 
                   {!!variabilityInfo.details?.length && (
-                    <ul className="mt-2 space-y-1 text-[12px] text-gray-300 list-disc pl-5">
+                    <ul className={`mt-2 space-y-1 text-[12px] list-disc pl-5 ${isDark ? "text-slate-300" : "text-slate-600"}`}>
                       {variabilityInfo.details.map((d, i) => (
                         <li key={i}>{d}</li>
                       ))}
@@ -211,7 +222,7 @@ export default function EvaluationDetailPanel({
 
               {/* Estados de promedio */}
               {avgLoading && (
-                <div className="mb-3 text-sm text-gray-400 bg-white/[0.03] border border-white/10 rounded-2xl p-4">
+                <div className={`mb-3 text-sm rounded-2xl border p-4 ${isDark ? "text-slate-400 bg-[#0b232a] border-[#579689]/18" : "text-slate-600 bg-slate-50 border-slate-200"}`}>
                   Calculando promedio de entrevistas…
                 </div>
               )}
@@ -237,7 +248,7 @@ export default function EvaluationDetailPanel({
           )}
 
           {detailTab === "INTERVIEWS" && !candidateGroup && (
-            <div className="text-sm text-gray-400 bg-black/20 border border-white/10 rounded-2xl p-4">
+            <div className={`text-sm rounded-2xl border p-4 ${isDark ? "text-slate-400 bg-[#0b232a] border-[#579689]/18" : "text-slate-600 bg-slate-50 border-slate-200"}`}>
               No se encontró el grupo del candidato para listar entrevistas.
             </div>
           )}

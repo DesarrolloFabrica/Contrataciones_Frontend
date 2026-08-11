@@ -4,6 +4,7 @@
 import React from "react";
 import { useTheme } from "../../context/ThemeContext";
 import { BootSplashContent } from "./BootSplashContent";
+import { LoginBackground } from "../brand";
 
 export const RouteLoadingScreen: React.FC = () => {
   const { theme } = useTheme();
@@ -17,12 +18,13 @@ export const RouteLoadingScreen: React.FC = () => {
       aria-label="Cargando"
       className={[
         "flex min-h-screen flex-col items-center justify-center px-4",
-        isDark
-          ? "bg-[radial-gradient(ellipse_at_20%_0%,#064E3B_0%,#022C22_50%,#011A12_100%)]"
-          : "bg-[radial-gradient(ellipse_at_18%_0%,#ECFDF5_0%,#ffffff_55%,#F0FDF4_100%)]",
+        isDark ? "bg-[#061419] text-white" : "bg-white text-slate-950",
       ].join(" ")}
     >
-      <BootSplashContent animate={false} />
+      <LoginBackground />
+      <div className="relative z-10">
+        <BootSplashContent animate={false} />
+      </div>
     </div>
   );
 };

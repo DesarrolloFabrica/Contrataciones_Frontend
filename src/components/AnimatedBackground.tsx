@@ -28,8 +28,8 @@ const AnimatedBackground: React.FC = () => {
         className={cn(
           "absolute inset-0 transition-colors duration-700",
           isDark
-            ? "bg-[radial-gradient(ellipse_at_18%_0%,#031a14_0%,#020308_50%,#010205_100%)]"
-            : "bg-[radial-gradient(ellipse_at_12%_0%,#f0fdf4_0%,#f8fafc_42%,#eef2f7_100%)]"
+            ? "bg-[radial-gradient(ellipse_at_18%_0%,#0d292d_0%,#07171c_48%,#041116_100%)]"
+            : "bg-[radial-gradient(ellipse_at_12%_0%,#effcf7_0%,#ffffff_42%,#f4f7fb_100%)]"
         )}
       />
 
@@ -38,7 +38,7 @@ const AnimatedBackground: React.FC = () => {
         className={cn(
           "absolute inset-0 transition-opacity duration-700",
           isDark
-            ? "bg-[radial-gradient(ellipse_at_82%_88%,rgba(16,185,129,0.06)_0%,transparent_52%)]"
+            ? "bg-[radial-gradient(ellipse_at_82%_88%,rgba(55,127,116,0.055)_0%,transparent_52%)]"
             : "bg-[radial-gradient(ellipse_at_82%_88%,rgba(16,185,129,0.08)_0%,transparent_48%)]"
         )}
       />
@@ -47,7 +47,7 @@ const AnimatedBackground: React.FC = () => {
       <div
         className={cn(
           "absolute inset-0 dot-grid transition-opacity duration-700",
-          isDark ? "opacity-[0.06]" : "opacity-[0.35]"
+          isDark ? "opacity-[0.035]" : "opacity-[0.28]"
         )}
       />
 
@@ -82,7 +82,7 @@ const AnimatedBackground: React.FC = () => {
             y1="0"
             x2={260 + i * 72}
             y2="900"
-            stroke={isDark ? "#34D399" : "#10B981"}
+            stroke={isDark ? "#58BEA1" : "#10B981"}
             strokeWidth="0.75"
           />
         ))}
@@ -97,9 +97,9 @@ const AnimatedBackground: React.FC = () => {
         viewBox="0 0 200 200"
         fill="none"
       >
-        <circle cx="100" cy="100" r="92" stroke={isDark ? "#34D399" : "#10B981"} strokeWidth="0.75" />
-        <circle cx="100" cy="100" r="68" stroke={isDark ? "#10B981" : "#059669"} strokeWidth="0.5" strokeOpacity="0.6" />
-        <circle cx="100" cy="100" r="44" stroke={isDark ? "#34D399" : "#10B981"} strokeWidth="0.5" strokeOpacity="0.35" />
+        <circle cx="100" cy="100" r="92" stroke={isDark ? "#58BEA1" : "#10B981"} strokeWidth="0.75" />
+        <circle cx="100" cy="100" r="68" stroke={isDark ? "#347C70" : "#059669"} strokeWidth="0.5" strokeOpacity="0.6" />
+        <circle cx="100" cy="100" r="44" stroke={isDark ? "#58BEA1" : "#10B981"} strokeWidth="0.5" strokeOpacity="0.35" />
       </svg>
 
       {/* Corner arcs — bottom right */}
@@ -111,8 +111,8 @@ const AnimatedBackground: React.FC = () => {
         viewBox="0 0 240 240"
         fill="none"
       >
-        <circle cx="120" cy="120" r="108" stroke={isDark ? "#10B981" : "#059669"} strokeWidth="0.75" />
-        <circle cx="120" cy="120" r="78" stroke={isDark ? "#34D399" : "#10B981"} strokeWidth="0.5" strokeOpacity="0.5" />
+        <circle cx="120" cy="120" r="108" stroke={isDark ? "#347C70" : "#059669"} strokeWidth="0.75" />
+        <circle cx="120" cy="120" r="78" stroke={isDark ? "#58BEA1" : "#10B981"} strokeWidth="0.5" strokeOpacity="0.5" />
       </svg>
 
       {/* Concentric rings */}
@@ -140,7 +140,7 @@ const AnimatedBackground: React.FC = () => {
         className={cn(
           "absolute rounded-full blur-[120px]",
           isDark
-            ? "-left-32 top-[4%] h-[360px] w-[360px] bg-brand-500/[0.07]"
+            ? "-left-32 top-[4%] h-[360px] w-[360px] bg-[#347c70]/[0.05]"
             : "-left-24 top-[6%] h-[420px] w-[420px] bg-brand-300/30 animate-float-slow"
         )}
       />
@@ -148,7 +148,7 @@ const AnimatedBackground: React.FC = () => {
         className={cn(
           "absolute rounded-full blur-[100px]",
           isDark
-            ? "right-[2%] top-[12%] h-[240px] w-[240px] bg-emerald-400/[0.04]"
+            ? "right-[2%] top-[12%] h-[240px] w-[240px] bg-[#315b73]/[0.035]"
             : "right-[2%] top-[12%] h-[280px] w-[280px] bg-brand-200/45 animate-float-reverse"
         )}
       />
@@ -161,9 +161,9 @@ const AnimatedBackground: React.FC = () => {
         ? DARK_DOTS.map((dot, i) => (
             <div
               key={i}
-              className="absolute rounded-full bg-brand-400/25"
+              className="absolute rounded-full bg-[#58bea1]/20"
               style={{
-                top: dot.top,
+                top: "top" in dot ? dot.top : undefined,
                 left: "left" in dot ? dot.left : undefined,
                 right: "right" in dot ? dot.right : undefined,
                 bottom: "bottom" in dot ? dot.bottom : undefined,
@@ -177,7 +177,7 @@ const AnimatedBackground: React.FC = () => {
               key={i}
               className="absolute rounded-full animate-pulse-glow bg-brand-500/40"
               style={{
-                top: dot.top,
+                top: "top" in dot ? dot.top : undefined,
                 left: "left" in dot ? dot.left : undefined,
                 right: "right" in dot ? dot.right : undefined,
                 bottom: "bottom" in dot ? dot.bottom : undefined,
@@ -193,7 +193,7 @@ const AnimatedBackground: React.FC = () => {
         className={cn(
           "absolute inset-x-0 top-0 h-40 transition-opacity duration-700",
           isDark
-            ? "bg-gradient-to-b from-[#010205]/50 to-transparent"
+            ? "bg-gradient-to-b from-[#041116]/65 to-transparent"
             : "bg-gradient-to-b from-white/50 to-transparent"
         )}
       />
@@ -201,7 +201,7 @@ const AnimatedBackground: React.FC = () => {
         className={cn(
           "absolute inset-x-0 bottom-0 h-32 transition-opacity duration-700",
           isDark
-            ? "bg-gradient-to-t from-[#010205]/45 to-transparent"
+            ? "bg-gradient-to-t from-[#041116]/55 to-transparent"
             : "bg-gradient-to-t from-slate-100/80 to-transparent"
         )}
       />

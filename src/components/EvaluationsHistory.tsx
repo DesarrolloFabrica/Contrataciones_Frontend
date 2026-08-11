@@ -169,7 +169,7 @@ const EvaluationsHistory: React.FC<EvaluationsHistoryProps> = ({
         className={[
           "rounded-3xl border border-t-2 border-t-brand-500 p-5 md:p-6 mb-8 backdrop-blur-xl",
           isDark
-            ? "bg-[#0B1220]/30 border-brand-500/25 shadow-[0_16px_50px_-24px_rgba(16,185,129,0.20)]"
+            ? "bg-[#0b232a]/72 border-[#579689]/22 shadow-[0_20px_56px_-30px_rgba(0,4,8,0.78)]"
             : "bg-white/80 border-brand-500/20 shadow-[0_16px_40px_-18px_rgba(15,23,42,0.10)]",
         ].join(" ")}
       >
@@ -221,7 +221,7 @@ const EvaluationsHistory: React.FC<EvaluationsHistoryProps> = ({
                 className={[
                   "block w-full pl-10 pr-4 py-2.5 rounded-xl text-sm outline-none transition-all duration-300",
                   isDark
-                    ? "bg-[#080D14] border border-white/[0.08] text-slate-200 placeholder-slate-500 focus:border-brand-500/40 focus:ring-1 focus:ring-brand-500/20 focus:shadow-[0_0_20px_-8px_rgba(16,185,129,0.18)] hover:border-white/[0.15] hover:bg-[#0A1018]"
+                    ? "bg-[#0a2025] border border-[#579689]/20 text-slate-200 placeholder-slate-500 focus:border-[#58bea1]/35 focus:ring-1 focus:ring-[#58bea1]/15 hover:border-[#579689]/32 hover:bg-[#0d252b]"
                     : "bg-white border border-slate-200 text-slate-900 placeholder-slate-400 focus:border-brand-500/60 focus:ring-1 focus:ring-brand-500/20 focus:shadow-[0_0_0_3px_rgba(16,185,129,0.12)] hover:border-slate-300",
                 ].join(" ")}
                 placeholder="Buscar por nombre, ID, programa..."
@@ -246,7 +246,7 @@ const EvaluationsHistory: React.FC<EvaluationsHistoryProps> = ({
         className={[
           "rounded-3xl overflow-hidden border border-t-2 border-t-brand-500 transition-all duration-300 backdrop-blur-xl",
           isDark
-            ? "bg-[#0B1220]/25 border-brand-500/25 shadow-[0_18px_55px_-28px_rgba(16,185,129,0.20)]"
+            ? "bg-[#0b232a]/68 border-[#579689]/22 shadow-[0_20px_56px_-30px_rgba(0,4,8,0.76)]"
             : "bg-white/80 border-brand-500/20 shadow-[0_8px_30px_-10px_rgba(15,23,42,0.06)]",
         ].join(" ")}
       >

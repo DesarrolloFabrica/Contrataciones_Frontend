@@ -45,7 +45,7 @@ export function LeaderQuickGuideCard({ currentStep = 1, onOpenFlowHelp }: Props)
     <div
       className={`rounded-2xl border border-t-2 border-t-brand-500 overflow-hidden transition-all duration-300 ${
         isDark
-          ? "bg-gradient-to-b from-[#080D16] to-[#0A1018] border-brand-500/25 shadow-[0_0_40px_-12px_rgba(16,185,129,0.10)]"
+          ? "bg-gradient-to-b from-[#0d252b] to-[#0a2025] border-[#579689]/22 shadow-[0_20px_52px_-30px_rgba(0,4,8,0.8)]"
           : "bg-white border-brand-500/20 shadow-[0_4px_24px_-8px_rgba(15,23,42,0.06)]"
       }`}
     >

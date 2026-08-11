@@ -20,7 +20,8 @@ const ThemeContext = createContext<ThemeContextValue | undefined>(undefined);
 const STORAGE_KEY = "APP_THEME";
 
 function getPreferredTheme(): Theme {
-  if (typeof window === "undefined") return "dark";
+  // El modo principal de la plataforma es light.
+  if (typeof window === "undefined") return "light";
 
   try {
     const stored = window.localStorage.getItem(STORAGE_KEY) as Theme | null;
@@ -29,10 +30,7 @@ function getPreferredTheme(): Theme {
     // ignore
   }
 
-  const prefersDark = window.matchMedia?.(
-    "(prefers-color-scheme: dark)",
-  ).matches;
-  return prefersDark ? "dark" : "light";
+  return "light";
 }
 
 export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({

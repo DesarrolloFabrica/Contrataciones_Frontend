@@ -3,6 +3,7 @@ import React from "react";
 import { Download, LayoutDashboard, AlertCircle } from "lucide-react";
 import AdminDetailContent from "./AdminDetailContent";
 import type { TeacherEvaluationSummary } from "../../../../types";
+import { useTheme } from "../../../../context/ThemeContext";
 
 type Props = {
   hideHeader?: boolean;
@@ -23,6 +24,8 @@ export default function AdminDetailPanel({
   onExportPdf,
   errorDetail,
 }: Props) {
+  const { theme } = useTheme();
+  const isDark = theme === "dark";
   const canExport = !!selectedDetail;
 
   return (
@@ -30,15 +33,15 @@ export default function AdminDetailPanel({
       className={
         hideHeader
           ? "rounded-2xl overflow-visible"
-          : "bg-[#0f1110] rounded-3xl border border-white/10 overflow-hidden"
+          : `rounded-3xl border overflow-hidden ${isDark ? "bg-[#091d22] border-[#579689]/20" : "bg-white border-slate-200"}`
       }
     >
       {!hideHeader && (
         <>
           {/* Header */}
-          <div className="p-6 border-b border-white/5 bg-[#141414]/50 backdrop-blur-sm flex items-center justify-between gap-3">
+          <div className={`p-6 border-b backdrop-blur-sm flex items-center justify-between gap-3 ${isDark ? "border-[#579689]/14 bg-[#0b232a]/75" : "border-slate-200 bg-slate-50"}`}>
             <div className="min-w-0">
-              <h3 className="text-white font-bold text-sm flex items-center gap-2 uppercase tracking-wide">
+              <h3 className={`font-bold text-sm flex items-center gap-2 uppercase tracking-wide ${isDark ? "text-white" : "text-slate-800"}`}>
                 <LayoutDashboard size={16} className="text-brand-400" />
                 Ficha de evaluación
               </h3>
@@ -55,7 +58,9 @@ export default function AdminDetailPanel({
                 "px-3 py-2 rounded-xl text-[11px] font-bold uppercase tracking-widest flex items-center gap-2 transition-colors",
                 canExport
                   ? "bg-brand-600 hover:bg-brand-500 text-white"
-                  : "bg-white/5 text-neutral-500 cursor-not-allowed border border-white/10",
+                  : isDark
+                    ? "bg-[#102a30] text-neutral-500 cursor-not-allowed border border-[#579689]/16"
+                    : "bg-slate-100 text-slate-400 cursor-not-allowed border border-slate-200",
               ].join(" ")}
               title={canExport ? "Exportar PDF" : "Selecciona una evaluación para exportar"}
             >

@@ -46,10 +46,10 @@ const GlassCard = ({
       ${
         glowing
           ? isDark
-            ? "bg-[#0A1014]/80 border-brand-500/20 shadow-[0_0_40px_-10px_rgba(16,185,129,0.1)]"
+            ? "bg-[#0b232a]/82 border-[#579689]/20 shadow-[0_22px_60px_-45px_rgba(88,190,161,0.26)]"
             : "bg-brand-50 border-brand-200 shadow-[0_18px_50px_rgba(16,185,129,0.20)]"
           : isDark
-            ? "bg-[#0A0C10]/60 border-white/[0.06] shadow-2xl"
+            ? "bg-[#091d22]/72 border-[#579689]/16 shadow-2xl"
             : "bg-white border-slate-200 shadow-[0_18px_50px_rgba(15,23,42,0.10)]"
       } ${className}`}
     >
@@ -287,16 +287,16 @@ export default function CoordinatorEvaluationDetailPage() {
 
   // Background sofisticado
   const BackgroundEffects = () => (
-    <div className="fixed inset-0 pointer-events-none overflow-hidden -z-10 bg-[#060A12]">
-      <div className="absolute top-[-20%] left-[-10%] w-[800px] h-[800px] bg-brand-900/10 rounded-full blur-[120px] mix-blend-screen opacity-40" />
-      <div className="absolute bottom-[-10%] right-[-10%] w-[600px] h-[600px] bg-brand-900/10 rounded-full blur-[100px] mix-blend-screen opacity-30" />
+    <div className="fixed inset-0 pointer-events-none overflow-hidden -z-10 bg-[#061419]">
+      <div className="absolute top-[-20%] left-[-10%] w-[800px] h-[800px] bg-[#347c70]/[0.06] rounded-full blur-[120px] mix-blend-screen opacity-40" />
+      <div className="absolute bottom-[-10%] right-[-10%] w-[600px] h-[600px] bg-[#315b73]/[0.04] rounded-full blur-[100px] mix-blend-screen opacity-30" />
     </div>
   );
 
   return (
     <div
       className={`min-h-screen w-full font-sans selection:bg-brand-500/30 ${
-        isDark ? "bg-[#060A12] text-slate-200" : "bg-[#F4F7FC] text-slate-900"
+        isDark ? "bg-[#061419] text-slate-200" : "bg-[#F4F7FB] text-slate-900"
       }`}
     >
       {isDark && <BackgroundEffects />}
@@ -344,7 +344,7 @@ export default function CoordinatorEvaluationDetailPage() {
                 ${
                   canExport
                     ? isDark
-                      ? "bg-[#0A0D14] border-brand-500/30 text-brand-400 hover:bg-brand-500 hover:text-black hover:border-transparent hover:shadow-[0_0_20px_rgba(16,185,129,0.4)]"
+                      ? "bg-[#102a30] border-[#579689]/30 text-[#72c4ae] hover:bg-[#178b70] hover:text-white hover:border-transparent hover:shadow-[0_0_20px_rgba(88,190,161,0.22)]"
                       : "bg-brand-500 border-brand-500 text-white hover:bg-brand-600 hover:shadow-[0_18px_40px_rgba(16,185,129,0.45)]"
                     : isDark
                       ? "bg-white/[0.02] border-white/5 text-white/10 cursor-not-allowed"
@@ -506,7 +506,7 @@ export default function CoordinatorEvaluationDetailPage() {
                       <div
                         className={`rounded-xl p-6 border ${
                           isDark
-                            ? "bg-[#050709]/50 border-white/5"
+                            ? "bg-[#07171c]/60 border-[#579689]/14"
                             : "bg-slate-100 border-slate-200"
                         }`}
                       >
@@ -652,7 +652,7 @@ export default function CoordinatorEvaluationDetailPage() {
                         <div
                           className={`mt-4 rounded-xl border p-5 ${
                             isDark
-                              ? "border-white/10 bg-[#050709]/40"
+                              ? "border-[#579689]/16 bg-[#07171c]/55"
                               : "border-slate-200 bg-slate-50"
                           }`}
                         >
@@ -686,7 +686,7 @@ export default function CoordinatorEvaluationDetailPage() {
                           className={`group flex items-center justify-between p-5 rounded-2xl border transition-all
                             ${
                               isDark
-                                ? "bg-[#0A0C10] border-white/5 hover:border-emerald-500/30 hover:bg-[#0F1418]"
+                                ? "bg-[#091d22] border-[#579689]/14 hover:border-[#58bea1]/30 hover:bg-[#102a30]"
                                 : "bg-white border-slate-200 hover:border-emerald-200 hover:bg-emerald-50/40 shadow-[0_10px_30px_rgba(15,23,42,0.08)]"
                             }`}
                         >

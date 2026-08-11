@@ -135,7 +135,7 @@ export default function AdminAuditGlobalPanel({
         {/* Filter pills */}
         <div className={[
           "px-5 py-3 border-b flex flex-wrap gap-2",
-          isDark ? "border-white/5 bg-black/10" : "border-slate-100 bg-slate-50/50",
+          isDark ? "border-[#579689]/14 bg-[#071a20]/55" : "border-slate-100 bg-slate-50/50",
         ].join(" ")}>
           <div className="inline-flex p-0.5 rounded-lg border bg-white/[0.02]">
             {tabs.map((t) => {
@@ -168,7 +168,7 @@ export default function AdminAuditGlobalPanel({
 
         {/* Body */}
         <div className={[
-          isDark ? "bg-black/20" : "bg-slate-50/30",
+          isDark ? "bg-[#07171c]/55" : "bg-slate-50/30",
         ].join(" ")}>
           {loadingAudit ? (
             <div className={[

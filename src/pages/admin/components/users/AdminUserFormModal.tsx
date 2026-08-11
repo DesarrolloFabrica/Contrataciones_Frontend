@@ -100,7 +100,7 @@ const ModalHeader = ({
   <div
     className={[
       "relative px-8 pt-8 pb-6 border-b",
-      isDark ? "border-white/5 bg-zinc-950/50" : "border-slate-200 bg-slate-50",
+      isDark ? "border-[#579689]/14 bg-[#071a20]/82" : "border-slate-200 bg-slate-50",
     ].join(" ")}
   >
     <div className="flex items-start justify-between">
@@ -220,7 +220,7 @@ const Input: React.FC<React.InputHTMLAttributes<HTMLInputElement>> = (props) => 
       className={[
         "w-full rounded-lg px-3.5 py-2.5 text-sm outline-none transition-all duration-200",
         isDark
-          ? "bg-zinc-900/50 border border-white/10 hover:border-white/20 text-zinc-100 placeholder:text-zinc-600 focus:border-brand-500/50 focus:ring-4 focus:ring-brand-500/10"
+          ? "bg-[#0a2025] border border-[#579689]/18 hover:border-[#579689]/32 text-slate-100 placeholder:text-slate-600 focus:border-[#58bea1]/45 focus:ring-4 focus:ring-[#58bea1]/10"
           : "bg-white border border-slate-200 hover:border-slate-300 text-slate-900 placeholder:text-slate-400 focus:border-brand-500 focus:ring-2 focus:ring-brand-200",
         props.className,
       ]
@@ -471,7 +471,7 @@ const AdminUserFormModal: React.FC<Props> = ({
         className={[
           "relative w-full max-w-2xl rounded-3xl shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-200 flex flex-col max-h-[90vh] border",
           isDark
-            ? "bg-zinc-950 border-white/10"
+            ? "bg-[#091d22] border-[#579689]/20"
             : "bg-white border-slate-200 shadow-[0_24px_80px_rgba(15,23,42,0.30)]",
         ].join(" ")}
       >
@@ -539,7 +539,7 @@ const AdminUserFormModal: React.FC<Props> = ({
                   className={[
                     "rounded-2xl p-1 relative overflow-hidden group border",
                     isDark
-                      ? "bg-black/40 border-white/10"
+                      ? "bg-[#07171c]/65 border-[#579689]/18"
                       : "bg-slate-50 border-slate-200",
                   ].join(" ")}
                 >
@@ -619,7 +619,7 @@ const AdminUserFormModal: React.FC<Props> = ({
                   className={[
                     "rounded-2xl border p-5",
                     isDark
-                      ? "border-white/10 bg-zinc-900/30"
+                      ? "border-[#579689]/18 bg-[#0a2025]/75"
                       : "border-slate-200 bg-slate-50",
                   ].join(" ")}
                 >
@@ -628,7 +628,7 @@ const AdminUserFormModal: React.FC<Props> = ({
                           className={[
                             "p-2 rounded-lg border",
                             isDark
-                              ? "bg-zinc-900 border-white/10"
+                              ? "bg-[#0a2025] border-[#579689]/18"
                               : "bg-white border-slate-200",
                           ].join(" ")}
                         >
@@ -665,7 +665,7 @@ const AdminUserFormModal: React.FC<Props> = ({
                       className={[
                         "rounded-xl border p-4 space-y-1",
                         isDark
-                          ? "bg-zinc-950/50 border-white/5"
+                          ? "bg-[#071a20]/70 border-[#579689]/14"
                           : "bg-white border-slate-200",
                       ].join(" ")}
                     >
@@ -717,7 +717,7 @@ const AdminUserFormModal: React.FC<Props> = ({
                             className={[
                               "w-full appearance-none rounded-lg px-3.5 py-2.5 text-sm outline-none transition-all",
                               isDark
-                                ? "bg-zinc-900/50 border border-white/10 text-zinc-100 focus:border-brand-500/50 focus:ring-4 focus:ring-brand-500/10"
+                                ? "bg-[#0a2025] border border-[#579689]/18 text-slate-100 focus:border-[#58bea1]/45 focus:ring-4 focus:ring-[#58bea1]/10"
                                 : "bg-white border border-slate-200 text-slate-900 focus:border-brand-500 focus:ring-2 focus:ring-brand-200",
                             ].join(" ")}
                         >
@@ -778,7 +778,7 @@ const AdminUserFormModal: React.FC<Props> = ({
                                   "w-full appearance-none rounded-lg px-3.5 py-2.5 text-sm outline-none transition-all",
                                   role === "ADMIN" ? "opacity-50 cursor-not-allowed" : "",
                                   isDark
-                                    ? "bg-zinc-900/50 border border-white/10 text-zinc-100 focus:border-brand-500/50 focus:ring-4 focus:ring-brand-500/10"
+                                    ? "bg-[#0a2025] border border-[#579689]/18 text-slate-100 focus:border-[#58bea1]/45 focus:ring-4 focus:ring-[#58bea1]/10"
                                     : "bg-white border border-slate-200 text-slate-900 focus:border-brand-500 focus:ring-2 focus:ring-brand-200",
                                 ]
                                   .filter(Boolean)
@@ -828,7 +828,7 @@ const AdminUserFormModal: React.FC<Props> = ({
         <div
           className={[
             "px-8 py-5 border-t flex items-center justify-between z-10",
-            isDark ? "border-white/5 bg-zinc-950/50" : "border-slate-200 bg-slate-50",
+            isDark ? "border-[#579689]/14 bg-[#071a20]/82" : "border-slate-200 bg-slate-50",
           ].join(" ")}
         >
             <button

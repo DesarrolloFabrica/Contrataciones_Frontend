@@ -16,7 +16,7 @@ interface InterviewReviewStepProps {
 const Item: React.FC<{ label: string; value?: string | null }> = ({ label, value }) => (
   <div>
     <p className="text-[10px] uppercase tracking-[0.14em] text-slate-400">{label}</p>
-    <p className="text-sm font-semibold text-slate-700">
+    <p className="text-sm font-semibold text-slate-700 dark:text-slate-200">
       {value && value.trim() ? value : "-"}
     </p>
   </div>
@@ -41,7 +41,7 @@ export const InterviewReviewStep: React.FC<InterviewReviewStepProps> = ({
           <div className="space-y-3">
             <Item label="Rol objetivo" value={hiringContext.targetRole} />
             <Item label="Tipo de proceso" value={hiringContext.processType} />
-            <Item label="Prioridad" value={hiringContext.priority} />
+            <Item label="Área" value={hiringContext.requestingArea} />
           </div>
         </div>
 

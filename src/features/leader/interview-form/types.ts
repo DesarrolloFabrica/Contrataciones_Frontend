@@ -1,9 +1,12 @@
 import type { InterviewData } from "../../../types";
 import type { TeacherCandidateSearchItemDto } from "../../../services/teachersService";
+import type { ChangeEvent } from "react";
 
 export interface InterviewFormProps {
   onSubmit: (data: InterviewData) => void | Promise<void>;
   onStepChange?: (step: number) => void;
+  requestedStep?: 1 | 2 | 3 | 4 | 5 | null;
+  onRequestedStepApplied?: () => void;
   examplePreset?: "approved" | "medium" | "rejected" | null;
   onExampleApplied?: () => void;
 }
@@ -65,9 +68,9 @@ export interface NormalizedSchool {
 
 export type InterviewFormChangeHandler = (
   e:
-    | React.ChangeEvent<HTMLInputElement>
-    | React.ChangeEvent<HTMLTextAreaElement>
-    | React.ChangeEvent<HTMLSelectElement>
+    | ChangeEvent<HTMLInputElement>
+    | ChangeEvent<HTMLTextAreaElement>
+    | ChangeEvent<HTMLSelectElement>
 ) => void;
 
 export type {

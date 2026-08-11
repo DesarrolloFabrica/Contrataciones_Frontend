@@ -1,5 +1,5 @@
 import React from "react";
-import { BarChart3, History } from "lucide-react";
+import { History, MessageSquareText } from "lucide-react";
 import { useTheme } from "../../../context/ThemeContext";
 import { UserAccountMenu } from "../../../components/UserAccountMenu";
 import { AppLogo } from "../../../components/brand";
@@ -15,8 +15,8 @@ type Props = {
   statusLabel?: string;
 };
 
-const NAV_ITEMS: { id: ViewMode; label: string; icon: typeof BarChart3 }[] = [
-  { id: "analyze", label: "Analizar", icon: BarChart3 },
+const NAV_ITEMS: { id: ViewMode; label: string; icon: typeof MessageSquareText }[] = [
+  { id: "analyze", label: "Entrevista", icon: MessageSquareText },
   { id: "history", label: "Historial", icon: History },
 ];
 
@@ -35,11 +35,11 @@ function NavTabs({
     <nav
       aria-label="Secciones principales"
       className={cn(
-        "inline-flex p-1 rounded-xl border",
+        "inline-flex items-center gap-1 rounded-2xl border p-1.5",
         isDark
-          ? "bg-white/[0.03] border-white/10"
-          : "bg-slate-100/70 border-slate-200/80",
-        className
+          ? "border-white/10 bg-white/[0.04] shadow-[inset_0_1px_0_rgba(255,255,255,0.04)]"
+          : "border-slate-200/90 bg-slate-100/80 shadow-[inset_0_1px_0_rgba(255,255,255,0.8)]",
+        className,
       )}
     >
       {NAV_ITEMS.map(({ id, label, icon: Icon }) => {
@@ -51,26 +51,26 @@ function NavTabs({
             onClick={() => onChangeMode(id)}
             aria-current={active ? "page" : undefined}
             className={cn(
-              "relative flex flex-1 md:flex-none items-center justify-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200",
-              "focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-500/50",
+              "relative flex flex-1 items-center justify-center gap-2.5 rounded-xl px-5 py-2.5 text-sm font-semibold transition-all duration-200 md:flex-none md:min-w-[132px]",
+              "focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/40",
               active
                 ? "text-white"
                 : isDark
-                  ? "text-slate-400 hover:text-slate-200"
-                  : "text-slate-500 hover:text-slate-800"
+                  ? "text-slate-400 hover:bg-white/[0.04] hover:text-slate-100"
+                  : "text-slate-500 hover:bg-white/80 hover:text-slate-800",
             )}
           >
             {active && (
               <span
                 className={cn(
-                  "absolute inset-0 rounded-lg shadow-sm",
+                  "absolute inset-0 rounded-xl",
                   isDark
-                    ? "bg-gradient-to-r from-brand-600 to-brand-500 shadow-brand-500/20"
-                    : "bg-gradient-to-r from-brand-500 to-brand-600 shadow-[0_4px_14px_rgba(16,185,129,0.35)]"
+                    ? "bg-gradient-to-br from-emerald-500 to-emerald-700 shadow-[0_8px_20px_-8px_rgba(16,185,129,0.65)]"
+                    : "bg-gradient-to-br from-emerald-500 to-emerald-600 shadow-[0_8px_18px_-8px_rgba(16,185,129,0.55)]",
                 )}
               />
             )}
-            <Icon className="relative w-4 h-4 shrink-0" />
+            <Icon className="relative h-[18px] w-[18px] shrink-0" strokeWidth={2.1} />
             <span className="relative">{label}</span>
           </button>
         );
@@ -92,45 +92,59 @@ export function LeaderModeHeader({
   return (
     <header
       className={cn(
-        "sticky top-0 z-50 w-full border-b transition-colors duration-300",
+        "sticky top-0 z-50 w-full border-b backdrop-blur-2xl transition-colors duration-300",
         isDark
-          ? "bg-[#021A0F]/90 border-white/[0.06] backdrop-blur-xl shadow-[0_1px_0_0_rgba(255,255,255,0.04)]"
-          : "bg-white/90 border-slate-200/70 backdrop-blur-xl shadow-[0_1px_3px_rgba(15,23,42,0.04)]"
+          ? "border-white/10 bg-[#0a1518]/85 shadow-[0_12px_40px_-24px_rgba(0,0,0,0.85)]"
+          : "border-slate-200/80 bg-white/85 shadow-[0_10px_30px_-20px_rgba(15,23,42,0.25)]",
       )}
     >
-      <div className="max-w-7xl mx-auto px-4 md:px-8">
-        <div className="grid grid-cols-[1fr_auto] md:grid-cols-[1fr_auto_1fr] items-center gap-x-4 h-14 md:h-16">
-          <div className="flex items-center gap-3 min-w-0">
-            <AppLogo variant="navbar" />
+      <div
+        className={cn(
+          "pointer-events-none absolute inset-x-0 top-0 h-px",
+          isDark
+            ? "bg-gradient-to-r from-transparent via-emerald-400/40 to-transparent"
+            : "bg-gradient-to-r from-transparent via-emerald-500/35 to-transparent",
+        )}
+      />
+
+      <div className="w-full px-5 md:px-7 xl:px-8">
+        <div className="grid grid-cols-[1fr_auto] items-center gap-x-5 py-3.5 md:grid-cols-[1fr_auto_1fr] md:py-4">
+          <div className="flex min-w-0 items-center gap-3.5">
+            <AppLogo
+              variant="navbar"
+              className="!h-11 !w-11 rounded-xl border-emerald-500/20 shadow-[0_8px_20px_-12px_rgba(16,185,129,0.55)] md:!h-12 md:!w-12"
+            />
             <div className="min-w-0">
               <p
                 className={cn(
-                  "text-sm md:text-[15px] font-semibold tracking-tight truncate",
-                  isDark ? "text-white" : "text-slate-900"
+                  "truncate text-[15px] font-bold tracking-tight md:text-base",
+                  isDark ? "text-white" : "text-slate-900",
                 )}
               >
                 Contratación Académica CUN
               </p>
-              <div className="flex items-center gap-2 mt-0.5">
+              <div className="mt-1 flex flex-wrap items-center gap-2">
                 <span
                   className={cn(
-                    "inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[10px] font-medium",
+                    "inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-semibold",
                     isDark
-                      ? "bg-brand-500/10 text-brand-400"
-                      : "bg-brand-50 text-brand-700"
+                      ? "bg-emerald-500/15 text-emerald-300"
+                      : "bg-emerald-50 text-emerald-700",
                   )}
                 >
                   <span className="relative flex h-1.5 w-1.5">
-                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-brand-400 opacity-60" />
-                    <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-brand-500" />
+                    <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-60" />
+                    <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-emerald-500" />
                   </span>
                   Sistema activo
                 </span>
                 {statusLabel && (
                   <span
                     className={cn(
-                      "hidden sm:inline text-[10px] font-medium truncate",
-                      isDark ? "text-slate-500" : "text-slate-400"
+                      "hidden rounded-full border px-2.5 py-1 text-[11px] font-medium sm:inline-flex",
+                      isDark
+                        ? "border-white/10 bg-white/[0.03] text-slate-300"
+                        : "border-slate-200 bg-slate-50 text-slate-600",
                     )}
                   >
                     {statusLabel}
@@ -140,7 +154,7 @@ export function LeaderModeHeader({
             </div>
           </div>
 
-          <div className="hidden md:flex justify-center">
+          <div className="hidden justify-center md:flex">
             <NavTabs mode={mode} onChangeMode={onChangeMode} isDark={isDark} />
           </div>
 
@@ -149,15 +163,26 @@ export function LeaderModeHeader({
           </div>
         </div>
 
-        <div className="md:hidden pb-3 -mt-1">
+        <div className="pb-3.5 md:hidden">
           <NavTabs
             mode={mode}
             onChangeMode={onChangeMode}
             isDark={isDark}
-            className="w-full flex"
+            className="flex w-full"
           />
         </div>
       </div>
+
+      <div
+        className={cn(
+          "h-[2px] w-full",
+          isDark
+            ? "bg-gradient-to-r from-transparent via-emerald-500/25 to-transparent"
+            : "bg-gradient-to-r from-transparent via-emerald-500/20 to-transparent",
+        )}
+      />
     </header>
   );
 }
+
+export default LeaderModeHeader;

@@ -51,7 +51,7 @@ export const EvaluationSummaryCard: React.FC<EvaluationSummaryCardProps> = ({
       <div
         className={`relative rounded-[30px] border p-8 shadow-2xl ${
           isDark
-            ? "bg-[#080A0E] border-white/10"
+            ? "bg-[#091d22] border-[#579689]/18"
             : "bg-white border-slate-200 shadow-[0_24px_70px_rgba(15,23,42,0.12)]"
         }`}
       >
@@ -155,7 +155,7 @@ export const EvaluationSummaryCard: React.FC<EvaluationSummaryCardProps> = ({
               <span className="text-lg font-medium text-slate-500">/100</span>
             </div>
             <div className="mt-3">
-              <div className={`h-1.5 w-full rounded-full overflow-hidden border ${isDark ? "bg-[#15191E] border-white/5" : "bg-slate-100 border-slate-200"}`}>
+              <div className={`h-1.5 w-full rounded-full overflow-hidden border ${isDark ? "bg-[#102a30] border-[#579689]/12" : "bg-slate-100 border-slate-200"}`}>
                 <div
                   className={`h-full rounded-full shadow-[0_0_12px_rgba(16,185,129,0.4)] bg-gradient-to-r ${
                     score >= 80
@@ -221,7 +221,7 @@ export const EvaluationSummaryCard: React.FC<EvaluationSummaryCardProps> = ({
           <div
             className={`mt-5 rounded-xl p-5 border ${
               isDark
-                ? "bg-[#050709]/50 border-white/5"
+                ? "bg-[#07171c]/60 border-[#579689]/14"
                 : "bg-slate-50 border-slate-200"
             }`}
           >

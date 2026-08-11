@@ -29,7 +29,7 @@ const LoadingState: React.FC = () => {
   const shellCls = [
     "relative overflow-hidden rounded-2xl border border-t-2 border-t-brand-500",
     isDark
-      ? "border-brand-500/25 bg-gradient-to-b from-[#080D16]/95 via-[#0A1018]/90 to-[#060A12] shadow-[0_0_40px_-12px_rgba(16,185,129,0.18)]"
+      ? "border-[#579689]/24 bg-gradient-to-b from-[#0d252b]/95 via-[#0a2025]/92 to-[#07191f] shadow-[0_22px_60px_-30px_rgba(0,4,8,0.82)]"
       : "border-brand-500/20 bg-gradient-to-b from-white via-slate-50/90 to-white shadow-[0_12px_40px_-12px_rgba(15,23,42,0.06)]",
   ].join(" ");
 

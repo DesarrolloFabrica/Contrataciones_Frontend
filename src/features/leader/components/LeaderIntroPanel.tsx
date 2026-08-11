@@ -44,7 +44,7 @@ export const LeaderIntroPanel: React.FC<LeaderIntroPanelProps> = ({
         <div
           className={`absolute inset-0 ${
             isDark
-              ? "bg-gradient-to-b from-[#050505]/70 via-[#050505]/50 to-[#050505]/80"
+              ? "bg-gradient-to-b from-[#091d22]/78 via-[#0a2025]/62 to-[#07191f]/84"
               : "bg-gradient-to-b from-white/60 via-white/40 to-white/70"
           }`}
         />
@@ -231,7 +231,7 @@ export const LeaderIntroPanel: React.FC<LeaderIntroPanelProps> = ({
             className={[
               "relative p-5 rounded-2xl border",
               isDark
-                ? "bg-gradient-to-br from-[#050b07] via-[#050505] to-[#040812] border-white/10"
+                ? "bg-gradient-to-br from-[#0d252b] via-[#091d22] to-[#07191f] border-[#579689]/20"
                 : "bg-gradient-to-br from-white via-slate-50 to-brand-50/30 border-slate-200 shadow-[0_14px_40px_rgba(15,23,42,0.08)]",
             ].join(" ")}
           >

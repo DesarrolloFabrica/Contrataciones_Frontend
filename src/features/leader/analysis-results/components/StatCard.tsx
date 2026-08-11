@@ -17,7 +17,7 @@ export const StatCard: React.FC<StatCardProps> = ({ label, value, icon, sub }) =
       className={[
         "relative overflow-hidden group p-5 rounded-2xl transition-all duration-300 border border-t-2 border-t-brand-500",
         isDark
-          ? "bg-gradient-to-b from-[#111A2B]/85 via-[#0F1727]/78 to-[#0B1220]/65 border-brand-500/25 hover:border-brand-400/50 hover:shadow-[0_18px_35px_-18px_rgba(16,185,129,0.45)]"
+          ? "bg-gradient-to-b from-[#102a30]/88 via-[#0d252b]/82 to-[#0a2025]/72 border-[#579689]/22 hover:border-[#58bea1]/40 hover:shadow-[0_18px_38px_-22px_rgba(44,126,108,0.34)]"
           : "bg-white border-brand-500/20 hover:border-brand-500/40 shadow-[0_4px_20px_-6px_rgba(15,23,42,0.06)] hover:shadow-[0_8px_30px_-6px_rgba(15,23,42,0.1)]",
       ].join(" ")}
     >

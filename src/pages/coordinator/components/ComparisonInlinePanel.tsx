@@ -9,6 +9,7 @@ import type { InterviewComparisonResult } from "../../../services/geminiService"
 
 // UI del resultado
 import ComparisonResultCard from "./ComparisonResultCard";
+import { useTheme } from "../../../context/ThemeContext";
 
 /**
  * Panel inline que:
@@ -20,6 +21,8 @@ type Props = {
 };
 
 export default function ComparisonInlinePanel({ candidateGroup }: Props) {
+  const { theme } = useTheme();
+  const isDark = theme === "dark";
   // Estado de UI
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -125,16 +128,18 @@ export default function ComparisonInlinePanel({ candidateGroup }: Props) {
 
   // Render
   return (
-    <div className="rounded-3xl border border-white/10 bg-black/20 p-4 md:p-5 space-y-4">
+    <div className={`rounded-3xl border p-4 md:p-5 space-y-4 ${
+      isDark ? "border-[#579689]/18 bg-[#071a20]/75" : "border-slate-200 bg-slate-50"
+    }`}>
       {/* Header */}
       <div className="flex items-start justify-between gap-4">
         <div>
-          <div className="text-[11px] uppercase tracking-widest text-gray-300 font-bold">
+          <div className={`text-[11px] uppercase tracking-widest font-bold ${isDark ? "text-slate-300" : "text-slate-700"}`}>
             Comparación de entrevistas con IA
           </div>
           <div className="text-xs text-gray-500 mt-1">
             Candidato:{" "}
-            <span className="text-gray-300 font-semibold">
+            <span className={isDark ? "text-slate-300 font-semibold" : "text-slate-700 font-semibold"}>
               {candidateGroup.candidateName}
             </span>{" "}
             • {candidateGroup.interviews.length} entrevista(s)
@@ -158,7 +163,7 @@ export default function ComparisonInlinePanel({ candidateGroup }: Props) {
 
       {/* Estados */}
       {!canCompare && (
-        <div className="text-sm text-gray-400 bg-white/[0.03] border border-white/10 rounded-2xl p-4">
+        <div className={`text-sm rounded-2xl border p-4 ${isDark ? "text-slate-400 bg-[#0b232a] border-[#579689]/18" : "text-slate-600 bg-white border-slate-200"}`}>
           Este candidato necesita mínimo 2 entrevistas para comparar.
         </div>
       )}
@@ -170,7 +175,7 @@ export default function ComparisonInlinePanel({ candidateGroup }: Props) {
       )}
 
       {loading && (
-        <div className="text-sm text-gray-400 bg-white/[0.03] border border-white/10 rounded-2xl p-4">
+        <div className={`text-sm rounded-2xl border p-4 ${isDark ? "text-slate-400 bg-[#0b232a] border-[#579689]/18" : "text-slate-600 bg-white border-slate-200"}`}>
           Generando comparación…
         </div>
       )}

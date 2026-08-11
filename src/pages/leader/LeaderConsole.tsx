@@ -1,7 +1,6 @@
 // src/pages/leader/LeaderConsole.tsx
 import React, { useState, useCallback, useEffect, useMemo } from "react";
 import { useLocation } from "react-router-dom";
-import { AlertCircle, CheckCircle2, FlaskConical, XCircle } from "lucide-react";
 // Types & Services
 import type {
   InterviewData,
@@ -39,14 +38,15 @@ import { LeaderFlowHelpModal } from "../../features/leader/components/LeaderFlow
 import { LeaderErrorState } from "../../features/leader/components/LeaderErrorState";
 import { LeaderHero } from "../../features/leader/components/LeaderHero";
 import { LeaderModeHeader } from "../../features/leader/components/LeaderModeHeader";
-import { LeaderQuickGuideCard } from "../../features/leader/components/LeaderQuickGuideCard";
+import { LeaderWorkspaceSidebar } from "../../features/leader/components/LeaderWorkspaceSidebar";
+import { LeaderAmbientDecor } from "../../features/leader/components/LeaderAmbientDecor";
 import { toBackendTeacherForm, mapFormToInterviewData } from "../../features/leader/utils/leaderMappers";
-import AnimatedBackground from "../../components/AnimatedBackground";
 
 const ORG_ID = import.meta.env.VITE_ORG_ID ?? "ORG_DEFAULT";
 
 type ViewMode = "analyze" | "history";
 type ExamplePreset = "approved" | "medium" | "rejected" | null;
+type WizardStep = 1 | 2 | 3 | 4 | 5;
 
 type SchoolWithPrograms = {
   id?: string;
@@ -101,7 +101,8 @@ const LeaderConsole: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [warning, setWarning] = useState<string | null>(null);
   const [isFlowHelpOpen, setIsFlowHelpOpen] = useState(false);
-  const [wizardStep, setWizardStep] = useState<number>(1);
+  const [wizardStep, setWizardStep] = useState<WizardStep>(1);
+  const [requestedWizardStep, setRequestedWizardStep] = useState<WizardStep | null>(null);
   const [examplePreset, setExamplePreset] = useState<ExamplePreset>(null);
 
   const handleFormSubmit = useCallback(
@@ -409,6 +410,14 @@ const LeaderConsole: React.FC = () => {
     setWizardStep(1);
   }, []);
 
+  const handleSelectWizardStep = useCallback((step: WizardStep) => {
+    if (analysisResult) {
+      handleReset();
+    }
+    setMode("analyze");
+    setRequestedWizardStep(step);
+  }, [analysisResult, handleReset]);
+
   const handleLogout = useCallback(() => {
     logout();
     window.location.href = "/login";
@@ -423,8 +432,8 @@ const LeaderConsole: React.FC = () => {
 
   return (
     <div
-      className={`min-h-screen w-full font-sans overflow-x-hidden flex flex-col ${
-        isDark ? "bg-transparent text-white" : "bg-transparent text-slate-900"
+      className={`relative h-[100dvh] w-full font-sans overflow-hidden flex flex-col ${
+        isDark ? "text-white" : "text-slate-900"
       }`}
     >
       <LeaderModeHeader
@@ -435,169 +444,105 @@ const LeaderConsole: React.FC = () => {
         statusLabel={statusLabel}
       />
 
-      <main className="flex-1 relative z-10 w-full">
-        <AnimatedBackground />
+      <div className="relative z-10 flex min-h-0 flex-1 overflow-hidden">
+        <LeaderAmbientDecor />
 
-        <div className="max-w-7xl mx-auto px-4 md:px-8 py-6 md:py-8 relative z-10">
-          {mode === "analyze" && (
-            <div className="space-y-6 md:space-y-8 animate-[fadeInUp_400ms_ease-out]">
-              <LeaderHero />
+        <LeaderWorkspaceSidebar
+          mode={mode}
+          currentStep={wizardStep}
+          onChangeMode={setMode}
+          onSelectStep={handleSelectWizardStep}
+          onOpenHelp={() => setIsFlowHelpOpen(true)}
+        />
 
-              {!analysisResult && (
-                <div className="grid grid-cols-1 lg:grid-cols-[1fr_300px] gap-6 items-start">
-                  <div className="animate-[fadeIn_300ms_ease-out] relative space-y-4">
-                    {error && (
-                      <LeaderErrorState error={error} onRetry={handleRetryAnalysis} variant="banner" />
-                    )}
+        <main className="relative z-10 flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
+          <div className="min-h-0 flex-1 overflow-y-auto">
+            <div className="mx-auto w-full max-w-[1400px] px-4 py-4 md:px-6 md:py-5">
+              {mode === "analyze" && (
+                <div className="space-y-4 animate-[fadeInUp_400ms_ease-out]">
+                  <LeaderHero
+                    currentStep={wizardStep}
+                    onOpenHelp={() => setIsFlowHelpOpen(true)}
+                    onLoadExample={setExamplePreset}
+                  />
 
-                    {isLoading && (
-                      <div
-                        className={`absolute inset-0 z-20 flex flex-col items-center justify-center rounded-2xl backdrop-blur-sm ${
-                          isDark ? "bg-[#020308]/70" : "bg-white/70"
-                        }`}
-                      >
-                        <LoadingState />
-                        <p className="mt-6 text-sm text-brand-400/80 font-medium animate-pulse">
-                          Analizando patrones pedagógicos y éticos...
-                        </p>
+                  {!analysisResult && (
+                    <div className="relative">
+                      {error && (
+                        <div className="mb-4">
+                          <LeaderErrorState error={error} onRetry={handleRetryAnalysis} variant="banner" />
+                        </div>
+                      )}
+
+                      {isLoading && (
+                        <div
+                          className={`absolute inset-0 z-20 flex flex-col items-center justify-center rounded-xl backdrop-blur-sm ${
+                            isDark ? "bg-[#071214]/80" : "bg-white/80"
+                          }`}
+                        >
+                          <LoadingState />
+                          <p className="mt-6 text-sm font-medium text-emerald-500 animate-pulse">
+                            Analizando la entrevista del candidato...
+                          </p>
+                        </div>
+                      )}
+
+                      <div className={isLoading ? "pointer-events-none opacity-60" : undefined}>
+                        <InterviewForm
+                          onSubmit={handleFormSubmit}
+                          onStepChange={(step) => setWizardStep(step as WizardStep)}
+                          requestedStep={requestedWizardStep}
+                          onRequestedStepApplied={() => setRequestedWizardStep(null)}
+                          examplePreset={examplePreset}
+                          onExampleApplied={() => setExamplePreset(null)}
+                        />
                       </div>
-                    )}
+                    </div>
+                  )}
 
-                    <div className={isLoading ? "pointer-events-none opacity-60" : undefined}>
-                      <InterviewForm
-                        onSubmit={handleFormSubmit}
-                        onStepChange={setWizardStep}
-                        examplePreset={examplePreset}
-                        onExampleApplied={() => setExamplePreset(null)}
+                  {warning && !error && (
+                    <div className={`rounded-lg border px-4 py-3 text-sm ${isDark ? "border-amber-400/30 bg-amber-500/10 text-amber-200" : "border-amber-200 bg-amber-50 text-amber-800"}`}>
+                      {warning}
+                    </div>
+                  )}
+
+                  {analysisResult && interviewData && (
+                    <div className="animate-[slideUp_400ms_ease-out] w-full">
+                      <AnalysisResults
+                        result={analysisResult}
+                        interviewData={interviewData}
+                        onReset={handleReset}
+                        evaluationId={evaluationId ?? undefined}
                       />
                     </div>
-                  </div>
-
-                  <aside className="hidden lg:block space-y-4 sticky top-28">
-                    <LeaderQuickGuideCard
-                      currentStep={wizardStep}
-                      onOpenFlowHelp={() => setIsFlowHelpOpen(true)}
-                    />
-                    <div
-                      className={`rounded-2xl border border-t-2 border-t-brand-500 p-4 space-y-3 ${
-                        isDark
-                          ? "bg-gradient-to-b from-[#080D16] to-[#0A1018] border-brand-500/25"
-                          : "bg-white border-brand-500/20 shadow-[0_4px_24px_-8px_rgba(15,23,42,0.06)]"
-                      }`}
-                    >
-                      <div className="flex items-center gap-2">
-                        <div
-                          className={`h-8 w-8 rounded-lg flex items-center justify-center ${
-                            isDark
-                              ? "bg-brand-500/10 border border-brand-500/20"
-                              : "bg-brand-50 border border-brand-200"
-                          }`}
-                        >
-                          <FlaskConical className={`h-4 w-4 ${isDark ? "text-brand-400" : "text-brand-600"}`} />
-                        </div>
-                        <div>
-                          <p className={`text-[11px] font-bold uppercase tracking-[0.16em] ${isDark ? "text-white" : "text-slate-900"}`}>
-                            Datos de ejemplo
-                          </p>
-                          <p className={`text-[10px] ${isDark ? "text-slate-500" : "text-slate-500"}`}>
-                            Carga casos de prueba sin editar el formulario completo.
-                          </p>
-                        </div>
-                      </div>
-
-                      <div className="space-y-2">
-                        <button
-                          type="button"
-                          onClick={() => setExamplePreset("approved")}
-                          className={`w-full flex items-center gap-2 rounded-xl border px-3 py-2 text-[11px] font-semibold transition ${
-                            isDark
-                              ? "border-white/10 text-slate-200 hover:bg-emerald-500/10 hover:border-emerald-400/30"
-                              : "border-slate-200 text-slate-700 hover:bg-emerald-50 hover:border-emerald-200"
-                          }`}
-                        >
-                          <CheckCircle2 className="h-4 w-4 text-emerald-400" />
-                          Perfil aprobado
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => setExamplePreset("medium")}
-                          className={`w-full flex items-center gap-2 rounded-xl border px-3 py-2 text-[11px] font-semibold transition ${
-                            isDark
-                              ? "border-white/10 text-slate-200 hover:bg-amber-500/10 hover:border-amber-400/30"
-                              : "border-slate-200 text-slate-700 hover:bg-amber-50 hover:border-amber-200"
-                          }`}
-                        >
-                          <AlertCircle className="h-4 w-4 text-amber-400" />
-                          Perfil medio
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => setExamplePreset("rejected")}
-                          className={`w-full flex items-center gap-2 rounded-xl border px-3 py-2 text-[11px] font-semibold transition ${
-                            isDark
-                              ? "border-white/10 text-slate-200 hover:bg-rose-500/10 hover:border-rose-400/30"
-                              : "border-slate-200 text-slate-700 hover:bg-rose-50 hover:border-rose-200"
-                          }`}
-                        >
-                          <XCircle className="h-4 w-4 text-rose-400" />
-                          Perfil rechazado
-                        </button>
-                      </div>
-                    </div>
-                  </aside>
+                  )}
                 </div>
               )}
 
-              {warning && !error && (
-                <div className={`rounded-xl border px-4 py-3 text-sm ${isDark ? "border-amber-400/30 bg-amber-500/10 text-amber-200" : "border-amber-300 bg-amber-50 text-amber-800"}`}>
-                  {warning}
-                </div>
-              )}
-
-              {analysisResult && interviewData && (
-                <div className="animate-[slideUp_400ms_ease-out] w-full">
-                  <AnalysisResults
-                    result={analysisResult}
-                    interviewData={interviewData}
-                    onReset={handleReset}
-                    evaluationId={evaluationId ?? undefined}
+              {mode === "history" && (
+                <div className="animate-[fadeInUp_400ms_ease-out]">
+                  <EvaluationsHistory
+                    onBackToAnalyze={() => setMode("analyze")}
+                    onOpenEvaluation={handleOpenEvaluationFromHistory}
                   />
                 </div>
               )}
             </div>
-          )}
-
-          {mode === "history" && (
-            <div className="animate-[fadeInUp_400ms_ease-out]">
-              {isDark && (
-                <div className="absolute inset-0 bg-gradient-to-b from-brand-500/5 to-transparent blur-3xl -z-10 pointer-events-none" />
-              )}
-              <EvaluationsHistory
-                onBackToAnalyze={() => setMode("analyze")}
-                onOpenEvaluation={handleOpenEvaluationFromHistory}
-              />
-            </div>
-          )}
-        </div>
-      </main>
+          </div>
+        </main>
+      </div>
 
       {isFlowHelpOpen && (
         <LeaderFlowHelpModal onClose={() => setIsFlowHelpOpen(false)} />
       )}
 
-      <footer className="py-6 text-center border-t border-white/5 mt-auto">
-        <p className="text-[10px] text-white/20 uppercase tracking-widest">
-          Sistema de Evaluación Docente · CUN © {new Date().getFullYear()}
-        </p>
-      </footer>
-
       <style>{`
         @keyframes fadeInUp {
-          from { opacity: 0; transform: translateY(20px); }
+          from { opacity: 0; transform: translateY(12px); }
           to { opacity: 1; transform: translateY(0); }
         }
         @keyframes slideUp {
-          from { opacity: 0; transform: translateY(40px); }
+          from { opacity: 0; transform: translateY(24px); }
           to { opacity: 1; transform: translateY(0); }
         }
       `}</style>

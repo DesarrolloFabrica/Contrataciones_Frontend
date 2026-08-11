@@ -13,6 +13,7 @@ import {
   type CoordinatorDecisionStatusApi,
   type CoordinatorCriteriaPayload,
 } from "../../../services/teachersService";
+import { useTheme } from "../../../context/ThemeContext";
 
 type Props = {
   selectedId: string | null;
@@ -50,6 +51,8 @@ const DecisionTab: React.FC<Props> = ({
   missingReasons,
   onSubmitDecision,
 }) => {
+  const { theme } = useTheme();
+  const isDark = theme === "dark";
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -131,13 +134,17 @@ const DecisionTab: React.FC<Props> = ({
 
   return (
     <div className="space-y-5">
-      <div className="bg-[#090909] border border-white/10 rounded-2xl p-4 space-y-3">
+      <div className={`rounded-2xl border p-4 space-y-3 ${
+        isDark
+          ? "bg-[#0b232a]/85 border-[#579689]/20 shadow-[0_20px_55px_-42px_rgba(88,190,161,0.32)]"
+          : "bg-white border-slate-200 shadow-sm"
+      }`}>
         <div className="flex items-center justify-between gap-3">
           <div>
-            <p className="text-[11px] uppercase tracking-widest text-gray-500">
+            <p className={`text-[11px] uppercase tracking-widest ${isDark ? "text-slate-500" : "text-slate-500"}`}>
               Decisión del Coordinador
             </p>
-            <p className="text-sm text-gray-300">
+            <p className={`text-sm ${isDark ? "text-slate-300" : "text-slate-600"}`}>
               El coordinador define la decisión oficial del proceso. El resultado
               queda registrado con trazabilidad completa. Se aplica al presionar{" "}
               <b>Registrar decisión oficial</b>.
@@ -173,7 +180,9 @@ const DecisionTab: React.FC<Props> = ({
             className={`px-4 py-2 rounded-xl text-xs font-bold uppercase tracking-widest flex items-center gap-2 ${
               decision === "APROBADO"
                 ? "bg-emerald-600 text-white"
-                : "bg-[#111] text-gray-300 hover:bg-emerald-600/10 hover:text-emerald-300"
+                : isDark
+                  ? "bg-[#102a30] text-slate-300 border border-[#579689]/15 hover:bg-emerald-500/10 hover:text-emerald-200"
+                  : "bg-slate-100 text-slate-700 border border-slate-200 hover:bg-emerald-50 hover:text-emerald-700"
             } ${saving ? "opacity-70 cursor-not-allowed" : ""}`}
           >
             <CheckCircle2 className="w-4 h-4" />
@@ -187,7 +196,9 @@ const DecisionTab: React.FC<Props> = ({
             className={`px-4 py-2 rounded-xl text-xs font-bold uppercase tracking-widest flex items-center gap-2 ${
               decision === "RECHAZADO"
                 ? "bg-rose-600 text-white"
-                : "bg-[#111] text-gray-300 hover:bg-rose-600/10 hover:text-rose-300"
+                : isDark
+                  ? "bg-[#102a30] text-slate-300 border border-[#579689]/15 hover:bg-rose-500/10 hover:text-rose-200"
+                  : "bg-slate-100 text-slate-700 border border-slate-200 hover:bg-rose-50 hover:text-rose-700"
             } ${saving ? "opacity-70 cursor-not-allowed" : ""}`}
           >
             <XCircle className="w-4 h-4" />
@@ -196,7 +207,7 @@ const DecisionTab: React.FC<Props> = ({
         </div>
 
         <div className="space-y-1">
-          <label className="text-[11px] uppercase tracking-widest text-gray-500">
+          <label className={`text-[11px] uppercase tracking-widest ${isDark ? "text-slate-500" : "text-slate-600"}`}>
             Comentario del coordinador
           </label>
           <textarea
@@ -205,7 +216,11 @@ const DecisionTab: React.FC<Props> = ({
             onBlur={onDecisionCommentBlur}
             rows={3}
             placeholder="Ej. Recomendado por horas. Fortalezas: experiencia, claridad. Riesgo: disponibilidad limitada."
-            className="w-full bg-[#0A0A0A] border border-white/10 rounded-xl px-3 py-2 text-sm text-gray-200 outline-none focus:border-emerald-500/50 resize-none"
+            className={`w-full rounded-xl border px-3 py-2 text-sm outline-none resize-none transition-colors ${
+              isDark
+                ? "bg-[#091d22] border-[#579689]/20 text-slate-100 placeholder:text-slate-600 focus:border-[#58bea1]/55 focus:bg-[#102a30]"
+                : "bg-slate-50 border-slate-200 text-slate-900 placeholder:text-slate-400 focus:border-emerald-500 focus:bg-white"
+            }`}
             disabled={saving}
           />
         </div>
@@ -235,7 +250,9 @@ const DecisionTab: React.FC<Props> = ({
             className={`px-4 py-2 rounded-xl text-xs font-bold uppercase tracking-widest inline-flex items-center gap-2 border transition ${
               canSendNow
                 ? "bg-emerald-600 text-white border-emerald-500/40 hover:bg-emerald-500"
-                : "bg-white/5 text-gray-500 border-white/10 cursor-not-allowed"
+                : isDark
+                  ? "bg-[#102a30]/70 text-slate-600 border-[#579689]/15 cursor-not-allowed"
+                  : "bg-slate-100 text-slate-400 border-slate-200 cursor-not-allowed"
             }`}
           >
             {saving ? (
@@ -247,7 +264,7 @@ const DecisionTab: React.FC<Props> = ({
           </button>
         </div>
 
-        <p className="text-[11px] text-gray-500">
+        <p className={`text-[11px] ${isDark ? "text-slate-500" : "text-slate-500"}`}>
           Esta decisión define el estado oficial del candidato y se refleja en los listados del sistema.
         </p>
       </div>

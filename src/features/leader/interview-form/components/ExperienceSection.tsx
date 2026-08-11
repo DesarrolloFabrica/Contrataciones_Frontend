@@ -16,7 +16,7 @@ export const ExperienceSection: React.FC<ExperienceSectionProps> = ({
   onChange,
 }) => {
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+    <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
       <FormField label="Resumen Profesional" name="careerSummary">
         <TextArea
           name="careerSummary"

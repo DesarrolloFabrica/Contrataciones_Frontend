@@ -25,12 +25,6 @@ const processTypeOptions = [
   { value: "Otro", label: "Otro" },
 ];
 
-const priorityOptions = [
-  { value: "Alta", label: "Alta" },
-  { value: "Media", label: "Media" },
-  { value: "Baja", label: "Baja" },
-];
-
 export const HiringContextSection: React.FC<HiringContextSectionProps> = ({
   hiringContext,
   onChange,
@@ -131,12 +125,12 @@ export const HiringContextSection: React.FC<HiringContextSectionProps> = ({
 
   return (
     <FormSection
-      title="Contexto de búsqueda / Perfil solicitado"
-      icon={<Briefcase className="w-6 h-6" />}
-      step={0}
-      subtitle="Define el perfil y las condiciones de la vacante antes de evaluar al candidato."
+      title="Contexto de la vacante"
+      icon={<Briefcase className="w-5 h-5" />}
+      step={1}
+      subtitle="Define el perfil buscado y las condiciones antes de registrar la entrevista con el candidato."
     >
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+      <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
         <FormField label="Vacante / Contexto" name="hiringRequestId">
           <select
             name="hiringRequestId"
@@ -195,53 +189,43 @@ export const HiringContextSection: React.FC<HiringContextSectionProps> = ({
             disabled={isSelectedMode}
           />
         </FormField>
+
+        <FormField label="Área solicitante" name="requestingArea">
+          <TextInput
+            name="requestingArea"
+            value={hiringContext.requestingArea}
+            onChange={handleFieldChange}
+            placeholder="Ej. Coordinación Académica, Facultad de Ciencias"
+            required={false}
+            disabled={isSelectedMode}
+          />
+        </FormField>
+
+        <FormField label="Coordinación" name="coordination">
+          <TextInput
+            name="coordination"
+            value={hiringContext.coordination ?? ""}
+            onChange={handleFieldChange}
+            placeholder="Ej. Fábrica de contenido"
+            required={false}
+            disabled={isSelectedMode}
+          />
+        </FormField>
       </div>
-
-      <FormField label="Área solicitante" name="requestingArea">
-        <TextInput
-          name="requestingArea"
-          value={hiringContext.requestingArea}
-          onChange={handleFieldChange}
-          placeholder="Ej. Coordinación Académica, Facultad de Ciencias"
-          required={false}
-          disabled={isSelectedMode}
-        />
-      </FormField>
-
-      <FormField label="Coordinación" name="coordination">
-        <TextInput
-          name="coordination"
-          value={hiringContext.coordination ?? ""}
-          onChange={handleFieldChange}
-          placeholder="Ej. Fábrica de contenido"
-          required={false}
-          disabled={isSelectedMode}
-        />
-      </FormField>
 
       <FormField label="Descripción de la necesidad" name="needDescription">
         <TextArea
           name="needDescription"
           value={hiringContext.needDescription}
           onChange={handleFieldChange}
-          rows={3}
+          rows={2}
+          maxLength={500}
+          showCount
+          maxHeight={96}
           placeholder="Describe brevemente por qué se requiere este perfil, el contexto y las expectativas..."
           disabled={isSelectedMode}
         />
       </FormField>
-
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-        <FormField label="Prioridad" name="priority">
-          <SelectInput
-            name="priority"
-            value={hiringContext.priority}
-            onChange={handleFieldChange}
-            options={priorityOptions}
-            placeholder="Seleccione prioridad..."
-            disabled={isSelectedMode}
-          />
-        </FormField>
-      </div>
 
       {error && (
         <p className="text-xs text-rose-500">
@@ -253,24 +237,6 @@ export const HiringContextSection: React.FC<HiringContextSectionProps> = ({
           No hay vacantes disponibles. Modo manual activo.
         </p>
       )}
-
-      {!isSelectedMode && !error && (hasRequests || !fetchDone) && (
-        <p className="text-xs text-slate-500">
-          Modo manual activo. El contexto se registrará en backend al enviar la entrevista.
-        </p>
-      )}
-
-      <div
-        className={[
-          "rounded-xl border px-5 py-4 text-xs leading-relaxed",
-          isDark
-            ? "bg-brand-500/5 border-brand-500/15 text-brand-300/70"
-            : "bg-brand-50 border-brand-200 text-brand-700",
-        ].join(" ")}
-      >
-        Esta informacion prepara la trazabilidad del proceso y podra conectarse
-        al backend en una fase posterior.
-      </div>
     </FormSection>
   );
 };

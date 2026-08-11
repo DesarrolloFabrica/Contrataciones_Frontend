@@ -52,7 +52,7 @@ export const Modal: React.FC<ModalProps> = ({
         className={cn(
           "relative w-full max-w-2xl mx-4 rounded-3xl border overflow-hidden",
           "bg-white border-slate-200 shadow-[0_30px_120px_rgba(15,23,42,0.35)]",
-          "dark:bg-[#050505] dark:border-white/10 dark:shadow-[0_30px_120px_rgba(0,0,0,0.9)]",
+          "dark:bg-[#091d22] dark:border-[#579689]/22 dark:shadow-[0_30px_120px_rgba(0,4,8,0.9)]",
           "animate-[fadeInUp_200ms_ease-out]",
           className
         )}

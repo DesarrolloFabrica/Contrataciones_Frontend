@@ -177,7 +177,7 @@ const AnalysisResults: React.FC<AnalysisResultsProps> = ({
           className={[
             "relative rounded-3xl border backdrop-blur-sm overflow-hidden",
             isDark
-              ? "bg-[#0B1220]/55 border-white/[0.08] shadow-[0_14px_50px_-24px_rgba(16,185,129,0.35)]"
+              ? "bg-[#0b232a]/78 border-[#579689]/20 shadow-[0_18px_54px_-28px_rgba(0,4,8,0.78)]"
               : "bg-white/90 border-slate-200 shadow-[0_16px_40px_-18px_rgba(15,23,42,0.18)]",
           ].join(" ")}
         >
@@ -271,7 +271,7 @@ const AnalysisResults: React.FC<AnalysisResultsProps> = ({
           className={[
             "relative rounded-3xl border border-t-2 border-t-brand-500 p-5 md:p-7 backdrop-blur-sm",
             isDark
-              ? "bg-[#0B1220]/55 border-brand-500/25 shadow-[0_14px_50px_-24px_rgba(16,185,129,0.35)]"
+              ? "bg-[#0b232a]/78 border-[#579689]/22 shadow-[0_18px_54px_-28px_rgba(0,4,8,0.78)]"
               : "bg-white/90 border-brand-500/20 shadow-[0_16px_40px_-18px_rgba(15,23,42,0.18)]",
           ].join(" ")}
         >
@@ -480,7 +480,7 @@ const AnalysisResults: React.FC<AnalysisResultsProps> = ({
           className={[
             "rounded-3xl border border-t-2 border-t-brand-500 p-4 md:p-5 backdrop-blur-sm",
             isDark
-              ? "bg-[#0B1220]/50 border-brand-500/25 shadow-[0_16px_50px_-30px_rgba(16,185,129,0.35)]"
+              ? "bg-[#0b232a]/74 border-[#579689]/22 shadow-[0_18px_54px_-30px_rgba(0,4,8,0.76)]"
               : "bg-white/90 border-brand-500/20 shadow-[0_16px_40px_-18px_rgba(15,23,42,0.18)]",
           ].join(" ")}
         >
@@ -530,7 +530,7 @@ const AnalysisResults: React.FC<AnalysisResultsProps> = ({
           className={[
             "rounded-3xl border border-t-2 border-t-brand-500 p-4 md:p-6 backdrop-blur-sm",
             isDark
-              ? "bg-[#0B1220]/45 border-brand-500/25 shadow-[0_20px_60px_-36px_rgba(16,185,129,0.4)]"
+              ? "bg-[#0b232a]/72 border-[#579689]/22 shadow-[0_20px_60px_-34px_rgba(0,4,8,0.78)]"
               : "bg-white/90 border-brand-500/20 shadow-[0_18px_44px_-22px_rgba(15,23,42,0.2)]",
           ].join(" ")}
         >

@@ -19,10 +19,10 @@ export const EthicsCasesSection: React.FC<EthicsCasesSectionProps> = ({
     <FormSection
       title="Casos Éticos y Resolución de Conflictos"
       icon={<ShieldCheck className="w-6 h-6" />}
-      step={5}
+      step="4.4"
       subtitle="Profundiza en su criterio frente a dilemas éticos y situaciones sensibles."
     >
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
         <FormField label="Caso: Nota Límite (2.9)" name="scenario29">
           <TextArea
             name="scenario29"

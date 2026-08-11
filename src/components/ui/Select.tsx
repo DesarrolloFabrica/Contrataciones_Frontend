@@ -38,11 +38,11 @@ export const Select = React.forwardRef<HTMLSelectElement, SelectProps>(
             "bg-white border border-slate-200 text-slate-900",
             "focus:border-emerald-500/60 focus:ring-1 focus:ring-emerald-500/30",
             "hover:border-slate-300",
-            "dark:bg-[#07090B] dark:border-white/[0.10] dark:text-gray-200",
-            "dark:focus:bg-[#0F1216] dark:focus:border-emerald-500/25 dark:focus:ring-emerald-500/20",
-            "dark:hover:border-white/[0.14] dark:hover:bg-[#0C0F12]",
+            "dark:bg-[#0a2025] dark:border-[#579689]/20 dark:text-slate-200",
+            "dark:focus:bg-[#102a30] dark:focus:border-[#58bea1]/35 dark:focus:ring-[#58bea1]/15",
+            "dark:hover:border-[#579689]/32 dark:hover:bg-[#0d252b]",
             props.disabled &&
-              "opacity-60 cursor-not-allowed bg-slate-50 dark:bg-[#07090B]/50",
+              "opacity-60 cursor-not-allowed bg-slate-50 dark:bg-[#0a2025]/50",
             error &&
               "border-red-400 focus:border-red-500 focus:ring-red-500/30 dark:border-red-500/50",
             className

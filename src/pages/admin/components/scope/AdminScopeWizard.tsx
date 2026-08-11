@@ -10,6 +10,7 @@ import {
   AlertCircle,
 } from "lucide-react";
 import type { TeacherEvaluationSummary } from "../../../../types";
+import { useTheme } from "../../../../context/ThemeContext";
 
 type SchoolOption = { id: string; name: string };
 type ProgramOption = { id: string; name: string; schoolId: string };
@@ -78,6 +79,8 @@ export default function AdminScopeWizard({
   loadingPrograms,
   error,
 }: Props) {
+  const { theme } = useTheme();
+  const isDark = theme === "dark";
   const step: 1 | 2 = selectedSchoolId ? 2 : 1;
 
   const schoolNameById = useMemo(() => {
@@ -139,11 +142,11 @@ export default function AdminScopeWizard({
           <span className="text-brand-300 font-black text-xl">✦</span>
         </div>
 
-        <h2 className="mt-4 text-3xl font-black text-white">
+        <h2 className={`mt-4 text-3xl font-black ${isDark ? "text-white" : "text-slate-900"}`}>
           Cambiar <span className="text-brand-400">Scope</span>
         </h2>
 
-        <p className="mt-2 text-sm text-neutral-400">
+        <p className={`mt-2 text-sm ${isDark ? "text-neutral-400" : "text-slate-600"}`}>
           Puedes trabajar en vista global o bajar a escuela / programa.
         </p>
 
@@ -153,7 +156,7 @@ export default function AdminScopeWizard({
               "px-4 py-2 rounded-xl border text-xs font-bold uppercase tracking-widest flex items-center gap-2",
               step === 1
                 ? "bg-brand-600 text-white border-brand-500/40 shadow-[0_0_30px_rgba(16,185,129,0.25)]"
-                : "bg-white/5 text-gray-300 border-white/10",
+                : isDark ? "bg-[#102a30] text-slate-300 border-[#579689]/18" : "bg-slate-100 text-slate-600 border-slate-200",
             ].join(" ")}
           >
             {step > 1 ? <Check className="w-4 h-4" /> : <Building2 className="w-4 h-4" />}
@@ -167,7 +170,7 @@ export default function AdminScopeWizard({
               "px-4 py-2 rounded-xl border text-xs font-bold uppercase tracking-widest flex items-center gap-2",
               step === 2
                 ? "bg-brand-600 text-white border-brand-500/40 shadow-[0_0_30px_rgba(16,185,129,0.25)]"
-                : "bg-white/5 text-gray-300 border-white/10",
+                : isDark ? "bg-[#102a30] text-slate-300 border-[#579689]/18" : "bg-slate-100 text-slate-600 border-slate-200",
             ].join(" ")}
           >
             <GraduationCap className="w-4 h-4" />
@@ -180,7 +183,7 @@ export default function AdminScopeWizard({
             <button
               type="button"
               onClick={onResetToGlobal}
-              className="inline-flex items-center gap-2 px-4 py-2 rounded-xl border border-white/10 bg-white/5 text-neutral-200 text-xs font-bold uppercase tracking-widest hover:bg-white/10 transition"
+              className={`inline-flex items-center gap-2 px-4 py-2 rounded-xl border text-xs font-bold uppercase tracking-widest transition ${isDark ? "border-[#579689]/18 bg-[#102a30] text-neutral-200 hover:bg-[#15343a]" : "border-slate-200 bg-white text-slate-700 hover:bg-slate-50"}`}
             >
               <Globe className="w-4 h-4" />
               Volver a Vista Global
@@ -204,9 +207,9 @@ export default function AdminScopeWizard({
       </div>
 
       {/* Panel */}
-      <div className="mt-6 bg-[#0f1110] rounded-3xl border border-white/10 overflow-hidden flex-1 min-h-0 flex flex-col">
-        <div className="flex-none p-6 border-b border-white/5 bg-[#141414]/50">
-          <h3 className="text-white font-black text-lg">
+      <div className={`mt-6 rounded-3xl border overflow-hidden flex-1 min-h-0 flex flex-col ${isDark ? "bg-[#091d22] border-[#579689]/20" : "bg-white border-slate-200"}`}>
+        <div className={`flex-none p-6 border-b ${isDark ? "border-[#579689]/14 bg-[#0b232a]/75" : "border-slate-200 bg-slate-50"}`}>
+          <h3 className={`font-black text-lg ${isDark ? "text-white" : "text-slate-900"}`}>
             {step === 1 ? "Selecciona una escuela" : "Selecciona un programa"}
           </h3>
 
@@ -233,7 +236,7 @@ export default function AdminScopeWizard({
           {step === 1 && (
             <>
               {(schools ?? []).length === 0 ? (
-                <div className="rounded-2xl border border-white/10 bg-black/20 p-8 text-center text-neutral-400">
+                <div className={`rounded-2xl border p-8 text-center ${isDark ? "border-[#579689]/18 bg-[#07171c]/60 text-neutral-400" : "border-slate-200 bg-slate-50 text-slate-500"}`}>
                   {loadingSchools ? "Cargando escuelas..." : "No hay escuelas para mostrar."}
                 </div>
               ) : (
@@ -249,11 +252,11 @@ export default function AdminScopeWizard({
                         key={s.id}
                         type="button"
                         onClick={() => onSelectSchool(s.id)}
-                        className="text-left rounded-2xl border border-brand-500/15 bg-black/20 hover:border-brand-500/30 hover:bg-brand-500/5 transition-all p-5"
+                        className={`text-left rounded-2xl border transition-all p-5 ${isDark ? "border-[#579689]/18 bg-[#07171c]/60 hover:border-[#58bea1]/35 hover:bg-[#102a30]" : "border-slate-200 bg-white hover:border-emerald-300 hover:bg-emerald-50/40"}`}
                       >
                         <div className="flex items-start justify-between gap-3">
                           <div className="min-w-0">
-                            <p className="text-white font-bold">{s.name}</p>
+                            <p className={`font-bold ${isDark ? "text-white" : "text-slate-800"}`}>{s.name}</p>
                             <p className="text-xs text-brand-300 mt-1">{count} evaluaciones</p>
                           </div>
                           <ChevronRight className="w-5 h-5 text-brand-300/70" />
@@ -269,7 +272,7 @@ export default function AdminScopeWizard({
           {step === 2 && (
             <>
               {programsForSelectedSchool.length === 0 ? (
-                <div className="rounded-2xl border border-white/10 bg-black/20 p-8 text-center text-neutral-400">
+                <div className={`rounded-2xl border p-8 text-center ${isDark ? "border-[#579689]/18 bg-[#07171c]/60 text-neutral-400" : "border-slate-200 bg-slate-50 text-slate-500"}`}>
                   {loadingPrograms ? "Cargando programas..." : "No hay programas para esta escuela."}
                 </div>
               ) : (
@@ -290,16 +293,18 @@ export default function AdminScopeWizard({
                           "text-left rounded-2xl border transition-all p-5",
                           active
                             ? "border-brand-400/40 bg-brand-600/30 shadow-[0_0_40px_rgba(16,185,129,0.18)]"
-                            : "border-white/10 bg-black/20 hover:border-brand-500/25 hover:bg-brand-500/5",
+                            : isDark
+                              ? "border-[#579689]/18 bg-[#07171c]/60 hover:border-[#58bea1]/35 hover:bg-[#102a30]"
+                              : "border-slate-200 bg-white hover:border-emerald-300 hover:bg-emerald-50/40",
                         ].join(" ")}
                       >
                         <div className="flex items-start justify-between gap-3">
                           <div className="min-w-0">
-                            <p className="text-white font-bold">{p.name}</p>
+                            <p className={`font-bold ${isDark ? "text-white" : "text-slate-800"}`}>{p.name}</p>
                             <p className="text-xs text-neutral-400 mt-1">{count} evaluaciones</p>
                           </div>
 
-                          <div className="h-7 w-7 rounded-full border border-white/10 flex items-center justify-center">
+                          <div className={`h-7 w-7 rounded-full border flex items-center justify-center ${isDark ? "border-[#579689]/18" : "border-slate-200"}`}>
                             {active ? (
                               <Check className="w-4 h-4 text-brand-300" />
                             ) : (

@@ -13,6 +13,7 @@ import {
   Clock,
   ChevronDown,
 } from "lucide-react";
+import { useTheme } from "../context/ThemeContext";
 
 type AuditEvent = {
   id?: string;
@@ -101,19 +102,19 @@ function iconForType(type: string, metadata?: Record<string, any> | null) {
   }
 }
 
-function pillClass(type: string, metadata?: Record<string, any> | null) {
+function pillClass(type: string, metadata: Record<string, any> | null | undefined, isDark: boolean) {
   if (type === "COORDINATOR_DECISION_SET") {
     const s = metadata?.status;
-    if (s === "APROBADO") return "bg-emerald-500/10 text-emerald-300 border-emerald-500/20";
-    if (s === "RECHAZADO") return "bg-rose-500/10 text-rose-300 border-rose-500/20";
-    return "bg-slate-500/10 text-slate-300 border-slate-500/20";
+    if (s === "APROBADO") return isDark ? "bg-emerald-500/10 text-emerald-300 border-emerald-500/20" : "bg-emerald-50 text-emerald-700 border-emerald-200";
+    if (s === "RECHAZADO") return isDark ? "bg-rose-500/10 text-rose-300 border-rose-500/20" : "bg-rose-50 text-rose-700 border-rose-200";
+    return isDark ? "bg-slate-500/10 text-slate-300 border-slate-500/20" : "bg-slate-100 text-slate-700 border-slate-200";
   }
-  if (type.includes("ERROR")) return "bg-rose-500/10 text-rose-300 border-rose-500/20";
+  if (type.includes("ERROR")) return isDark ? "bg-rose-500/10 text-rose-300 border-rose-500/20" : "bg-rose-50 text-rose-700 border-rose-200";
   if (type.includes("FINISHED") || type.includes("CREATED") || type.includes("UPLOADED"))
-    return "bg-emerald-500/10 text-emerald-300 border-emerald-500/20";
+    return isDark ? "bg-emerald-500/10 text-emerald-300 border-emerald-500/20" : "bg-emerald-50 text-emerald-700 border-emerald-200";
   if (type.includes("OPENED") || type.includes("DOWNLOADED"))
-    return "bg-brand-500/10 text-brand-300 border-brand-500/20";
-  return "bg-white/5 text-gray-300 border-white/10";
+    return isDark ? "bg-[#58bea1]/10 text-[#8ad6c0] border-[#58bea1]/20" : "bg-cyan-50 text-cyan-700 border-cyan-200";
+  return isDark ? "bg-white/5 text-slate-300 border-white/10" : "bg-slate-100 text-slate-700 border-slate-200";
 }
 
 function compactMetadata(ev: AuditEvent) {
@@ -132,6 +133,8 @@ function compactMetadata(ev: AuditEvent) {
 }
 
 const AuditTimeline: React.FC<Props> = ({ title = "Actividad", events, emptyText, compact }) => {
+  const { theme } = useTheme();
+  const isDark = theme === "dark";
   const [openMap, setOpenMap] = useState<Record<string, boolean>>({});
 
   const grouped = useMemo(() => {
@@ -163,20 +166,24 @@ const AuditTimeline: React.FC<Props> = ({ title = "Actividad", events, emptyText
 
   if (!events || events.length === 0) {
     return (
-      <div className="bg-[#050505] border border-white/10 rounded-2xl p-4 text-gray-500 text-sm">
+      <div className={`rounded-2xl border p-4 text-sm ${
+        isDark ? "bg-[#091d22] border-[#579689]/20 text-slate-500" : "bg-white border-slate-200 text-slate-500"
+      }`}>
         {emptyText ?? "Aún no hay actividad."}
       </div>
     );
   }
 
   return (
-    <div className={`bg-[#050505] border border-white/10 rounded-2xl ${compact ? "p-3" : "p-4"}`}>
+    <div className={`rounded-2xl border ${compact ? "p-3" : "p-4"} ${
+      isDark ? "bg-[#091d22] border-[#579689]/20" : "bg-white border-slate-200"
+    }`}>
       <div className="flex items-center justify-between mb-3">
         <div>
-          <p className="text-[11px] uppercase tracking-widest text-gray-500">{title}</p>
-          {!compact && <p className="text-xs text-gray-500 mt-0.5">Trazabilidad de eventos, actor, fecha y metadata.</p>}
+          <p className={`text-[11px] uppercase tracking-widest ${isDark ? "text-slate-400" : "text-slate-600"}`}>{title}</p>
+          {!compact && <p className={`text-xs mt-0.5 ${isDark ? "text-slate-500" : "text-slate-500"}`}>Trazabilidad de eventos, actor, fecha y metadata.</p>}
         </div>
-        <span className="text-[11px] text-gray-500 border border-white/10 rounded-full px-2 py-1">
+        <span className={`text-[11px] rounded-full border px-2 py-1 ${isDark ? "text-slate-500 border-[#579689]/20" : "text-slate-500 border-slate-200"}`}>
           {events.length} eventos
         </span>
       </div>
@@ -184,7 +191,7 @@ const AuditTimeline: React.FC<Props> = ({ title = "Actividad", events, emptyText
       <div className={`space-y-4 ${compact ? "max-h-[260px]" : "max-h-[420px]"} overflow-y-auto pr-1`}>
         {grouped.map((g) => (
           <div key={g.day} className="space-y-2">
-            <div className="text-[11px] uppercase tracking-widest text-gray-600">
+            <div className={`text-[11px] uppercase tracking-widest ${isDark ? "text-slate-600" : "text-slate-400"}`}>
               {g.dayTitle}
             </div>
 
@@ -208,24 +215,26 @@ const AuditTimeline: React.FC<Props> = ({ title = "Actividad", events, emptyText
                 return (
                   <div
                     key={(ev.id ?? "") + idx}
-                    className="bg-[#0A0A0A] border border-white/10 rounded-xl p-3"
+                    className={`rounded-xl border p-3 ${
+                      isDark ? "bg-[#0b232a] border-[#579689]/16" : "bg-slate-50/80 border-slate-200"
+                    }`}
                   >
                     <div className="flex items-start justify-between gap-3">
                       <div className="flex items-start gap-3">
-                        <div className={`mt-0.5 inline-flex items-center justify-center w-8 h-8 rounded-lg border ${pillClass(ev.type, ev.metadata)}`}>
+                        <div className={`mt-0.5 inline-flex items-center justify-center w-8 h-8 rounded-lg border ${pillClass(ev.type, ev.metadata, isDark)}`}>
                           {iconForType(ev.type, ev.metadata)}
                         </div>
 
                         <div className="min-w-0">
                           <div className="flex items-center gap-2 flex-wrap">
-                            <p className="text-sm font-semibold text-gray-200">{label}</p>
+                            <p className={`text-sm font-semibold ${isDark ? "text-slate-200" : "text-slate-800"}`}>{label}</p>
 
-                            <span className={`text-[10px] uppercase tracking-widest px-2 py-0.5 rounded-full border ${pillClass(ev.type, ev.metadata)}`}>
+                            <span className={`text-[10px] uppercase tracking-widest px-2 py-0.5 rounded-full border ${pillClass(ev.type, ev.metadata, isDark)}`}>
                               {ev.type}
                             </span>
                           </div>
 
-                          <div className="mt-1 text-xs text-gray-500 flex flex-wrap items-center gap-2">
+                          <div className={`mt-1 text-xs flex flex-wrap items-center gap-2 ${isDark ? "text-slate-500" : "text-slate-500"}`}>
                             <span>{actorName}{actorRole ? ` • ${actorRole}` : ""}</span>
                             <span className="w-1 h-1 rounded-full bg-gray-700" />
                             <span>{d ? formatTime(d) : "—"}</span>
@@ -242,9 +251,9 @@ const AuditTimeline: React.FC<Props> = ({ title = "Actividad", events, emptyText
                               {Object.entries(meta).map(([k, v]) => (
                                 <span
                                   key={k}
-                                  className="text-[11px] text-gray-400 bg-black/30 border border-white/10 rounded-full px-2 py-1"
+                                  className={`text-[11px] rounded-full border px-2 py-1 ${isDark ? "text-slate-400 bg-[#061419]/55 border-[#579689]/16" : "text-slate-600 bg-white border-slate-200"}`}
                                 >
-                                  {k}: <span className="text-gray-300">{String(v)}</span>
+                                  {k}: <span className={isDark ? "text-slate-300" : "text-slate-700"}>{String(v)}</span>
                                 </span>
                               ))}
                             </div>
@@ -256,7 +265,9 @@ const AuditTimeline: React.FC<Props> = ({ title = "Actividad", events, emptyText
                         <button
                           type="button"
                           onClick={() => setOpenMap((p) => ({ ...p, [eventKey]: !p[eventKey] }))}
-                          className="text-gray-500 hover:text-gray-200 border border-white/10 rounded-lg px-2 py-1 text-xs flex items-center gap-1"
+                          className={`rounded-lg border px-2 py-1 text-xs flex items-center gap-1 transition-colors ${
+                            isDark ? "text-slate-500 hover:text-slate-200 border-[#579689]/18" : "text-slate-500 hover:text-slate-800 border-slate-200"
+                          }`}
                         >
                           Detalles <ChevronDown className={`w-4 h-4 transition-transform ${isOpen ? "rotate-180" : ""}`} />
                         </button>
@@ -264,7 +275,9 @@ const AuditTimeline: React.FC<Props> = ({ title = "Actividad", events, emptyText
                     </div>
 
                     {isOpen && ev.metadata && (
-                      <pre className="mt-3 text-[11px] text-gray-400 bg-black/40 border border-white/10 rounded-xl p-3 overflow-auto">
+                      <pre className={`mt-3 text-[11px] rounded-xl border p-3 overflow-auto ${
+                        isDark ? "text-slate-400 bg-[#041116]/65 border-[#579689]/16" : "text-slate-600 bg-white border-slate-200"
+                      }`}>
                         {JSON.stringify(ev.metadata, null, 2)}
                       </pre>
                     )}

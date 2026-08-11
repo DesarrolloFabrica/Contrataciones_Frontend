@@ -40,18 +40,28 @@ export const BootSplashContent: React.FC<BootSplashContentProps> = ({
       initial={shouldAnimate ? { opacity: 0, y: 8 } : false}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
-      className="flex flex-col items-center gap-7 sm:gap-8"
+      className="flex min-w-[280px] flex-col items-center gap-6 rounded-[1.75rem] border border-slate-200/80 bg-white/88 px-10 py-9 text-center shadow-[0_28px_80px_-28px_rgba(15,23,42,0.3)] backdrop-blur-2xl dark:border-[#4d8e80]/35 dark:bg-[#07161b]/86 dark:shadow-[0_30px_90px_-28px_rgba(0,4,8,0.88)] sm:min-w-[340px] sm:px-12 sm:py-10"
     >
       <AppLogo
-        variant="splash"
-        className="h-32 w-auto sm:h-36 md:h-40 dark:drop-shadow-[0_4px_28px_rgba(255,255,255,0.18)]"
+        variant="login"
+        bare
+        className="h-20 w-20 sm:h-24 sm:w-24"
       />
+
+      <div className="space-y-1">
+        <p className="text-base font-black tracking-[-0.025em] text-slate-950 dark:text-white">
+          Contratación Académica <span className="text-brand-700 dark:text-[#58bea1]">CUN</span>
+        </p>
+        <p className="text-xs font-medium text-slate-500 dark:text-slate-400">
+          Preparando tu espacio de trabajo
+        </p>
+      </div>
 
       <div className="flex w-full flex-col items-center gap-4">
         <div
           className={[
             "w-48 overflow-hidden rounded-full sm:w-56",
-            isDark ? "bg-brand-900/50" : "bg-brand-100",
+            isDark ? "bg-[#173238]/80" : "bg-brand-100",
           ].join(" ")}
           style={{ height: "3px" }}
           aria-hidden
@@ -60,7 +70,7 @@ export const BootSplashContent: React.FC<BootSplashContentProps> = ({
             className={[
               "h-full w-2/5 rounded-full boot-progress-bar",
               isDark
-                ? "bg-gradient-to-r from-brand-500 to-brand-300"
+                ? "bg-gradient-to-r from-[#178b70] to-[#72c4ae]"
                 : "bg-gradient-to-r from-brand-600 to-brand-400",
             ].join(" ")}
           />
@@ -76,7 +86,7 @@ export const BootSplashContent: React.FC<BootSplashContentProps> = ({
               transition={{ duration: 0.35, ease: "easeOut" }}
               className={[
                 "text-sm font-medium tracking-wide",
-                isDark ? "text-brand-200/80" : "text-brand-700/75",
+                isDark ? "text-slate-300" : "text-brand-700/75",
               ].join(" ")}
             >
               {currentMessage}

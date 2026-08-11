@@ -5,7 +5,7 @@ import { SectionHeader } from "./SectionHeader";
 interface FormSectionProps {
   title: string;
   icon: React.ReactNode;
-  step: number;
+  step: number | string;
   subtitle?: string;
   children: React.ReactNode;
 }
@@ -13,14 +13,14 @@ interface FormSectionProps {
 export const FormSection: React.FC<FormSectionProps> = React.memo(
   ({ title, icon, step, subtitle, children }) => {
     return (
-      <div className="space-y-6">
+      <div className="space-y-3">
         <SectionHeader
           title={title}
           icon={icon}
           step={step}
           subtitle={subtitle}
         />
-        <div className="space-y-6">{children}</div>
+        <div className="space-y-3">{children}</div>
       </div>
     );
   }

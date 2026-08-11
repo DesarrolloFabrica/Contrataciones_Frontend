@@ -60,6 +60,8 @@ import { useCedulaValidation } from "../features/leader/interview-form/hooks/use
 const InterviewForm: React.FC<InterviewFormProps> = ({
   onSubmit,
   onStepChange,
+  requestedStep = null,
+  onRequestedStepApplied,
   examplePreset = null,
   onExampleApplied,
 }) => {
@@ -614,6 +616,12 @@ const InterviewForm: React.FC<InterviewFormProps> = ({
     window.scrollTo({ top: 0, behavior: "smooth" });
   }, []);
 
+  useEffect(() => {
+    if (!requestedStep) return;
+    goToStep(requestedStep);
+    onRequestedStepApplied?.();
+  }, [goToStep, onRequestedStepApplied, requestedStep]);
+
   const renderStepContent = () => {
     if (currentStep === 1) {
       return (
@@ -694,41 +702,25 @@ const InterviewForm: React.FC<InterviewFormProps> = ({
 
 
   return (
-    <div className="w-full">
-      <div className="relative z-10 space-y-8">
-        <form onSubmit={handleSubmit} className="space-y-6">
-          <InterviewWizardShell
-            currentStep={currentStep}
-            maxReachedStep={maxReachedStep}
-            onStepClick={goToStep}
-            navigation={(
-              <InterviewWizardNavigation
-                currentStep={currentStep}
-                isCedulaValid={isCedulaValid}
-                onBack={handleBack}
-                onNext={handleNext}
-              />
-            )}
-          >
-            {renderStepContent()}
-          </InterviewWizardShell>
-
-          <div className="flex justify-center">
-            <button
-              type="button"
-              onClick={resetForm}
-              className={[
-                "rounded-full px-5 py-2 text-[11px] font-bold uppercase tracking-[0.2em] transition",
-                isDark
-                  ? "text-white/60 border border-white/15 hover:bg-white/[0.04]"
-                  : "text-slate-600 border border-slate-300 hover:bg-slate-50",
-              ].join(" ")}
-            >
-              Resetear formulario
-            </button>
-          </div>
-        </form>
-      </div>
+    <div className="w-full max-h-full">
+      <form onSubmit={handleSubmit} className="w-full max-h-full">
+        <InterviewWizardShell
+          currentStep={currentStep}
+          maxReachedStep={maxReachedStep}
+          onStepClick={goToStep}
+          navigation={(
+            <InterviewWizardNavigation
+              currentStep={currentStep}
+              isCedulaValid={isCedulaValid}
+              onBack={handleBack}
+              onNext={handleNext}
+              onReset={resetForm}
+            />
+          )}
+        >
+          {renderStepContent()}
+        </InterviewWizardShell>
+      </form>
     </div>
   );
 };

@@ -19,7 +19,7 @@ export const AiUsageSection: React.FC<AiUsageSectionProps> = ({
     <FormSection
       title="Integración de Inteligencia Artificial"
       icon={<Bot className="w-6 h-6" />}
-      step={4}
+      step="4.3"
       subtitle="Analiza su relación con la IA y las medidas éticas que aplica."
     >
       <FormField
@@ -35,7 +35,7 @@ export const AiUsageSection: React.FC<AiUsageSectionProps> = ({
         />
       </FormField>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
         <FormField label="Ética y IA en el Aula" name="ethicalAiMeasures">
           <TextArea
             name="ethicalAiMeasures"

@@ -156,7 +156,7 @@ function useOutsideClose(open: boolean, refs: Array<React.RefObject<HTMLElement>
             className={[
               "absolute left-0 top-full mt-2 z-[250] w-[180px] max-h-[260px] overflow-auto rounded-2xl border p-1.5 backdrop-blur-2xl animate-in fade-in zoom-in-95 duration-200",
               isDark
-                ? "border-white/10 bg-[#0a0c0b]/95 shadow-[0_30px_120px_rgba(0,0,0,0.8)]"
+                ? "border-[#579689]/20 bg-[#091d22]/95 shadow-[0_30px_120px_rgba(0,4,8,0.74)]"
                 : "border-slate-200 bg-white/95 shadow-[0_24px_80px_rgba(15,23,42,0.15)]",
             ].join(" ")}
           >
@@ -274,7 +274,7 @@ function useOutsideClose(open: boolean, refs: Array<React.RefObject<HTMLElement>
             className={[
               "absolute z-[200] mt-2 w-[340px] rounded-[1.5rem] border p-4 backdrop-blur-2xl animate-in fade-in slide-in-from-top-2 duration-200",
               isDark
-                ? "border-white/10 bg-[#0a0c0b]/95 shadow-[0_40px_100px_rgba(0,0,0,0.8)]"
+                ? "border-[#579689]/20 bg-[#091d22]/95 shadow-[0_40px_100px_rgba(0,4,8,0.74)]"
                 : "border-slate-200 bg-white/95 shadow-[0_24px_60px_rgba(15,23,42,0.15)]",
             ].join(" ")}
           >
@@ -452,7 +452,7 @@ function useOutsideClose(open: boolean, refs: Array<React.RefObject<HTMLElement>
             className={[
               "absolute left-0 top-full mt-2 z-[220] w-[320px] max-h-[300px] overflow-auto rounded-[1.5rem] border p-1.5 backdrop-blur-2xl animate-in fade-in zoom-in-95 duration-200",
               isDark
-                ? "border-white/10 bg-[#0a0c0b]/95 shadow-[0_40px_100px_rgba(0,0,0,0.8)]"
+                ? "border-[#579689]/20 bg-[#091d22]/95 shadow-[0_40px_100px_rgba(0,4,8,0.74)]"
                 : "border-slate-200 bg-white/95 shadow-[0_24px_60px_rgba(15,23,42,0.15)]",
             ].join(" ")}
           >
@@ -810,7 +810,7 @@ function useOutsideClose(open: boolean, refs: Array<React.RefObject<HTMLElement>
         )}
   
         {loading && (
-          <div className={["flex flex-col items-center justify-center p-12 rounded-3xl border border-dashed", isDark ? "border-white/10 bg-[#0a0c0b]/50" : "border-slate-200 bg-slate-50/50"].join(" ")}>
+          <div className={["flex flex-col items-center justify-center p-12 rounded-3xl border border-dashed", isDark ? "border-[#579689]/18 bg-[#091d22]/58" : "border-slate-200 bg-slate-50/50"].join(" ")}>
             <Loader2 className={["w-8 h-8 animate-spin mb-4", isDark ? "text-brand-500" : "text-brand-600"].join(" ")} />
             <span className={["text-sm font-medium tracking-wide animate-pulse", isDark ? "text-neutral-400" : "text-slate-500"].join(" ")}>
               Recopilando métricas del dashboard...

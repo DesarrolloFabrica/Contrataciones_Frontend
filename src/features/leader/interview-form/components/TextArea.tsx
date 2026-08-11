@@ -9,6 +9,9 @@ interface TextAreaProps {
   rows?: number;
   placeholder?: string;
   disabled?: boolean;
+  maxLength?: number;
+  showCount?: boolean;
+  maxHeight?: number;
 }
 
 export const TextArea: React.FC<TextAreaProps> = ({
@@ -18,6 +21,9 @@ export const TextArea: React.FC<TextAreaProps> = ({
   rows = 3,
   placeholder,
   disabled = false,
+  maxLength,
+  showCount = false,
+  maxHeight,
 }) => {
   const ref = useRef<HTMLTextAreaElement | null>(null);
   const { theme } = useTheme();
@@ -26,24 +32,38 @@ export const TextArea: React.FC<TextAreaProps> = ({
   useEffect(() => {
     if (!ref.current) return;
     ref.current.style.height = "auto";
-    ref.current.style.height = `${ref.current.scrollHeight}px`;
-  }, [value]);
+    const next = maxHeight
+      ? Math.min(ref.current.scrollHeight, maxHeight)
+      : ref.current.scrollHeight;
+    ref.current.style.height = `${next}px`;
+  }, [value, maxHeight]);
 
   return (
-    <textarea
-      ref={ref}
-      id={name}
-      name={name}
-      value={value}
-      onChange={onChange}
-      rows={rows}
-      className={`${
-        isDark ? darkInputStyles : lightInputStyles
-      } resize-none leading-relaxed overflow-hidden min-h-[80px]`}
-      placeholder={placeholder}
-      disabled={disabled}
-      required
-    />
+    <div className="relative">
+      <textarea
+        ref={ref}
+        id={name}
+        name={name}
+        value={value}
+        onChange={onChange}
+        rows={rows}
+        maxLength={maxLength}
+        className={`${
+          isDark ? darkInputStyles : lightInputStyles
+        } resize-none leading-relaxed ${
+          maxHeight ? "overflow-y-auto min-h-[56px]" : "overflow-hidden min-h-[80px]"
+        } ${showCount ? "pb-7" : ""}`}
+        style={maxHeight ? { maxHeight } : undefined}
+        placeholder={placeholder}
+        disabled={disabled}
+        required
+      />
+      {showCount && maxLength && (
+        <span className="pointer-events-none absolute bottom-2.5 right-3 text-[10px] font-medium text-slate-500">
+          {value.length} / {maxLength}
+        </span>
+      )}
+    </div>
   );
 };
 

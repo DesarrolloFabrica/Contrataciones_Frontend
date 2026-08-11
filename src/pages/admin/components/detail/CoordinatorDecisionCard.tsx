@@ -106,7 +106,7 @@ export default function CoordinatorDecisionCard({
         </div>
 
         {/* Coordinator info */}
-        <div className={`rounded-xl border p-3 ${isDark ? "border-white/10 bg-black/25" : "border-slate-200 bg-slate-50"}`}>
+        <div className={`rounded-xl border p-3 ${isDark ? "border-[#579689]/18 bg-[#07171c]/60" : "border-slate-200 bg-slate-50"}`}>
           <div className="space-y-2 text-sm">
             {coordinatorName && (
               <div className="flex items-center gap-2">
@@ -136,7 +136,7 @@ export default function CoordinatorDecisionCard({
             <p className={`text-[10px] uppercase tracking-[0.24em] font-bold mb-2 ${isDark ? "text-white/35" : "text-slate-500"}`}>
               Nota oficial
             </p>
-            <div className={`rounded-xl border p-3 ${isDark ? "border-white/10 bg-black/25" : "border-slate-200 bg-slate-50"}`}>
+            <div className={`rounded-xl border p-3 ${isDark ? "border-[#579689]/18 bg-[#07171c]/60" : "border-slate-200 bg-slate-50"}`}>
               <div className="flex items-start gap-2">
                 <MessageSquare className={`w-3.5 h-3.5 shrink-0 mt-0.5 ${isDark ? "text-neutral-500" : "text-slate-400"}`} />
                 <p className={`text-sm whitespace-pre-wrap leading-relaxed ${isDark ? "text-white/80" : "text-slate-700"}`}>

@@ -13,11 +13,11 @@ export const FormField: React.FC<FormFieldProps> = React.memo(
     const isDark = theme === "dark";
 
     return (
-      <div className="flex flex-col gap-2 group">
+      <div className="flex flex-col gap-1.5">
         <label
           htmlFor={name}
-          className={`text-[11px] font-bold uppercase tracking-[0.14em] ml-1 transition-colors duration-300 group-focus-within:text-brand-500 ${
-            isDark ? "text-slate-300" : "text-slate-600"
+          className={`text-sm font-medium ${
+            isDark ? "text-slate-200" : "text-slate-700"
           }`}
         >
           {label}

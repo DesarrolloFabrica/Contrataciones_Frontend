@@ -1,5 +1,6 @@
 import React from "react";
 import { motion } from "framer-motion";
+import { ShieldCheck, UsersRound, Zap } from "lucide-react";
 
 import { AppLogo } from "./AppLogo";
 
@@ -8,30 +9,61 @@ const fadeUp = {
   visible: (i: number) => ({
     opacity: 1,
     y: 0,
-    transition: { delay: 0.1 + i * 0.08, duration: 0.5, ease: [0.22, 1, 0.36, 1] },
+    transition: { delay: 0.08 + i * 0.08, duration: 0.5, ease: [0.22, 1, 0.36, 1] },
   }),
 };
 
+const benefits = [
+  { icon: ShieldCheck, title: "Seguro", copy: "Tus datos están protegidos" },
+  { icon: Zap, title: "Eficiente", copy: "Procesos ágiles y centralizados" },
+  { icon: UsersRound, title: "Confiable", copy: "Información precisa y actualizada" },
+];
+
 export const BrandPanel: React.FC = () => {
   return (
-    <aside className="relative z-10 hidden lg:flex lg:items-end lg:justify-end lg:pr-2 xl:pr-4">
-      <div className="flex max-w-sm flex-col gap-6 xl:max-w-md">
+    <aside className="relative z-10 hidden lg:flex lg:items-center lg:justify-center">
+      <div className="w-full max-w-[570px] pb-3 text-center xl:max-w-[620px]">
         <motion.div custom={0} initial="hidden" animate="visible" variants={fadeUp}>
           <AppLogo variant="login" />
         </motion.div>
 
         <motion.div custom={1} initial="hidden" animate="visible" variants={fadeUp}>
-          <h1 className="text-[2.1rem] font-black leading-[1.1] tracking-[-0.04em] text-slate-900 dark:text-white xl:text-[2.4rem]">
+          <h1 className="mt-7 text-[2.55rem] font-black leading-[1.08] tracking-[-0.045em] text-slate-950 [text-shadow:0_1px_0_rgba(255,255,255,0.7)] dark:text-white dark:[text-shadow:none] xl:text-[3rem]">
             Contratación
             <br />
-            Académica{" "}
-            <span className="bg-gradient-to-r from-brand-600 to-brand-500 bg-clip-text text-transparent dark:from-brand-300 dark:to-brand-400">
-              CUN
-            </span>
+            Académica <span className="text-brand-700 dark:text-[#58bea1]">CUN</span>
           </h1>
-          <p className="mt-3 max-w-xs text-[15px] leading-6 text-slate-500 dark:text-slate-400">
-            Plataforma institucional para la gestión de procesos de contratación académica.
+          <span className="mx-auto mt-5 block h-0.5 w-24 rounded-full bg-brand-600" />
+          <p className="mx-auto mt-5 max-w-md text-[15px] font-semibold leading-6 text-slate-700 [text-shadow:0_1px_0_rgba(255,255,255,0.65)] dark:text-slate-200 dark:[text-shadow:none] xl:text-base">
+            Plataforma institucional para la gestión de
+            <br className="hidden xl:block" /> procesos de contratación académica.
           </p>
+        </motion.div>
+
+        <motion.div
+          custom={2}
+          initial="hidden"
+          animate="visible"
+          variants={fadeUp}
+          className="mt-9 grid grid-cols-3"
+        >
+          {benefits.map(({ icon: Icon, title, copy }, index) => (
+            <div
+              key={title}
+              className={[
+                "flex min-w-0 flex-col items-center px-4",
+                index > 0 ? "border-l border-brand-500/25 dark:border-brand-300/15" : "",
+              ].join(" ")}
+            >
+              <span className="flex h-12 w-12 items-center justify-center rounded-2xl border border-brand-200/70 bg-brand-100/80 text-brand-800 shadow-[0_10px_30px_-12px_rgba(16,185,129,0.55)] backdrop-blur-sm dark:border-[#4d8e80]/30 dark:bg-[#173238]/65 dark:text-[#79cdb4] dark:shadow-[0_12px_30px_-18px_rgba(0,0,0,0.85)]">
+                <Icon className="h-6 w-6" strokeWidth={2} />
+              </span>
+              <strong className="mt-3 text-sm font-extrabold text-slate-950 dark:text-white">{title}</strong>
+              <span className="mt-1 max-w-[150px] text-xs font-medium leading-[1.45] text-slate-700 dark:text-slate-200">
+                {copy}
+              </span>
+            </div>
+          ))}
         </motion.div>
       </div>
     </aside>

@@ -50,7 +50,7 @@ export const SelectInput: React.FC<SelectInputProps> = ({
           <option
             key={opt.value}
             value={opt.value}
-            className={isDark ? "bg-[#0C1218] py-2" : "bg-white py-2"}
+            className={isDark ? "bg-[#0a2025] py-2" : "bg-white py-2"}
           >
             {opt.label}
           </option>
