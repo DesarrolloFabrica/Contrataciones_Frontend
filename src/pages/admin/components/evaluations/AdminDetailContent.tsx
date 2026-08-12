@@ -13,6 +13,7 @@ import {
   AlertTriangle,
   Sparkles,
   FolderOpen,
+  ChevronDown,
 } from "lucide-react";
 
 import type { TeacherEvaluationSummary } from "../../../../types";
@@ -145,13 +146,13 @@ function pickCandidateSchoolProgramLabel(
 // ==========================================
 const STYLES = {
   shellDark:
-    "relative rounded-[28px] overflow-hidden border border-[#579689]/22 border-t-2 border-t-[#58bea1] bg-[#091d22] shadow-[0_30px_120px_rgba(0,4,8,0.72)]",
+    "relative overflow-hidden rounded-[28px] border border-white/[0.06] bg-[#091d22]",
   shellInnerDark: "relative p-5 sm:p-6",
   cardDark:
-    "rounded-2xl border border-brand-500/20 border-t-2 border-t-brand-500 bg-white/[0.04] backdrop-blur-md shadow-[0_18px_60px_rgba(0,0,0,0.55)]",
+    "rounded-2xl border border-white/[0.05] bg-white/[0.03] backdrop-blur-sm",
   cardPad: "p-5",
   subCardDark:
-    "rounded-2xl border border-[#579689]/18 bg-[#07171c]/60 backdrop-blur-sm p-4",
+    "rounded-2xl border border-white/[0.04] bg-white/[0.025] p-4",
   labelDark:
     "text-[10px] uppercase tracking-[0.24em] text-white/35 font-bold",
   pillBase:
@@ -224,7 +225,7 @@ const ActorCard = ({ actor }: { actor: ActorData }) => {
       className={
         isDark
           ? STYLES.subCardDark
-          : "rounded-2xl border border-slate-200 bg-white p-4 shadow-sm"
+          : "rounded-2xl border border-slate-200/70 bg-slate-50/80 p-4"
       }
     >
       <div className="flex flex-col gap-3">
@@ -248,8 +249,8 @@ const ActorCard = ({ actor }: { actor: ActorData }) => {
               className={[
                 "inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-2xl border",
                 isDark
-                  ? "bg-white/5 border-white/10"
-                  : "bg-slate-100 border-slate-200",
+                  ? "border-white/[0.05] bg-white/[0.04]"
+                  : "border-slate-200/70 bg-slate-100",
               ].join(" ")}
             >
               <User
@@ -365,6 +366,8 @@ type Props = {
   hasDetail: boolean;
   selectedSummary: TeacherEvaluationSummary | null;
   selectedDetail: { analysis: any; interview: any; raw: any } | null;
+  /** Cuando va dentro del modal del AdminConsole (sin shell/título duplicados). */
+  embedded?: boolean;
 };
 
 type TabKey = "RESUMEN" | "DECISION" | "DOCUMENTOS" | "TRAZABILIDAD";
@@ -375,6 +378,7 @@ export default function AdminDetailContent({
   hasDetail,
   selectedSummary,
   selectedDetail,
+  embedded = false,
 }: Props) {
   const { theme } = useTheme();
   const isDark = theme === "dark";
@@ -392,6 +396,8 @@ export default function AdminDetailContent({
   const [coordUserLoading, setCoordUserLoading] = useState(false);
 
   const [activeTab, setActiveTab] = useState<TabKey>("RESUMEN");
+  const [showAllStrengths, setShowAllStrengths] = useState(false);
+  const [showAllRisks, setShowAllRisks] = useState(false);
 
   const refResumen = useRef<HTMLDivElement>(null);
   const refDecision = useRef<HTMLDivElement>(null);
@@ -400,6 +406,8 @@ export default function AdminDetailContent({
 
   useEffect(() => {
     setActiveTab("RESUMEN");
+    setShowAllStrengths(false);
+    setShowAllRisks(false);
   }, [selectedId]);
 
   useEffect(() => {
@@ -513,10 +521,10 @@ export default function AdminDetailContent({
 
   const risksFromTemporal = parseBullets(temporalRiskFactors);
 
-  const strengths = takeTop([...strengthsFromSummary, ...strengthsFromCats], 8);
+  const strengths = takeTop([...strengthsFromSummary, ...strengthsFromCats], 6);
   const risks = takeTop(
     [...risksFromSummary, ...risksFromCats, ...risksFromTemporal],
-    8
+    6
   );
 
   const actors = useMemo(() => {
@@ -569,11 +577,11 @@ export default function AdminDetailContent({
       STYLES.chipBase,
       activeTab === tab
         ? isDark
-          ? "border-brand-400/25 bg-brand-500/10 text-brand-100 shadow-[0_0_22px_rgba(16,185,129,0.12)]"
-          : "border-brand-500 bg-brand-600 text-white shadow-[0_10px_25px_rgba(16,185,129,0.35)]"
+          ? "border-emerald-400/20 bg-emerald-500/10 text-emerald-100"
+          : "border-emerald-500 bg-emerald-600 text-white"
         : isDark
-          ? "border-white/10 bg-white/5 text-white/65 hover:text-white/85 hover:bg-white/10 hover:border-white/15"
-          : "border-slate-200 bg-white text-slate-600 hover:border-brand-300 hover:text-brand-700 hover:bg-brand-50",
+          ? "border-white/[0.05] bg-white/[0.03] text-white/65 hover:bg-white/[0.06] hover:text-white/85"
+          : "border-slate-200/70 bg-white text-slate-600 hover:border-emerald-200 hover:bg-emerald-50 hover:text-emerald-700",
     ].join(" ");
 
   const schoolProgramLabel = pickCandidateSchoolProgramLabel(
@@ -601,26 +609,36 @@ export default function AdminDetailContent({
       />
     );
 
-  const shellClass = isDark
-    ? STYLES.shellDark
-    : "relative rounded-[28px] overflow-hidden border border-brand-500/20 border-t-2 border-t-brand-500 bg-gradient-to-b from-slate-50 via-white to-white shadow-[0_24px_80px_rgba(15,23,42,0.25)]";
+  const shellClass = embedded
+    ? "relative"
+    : isDark
+      ? STYLES.shellDark
+      : "relative overflow-hidden rounded-[28px] border border-slate-200/70 bg-gradient-to-b from-slate-50 via-white to-white";
 
-  const shellInnerClass = isDark
-    ? STYLES.shellInnerDark
-    : "relative p-5 sm:p-6";
+  const shellInnerClass = embedded
+    ? "relative"
+    : isDark
+      ? STYLES.shellInnerDark
+      : "relative p-5 sm:p-6";
 
-  const cardClass = isDark
-    ? `${STYLES.cardDark} ${STYLES.cardPad}`
-    : "rounded-2xl border border-slate-200 bg-white p-5 shadow-[0_18px_50px_rgba(15,23,42,0.10)]";
+  const cardClass = embedded
+    ? isDark
+      ? "rounded-2xl border border-white/[0.05] bg-white/[0.03] p-5"
+      : "rounded-2xl border border-slate-200/60 bg-white p-5"
+    : isDark
+      ? `${STYLES.cardDark} ${STYLES.cardPad}`
+      : "rounded-2xl border border-slate-200/60 bg-white p-5";
 
   const subCardClass = isDark
-    ? STYLES.subCardDark
-    : "rounded-2xl border border-slate-200 bg-slate-50 p-4";
+    ? embedded
+      ? "rounded-2xl border border-white/[0.04] bg-white/[0.025] p-4"
+      : STYLES.subCardDark
+    : "rounded-2xl border border-slate-200/60 bg-slate-50/80 p-4";
 
   return (
     <div className={shellClass}>
-      {/* Fondo premium solo en oscuro */}
-      {isDark && (
+      {/* Fondo premium solo en oscuro y cuando no está embebido */}
+      {isDark && !embedded && (
         <div className="pointer-events-none absolute inset-0">
           <div className="absolute -top-24 -left-20 h-72 w-72 rounded-full bg-brand-500/10 blur-3xl" />
           <div className="absolute -bottom-28 -right-16 h-80 w-80 rounded-full bg-brand-500/10 blur-3xl" />
@@ -631,28 +649,30 @@ export default function AdminDetailContent({
       )}
 
       <div className={shellInnerClass}>
-        {/* Header pequeño */}
-        <div className="flex items-center justify-between gap-3 mb-5">
-          <div>
-            <p
-              className={`text-sm font-extrabold ${
-                isDark ? "text-white" : "text-slate-900"
-              }`}
-            >
-              Detalle de evaluación
-            </p>
-            <p
-              className={`text-xs ${
-                isDark ? "text-white/40" : "text-slate-600"
-              }`}
-            >
-              Vista completa de la ficha de evaluación seleccionada.
-            </p>
+        {/* Header pequeño — oculto en modal (ya lo pinta AdminConsole) */}
+        {!embedded && (
+          <div className="mb-5 flex items-center justify-between gap-3">
+            <div>
+              <p
+                className={`text-sm font-extrabold ${
+                  isDark ? "text-white" : "text-slate-900"
+                }`}
+              >
+                Detalle de evaluación
+              </p>
+              <p
+                className={`text-xs ${
+                  isDark ? "text-white/40" : "text-slate-600"
+                }`}
+              >
+                Vista completa de la ficha de evaluación seleccionada.
+              </p>
+            </div>
           </div>
-        </div>
+        )}
 
         {/* HERO GRID */}
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 items-start">
+        <div className="grid grid-cols-1 items-start gap-5 lg:grid-cols-12">
           {/* LEFT */}
           <div className="lg:col-span-8 space-y-5">
             <div className={cardClass}>
@@ -736,8 +756,8 @@ export default function AdminDetailContent({
                       className={[
                         "mt-4 rounded-2xl border p-4",
                         isDark
-                          ? "border-[#579689]/18 bg-[#07171c]/60"
-                          : "border-slate-200 bg-slate-50",
+                          ? "border-white/[0.04] bg-white/[0.025]"
+                          : "border-slate-200/60 bg-slate-50/80",
                       ].join(" ")}
                     >
                       <div className="flex items-center gap-2 mb-2">
@@ -773,7 +793,7 @@ export default function AdminDetailContent({
                   >
                     Score IA
                   </p>
-                  <div className="mt-2 rounded-2xl border border-brand-400/25 bg-brand-500/10 px-4 py-3 shadow-[0_0_28px_rgba(16,185,129,0.12)]">
+                  <div className="mt-2 rounded-2xl border border-emerald-400/15 bg-emerald-500/[0.08] px-4 py-3">
                     <div className="flex items-baseline gap-2 justify-end">
                       <span
                         className={`text-3xl font-black ${
@@ -796,8 +816,8 @@ export default function AdminDetailContent({
 
               {/* Tabs */}
               <div
-                className={`mt-6 pt-4 border-t ${
-                  isDark ? "border-white/10" : "border-slate-200"
+                className={`mt-6 border-t pt-4 ${
+                  isDark ? "border-white/[0.05]" : "border-slate-200/70"
                 }`}
               >
                 <p
@@ -851,97 +871,148 @@ export default function AdminDetailContent({
 
             {/* TAB CONTENT */}
             {activeTab === "RESUMEN" && (
-              <div ref={refResumen} className={cardClass}>
-                <div className="flex items-center gap-2 mb-2">
-                  <FileText className="w-4 h-4 text-brand-300" />
-                  <h5
-                    className={`text-sm font-extrabold uppercase tracking-[0.18em] ${
-                      isDark ? "text-white" : "text-slate-900"
-                    }`}
-                  >
-                    Resumen ejecutivo (IA)
-                  </h5>
-                </div>
-                <p
-                  className={`text-[12px] mb-4 ${
-                    isDark ? "text-white/45" : "text-slate-600"
-                  }`}
-                >
-                  Síntesis del análisis y señales clave.
-                </p>
-
-                <div className={subCardClass}>
+              <div ref={refResumen} className="space-y-4">
+                <div className={cardClass}>
+                  <div className="mb-2 flex items-center gap-2">
+                    <FileText className="h-4 w-4 text-emerald-400" />
+                    <h5
+                      className={`text-sm font-extrabold uppercase tracking-[0.18em] ${
+                        isDark ? "text-white" : "text-slate-900"
+                      }`}
+                    >
+                      Resumen ejecutivo (IA)
+                    </h5>
+                  </div>
                   <p
-                    className={`text-sm leading-relaxed ${
-                      isDark ? "text-white/80" : "text-slate-700"
+                    className={`mb-4 text-[12px] ${
+                      isDark ? "text-white/45" : "text-slate-600"
                     }`}
                   >
-                    {executiveText || "Aún no hay resumen ejecutivo disponible."}
+                    Síntesis del análisis y señales clave.
                   </p>
+
+                  <div className={subCardClass}>
+                    <p
+                      className={`text-sm leading-relaxed ${
+                        isDark ? "text-white/80" : "text-slate-700"
+                      }`}
+                    >
+                      {executiveText || "Aún no hay resumen ejecutivo disponible."}
+                    </p>
+                  </div>
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-5">
-                  <div className={subCardClass}>
-                    <div className="flex items-center gap-2 mb-3">
-                      <CheckCircle2 className="w-4 h-4 text-brand-300" />
-                      <p className="text-[11px] font-extrabold uppercase tracking-[0.18em] text-brand-200/90">
-                        Fortalezas
-                      </p>
-                    </div>
+                {/* Desplegables: fortalezas / riesgos (sin scroll interno) */}
+                <div className="space-y-3">
+                  <div className={cardClass}>
+                    <button
+                      type="button"
+                      onClick={() => setShowAllStrengths((v) => !v)}
+                      className="flex w-full items-center justify-between gap-3 text-left"
+                    >
+                      <div className="flex min-w-0 items-center gap-2">
+                        <CheckCircle2 className="h-4 w-4 shrink-0 text-emerald-400" />
+                        <p className="text-[11px] font-extrabold uppercase tracking-[0.18em] text-emerald-300/90">
+                          Fortalezas
+                        </p>
+                        {strengths.length > 0 && (
+                          <span
+                            className={`rounded-md px-1.5 py-0.5 text-[10px] font-bold tabular-nums ${
+                              isDark
+                                ? "bg-emerald-500/10 text-emerald-300"
+                                : "bg-emerald-50 text-emerald-700"
+                            }`}
+                          >
+                            {strengths.length}
+                          </span>
+                        )}
+                      </div>
+                      <ChevronDown
+                        className={`h-4 w-4 shrink-0 transition ${
+                          showAllStrengths ? "rotate-180" : ""
+                        } ${isDark ? "text-slate-400" : "text-slate-500"}`}
+                      />
+                    </button>
 
-                    {strengths.length ? (
-                      <ul
-                        className={`text-sm space-y-2 ${
-                          isDark ? "text-white/75" : "text-slate-700"
-                        }`}
-                      >
-                        {strengths.map((s, i) => (
-                          <li key={i} className="flex gap-2">
-                            <span className="text-brand-300 shrink-0">•</span>
-                            <span>{s}</span>
-                          </li>
-                        ))}
-                      </ul>
-                    ) : (
-                      <p
-                        className={`text-xs ${
-                          isDark ? "text-white/40" : "text-slate-500"
-                        }`}
-                      >
-                        Sin datos
-                      </p>
+                    {showAllStrengths && (
+                      <div className="mt-3 border-t border-white/[0.04] pt-3">
+                        {strengths.length ? (
+                          <ul
+                            className={`space-y-2 text-sm leading-5 ${
+                              isDark ? "text-white/75" : "text-slate-700"
+                            }`}
+                          >
+                            {strengths.map((s, i) => (
+                              <li key={i} className="flex gap-2">
+                                <span className="shrink-0 text-emerald-400">•</span>
+                                <span>{s}</span>
+                              </li>
+                            ))}
+                          </ul>
+                        ) : (
+                          <p className={`text-xs ${isDark ? "text-white/40" : "text-slate-500"}`}>
+                            Sin datos
+                          </p>
+                        )}
+                      </div>
                     )}
                   </div>
 
-                  <div className={subCardClass}>
-                    <div className="flex items-center gap-2 mb-3">
-                      <AlertTriangle className="w-4 h-4 text-rose-300" />
-                      <p className="text-[11px] font-extrabold uppercase tracking-[0.18em] text-rose-200/90">
-                        Riesgos / Alertas
-                      </p>
-                    </div>
+                  <div className={cardClass}>
+                    <button
+                      type="button"
+                      onClick={() => setShowAllRisks((v) => !v)}
+                      className="flex w-full items-center justify-between gap-3 text-left"
+                    >
+                      <div className="flex min-w-0 items-center gap-2">
+                        <AlertTriangle className="h-4 w-4 shrink-0 text-rose-300" />
+                        <p className="text-[11px] font-extrabold uppercase tracking-[0.18em] text-rose-200/90">
+                          Riesgos / Alertas
+                        </p>
+                        {risks.length > 0 && (
+                          <span
+                            className={`rounded-md px-1.5 py-0.5 text-[10px] font-bold tabular-nums ${
+                              isDark
+                                ? "bg-rose-500/10 text-rose-300"
+                                : "bg-rose-50 text-rose-700"
+                            }`}
+                          >
+                            {risks.length}
+                          </span>
+                        )}
+                      </div>
+                      <ChevronDown
+                        className={`h-4 w-4 shrink-0 transition ${
+                          showAllRisks ? "rotate-180" : ""
+                        } ${isDark ? "text-slate-400" : "text-slate-500"}`}
+                      />
+                    </button>
 
-                    {risks.length ? (
-                      <ul
-                        className={`text-sm space-y-2 ${
-                          isDark ? "text-white/75" : "text-slate-700"
+                    {showAllRisks && (
+                      <div
+                        className={`mt-3 border-t pt-3 ${
+                          isDark ? "border-white/[0.04]" : "border-slate-100"
                         }`}
                       >
-                        {risks.map((s, i) => (
-                          <li key={i} className="flex gap-2">
-                            <span className="text-rose-300 shrink-0">•</span>
-                            <span>{s}</span>
-                          </li>
-                        ))}
-                      </ul>
-                    ) : (
-                      <p
-                        className={`text-xs ${
-                          isDark ? "text-white/40" : "text-slate-500"
-                        }`}
-                      >
-                        Sin datos
-                      </p>
+                        {risks.length ? (
+                          <ul
+                            className={`space-y-2 text-sm leading-5 ${
+                              isDark ? "text-white/75" : "text-slate-700"
+                            }`}
+                          >
+                            {risks.map((s, i) => (
+                              <li key={i} className="flex gap-2">
+                                <span className="shrink-0 text-rose-300">•</span>
+                                <span>{s}</span>
+                              </li>
+                            ))}
+                          </ul>
+                        ) : (
+                          <p className={`text-xs ${isDark ? "text-white/40" : "text-slate-500"}`}>
+                            Sin datos
+                          </p>
+                        )}
+                      </div>
                     )}
                   </div>
                 </div>
@@ -1016,11 +1087,15 @@ export default function AdminDetailContent({
           </div>
 
           {/* RIGHT SIDEBAR */}
-          <aside className="lg:col-span-4 space-y-4">
+          <aside className="space-y-4 lg:col-span-4">
             <div className={cardClass}>
-              <div className="flex items-center gap-2 mb-3">
-                <Users className="w-4 h-4 text-brand-300" />
-                <h6 className="text-sm font-extrabold text-white uppercase tracking-[0.18em]">
+              <div className="mb-3 flex items-center gap-2">
+                <Users className="h-4 w-4 text-emerald-400" />
+                <h6
+                  className={`text-sm font-extrabold uppercase tracking-[0.18em] ${
+                    isDark ? "text-white" : "text-slate-900"
+                  }`}
+                >
                   Responsables
                 </h6>
               </div>
@@ -1046,25 +1121,24 @@ export default function AdminDetailContent({
                 }`}
               >
                 <li className="flex gap-2">
-                  <span className="text-brand-300">1)</span>
+                  <span className="text-emerald-400">1)</span>
                   <span>Revisa resumen y señales (fortalezas/riesgos).</span>
                 </li>
                 <li className="flex gap-2">
-                  <span className="text-brand-300">2)</span>
+                  <span className="text-emerald-400">2)</span>
                   <span>Consulta decisión oficial del coordinador y criterios.</span>
                 </li>
                 <li className="flex gap-2">
-                  <span className="text-brand-300">3)</span>
+                  <span className="text-emerald-400">3)</span>
                   <span>Revisa documentos soportes del candidato.</span>
                 </li>
                 <li className="flex gap-2">
-                  <span className="text-brand-300">4)</span>
+                  <span className="text-emerald-400">4)</span>
                   <span>Comprueba trazabilidad completa (líder/coordinador).</span>
                 </li>
               </ul>
             </div>
 
-            {/* Si luego activas auditoría */}
             {loadingAudit && (
               <div className={cardClass}>
                 <p
@@ -1081,7 +1155,7 @@ export default function AdminDetailContent({
                     isDark ? "text-white/55" : "text-slate-600"
                   }`}
                 >
-                  <Loader2 className="w-4 h-4 animate-spin text-brand-300" />
+                  <Loader2 className="h-4 w-4 animate-spin text-emerald-400" />
                   Cargando auditoría…
                 </div>
               </div>

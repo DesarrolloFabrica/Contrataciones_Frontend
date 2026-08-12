@@ -16,7 +16,6 @@ import {
   Building2,
   CalendarDays,
   IdCard,
-  Eye,
   Filter as FilterIcon,
   TrendingUp,
   Clock,
@@ -431,17 +430,25 @@ export default function AdminEvaluationsPanel({
       {/* ═══ SECTION 3: FILTERS ═══ */}
       <div
         className={[
-          "rounded-2xl border border-t-2 border-t-brand-500 p-5 md:p-6 space-y-4",
+          "overflow-hidden rounded-2xl border",
           isDark
-            ? "bg-white/[0.03] border-brand-500/25"
-            : "bg-white border-brand-500/20 shadow-[0_8px_30px_-12px_rgba(15,23,42,0.08)]",
+            ? "border-white/[0.08] bg-[#0d252b]"
+            : "border-slate-200/80 bg-white shadow-[0_14px_36px_-24px_rgba(15,23,42,0.18)]",
         ].join(" ")}
       >
+        <div
+          className={`h-1 w-full ${
+            isDark
+              ? "bg-gradient-to-r from-emerald-500/70 via-teal-400/50 to-transparent"
+              : "bg-gradient-to-r from-emerald-500 via-emerald-400 to-teal-300"
+          }`}
+        />
+        <div className="space-y-4 p-5 md:p-6">
         <div className="flex items-center gap-2">
-          <FilterIcon className={`w-3.5 h-3.5 ${isDark ? "text-brand-400" : "text-brand-600"}`} />
+          <FilterIcon className={`w-3.5 h-3.5 ${isDark ? "text-emerald-400" : "text-emerald-600"}`} />
           <p
             className={`text-[10px] font-bold uppercase tracking-[0.18em] ${
-              isDark ? "text-neutral-400" : "text-slate-600"
+              isDark ? "text-slate-400" : "text-slate-600"
             }`}
           >
             Filtros
@@ -745,33 +752,41 @@ export default function AdminEvaluationsPanel({
             </button>
           </div>
         )}
+        </div>
       </div>
 
       {/* ═══ SECTION 4: TABLE ═══ */}
       <div
         className={[
-          "rounded-2xl border border-t-2 border-t-brand-500 overflow-hidden",
+          "overflow-hidden rounded-2xl border",
           isDark
-            ? "bg-white/[0.02] border-brand-500/25"
-            : "bg-white border-brand-500/20 shadow-[0_8px_30px_-12px_rgba(15,23,42,0.08)]",
+            ? "border-white/[0.08] bg-[#0d252b]"
+            : "border-slate-200/80 bg-white shadow-[0_14px_36px_-24px_rgba(15,23,42,0.18)]",
         ].join(" ")}
       >
+        <div
+          className={`h-1 w-full ${
+            isDark
+              ? "bg-gradient-to-r from-emerald-500/70 via-teal-400/50 to-transparent"
+              : "bg-gradient-to-r from-emerald-500 via-emerald-400 to-teal-300"
+          }`}
+        />
         {/* Table toolbar */}
         <div
           className={[
-            "px-5 py-3.5 border-b flex flex-wrap items-center justify-between gap-3",
+            "flex flex-wrap items-center justify-between gap-3 border-b px-5 py-3.5",
             isDark
-              ? "border-white/[0.06] bg-white/[0.015]"
-              : "border-brand-500/15 bg-gradient-to-r from-brand-50/40 to-transparent",
+              ? "border-white/10 bg-white/[0.03]"
+              : "border-slate-100 bg-slate-50/80",
           ].join(" ")}
         >
           <div className="flex items-center gap-2.5">
             <div
               className={[
-                "shrink-0 w-7 h-7 rounded-lg border flex items-center justify-center",
+                "flex h-7 w-7 shrink-0 items-center justify-center rounded-lg border",
                 isDark
-                  ? "bg-brand-500/10 border-brand-500/20 text-brand-300"
-                  : "bg-brand-500/10 border-brand-200 text-brand-700",
+                  ? "border-emerald-500/20 bg-emerald-500/10 text-emerald-300"
+                  : "border-emerald-200 bg-emerald-50 text-emerald-700",
               ].join(" ")}
             >
               <Users className="w-3.5 h-3.5" />
@@ -866,13 +881,12 @@ export default function AdminEvaluationsPanel({
         {pageItems.length > 0 && (
           <div
             className={[
-              "hidden md:grid grid-cols-[20px_minmax(0,1.6fr)_minmax(0,1.4fr)_160px_150px_120px_44px] gap-3 px-5 py-2.5 border-b text-[10px] font-bold uppercase tracking-[0.14em]",
+              "hidden md:grid grid-cols-[minmax(0,1.7fr)_minmax(0,1.4fr)_140px_160px_120px_44px] gap-3 border-b px-5 py-2.5 text-[11px] font-semibold uppercase tracking-[0.08em]",
               isDark
-                ? "border-white/[0.05] bg-white/[0.01] text-neutral-500"
-                : "border-slate-100 bg-slate-50/50 text-slate-500",
+                ? "border-white/10 bg-white/[0.03] text-slate-400"
+                : "border-slate-100 bg-slate-50 text-slate-500",
             ].join(" ")}
           >
-            <div></div>
             <div>Candidato</div>
             <div>Programa · Escuela</div>
             <div className="text-center">Score IA</div>
@@ -884,8 +898,8 @@ export default function AdminEvaluationsPanel({
 
         {/* Table rows */}
         {pageItems.length > 0 ? (
-          <div>
-            {pageItems.map((ev, idx) => {
+          <div className={isDark ? "divide-y divide-white/[0.06]" : "divide-y divide-slate-100"}>
+            {pageItems.map((ev) => {
               const status = getAiRecommendationStatus(ev);
               const cfg = statusConfig[status];
               const score = getScore(ev);
@@ -907,19 +921,14 @@ export default function AdminEvaluationsPanel({
                 <div
                   key={ev.id}
                   className={[
-                    "group relative grid grid-cols-[20px_minmax(0,1.6fr)_minmax(0,1.4fr)_160px_150px_120px_44px] gap-3 px-5 py-3.5 items-center transition-all duration-200 cursor-pointer",
-                    idx > 0
-                      ? isDark
-                        ? "border-t border-white/[0.05]"
-                        : "border-t border-slate-100"
-                      : "",
+                    "group relative grid cursor-pointer grid-cols-1 items-center gap-3 px-5 py-3.5 transition md:grid-cols-[minmax(0,1.7fr)_minmax(0,1.4fr)_140px_160px_120px_44px]",
                     isSelected
                       ? isDark
-                        ? "bg-brand-500/[0.08]"
-                        : "bg-brand-50/70"
+                        ? "bg-emerald-500/[0.08]"
+                        : "bg-emerald-50/70"
                       : isDark
-                        ? "hover:bg-white/[0.035]"
-                        : "hover:bg-slate-50/60",
+                        ? "hover:bg-emerald-500/[0.05]"
+                        : "hover:bg-emerald-50/60",
                   ].join(" ")}
                   role="button"
                   tabIndex={0}
@@ -931,71 +940,68 @@ export default function AdminEvaluationsPanel({
                     }
                   }}
                 >
-                  {/* Status indicator dot */}
-                  <div className="flex justify-center">
-                    <span
-                      className={[
-                        "w-2.5 h-2.5 rounded-full shrink-0 transition-transform duration-200",
-                        cfg.dot,
-                        isSelected ? "scale-125 ring-2 ring-offset-2 ring-offset-transparent" : "group-hover:scale-110",
-                        isSelected
-                          ? isDark
-                            ? "ring-brand-400/50"
-                            : "ring-brand-500/40"
-                          : "",
-                      ].join(" ")}
-                      title={cfg.label}
-                    />
-                  </div>
-
                   {/* Candidato */}
-                  <div className="min-w-0">
-                    <div className="flex items-center gap-2 min-w-0">
-                      <h3
-                        className={[
-                          "text-[13px] font-bold tracking-tight truncate",
-                          isDark ? "text-white" : "text-slate-900",
-                        ].join(" ")}
-                      >
-                        {getCandidateName(ev)}
-                      </h3>
-                      {coordLabel && coordTone && (
-                        <span
+                  <div className="flex min-w-0 items-center gap-3">
+                    <div
+                      className={[
+                        "flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border transition",
+                        isDark
+                          ? "border-white/10 bg-white/[0.04] text-slate-400 group-hover:border-emerald-400/25 group-hover:text-emerald-300"
+                          : "border-slate-200 bg-slate-50 text-slate-400 group-hover:border-emerald-200 group-hover:bg-white group-hover:text-emerald-700",
+                      ].join(" ")}
+                    >
+                      <Users className="h-4 w-4" />
+                    </div>
+                    <div className="min-w-0">
+                      <div className="flex min-w-0 items-center gap-2">
+                        <h3
                           className={[
-                            "hidden lg:inline-flex shrink-0 items-center gap-1 px-1.5 py-0.5 rounded text-[9px] font-bold uppercase tracking-wider border",
-                            coordTone,
+                            "truncate text-sm font-semibold tracking-tight transition",
+                            isDark
+                              ? "text-white group-hover:text-emerald-200"
+                              : "text-slate-900 group-hover:text-emerald-800",
                           ].join(" ")}
                         >
-                          <CheckCircle2 className="w-2.5 h-2.5" />
-                          {coordLabel}
-                        </span>
+                          {getCandidateName(ev)}
+                        </h3>
+                        {coordLabel && coordTone && (
+                          <span
+                            className={[
+                              "hidden shrink-0 items-center gap-1 rounded-lg border px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wider lg:inline-flex",
+                              coordTone,
+                            ].join(" ")}
+                          >
+                            <CheckCircle2 className="h-2.5 w-2.5" />
+                            {coordLabel}
+                          </span>
+                        )}
+                      </div>
+                      {getDocNumber(ev) && (
+                        <div
+                          className={[
+                            "mt-0.5 flex items-center gap-1 font-mono text-[11px]",
+                            isDark ? "text-slate-500" : "text-slate-400",
+                          ].join(" ")}
+                        >
+                          <IdCard className="h-3 w-3 shrink-0" />
+                          <span className="truncate">{getDocNumber(ev)}</span>
+                        </div>
                       )}
                     </div>
-                    {getDocNumber(ev) && (
-                      <div
-                        className={[
-                          "flex items-center gap-1 mt-0.5 text-[11px] font-mono",
-                          isDark ? "text-neutral-500" : "text-slate-400",
-                        ].join(" ")}
-                      >
-                        <IdCard className="w-3 h-3 shrink-0" />
-                        <span className="truncate">{getDocNumber(ev)}</span>
-                      </div>
-                    )}
                   </div>
 
                   {/* Programa · Escuela */}
-                  <div className="min-w-0">
+                  <div className="hidden min-w-0 md:block">
                     {getProgramName(ev) && (
                       <div
                         className={[
-                          "flex items-center gap-1.5 text-[12px] font-semibold truncate",
-                          isDark ? "text-neutral-200" : "text-slate-800",
+                          "flex items-center gap-1.5 truncate text-xs font-medium",
+                          isDark ? "text-slate-300" : "text-slate-600",
                         ].join(" ")}
                       >
                         <GraduationCap
-                          className={`w-3.5 h-3.5 shrink-0 ${
-                            isDark ? "text-neutral-500" : "text-slate-400"
+                          className={`h-3.5 w-3.5 shrink-0 ${
+                            isDark ? "text-slate-500" : "text-slate-400"
                           }`}
                         />
                         <span className="truncate">{getProgramName(ev)}</span>
@@ -1004,26 +1010,22 @@ export default function AdminEvaluationsPanel({
                     {getSchoolName(ev) && (
                       <div
                         className={[
-                          "flex items-center gap-1.5 text-[11px] truncate mt-0.5",
-                          isDark ? "text-neutral-500" : "text-slate-500",
+                          "mt-0.5 flex items-center gap-1.5 truncate text-[11px]",
+                          isDark ? "text-slate-500" : "text-slate-400",
                         ].join(" ")}
                       >
-                        <Building2
-                          className={`w-3 h-3 shrink-0 ${
-                            isDark ? "text-neutral-600" : "text-slate-400"
-                          }`}
-                        />
+                        <Building2 className="h-3 w-3 shrink-0" />
                         <span className="truncate">{getSchoolName(ev)}</span>
                       </div>
                     )}
                   </div>
 
                   {/* Score IA */}
-                  <div className="flex flex-col items-center justify-center gap-1">
+                  <div className="hidden flex-col items-center justify-center gap-1 md:flex">
                     <div className="flex items-baseline gap-0.5">
                       <span
                         className={[
-                          "text-lg font-black leading-none tabular-nums",
+                          "text-base font-bold leading-none tabular-nums",
                           cfg.text,
                         ].join(" ")}
                       >
@@ -1031,7 +1033,7 @@ export default function AdminEvaluationsPanel({
                       </span>
                       <span
                         className={`text-[10px] font-medium ${
-                          isDark ? "text-neutral-500" : "text-slate-400"
+                          isDark ? "text-slate-500" : "text-slate-400"
                         }`}
                       >
                         /100
@@ -1054,16 +1056,16 @@ export default function AdminEvaluationsPanel({
                   </div>
 
                   {/* Decisión IA pill */}
-                  <div className="flex justify-start">
+                  <div className="hidden justify-start md:flex">
                     <span
                       className={[
-                        "inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[10px] font-bold uppercase tracking-wider border",
+                        "inline-flex items-center gap-1.5 rounded-lg border px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide",
                         cfg.pill,
                       ].join(" ")}
                     >
-                      {status === "RECOMMENDED" && <CheckCircle2 className="w-3 h-3" />}
-                      {status === "RESERVED" && <AlertTriangle className="w-3 h-3" />}
-                      {status === "NOT_RECOMMENDED" && <ShieldAlert className="w-3 h-3" />}
+                      {status === "RECOMMENDED" && <CheckCircle2 className="h-3 w-3" />}
+                      {status === "RESERVED" && <AlertTriangle className="h-3 w-3" />}
+                      {status === "NOT_RECOMMENDED" && <ShieldAlert className="h-3 w-3" />}
                       <span className="hidden xl:inline">{cfg.label}</span>
                       <span className="xl:hidden">{cfg.shortLabel}</span>
                     </span>
@@ -1072,13 +1074,13 @@ export default function AdminEvaluationsPanel({
                   {/* Fecha */}
                   <div
                     className={[
-                      "flex items-center gap-1.5 text-[11px] font-medium tabular-nums",
-                      isDark ? "text-neutral-400" : "text-slate-500",
+                      "hidden items-center gap-1.5 text-[11px] font-medium tabular-nums md:flex",
+                      isDark ? "text-slate-400" : "text-slate-500",
                     ].join(" ")}
                   >
                     <CalendarDays
-                      className={`w-3.5 h-3.5 shrink-0 ${
-                        isDark ? "text-neutral-600" : "text-slate-400"
+                      className={`h-3.5 w-3.5 shrink-0 ${
+                        isDark ? "text-slate-600" : "text-slate-400"
                       }`}
                     />
                     <div className="flex flex-col leading-tight">
@@ -1086,7 +1088,7 @@ export default function AdminEvaluationsPanel({
                       {getTimeLabel(ev.createdAt) && (
                         <span
                           className={`text-[10px] ${
-                            isDark ? "text-neutral-600" : "text-slate-400"
+                            isDark ? "text-slate-600" : "text-slate-400"
                           }`}
                         >
                           {getTimeLabel(ev.createdAt)}
@@ -1097,23 +1099,17 @@ export default function AdminEvaluationsPanel({
 
                   {/* Acción */}
                   <div className="flex items-center justify-end">
-                    <button
-                      type="button"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        onSelect(ev.id);
-                      }}
+                    <div
                       className={[
-                        "inline-flex items-center justify-center w-9 h-9 rounded-lg border transition-all duration-200",
-                        "opacity-60 group-hover:opacity-100",
+                        "rounded-lg p-2 transition",
                         isDark
-                          ? "border-white/10 bg-white/[0.04] text-neutral-400 hover:bg-brand-500/15 hover:border-brand-400/30 hover:text-brand-300"
-                          : "border-slate-200 bg-white text-slate-500 hover:bg-brand-600 hover:border-brand-600 hover:text-white",
+                          ? "text-slate-500 group-hover:bg-emerald-500/10 group-hover:text-emerald-300"
+                          : "text-slate-400 group-hover:bg-emerald-50 group-hover:text-emerald-700",
                       ].join(" ")}
                       title="Ver detalle"
                     >
-                      <Eye className="w-4 h-4" />
-                    </button>
+                      <ChevronRight className="h-4 w-4" />
+                    </div>
                   </div>
                 </div>
               );

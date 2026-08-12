@@ -87,6 +87,7 @@ export default function AdminDetailPanel({
           hasDetail={!!selectedDetail}
           selectedSummary={selectedSummary}
           selectedDetail={selectedDetail}
+          embedded={hideHeader}
         />
       </div>
     </section>

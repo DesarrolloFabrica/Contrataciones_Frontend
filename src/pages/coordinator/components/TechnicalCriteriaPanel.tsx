@@ -6,6 +6,7 @@ import type { CoordinatorCriteria, CoordinatorCriteriaKey } from "../types";
 interface TechnicalCriteriaPanelProps {
   criteria: CoordinatorCriteria;
   setCriteria: (next: CoordinatorCriteria) => void;
+  compact?: boolean;
 }
 
 const CRITERIA_DEFINITIONS: Array<{
@@ -38,6 +39,7 @@ const CRITERIA_DEFINITIONS: Array<{
 export const TechnicalCriteriaPanel: React.FC<TechnicalCriteriaPanelProps> = ({
   criteria,
   setCriteria,
+  compact = false,
 }) => {
   const { theme } = useTheme();
   const isDark = theme === "dark";
@@ -45,71 +47,73 @@ export const TechnicalCriteriaPanel: React.FC<TechnicalCriteriaPanelProps> = ({
   const checkedCount = Object.values(criteria).filter(Boolean).length;
 
   return (
-    <div className="space-y-4">
+    <div className={compact ? "space-y-3" : "space-y-4"}>
       <div className="flex items-center justify-between">
-        <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">
-          Criterios técnicos
+        <span className="text-[10px] font-bold uppercase tracking-widest text-slate-500">
+          2. Criterios técnicos
         </span>
         <span
-          className={`text-[10px] font-mono font-bold px-2 py-0.5 rounded border ${
+          className={`rounded border px-2 py-0.5 font-mono text-[10px] font-bold ${
             checkedCount >= 2
-              ? "border-emerald-500/30 text-emerald-400 bg-emerald-500/10"
-              : "border-slate-700 text-slate-500"
+              ? "border-emerald-500/30 bg-emerald-500/10 text-emerald-400"
+              : isDark
+                ? "border-white/10 text-slate-500"
+                : "border-slate-200 bg-slate-50 text-slate-500"
           }`}
         >
           {checkedCount}/{CRITERIA_DEFINITIONS.length}
         </span>
       </div>
 
-      <div className="space-y-2.5">
+      <div className={compact ? "grid grid-cols-1 gap-2 sm:grid-cols-2" : "space-y-2.5"}>
         {CRITERIA_DEFINITIONS.map((c) => {
           const active = !!criteria[c.key];
           return (
             <button
               key={c.key}
               type="button"
-              onClick={() =>
-                setCriteria({ ...criteria, [c.key]: !active })
-              }
-              className={`w-full group flex items-start gap-3 p-3.5 rounded-xl border text-left transition-all duration-200 ${
+              onClick={() => setCriteria({ ...criteria, [c.key]: !active })}
+              className={`group flex w-full items-start gap-2.5 rounded-lg border text-left transition-all ${
+                compact ? "p-2" : "gap-3 rounded-xl p-3.5"
+              } ${
                 active
                   ? isDark
-                    ? "bg-emerald-500/[0.05] border-emerald-500/30"
-                    : "bg-emerald-50 border-emerald-200"
+                    ? "border-emerald-500/30 bg-emerald-500/[0.05]"
+                    : "border-emerald-200 bg-emerald-50"
                   : isDark
-                    ? "bg-[#13181E] border-transparent hover:bg-[#1A2026]"
-                    : "bg-slate-50 border-slate-200 hover:bg-slate-100"
+                    ? "border-white/[0.06] bg-[#07171c]/55 hover:bg-white/[0.04]"
+                    : "border-slate-200 bg-slate-50 hover:bg-slate-100"
               }`}
             >
               <div
-                className={`mt-0.5 w-5 h-5 rounded border flex items-center justify-center transition-all duration-200 shadow-sm ${
+                className={`mt-0.5 flex items-center justify-center rounded border shadow-sm transition-all ${
+                  compact ? "h-4 w-4" : "h-5 w-5"
+                } ${
                   active
-                    ? "bg-emerald-500 border-emerald-500 shadow-[0_0_10px_rgba(16,185,129,0.4)]"
+                    ? "border-emerald-500 bg-emerald-500"
                     : isDark
-                      ? "border-slate-600 bg-transparent group-hover:border-slate-500"
-                      : "border-slate-300 bg-white group-hover:border-slate-400"
+                      ? "border-slate-600 bg-transparent"
+                      : "border-slate-300 bg-white"
                 }`}
               >
-                {active && (
-                  <CheckCircle2 className="w-3.5 h-3.5 text-black" />
-                )}
+                {active && <CheckCircle2 className={compact ? "h-3 w-3 text-white" : "h-3.5 w-3.5 text-white"} />}
               </div>
-              <div>
+              <div className="min-w-0">
                 <div
-                  className={`text-sm font-semibold transition-colors ${
+                  className={`font-semibold transition-colors ${compact ? "text-xs" : "text-sm"} ${
                     active
                       ? isDark
                         ? "text-emerald-100"
                         : "text-emerald-800"
                       : isDark
                         ? "text-slate-400 group-hover:text-slate-200"
-                        : "text-slate-700 group-hover:text-slate-900"
+                        : "text-slate-700"
                   }`}
                 >
                   {c.label}
                 </div>
                 <div
-                  className={`text-xs mt-0.5 ${
+                  className={`mt-0.5 ${compact ? "text-[10px] leading-4" : "text-xs"} ${
                     isDark ? "text-slate-500" : "text-slate-500"
                   }`}
                 >

@@ -9,6 +9,8 @@ type Props = {
   onEdit: (u: AdminUser) => void;
   onToggleActive: (id: string) => Promise<{ ok: boolean }>;
   onViewSecurity?: (u: AdminUser) => void;
+  /** embedded: sin borde propio (va dentro de un card padre) */
+  variant?: "default" | "embedded";
 };
 
 const fmtDate = (iso?: string | null) => {
@@ -33,13 +35,13 @@ const roleLabel = (role: AdminUser["role"]) => {
 
 const roleConfig: Record<AdminUser["role"], { badge: string }> = {
   ADMIN: {
-    badge: "bg-purple-500/10 text-purple-600 dark:text-purple-300 border-purple-200 dark:border-purple-500/30",
+    badge: "bg-violet-500/10 text-violet-700 dark:text-violet-300 border-violet-200 dark:border-violet-500/30",
   },
   LEADER: {
-    badge: "bg-brand-500/10 text-brand-600 dark:text-brand-300 border-brand-200 dark:border-brand-500/30",
+    badge: "bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border-emerald-200 dark:border-emerald-500/30",
   },
   COORDINATOR: {
-    badge: "bg-brand-500/10 text-brand-600 dark:text-brand-300 border-brand-200 dark:border-brand-500/30",
+    badge: "bg-teal-500/10 text-teal-700 dark:text-teal-300 border-teal-200 dark:border-teal-500/30",
   },
 };
 
@@ -59,9 +61,11 @@ const AdminUsersTable: React.FC<Props> = ({
   onEdit,
   onToggleActive,
   onViewSecurity,
+  variant = "default",
 }) => {
   const { theme } = useTheme();
   const isDark = theme === "dark";
+  const embedded = variant === "embedded";
 
   const pageSize = 10;
   const [page, setPage] = React.useState(1);
@@ -97,12 +101,16 @@ const AdminUsersTable: React.FC<Props> = ({
 
   return (
     <div
-      className={[
-        "rounded-2xl overflow-hidden border",
-        isDark
-          ? "border-[#579689]/20 bg-[#091d22]"
-          : "border-slate-200 bg-white shadow-sm",
-      ].join(" ")}
+      className={
+        embedded
+          ? "overflow-hidden"
+          : [
+              "rounded-2xl overflow-hidden border",
+              isDark
+                ? "border-[#579689]/20 bg-[#091d22]"
+                : "border-slate-200 bg-white shadow-sm",
+            ].join(" ")
+      }
     >
       <div className="overflow-x-auto">
         <table className="w-full text-sm">
@@ -110,8 +118,12 @@ const AdminUsersTable: React.FC<Props> = ({
             className={[
               "sticky top-0 z-10 border-b",
               isDark
-                ? "bg-[#071a20] border-[#579689]/16"
-                : "bg-slate-50 border-slate-200",
+                ? embedded
+                  ? "bg-white/[0.03] border-white/10"
+                  : "bg-[#071a20] border-[#579689]/16"
+                : embedded
+                  ? "bg-slate-50 border-slate-100"
+                  : "bg-slate-50 border-slate-200",
             ].join(" ")}
           >
             <tr
@@ -144,8 +156,8 @@ const AdminUsersTable: React.FC<Props> = ({
                   key={u.id}
                   className={
                     isDark
-                      ? "hover:bg-white/[0.03] transition-colors"
-                      : "hover:bg-brand-50/40 transition-colors"
+                      ? "hover:bg-emerald-500/[0.05] transition-colors"
+                      : "hover:bg-emerald-50/60 transition-colors"
                   }
                 >
                   <td className="px-4 py-3.5">
@@ -154,14 +166,14 @@ const AdminUsersTable: React.FC<Props> = ({
                         className={[
                           "w-9 h-9 rounded-xl flex items-center justify-center border shrink-0",
                           isDark
-                            ? "bg-white/5 border-white/10"
-                            : "bg-brand-50 border-brand-100",
+                            ? "bg-emerald-500/10 border-emerald-500/20"
+                            : "bg-emerald-50 border-emerald-100",
                         ].join(" ")}
                       >
                         <ShieldCheck
                           className={[
                             "w-4 h-4",
-                            isDark ? "text-brand-400" : "text-brand-600",
+                            isDark ? "text-emerald-400" : "text-emerald-600",
                           ].join(" ")}
                         />
                       </div>
@@ -207,11 +219,17 @@ const AdminUsersTable: React.FC<Props> = ({
 
                   <td
                     className={[
-                      "px-4 py-3.5",
-                      isDark ? "text-gray-300" : "text-slate-800",
+                      "px-4 py-3.5 font-mono text-[12px]",
+                      u.cedula
+                        ? isDark
+                          ? "text-slate-300"
+                          : "text-slate-700"
+                        : isDark
+                          ? "text-slate-600"
+                          : "text-slate-400",
                     ].join(" ")}
                   >
-                    {u.cedula ?? "—"}
+                    {u.cedula?.trim() ? u.cedula : "—"}
                   </td>
 
                   <td
@@ -245,8 +263,12 @@ const AdminUsersTable: React.FC<Props> = ({
         className={[
           "flex flex-col md:flex-row items-center justify-between gap-3 px-4 py-3 border-t",
           isDark
-            ? "border-[#579689]/16 bg-[#071a20]"
-            : "border-slate-200 bg-slate-50",
+            ? embedded
+              ? "border-white/10 bg-white/[0.02]"
+              : "border-[#579689]/16 bg-[#071a20]"
+            : embedded
+              ? "border-slate-100 bg-slate-50/80"
+              : "border-slate-200 bg-slate-50",
         ].join(" ")}
       >
         <p

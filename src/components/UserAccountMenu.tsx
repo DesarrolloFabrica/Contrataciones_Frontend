@@ -87,21 +87,16 @@ export function UserAccountMenu({ onLogout, onOpenHelp }: Props) {
     <img
       src={user.googlePicture!.trim()}
       alt=""
-      className={cn(
-        "w-10 h-10 shrink-0 rounded-full object-cover ring-2 ring-offset-2",
-        isDark
-          ? "ring-emerald-400/30 ring-offset-[#0a1518]"
-          : "ring-emerald-500/20 ring-offset-white"
-      )}
+      className="h-8 w-8 shrink-0 rounded-full object-cover"
       onError={() => setImgError(true)}
     />
   ) : (
     <div
       className={cn(
-        "w-10 h-10 shrink-0 rounded-full flex items-center justify-center text-sm font-semibold ring-2 ring-offset-2",
+        "flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-xs font-semibold",
         isDark
-          ? "bg-emerald-500/15 text-emerald-300 ring-emerald-400/25 ring-offset-[#0a1518]"
-          : "bg-emerald-50 text-emerald-700 ring-emerald-500/20 ring-offset-white"
+          ? "bg-emerald-500/20 text-emerald-300"
+          : "bg-emerald-50 text-emerald-700",
       )}
       aria-hidden
     >
@@ -109,44 +104,50 @@ export function UserAccountMenu({ onLogout, onOpenHelp }: Props) {
     </div>
   );
 
+  const itemClass = cn(
+    "flex w-full items-center gap-2.5 rounded-lg px-2.5 py-2 text-[13px] font-medium transition-colors",
+    isDark
+      ? "text-slate-300 hover:bg-white/[0.06] hover:text-white"
+      : "text-slate-600 hover:bg-slate-100 hover:text-slate-900",
+  );
+
   return (
-    <div ref={menuRef} className="relative">
+    <div ref={menuRef} className="relative z-[80]">
       <button
         type="button"
         onClick={() => setOpen((prev) => !prev)}
         aria-expanded={open}
         aria-haspopup="menu"
-      className={cn(
-        "flex items-center gap-2.5 rounded-2xl border py-2 pl-2 pr-3 transition-all duration-200",
-        "focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-500/50",
-        open
-          ? isDark
-            ? "border-white/15 bg-white/[0.08] shadow-[0_10px_28px_-12px_rgba(0,0,0,0.55)]"
-            : "border-slate-200 bg-white shadow-[0_10px_28px_-12px_rgba(15,23,42,0.14)]"
-          : isDark
-            ? "border-white/10 bg-white/[0.04] hover:border-white/15 hover:bg-white/[0.07]"
-            : "border-slate-200/90 bg-white hover:border-slate-300 hover:shadow-sm"
-      )}
+        className={cn(
+          "flex items-center gap-2 rounded-full py-1 pl-1 pr-2 transition-colors duration-200",
+          "focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/40",
+          open
+            ? isDark
+              ? "bg-white/[0.08]"
+              : "bg-slate-100"
+            : isDark
+              ? "hover:bg-white/[0.06]"
+              : "hover:bg-slate-100/90",
+        )}
       >
         {avatar}
-        <div className="hidden md:block min-w-0 text-left max-w-[180px] lg:max-w-[220px]">
+        <div className="hidden min-w-0 max-w-[140px] text-left xl:block xl:max-w-[160px]">
           <p
             className={cn(
-              "text-sm font-medium truncate leading-tight",
-              isDark ? "text-white" : "text-slate-800"
+              "truncate text-[13px] font-medium leading-tight",
+              isDark ? "text-white" : "text-slate-800",
             )}
           >
             {displayName}
           </p>
-          <p className="text-[11px] truncate text-slate-400 leading-tight mt-0.5">
+          <p className="mt-0.5 truncate text-[10px] leading-tight text-slate-400">
             {subtitle}
           </p>
         </div>
         <ChevronDown
           className={cn(
-            "w-4 h-4 shrink-0 transition-transform duration-200",
+            "mr-0.5 h-3.5 w-3.5 shrink-0 text-slate-400 transition-transform duration-200",
             open && "rotate-180",
-            isDark ? "text-slate-400" : "text-slate-400"
           )}
         />
       </button>
@@ -155,52 +156,39 @@ export function UserAccountMenu({ onLogout, onOpenHelp }: Props) {
         <div
           role="menu"
           className={cn(
-            "absolute right-0 top-[calc(100%+8px)] w-72 rounded-2xl border shadow-xl overflow-hidden z-50",
-            "animate-[fadeInUp_180ms_ease-out]",
+            "absolute right-0 top-[calc(100%+8px)] z-[90] w-[240px] overflow-hidden rounded-xl",
+            "animate-[fadeInUp_160ms_ease-out]",
             isDark
-              ? "bg-[#091d22]/96 border-[#579689]/22 shadow-black/50 backdrop-blur-xl"
-              : "bg-white border-slate-200/90 shadow-slate-200/60 backdrop-blur-xl"
+              ? "bg-[#101e23] shadow-[0_18px_48px_-16px_rgba(0,0,0,0.75),0_0_0_1px_rgba(255,255,255,0.06)]"
+              : "bg-white shadow-[0_16px_40px_-14px_rgba(15,23,42,0.28),0_0_0_1px_rgba(15,23,42,0.06)]",
           )}
         >
+          <div className="px-3.5 pb-2.5 pt-3">
+            <p
+              className={cn(
+                "text-[10px] font-semibold uppercase tracking-[0.12em]",
+                isDark ? "text-slate-500" : "text-slate-400",
+              )}
+            >
+              Cuenta
+            </p>
+            <p
+              className={cn(
+                "mt-1.5 truncate text-[12px] leading-snug",
+                isDark ? "text-slate-300" : "text-slate-600",
+              )}
+              title={user.email}
+            >
+              {user.email}
+            </p>
+          </div>
+
           <div
             className={cn(
-              "px-4 py-4 border-b",
-              isDark ? "border-white/[0.06] bg-white/[0.02]" : "border-slate-100 bg-slate-50/50"
+              "mx-2.5 h-px",
+              isDark ? "bg-white/[0.06]" : "bg-slate-100",
             )}
-          >
-            <div className="flex items-center gap-3">
-              {showImg ? (
-                <img
-                  src={user.googlePicture!.trim()}
-                  alt=""
-                  className="w-11 h-11 rounded-full object-cover shrink-0"
-                />
-              ) : (
-                <div
-                  className={cn(
-                    "w-11 h-11 rounded-full flex items-center justify-center text-base font-semibold shrink-0",
-                    isDark
-                      ? "bg-[#58bea1]/12 text-[#72c4ae]"
-                      : "bg-brand-50 text-brand-700"
-                  )}
-                >
-                  {initial}
-                </div>
-              )}
-              <div className="min-w-0">
-                <p
-                  className={cn(
-                    "text-sm font-semibold truncate",
-                    isDark ? "text-white" : "text-slate-900"
-                  )}
-                >
-                  {displayName}
-                </p>
-                <p className="text-xs text-slate-400 truncate mt-0.5">{subtitle}</p>
-                <p className="text-[11px] text-slate-500 truncate mt-0.5">{user.email}</p>
-              </div>
-            </div>
-          </div>
+          />
 
           <div className="p-1.5">
             {onOpenHelp && (
@@ -208,21 +196,14 @@ export function UserAccountMenu({ onLogout, onOpenHelp }: Props) {
                 type="button"
                 role="menuitem"
                 onClick={handleOpenHelp}
-                className={cn(
-                  "w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-colors",
-                  isDark
-                    ? "text-slate-300 hover:bg-white/[0.06] hover:text-white"
-                    : "text-slate-600 hover:bg-slate-50 hover:text-slate-900"
-                )}
+                className={itemClass}
               >
-                <span
+                <BookOpen
                   className={cn(
-                    "flex items-center justify-center w-8 h-8 rounded-lg",
-                    isDark ? "bg-[#58bea1]/10 text-[#72c4ae]" : "bg-brand-50 text-brand-600"
+                    "h-4 w-4 shrink-0",
+                    isDark ? "text-emerald-400" : "text-emerald-600",
                   )}
-                >
-                  <BookOpen className="w-4 h-4" />
-                </span>
+                />
                 Guía de uso
               </button>
             )}
@@ -230,53 +211,38 @@ export function UserAccountMenu({ onLogout, onOpenHelp }: Props) {
             <button
               type="button"
               role="menuitem"
-              onClick={() => {
-                toggleTheme();
-              }}
-              className={cn(
-                "w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-colors",
-                isDark
-                  ? "text-slate-300 hover:bg-white/[0.06] hover:text-white"
-                  : "text-slate-600 hover:bg-slate-50 hover:text-slate-900"
-              )}
+              onClick={() => toggleTheme()}
+              className={itemClass}
             >
-              <span
-                className={cn(
-                  "flex items-center justify-center w-8 h-8 rounded-lg",
-                  isDark ? "bg-white/[0.06] text-slate-300" : "bg-slate-100 text-slate-600"
-                )}
-              >
-                {isDark ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
-              </span>
+              {isDark ? (
+                <Sun className="h-4 w-4 shrink-0 text-amber-300" />
+              ) : (
+                <Moon className="h-4 w-4 shrink-0 text-slate-500" />
+              )}
               {isDark ? "Modo claro" : "Modo oscuro"}
             </button>
           </div>
 
           <div
             className={cn(
-              "p-1.5 border-t",
-              isDark ? "border-white/[0.06]" : "border-slate-100"
+              "mx-2.5 h-px",
+              isDark ? "bg-white/[0.06]" : "bg-slate-100",
             )}
-          >
+          />
+
+          <div className="p-1.5">
             <button
               type="button"
               role="menuitem"
               onClick={handleLogout}
               className={cn(
-                "w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-colors",
+                "flex w-full items-center gap-2.5 rounded-lg px-2.5 py-2 text-[13px] font-medium transition-colors",
                 isDark
                   ? "text-rose-300/90 hover:bg-rose-500/10 hover:text-rose-200"
-                  : "text-rose-600 hover:bg-rose-50"
+                  : "text-rose-600 hover:bg-rose-50",
               )}
             >
-              <span
-                className={cn(
-                  "flex items-center justify-center w-8 h-8 rounded-lg",
-                  isDark ? "bg-rose-500/10 text-rose-400" : "bg-rose-50 text-rose-500"
-                )}
-              >
-                <LogOut className="w-4 h-4" />
-              </span>
+              <LogOut className="h-4 w-4 shrink-0" />
               Cerrar sesión
             </button>
           </div>

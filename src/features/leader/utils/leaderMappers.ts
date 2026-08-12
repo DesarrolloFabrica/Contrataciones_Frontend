@@ -10,28 +10,70 @@ export const toBackendTeacherForm = (form: TeacherForm) => {
   };
 };
 
-export const mapFormToInterviewData = (form: TeacherForm): InterviewData => ({
-  documentNumber: form.candidate.documentNumber ?? "",
-  candidateName: form.candidate.fullName,
-  age: form.candidate.age ? String(form.candidate.age) : "",
-  school: form.candidate.schoolName,
-  program: form.candidate.programName,
-  careerSummary: form.candidate.careerSummary,
-  previousExperience: form.candidate.teachingExperience,
+/** Tolera formRawData incompleto (p. ej. seeds mock) sin romper el detalle. */
+export const mapFormToInterviewData = (form: Partial<TeacherForm> | any): InterviewData => {
+  const candidate = form?.candidate ?? {};
+  const availability = form?.availability ?? {};
+  const classroomManagement = form?.classroomManagement ?? {};
+  const aiAttitude = form?.aiAttitude ?? {};
+  const coherenceCommitment = form?.coherenceCommitment ?? {};
+  const answers = form?.answers ?? {};
 
-  availabilityDetails: form.availability.scheduleDetails,
-  acceptsCommittees: form.availability.acceptsCommittees,
-  otherJobs: form.availability.otherJobsImpact,
+  return {
+    documentNumber:
+      candidate.documentNumber ??
+      candidate.document_number ??
+      "",
+    candidateName: candidate.fullName ?? "",
+    age: candidate.age != null && candidate.age !== "" ? String(candidate.age) : "",
+    school: candidate.schoolName ?? candidate.school ?? "",
+    program: candidate.programName ?? candidate.program ?? "",
+    careerSummary:
+      candidate.careerSummary ??
+      answers.careerSummary ??
+      "",
+    previousExperience:
+      candidate.teachingExperience ??
+      answers.previousExperience ??
+      "",
 
-  evaluationMethodology: form.classroomManagement.evaluationMethodology,
-  failureRatePlan: form.classroomManagement.planIfHalfFail,
-  apatheticStudentPlan: form.classroomManagement.handleApatheticStudent,
+    availabilityDetails:
+      availability.scheduleDetails ??
+      answers.availabilityDetails ??
+      "",
+    acceptsCommittees:
+      (availability.acceptsCommittees ??
+        answers.acceptsCommittees ??
+        "Depende") as InterviewData["acceptsCommittees"],
+    otherJobs:
+      availability.otherJobsImpact ??
+      answers.otherJobs ??
+      "",
 
-  aiToolsUsage: form.aiAttitude.usesAiHow,
-  ethicalAiMeasures: form.aiAttitude.ethicalUseMeasures,
-  aiPlagiarismPrevention: form.aiAttitude.handleAiPlagiarism,
+    evaluationMethodology:
+      classroomManagement.evaluationMethodology ??
+      answers.evaluationMethodology ??
+      "",
+    failureRatePlan:
+      classroomManagement.planIfHalfFail ??
+      answers.failureRatePlan ??
+      "",
+    apatheticStudentPlan:
+      classroomManagement.handleApatheticStudent ??
+      answers.apatheticStudentPlan ??
+      "",
 
-  scenario29: form.coherenceCommitment.caseStudent2_9,
-  scenarioCoverage: form.coherenceCommitment.emergencyProtocol,
-  scenarioFeedback: form.coherenceCommitment.handleNegativeFeedback,
-});
+    aiToolsUsage: aiAttitude.usesAiHow ?? answers.aiToolsUsage ?? "",
+    ethicalAiMeasures:
+      aiAttitude.ethicalUseMeasures ?? answers.ethicalAiMeasures ?? "",
+    aiPlagiarismPrevention:
+      aiAttitude.handleAiPlagiarism ?? answers.aiPlagiarismPrevention ?? "",
+
+    scenario29:
+      coherenceCommitment.caseStudent2_9 ?? answers.scenario29 ?? "",
+    scenarioCoverage:
+      coherenceCommitment.emergencyProtocol ?? answers.scenarioCoverage ?? "",
+    scenarioFeedback:
+      coherenceCommitment.handleNegativeFeedback ?? answers.scenarioFeedback ?? "",
+  };
+};

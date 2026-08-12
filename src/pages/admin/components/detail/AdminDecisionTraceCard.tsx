@@ -40,11 +40,11 @@ function StepIcon({ status }: { status?: string | null }) {
 
 function StatusBadge({ status }: { status?: string | null }) {
   const s = (status ?? "").toUpperCase();
-  let cls = "bg-white/5 text-neutral-300 border-white/10";
-  if (s === "APPROVED" || s === "APROBADO") cls = "bg-brand-500/10 text-brand-300 border-brand-500/30";
-  else if (s === "REJECTED" || s === "RECHAZADO") cls = "bg-rose-500/10 text-rose-300 border-rose-500/30";
-  else if (s === "NO_RECOMENDAR") cls = "bg-rose-500/10 text-rose-300 border-rose-500/30";
-  else if (s === "PRECAUCION") cls = "bg-yellow-500/10 text-yellow-200 border-yellow-500/30";
+  let cls = "bg-white/[0.03] text-neutral-300 border-white/[0.05]";
+  if (s === "APPROVED" || s === "APROBADO") cls = "bg-emerald-500/10 text-emerald-300 border-emerald-500/20";
+  else if (s === "REJECTED" || s === "RECHAZADO") cls = "bg-rose-500/10 text-rose-300 border-rose-500/20";
+  else if (s === "NO_RECOMENDAR") cls = "bg-rose-500/10 text-rose-300 border-rose-500/20";
+  else if (s === "PRECAUCION") cls = "bg-amber-500/10 text-amber-200 border-amber-500/20";
   return (
     <span
       className={`inline-flex px-2.5 py-1 rounded-xl text-[10px] font-bold uppercase tracking-widest border leading-none ${cls}`}
@@ -85,8 +85,8 @@ export default function AdminDecisionTraceCard({
 
       <div className="space-y-3">
         {/* IA */}
-        <div className={`${stepBase} ${isDark ? "bg-white/[0.04] border-white/10" : "bg-slate-50 border-slate-200"}`}>
-          <Brain className="w-5 h-5 text-brand-400 shrink-0 mt-0.5" />
+        <div className={`${stepBase} ${isDark ? "border-white/[0.04] bg-white/[0.025]" : "border-slate-200/60 bg-slate-50/80"}`}>
+          <Brain className="mt-0.5 h-5 w-5 shrink-0 text-emerald-400" />
           <div className="min-w-0 flex-1">
             <div className="flex items-center justify-between gap-3 flex-wrap">
               <span className={`text-xs font-bold uppercase tracking-widest ${isDark ? "text-neutral-400" : "text-slate-500"}`}>
@@ -106,7 +106,7 @@ export default function AdminDecisionTraceCard({
         {connector()}
 
         {/* Líder */}
-        <div className={`${stepBase} ${isDark ? "bg-white/[0.04] border-white/10" : "bg-slate-50 border-slate-200"}`}>
+        <div className={`${stepBase} ${isDark ? "border-white/[0.04] bg-white/[0.025]" : "border-slate-200/60 bg-slate-50/80"}`}>
           <StepIcon status={leader.status} />
           <div className="min-w-0 flex-1">
             <div className="flex items-center justify-between gap-3 flex-wrap">
@@ -131,11 +131,11 @@ export default function AdminDecisionTraceCard({
         {/* Coordinador - decisión oficial */}
         <div className={`${stepBase} ${
           isDark
-            ? "bg-brand-500/[0.06] border-brand-500/25"
-            : "bg-brand-50 border-brand-200"
+            ? "border-emerald-500/15 bg-emerald-500/[0.05]"
+            : "border-emerald-200/70 bg-emerald-50"
         }`}>
-          <div className={`w-5 h-5 shrink-0 mt-0.5 rounded-full flex items-center justify-center ${isDark ? "bg-brand-500/20" : "bg-brand-100"}`}>
-            <ShieldCheck className={`w-3.5 h-3.5 ${isDark ? "text-brand-400" : "text-brand-600"}`} />
+          <div className={`mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full ${isDark ? "bg-emerald-500/15" : "bg-emerald-100"}`}>
+            <ShieldCheck className={`h-3.5 w-3.5 ${isDark ? "text-emerald-400" : "text-emerald-600"}`} />
           </div>
           <div className="min-w-0 flex-1">
             <div className="flex items-center justify-between gap-3 flex-wrap">

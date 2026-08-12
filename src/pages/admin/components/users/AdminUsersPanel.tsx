@@ -83,134 +83,187 @@ const AdminUsersPanel: React.FC<Props> = ({ scope }) => {
   }, []);
 
   return (
-    <div className="space-y-5">
-      {/* Section 1: Title + actions */}
-      <div>
-        <div className="flex items-center justify-between gap-3">
-          <div>
-            <h1 className={`text-2xl font-black tracking-tight ${isDark ? "text-white" : "text-slate-900"}`}>
-              Usuarios
-            </h1>
-            <p className={`text-sm mt-1 ${isDark ? "text-neutral-400" : "text-slate-500"}`}>
-              Gestión de roles y acceso con Google institucional (@cun.edu.co).
-            </p>
+    <div className="relative w-full space-y-4 animate-in fade-in duration-300">
+      {/* Header — misma línea que coordinador/líder */}
+      <section
+        className={[
+          "relative overflow-hidden rounded-2xl border px-4 py-4 md:px-5",
+          isDark
+            ? "border-white/[0.08] bg-gradient-to-r from-[#0f1f23] via-[#0d1a1e] to-[#102226]"
+            : "border-slate-200/80 bg-white shadow-[0_12px_32px_-24px_rgba(15,23,42,0.2)]",
+        ].join(" ")}
+      >
+        <div
+          className={[
+            "pointer-events-none absolute -right-10 -top-12 h-36 w-36 rounded-full blur-3xl",
+            isDark ? "bg-emerald-500/12" : "bg-emerald-400/15",
+          ].join(" ")}
+        />
+
+        <div className="relative flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex min-w-0 items-center gap-3">
+            <div
+              className={[
+                "flex h-11 w-11 shrink-0 items-center justify-center rounded-xl",
+                isDark
+                  ? "bg-emerald-500/15 text-emerald-300"
+                  : "bg-emerald-50 text-emerald-700",
+              ].join(" ")}
+            >
+              <Users className="h-5 w-5" />
+            </div>
+            <div className="min-w-0">
+              <h1 className={`text-xl font-bold tracking-tight md:text-2xl ${isDark ? "text-white" : "text-slate-900"}`}>
+                Usuarios
+              </h1>
+              <p className={`text-sm ${isDark ? "text-slate-400" : "text-slate-500"}`}>
+                Gestión de roles y acceso con Google institucional (@cun.edu.co)
+              </p>
+            </div>
           </div>
 
           <button
             type="button"
             onClick={openCreate}
-            className="h-10 px-4 rounded-xl bg-brand-600 hover:bg-brand-500 text-white text-xs font-bold uppercase tracking-widest shadow-lg shadow-brand-500/25 transition-all flex items-center gap-2"
+            className="inline-flex shrink-0 items-center gap-2 rounded-xl bg-emerald-600 px-4 py-2.5 text-xs font-semibold text-white shadow-[0_10px_24px_-12px_rgba(16,185,129,0.8)] transition hover:bg-emerald-500"
           >
-            <Plus className="w-3.5 h-3.5" />
+            <Plus className="h-4 w-4" />
             Crear usuario
           </button>
         </div>
-      </div>
+      </section>
 
-      {/* Section 2: Main card */}
-      <div
+      {/* Card principal: filtros + tabla */}
+      <section
         className={[
-          "rounded-2xl border border-t-2 border-t-brand-500 p-5 md:p-6 space-y-5",
-          isDark ? "bg-white/[0.03] border-brand-500/25" : "bg-white border-brand-500/20 shadow-[0_8px_30px_-12px_rgba(15,23,42,0.08)]",
+          "overflow-hidden rounded-2xl border",
+          isDark
+            ? "border-white/[0.08] bg-[#0d252b]"
+            : "border-slate-200/80 bg-white shadow-[0_14px_36px_-24px_rgba(15,23,42,0.18)]",
         ].join(" ")}
       >
-        <AdminUsersHeader
-          search={users.search}
-          setSearch={users.setSearch}
-          statusFilter={users.statusFilter}
-          setStatusFilter={users.setStatusFilter}
-          roleFilter={users.roleFilter}
-          setRoleFilter={users.setRoleFilter}
-          roles={roles}
-          metrics={users.metrics}
+        <div
+          className={`h-1 w-full ${
+            isDark
+              ? "bg-gradient-to-r from-emerald-500/70 via-teal-400/50 to-transparent"
+              : "bg-gradient-to-r from-emerald-500 via-emerald-400 to-teal-300"
+          }`}
         />
 
-        <div className={`border-t ${isDark ? "border-white/5" : "border-slate-100"}`} />
+        <div className="space-y-4 p-4 md:p-5">
+          <AdminUsersHeader
+            search={users.search}
+            setSearch={users.setSearch}
+            statusFilter={users.statusFilter}
+            setStatusFilter={users.setStatusFilter}
+            roleFilter={users.roleFilter}
+            setRoleFilter={users.setRoleFilter}
+            roles={roles}
+            metrics={users.metrics}
+          />
+        </div>
 
-        <div className="space-y-4">
-          {/* Results count */}
-          <div className="flex items-center gap-2 text-xs">
-            <span className={isDark ? "text-neutral-400" : "text-slate-500"}>
-              {users.filteredUsers?.length ?? 0} {users.filteredUsers?.length === 1 ? "resultado" : "resultados"}
+        <div className={`border-t ${isDark ? "border-white/10" : "border-slate-100"}`} />
+
+        {!users.loading && !users.error && !showEmpty && (
+          <div
+            className={[
+              "flex items-center justify-between border-b px-4 py-2.5 text-[11px] font-semibold uppercase tracking-[0.08em] md:px-5",
+              isDark
+                ? "border-white/10 bg-white/[0.03] text-slate-400"
+                : "border-slate-100 bg-slate-50 text-slate-500",
+            ].join(" ")}
+          >
+            <div className="flex items-center gap-2">
+              <Users className={`h-3.5 w-3.5 ${isDark ? "text-emerald-400" : "text-emerald-600"}`} />
+              <span>Listado de usuarios</span>
+            </div>
+            <span
+              className={[
+                "rounded-full px-2 py-0.5 text-[10px] font-bold",
+                isDark
+                  ? "bg-emerald-500/10 text-emerald-300"
+                  : "bg-emerald-50 text-emerald-700",
+              ].join(" ")}
+            >
+              {users.filteredUsers?.length ?? 0} resultados
             </span>
           </div>
+        )}
 
-          {users.loading && (
+        {users.loading && (
+          <div className={`flex flex-col items-center justify-center gap-3 py-16 ${isDark ? "text-slate-400" : "text-slate-500"}`}>
+            <Loader2 className="h-6 w-6 animate-spin text-emerald-500" />
+            <span className="text-sm">Cargando usuarios…</span>
+          </div>
+        )}
+
+        {!users.loading && users.error && (
+          <div className="flex flex-col items-center justify-center gap-3 px-4 py-14 text-center">
+            <div className={`rounded-xl p-3 ${isDark ? "bg-rose-500/10" : "bg-rose-50"}`}>
+              <AlertCircle className="h-6 w-6 text-rose-500" />
+            </div>
+            <p className={`text-sm ${isDark ? "text-slate-300" : "text-slate-600"}`}>{users.error}</p>
+          </div>
+        )}
+
+        {!users.loading && !users.error && !showEmpty && (
+          <AdminUsersTable
+            users={users.filteredUsers}
+            onEdit={openEdit}
+            onToggleActive={users.toggleActive}
+            onViewSecurity={openSecurity}
+            variant="embedded"
+          />
+        )}
+
+        {showEmpty && (
+          <div className="flex flex-col items-center justify-center px-4 py-14 text-center">
             <div
               className={[
-                "flex flex-col items-center justify-center py-16 gap-3 rounded-2xl border",
+                "mb-4 flex h-14 w-14 items-center justify-center rounded-2xl border",
                 isDark
-                  ? "text-neutral-500 border-white/10 bg-black/10"
-                  : "text-slate-500 border-slate-200 bg-slate-50",
+                  ? "border-white/10 bg-white/[0.04] text-slate-400"
+                  : "border-slate-200 bg-slate-50 text-slate-400",
               ].join(" ")}
             >
-              <Loader2 className="w-8 h-8 animate-spin text-brand-500" />
-              <p className="text-sm">Cargando usuarios…</p>
+              <Users className="h-6 w-6" />
             </div>
-          )}
-
-          {!users.loading && users.error && (
-            <div
-              className={[
-                "flex flex-col items-center justify-center py-14 gap-3 rounded-2xl border",
-                isDark
-                  ? "text-red-400 bg-red-500/5 border-red-500/10"
-                  : "text-red-700 bg-red-50 border-red-200",
-              ].join(" ")}
-            >
-              <AlertCircle className="w-8 h-8" />
-              <p className="text-sm text-center max-w-md">{users.error}</p>
+            <p className={`text-base font-semibold ${isDark ? "text-white" : "text-slate-900"}`}>
+              Sin resultados
+            </p>
+            <p className={`mt-1 max-w-sm text-sm ${isDark ? "text-slate-400" : "text-slate-500"}`}>
+              No encontramos usuarios con los filtros actuales.
+            </p>
+            <div className="mt-4 flex flex-wrap items-center justify-center gap-2">
+              <button
+                type="button"
+                onClick={() => {
+                  users.setSearch("");
+                  users.setRoleFilter("ALL");
+                  users.setStatusFilter("ALL");
+                }}
+                className={[
+                  "rounded-xl border px-3.5 py-2 text-xs font-semibold transition",
+                  isDark
+                    ? "border-white/10 text-slate-200 hover:bg-white/[0.06]"
+                    : "border-slate-200 text-slate-700 hover:bg-slate-50",
+                ].join(" ")}
+              >
+                Limpiar filtros
+              </button>
+              <button
+                type="button"
+                onClick={openCreate}
+                className="inline-flex items-center gap-2 rounded-xl bg-emerald-600 px-3.5 py-2 text-xs font-semibold text-white shadow-[0_10px_24px_-12px_rgba(16,185,129,0.8)] hover:bg-emerald-500"
+              >
+                <Plus className="h-3.5 w-3.5" />
+                Crear usuario
+              </button>
             </div>
-          )}
-
-          {!users.loading && !users.error && !showEmpty && (
-            <AdminUsersTable
-              users={users.filteredUsers}
-              onEdit={openEdit}
-              onToggleActive={users.toggleActive}
-              onViewSecurity={openSecurity}
-            />
-          )}
-
-          {showEmpty && (
-            <div
-              className={[
-                "flex flex-col items-center justify-center gap-4 rounded-2xl border border-dashed py-16",
-                isDark
-                  ? "border-white/10 bg-black/10 text-neutral-400"
-                  : "border-slate-200 bg-slate-50 text-slate-500",
-              ].join(" ")}
-            >
-              <Users className="w-8 h-8 opacity-50" />
-              <p className="text-sm font-medium">Sin resultados</p>
-              <p className="text-xs opacity-60">
-                No encontramos usuarios con los filtros actuales.
-              </p>
-              <div className="flex flex-wrap gap-2 mt-2">
-                <button
-                  type="button"
-                  onClick={() => { users.setSearch(""); users.setRoleFilter("ALL"); users.setStatusFilter("ALL"); }}
-                  className={[
-                    "px-3 py-2 rounded-lg text-[11px] font-bold uppercase tracking-widest border transition",
-                    isDark
-                      ? "bg-white/5 hover:bg-white/10 border-white/10 text-neutral-200"
-                      : "bg-white hover:bg-slate-50 border-slate-200 text-slate-700",
-                  ].join(" ")}
-                >
-                  Limpiar filtros
-                </button>
-                <button
-                  type="button"
-                  onClick={openCreate}
-                  className="px-3 py-2 rounded-lg bg-brand-600 hover:bg-brand-500 text-white text-[11px] font-bold uppercase tracking-widest shadow-lg shadow-brand-500/25"
-                >
-                  Crear usuario
-                </button>
-              </div>
-            </div>
-          )}
-        </div>
-      </div>
+          </div>
+        )}
+      </section>
 
       <AdminUserFormModal
         open={isCreateOpen}
@@ -234,7 +287,7 @@ const AdminUsersPanel: React.FC<Props> = ({ scope }) => {
               className={[
                 "absolute inset-y-0 right-0 w-full max-w-md border-l shadow-2xl",
                 isDark
-                  ? "bg-[#091d22] border-[#579689]/18"
+                  ? "bg-[#0d252b] border-white/10"
                   : "bg-white border-slate-200",
               ].join(" ")}
             >

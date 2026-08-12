@@ -288,7 +288,7 @@ const AdminConsole: React.FC = () => {
   return (
     <div
       className={[
-        "min-h-screen w-full font-sans overflow-x-hidden flex flex-col",
+        "min-h-[100dvh] w-full font-sans overflow-x-hidden flex flex-col",
         isDark ? "bg-[#061419] text-slate-100" : "bg-[#F4F7FB] text-slate-900",
       ].join(" ")}
     >
@@ -296,13 +296,13 @@ const AdminConsole: React.FC = () => {
         mode={view}
         onChangeMode={handleSwitchView}
         onLogout={handleLogout}
-        statusLabel={admin.loading ? "Sincronizando..." : "Listo"}
+        statusLabel={admin.loading ? "Sincronizando..." : "Administrador"}
       />
 
       <main className="flex-1 relative z-10 w-full">
         <AnimatedBackground />
 
-        <div className="max-w-7xl mx-auto px-4 md:px-8 py-6 md:py-8 relative z-10 space-y-6">
+        <div className="relative z-10 mx-auto max-w-[1320px] space-y-5 px-4 py-5 md:px-6 md:py-6">
           {/* ANALYTICS view: ScopeBar aparece en el contenido, no en el navbar */}
           {view === "ANALYTICS" && (
             <AdminScopeBar
@@ -314,17 +314,7 @@ const AdminConsole: React.FC = () => {
           )}
 
           {/* Content */}
-          <div className="space-y-6 relative">
-            {view === "EVALUATIONS" && (
-              <div
-                className={[
-                  "pointer-events-none absolute -inset-x-4 -top-6 h-72 rounded-3xl",
-                  isDark
-                    ? "bg-[radial-gradient(ellipse_at_50%_10%,rgba(2,6,23,0.28),rgba(2,6,23,0.56))]"
-                    : "bg-[radial-gradient(ellipse_at_50%_10%,rgba(255,255,255,0.4),rgba(241,245,249,0.72))]",
-                ].join(" ")}
-              />
-            )}
+          <div className="relative space-y-5">
             <div className="relative z-10">
 
               {/* ── HOME ── */}
@@ -435,18 +425,18 @@ const AdminConsole: React.FC = () => {
           <div className="relative z-[71] w-full max-w-5xl max-h-[90vh] flex flex-col">
             <div
               className={[
-                "rounded-[28px] overflow-hidden flex flex-col max-h-[90vh] border",
+                "flex max-h-[90vh] flex-col overflow-hidden rounded-2xl border",
                 isDark
-                  ? "border-[#579689]/25 bg-[#0d252b] shadow-[0_30px_80px_rgba(0,4,8,0.68),0_0_0_1px_rgba(255,255,255,0.035)]"
-                  : "border-slate-300 bg-white shadow-[0_24px_80px_rgba(15,23,42,0.35)]",
+                  ? "border-white/[0.06] bg-[#0d252b] shadow-[0_24px_60px_rgba(0,4,8,0.45)]"
+                  : "border-slate-200/70 bg-white shadow-[0_20px_50px_rgba(15,23,42,0.18)]",
               ].join(" ")}
             >
               <div
                 className={[
-                  "shrink-0 px-6 py-5 border-b flex items-center justify-between gap-4 backdrop-blur-sm",
+                  "flex shrink-0 items-center justify-between gap-4 border-b px-5 py-4 md:px-6",
                   isDark
-                    ? "border-[#579689]/20 bg-[#102c32]/92"
-                    : "border-slate-200 bg-slate-50",
+                    ? "border-white/[0.05] bg-white/[0.02]"
+                    : "border-slate-200/70 bg-slate-50/80",
                 ].join(" ")}
               >
                 <div className="min-w-0">
@@ -460,26 +450,21 @@ const AdminConsole: React.FC = () => {
                   </h2>
                   <p
                     className={[
-                      "text-xs mt-1",
-                      isDark ? "text-neutral-400" : "text-slate-600",
+                      "mt-0.5 text-xs",
+                      isDark ? "text-slate-400" : "text-slate-500",
                     ].join(" ")}
                   >
                     Vista completa de la ficha de evaluación seleccionada.
                   </p>
                 </div>
-                <div className="flex items-center gap-2 shrink-0">
+                <div className="flex shrink-0 items-center gap-2">
                   {detail.selectedDetail && (
                     <button
                       type="button"
                       onClick={detail.exportPdf}
-                      className={[
-                        "inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold uppercase tracking-widest transition-colors shadow-lg",
-                        isDark
-                          ? "bg-brand-600 hover:bg-brand-500 text-white shadow-brand-900/30"
-                          : "bg-brand-600 hover:bg-brand-500 text-white shadow-[0_10px_30px_rgba(16,185,129,0.45)]",
-                      ].join(" ")}
+                      className="inline-flex items-center gap-2 rounded-xl bg-emerald-600 px-4 py-2.5 text-xs font-bold uppercase tracking-widest text-white shadow-[0_10px_24px_-12px_rgba(16,185,129,0.8)] transition hover:bg-emerald-500"
                     >
-                      <Download className="w-4 h-4" />
+                      <Download className="h-4 w-4" />
                       PDF
                     </button>
                   )}
@@ -487,18 +472,18 @@ const AdminConsole: React.FC = () => {
                     type="button"
                     onClick={handleCloseDetail}
                     className={[
-                      "p-2.5 rounded-xl border transition shrink-0",
+                      "rounded-xl border p-2.5 transition shrink-0",
                       isDark
-                        ? "border-white/15 bg-white/10 hover:bg-white/15 text-neutral-200"
-                        : "border-slate-200 bg-white hover:bg-slate-100 text-slate-600",
+                        ? "border-white/10 bg-white/[0.04] text-slate-300 hover:bg-white/[0.08]"
+                        : "border-slate-200 bg-white text-slate-600 hover:bg-slate-100",
                     ].join(" ")}
                     title="Cerrar detalle"
                   >
-                    <X className="w-5 h-5" />
+                    <X className="h-5 w-5" />
                   </button>
                 </div>
               </div>
-              <div className="flex-1 min-h-0 overflow-y-auto pt-8 px-6 pb-6 bg-transparent">
+              <div className="min-h-0 flex-1 overflow-y-auto px-5 py-5 md:px-6">
                 <AdminDetailPanel
                   hideHeader
                   selectedId={detail.selectedId}

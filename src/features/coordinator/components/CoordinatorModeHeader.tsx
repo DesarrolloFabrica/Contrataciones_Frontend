@@ -35,10 +35,8 @@ function NavTabs({
     <nav
       aria-label="Secciones principales"
       className={cn(
-        "inline-flex p-1 rounded-xl border",
-        isDark
-          ? "bg-white/[0.03] border-white/10"
-          : "bg-slate-100/70 border-slate-200/80",
+        "inline-flex rounded-xl p-1",
+        isDark ? "bg-white/[0.04]" : "bg-slate-100/80",
         className
       )}
     >
@@ -94,42 +92,42 @@ export function CoordinatorModeHeader({
       className={cn(
         "sticky top-0 z-50 w-full border-b transition-colors duration-300",
         isDark
-          ? "bg-[#071a20]/92 border-[#579689]/20 backdrop-blur-xl shadow-[0_1px_0_0_rgba(255,255,255,0.035),0_14px_34px_-28px_rgba(0,4,8,0.9)]"
+          ? "bg-[#071a20]/92 border-white/[0.06] backdrop-blur-xl"
           : "bg-white/90 border-slate-200/70 backdrop-blur-xl shadow-[0_1px_3px_rgba(15,23,42,0.04)]"
       )}
     >
-      <div className="max-w-7xl mx-auto px-4 md:px-8">
-        <div className="grid grid-cols-[1fr_auto] md:grid-cols-[1fr_auto_1fr] items-center gap-x-4 h-14 md:h-16">
-          <div className="flex items-center gap-3 min-w-0">
+      <div className="mx-auto max-w-[1560px] px-5 md:px-8">
+        <div className="grid h-14 grid-cols-[1fr_auto] items-center gap-x-5 md:h-[3.75rem] md:grid-cols-[1fr_auto_1fr]">
+          <div className="flex min-w-0 items-center gap-3">
             <AppLogo variant="navbar" />
             <div className="min-w-0">
               <p
                 className={cn(
-                  "text-sm md:text-[15px] font-semibold tracking-tight truncate",
+                  "truncate text-sm font-semibold tracking-tight md:text-[15px]",
                   isDark ? "text-white" : "text-slate-900"
                 )}
               >
                 Contratación Académica CUN
               </p>
-              <div className="flex items-center gap-2 mt-0.5">
+              <div className="mt-0.5 flex items-center gap-2">
                 <span
                   className={cn(
-                    "inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[10px] font-medium",
+                    "inline-flex items-center gap-1.5 rounded-full px-2 py-0.5 text-[10px] font-medium",
                     isDark
-                      ? "bg-[#58bea1]/10 text-[#72c4ae]"
+                      ? "bg-emerald-400/10 text-emerald-300"
                       : "bg-brand-50 text-brand-700"
                   )}
                 >
                   <span className="relative flex h-1.5 w-1.5">
-                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-brand-400 opacity-60" />
-                    <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-brand-500" />
+                    <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-brand-400 opacity-60" />
+                    <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-brand-500" />
                   </span>
                   Sistema activo
                 </span>
                 {statusLabel && (
                   <span
                     className={cn(
-                      "hidden sm:inline text-[10px] font-medium truncate",
+                      "hidden truncate text-[10px] font-medium sm:inline",
                       isDark ? "text-slate-500" : "text-slate-400"
                     )}
                   >
@@ -140,21 +138,21 @@ export function CoordinatorModeHeader({
             </div>
           </div>
 
-          <div className="hidden md:flex justify-center">
+          <div className="hidden justify-center md:flex">
             <NavTabs mode={mode} onChangeMode={onChangeMode} isDark={isDark} />
           </div>
 
-          <div className="justify-self-end">
+          <div className="justify-self-end pl-2">
             <UserAccountMenu onLogout={onLogout} onOpenHelp={onOpenHelp} />
           </div>
         </div>
 
-        <div className="md:hidden pb-3 -mt-1">
+        <div className="-mt-1 pb-3 md:hidden">
           <NavTabs
             mode={mode}
             onChangeMode={onChangeMode}
             isDark={isDark}
-            className="w-full flex"
+            className="flex w-full"
           />
         </div>
       </div>

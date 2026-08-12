@@ -2,7 +2,6 @@ import React from "react";
 import {
   AlertCircle,
   CheckCircle2,
-  ChevronRight,
   CircleHelp,
   MessageSquareText,
   ShieldAlert,
@@ -27,9 +26,9 @@ export function LeaderHero({ currentStep = 1, onOpenHelp, onLoadExample }: Props
         "relative overflow-hidden rounded-2xl border px-4 py-3.5 md:px-5 md:py-4",
         isDark
           ? "border-white/10 bg-gradient-to-r from-[#0f1f23]/95 via-[#0d1a1e]/90 to-[#102226]/80 shadow-[0_16px_40px_-28px_rgba(0,0,0,0.7),inset_0_1px_0_rgba(255,255,255,0.05)]"
-          : "border-slate-200/90 bg-gradient-to-r from-white via-white to-emerald-50/50 shadow-[0_14px_36px_-24px_rgba(15,23,42,0.22),inset_0_1px_0_rgba(255,255,255,1)]",
-      ].join(" ")}
-    >
+          : "border-slate-200 bg-white shadow-[0_14px_36px_-24px_rgba(15,23,42,0.22)]",
+        ].join(" ")}
+      >
       <div
         className={[
           "pointer-events-none absolute -right-8 -top-10 h-36 w-36 rounded-full blur-3xl",
@@ -45,14 +44,6 @@ export function LeaderHero({ currentStep = 1, onOpenHelp, onLoadExample }: Props
 
       <div className="relative flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div className="min-w-0">
-          <nav className={`mb-1.5 flex flex-wrap items-center gap-1 text-xs ${isDark ? "text-slate-400" : "text-slate-500"}`} aria-label="Ruta de navegación">
-            <span>Inicio</span>
-            <ChevronRight className="h-3 w-3" />
-            <span>Entrevistas</span>
-            <ChevronRight className="h-3 w-3" />
-            <span className={isDark ? "text-slate-200" : "text-slate-700"}>Nueva entrevista</span>
-          </nav>
-
           <div className="flex items-center gap-3">
             <div className="relative">
               <div className={`absolute -inset-1 rounded-xl blur-md ${isDark ? "bg-emerald-500/25" : "bg-emerald-400/30"}`} />

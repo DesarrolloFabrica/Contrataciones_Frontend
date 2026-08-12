@@ -92,10 +92,10 @@ export function LeaderModeHeader({
   return (
     <header
       className={cn(
-        "sticky top-0 z-50 w-full border-b backdrop-blur-2xl transition-colors duration-300",
+        "sticky top-0 z-50 w-full border-b transition-colors duration-300",
         isDark
-          ? "border-white/10 bg-[#0a1518]/85 shadow-[0_12px_40px_-24px_rgba(0,0,0,0.85)]"
-          : "border-slate-200/80 bg-white/85 shadow-[0_10px_30px_-20px_rgba(15,23,42,0.25)]",
+          ? "border-white/10 bg-[#0a1518] shadow-[0_12px_40px_-24px_rgba(0,0,0,0.85)]"
+          : "border-slate-200/80 bg-white shadow-[0_10px_30px_-20px_rgba(15,23,42,0.25)]",
       )}
     >
       <div
@@ -132,10 +132,7 @@ export function LeaderModeHeader({
                       : "bg-emerald-50 text-emerald-700",
                   )}
                 >
-                  <span className="relative flex h-1.5 w-1.5">
-                    <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-60" />
-                    <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-emerald-500" />
-                  </span>
+                  <span className="inline-flex h-1.5 w-1.5 rounded-full bg-emerald-500" />
                   Sistema activo
                 </span>
                 {statusLabel && (

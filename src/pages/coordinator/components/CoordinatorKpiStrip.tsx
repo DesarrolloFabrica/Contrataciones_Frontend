@@ -1,5 +1,5 @@
 import React from "react";
-import { FileText, Activity, UserCheck } from "lucide-react";
+import { FileText, Activity, ShieldCheck, UserCheck } from "lucide-react";
 import { useTheme } from "../../../context/ThemeContext";
 
 interface CoordinatorKpiStripProps {
@@ -32,58 +32,71 @@ export const CoordinatorKpiStrip: React.FC<CoordinatorKpiStripProps> = ({
     {
       label: "Flujo Activo",
       value: isScoped ? "Escuela asignada" : "Global",
-      suffix: "",
+      suffix: isScoped ? "Coordinación actual" : "Cobertura disponible",
       icon: UserCheck,
+    },
+    {
+      label: "Trazabilidad",
+      value: "100%",
+      suffix: "del proceso",
+      icon: ShieldCheck,
     },
   ];
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+    <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
       {cards.map((card) => (
         <div
           key={card.label}
           className={[
-            "group relative overflow-hidden rounded-xl p-4 transition-all duration-300 border border-t-2 border-t-brand-500",
+            "group relative min-h-[96px] overflow-hidden rounded-2xl p-4 transition-colors duration-300",
             isDark
-              ? "bg-white/[0.02] border-brand-500/25 hover:border-brand-400/45"
-              : "bg-white border-brand-500/20 hover:border-brand-500/40 shadow-[0_2px_12px_-4px_rgba(15,23,42,0.06)]",
+              ? "border border-white/[0.08] bg-[#0d252b] hover:border-white/[0.12] hover:bg-[#102a31]"
+              : "border border-slate-200/80 bg-white shadow-[0_10px_28px_-22px_rgba(15,23,42,0.35)] hover:bg-white",
           ].join(" ")}
         >
-          <div className="relative flex items-center justify-between gap-3">
-            <div className="min-w-0 flex-1">
-              <div className="flex items-center gap-1.5 mb-1">
+          <div className="relative flex h-full items-center gap-3.5">
+            <div
+              className={`relative flex h-11 w-11 shrink-0 items-center justify-center rounded-xl transition-all duration-200 ${
+                isDark
+                  ? "bg-gradient-to-br from-emerald-400/18 via-teal-400/10 to-transparent text-emerald-300 shadow-[0_0_14px_-6px_rgba(52,211,153,0.35)] ring-1 ring-emerald-400/20 group-hover:from-emerald-400/24 group-hover:ring-emerald-400/28"
+                  : "bg-gradient-to-br from-emerald-100 to-teal-50 text-emerald-600 ring-1 ring-emerald-200/80 group-hover:from-emerald-200/80"
+              }`}
+            >
+              {isDark && (
                 <span
-                  className={`text-[9px] font-bold uppercase tracking-[0.16em] ${
-                    isDark ? "text-slate-500" : "text-slate-400"
-                  }`}
-                >
-                  {card.label}
-                </span>
-              </div>
-              <div className="flex items-baseline gap-1.5">
+                  aria-hidden
+                  className="pointer-events-none absolute inset-0 rounded-xl bg-[radial-gradient(circle_at_30%_25%,rgba(52,211,153,0.16),transparent_70%)]"
+                />
+              )}
+              <card.icon
+                className={`relative h-5 w-5 ${isDark ? "drop-shadow-[0_0_4px_rgba(52,211,153,0.35)]" : ""}`}
+                strokeWidth={2}
+              />
+            </div>
+
+            <div className="min-w-0 flex-1">
+              <span
+                className={`mb-1 block text-[9px] font-bold uppercase tracking-[0.14em] ${
+                  isDark ? "text-slate-500" : "text-slate-400"
+                }`}
+              >
+                {card.label}
+              </span>
+              <div className="flex flex-wrap items-baseline gap-x-1.5 gap-y-0.5">
                 <p
-                  className={`text-2xl font-black tracking-tight ${
+                  className={`${card.label === "Flujo Activo" ? "text-[15px]" : "text-2xl"} font-bold tracking-tight ${
                     isDark ? "text-white" : "text-slate-900"
                   }`}
                 >
                   {card.value}
                 </p>
                 {card.suffix && (
-                  <span className={`text-[11px] font-medium ${isDark ? "text-slate-600" : "text-slate-400"}`}>
+                  <span className={`text-[10px] font-medium ${isDark ? "text-slate-500" : "text-slate-400"}`}>
                     {card.suffix}
                   </span>
                 )}
               </div>
-            </div>
-
-            <div
-              className={`flex h-9 w-9 items-center justify-center rounded-xl border transition-colors duration-200 ${
-                isDark
-                  ? "bg-white/[0.03] border-white/[0.06] text-brand-400 group-hover:bg-brand-500/10 group-hover:border-brand-500/25"
-                  : "bg-brand-50 border-brand-200 text-brand-600 group-hover:bg-brand-100"
-              }`}
-            >
-              <card.icon className="w-4 h-4" />
             </div>
           </div>
         </div>

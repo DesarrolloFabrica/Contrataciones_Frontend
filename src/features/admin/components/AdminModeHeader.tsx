@@ -36,7 +36,7 @@ function NavTabs({
     <nav
       aria-label="Secciones principales"
       className={cn(
-        "inline-flex p-1 rounded-xl border",
+        "inline-flex rounded-xl border p-1",
         isDark
           ? "bg-white/[0.03] border-white/10"
           : "bg-slate-100/70 border-slate-200/80",
@@ -52,7 +52,7 @@ function NavTabs({
             onClick={() => onChangeMode(id)}
             aria-current={active ? "page" : undefined}
             className={cn(
-              "relative flex flex-1 md:flex-none items-center justify-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200",
+              "relative flex flex-1 items-center justify-center gap-2 rounded-lg px-4 py-2 text-sm font-medium transition-all duration-200 md:flex-none",
               "focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-500/50",
               active
                 ? "text-white"
@@ -99,8 +99,8 @@ export function AdminModeHeader({
           : "bg-white/90 border-slate-200/70 backdrop-blur-xl shadow-[0_1px_3px_rgba(15,23,42,0.04)]"
       )}
     >
-      <div className="max-w-7xl mx-auto px-4 md:px-8">
-        <div className="grid grid-cols-[1fr_auto] md:grid-cols-[1fr_auto_1fr] items-center gap-x-4 h-14 md:h-16">
+      <div className="mx-auto max-w-[1440px] px-5 md:px-7">
+        <div className="grid h-14 grid-cols-[1fr_auto] items-center gap-x-5 md:h-16 md:grid-cols-[1fr_auto_1fr]">
           <div className="flex items-center gap-3 min-w-0">
             <AppLogo variant="navbar" />
             <div className="min-w-0">

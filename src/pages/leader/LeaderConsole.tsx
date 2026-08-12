@@ -366,8 +366,19 @@ const LeaderConsole: React.FC = () => {
           metadata: { source: "leader-history", evaluationId: detail.id },
         });
 
-        const form: TeacherForm = detail.formRawData;
-        const analysis: AnalysisResult = detail.aiRawJson;
+        const form = detail.formRawData ?? {};
+        const analysis: AnalysisResult =
+          detail.aiRawJson ??
+          ({
+            overallRiskLevel: "Medio",
+            overallScore: Number(detail.aiTeachingSuitabilityScore ?? 0),
+            executiveSummary: detail.aiOverallComment ?? "",
+            categoryAnalyses: [],
+            mitigationRecommendations: [],
+            resignationRiskWindow: "",
+            temporalRiskFactors: [],
+            finalVerdict: detail.aiFinalRecommendation ?? "",
+          } as AnalysisResult);
 
         const interview = mapFormToInterviewData(form);
 
@@ -433,20 +444,19 @@ const LeaderConsole: React.FC = () => {
   return (
     <div
       className={`relative h-[100dvh] w-full font-sans overflow-hidden flex flex-col ${
-        isDark ? "text-white" : "text-slate-900"
+        isDark ? "bg-[#071214] text-white" : "bg-white text-slate-900"
       }`}
     >
-      <LeaderModeHeader
-        mode={mode}
-        onChangeMode={setMode}
-        onLogout={handleLogout}
-        onOpenHelp={() => setIsFlowHelpOpen(true)}
-        statusLabel={statusLabel}
-      />
+      <div className="relative z-20 flex min-h-0 flex-1 flex-col overflow-hidden">
+        <LeaderModeHeader
+          mode={mode}
+          onChangeMode={setMode}
+          onLogout={handleLogout}
+          onOpenHelp={() => setIsFlowHelpOpen(true)}
+          statusLabel={statusLabel}
+        />
 
-      <div className="relative z-10 flex min-h-0 flex-1 overflow-hidden">
-        <LeaderAmbientDecor />
-
+        <div className="relative flex min-h-0 flex-1 overflow-hidden">
         <LeaderWorkspaceSidebar
           mode={mode}
           currentStep={wizardStep}
@@ -456,15 +466,18 @@ const LeaderConsole: React.FC = () => {
         />
 
         <main className="relative z-10 flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
-          <div className="min-h-0 flex-1 overflow-y-auto">
+          <LeaderAmbientDecor />
+          <div className="relative z-10 min-h-0 flex-1 overflow-y-auto">
             <div className="mx-auto w-full max-w-[1400px] px-4 py-4 md:px-6 md:py-5">
               {mode === "analyze" && (
                 <div className="space-y-4 animate-[fadeInUp_400ms_ease-out]">
-                  <LeaderHero
-                    currentStep={wizardStep}
-                    onOpenHelp={() => setIsFlowHelpOpen(true)}
-                    onLoadExample={setExamplePreset}
-                  />
+                  {!analysisResult && (
+                    <LeaderHero
+                      currentStep={wizardStep}
+                      onOpenHelp={() => setIsFlowHelpOpen(true)}
+                      onLoadExample={setExamplePreset}
+                    />
+                  )}
 
                   {!analysisResult && (
                     <div className="relative">
@@ -530,6 +543,7 @@ const LeaderConsole: React.FC = () => {
             </div>
           </div>
         </main>
+        </div>
       </div>
 
       {isFlowHelpOpen && (

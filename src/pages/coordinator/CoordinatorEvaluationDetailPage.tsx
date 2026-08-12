@@ -6,10 +6,8 @@ import {
   CheckCircle2,
   XCircle,
   ChevronRight,
-  Loader2,
-  AlertTriangle,
-  Activity,
-  Sparkles,
+  MoreHorizontal,
+  History,
 } from "lucide-react";
 
 import { useAuth } from "../../context/AuthContext";
@@ -19,46 +17,13 @@ import { useEvaluationDetail } from "./hooks/useEvaluationDetail";
 import { getTeacherEvaluationById } from "../../services/teachersService";
 import { compareInterviewsWithGemini } from "../../services/geminiService";
 import { useTheme } from "../../context/ThemeContext";
+import { CoordinatorModeHeader } from "../../features/coordinator/components/CoordinatorModeHeader";
 import { EvaluationSummaryCard } from "./components/EvaluationSummaryCard";
 import { ProcessTimeline } from "./components/ProcessTimeline";
 import { CandidateDecisionPanel } from "./components/CandidateDecisionPanel";
 import { EvaluationComparisonPreview } from "./components/EvaluationComparisonPreview";
-import { CoordinatorDocumentsSection } from "./components/CoordinatorDocumentsSection";
+import { DecisionSupportSidebar } from "./components/DecisionSupportSidebar";
 import { buildTimelineEvents } from "./utils/coordinatorTimeline";
-
-// --- COMPONENTES UI DE ALTA GAMA ---
-
-const GlassCard = ({
-  children,
-  className = "",
-  glowing = false,
-}: {
-  children: React.ReactNode;
-  className?: string;
-  glowing?: boolean;
-}) => {
-  const { theme } = useTheme();
-  const isDark = theme === "dark";
-
-  return (
-    <div
-      className={`relative overflow-hidden rounded-2xl border backdrop-blur-xl transition-all duration-300
-      ${
-        glowing
-          ? isDark
-            ? "bg-[#0b232a]/82 border-[#579689]/20 shadow-[0_22px_60px_-45px_rgba(88,190,161,0.26)]"
-            : "bg-brand-50 border-brand-200 shadow-[0_18px_50px_rgba(16,185,129,0.20)]"
-          : isDark
-            ? "bg-[#091d22]/72 border-[#579689]/16 shadow-2xl"
-            : "bg-white border-slate-200 shadow-[0_18px_50px_rgba(15,23,42,0.10)]"
-      } ${className}`}
-    >
-      {children}
-    </div>
-  );
-};
-
-
 
 function StatusBadge({ status }: { status?: string }) {
   const s = (status ?? "").toUpperCase();
@@ -69,69 +34,70 @@ function StatusBadge({ status }: { status?: string }) {
 
   return (
     <div
-      className={`flex items-center gap-2 px-4 py-1.5 rounded-full border text-xs font-semibold backdrop-blur-md transition-all
-      ${
+      className={`inline-flex items-center gap-2 rounded-full border px-3.5 py-1.5 text-xs font-semibold ${
         isApproved
           ? isDark
-            ? "bg-brand-500/10 border-brand-500/25 text-brand-400 shadow-[0_0_15px_-3px_rgba(16,185,129,0.2)]"
-            : "bg-brand-50 border-brand-200 text-brand-700 shadow-[0_0_15px_-3px_rgba(16,185,129,0.25)]"
+            ? "border-emerald-400/30 bg-emerald-500/10 text-emerald-300"
+            : "border-emerald-200 bg-emerald-50 text-emerald-700"
           : isRejected
             ? isDark
-              ? "bg-rose-500/10 border-rose-500/20 text-rose-400 shadow-[0_0_15px_-3px_rgba(244,63,94,0.2)]"
-              : "bg-rose-50 border-rose-200 text-rose-700 shadow-[0_0_15px_-3px_rgba(244,63,94,0.25)]"
+              ? "border-rose-400/30 bg-rose-500/10 text-rose-300"
+              : "border-rose-200 bg-rose-50 text-rose-700"
             : isDark
-              ? "bg-white/5 border-white/10 text-slate-400"
-              : "bg-slate-100 border-slate-300 text-slate-700"
+              ? "border-white/10 bg-white/[0.04] text-slate-400"
+              : "border-slate-200 bg-slate-100 text-slate-600"
       }`}
     >
       {isApproved ? (
-        <CheckCircle2 className="w-3.5 h-3.5" />
+        <CheckCircle2 className="h-3.5 w-3.5" />
       ) : isRejected ? (
-        <XCircle className="w-3.5 h-3.5" />
+        <XCircle className="h-3.5 w-3.5" />
       ) : (
-        <div className="w-2 h-2 rounded-full bg-slate-500 animate-pulse" />
+        <span className="h-2 w-2 rounded-full bg-slate-400" />
       )}
       {isApproved ? "APROBADO" : isRejected ? "RECHAZADO" : "PENDIENTE"}
     </div>
   );
 }
 
-// Helper: tiempo seguro
 function toTimeMaybe(v: any) {
   const t = new Date(String(v ?? "")).getTime();
   return Number.isFinite(t) ? t : 0;
 }
-
-// --- PÁGINA PRINCIPAL ---
 
 export default function CoordinatorEvaluationDetailPage() {
   const navigate = useNavigate();
   const { evaluationId } = useParams<{ evaluationId: string }>();
   const id = evaluationId;
 
-  const { user } = useAuth();
+  const { user, logout } = useAuth();
   const actor = actorFromUser(user);
   const { theme } = useTheme();
   const isDark = theme === "dark";
 
   const evals = useCoordinatorEvaluations();
-  const [activeTab, setActiveTab] = useState<"details" | "interviews">(
-    "details",
-  );
+  const [showHistory, setShowHistory] = useState(false);
 
-  // ✅ Compute isAlreadyEvaluated BEFORE useEvaluationDetail (needs to be available at hook call)
+  const handleLogout = () => {
+    logout();
+    navigate("/login", { replace: true });
+  };
+
+  const handleChangeMode = (mode: "evaluations" | "users") => {
+    navigate("/coordinator", { state: { tab: mode } });
+  };
+
   const summaryForHook = useMemo(() => {
     if (!id) return null;
-    return (
-      evals.evaluations.find((e: any) => String(e?.id) === String(id)) ?? null
-    );
+    return evals.evaluations.find((e: any) => String(e?.id) === String(id)) ?? null;
   }, [evals.evaluations, id]);
 
   const coordinatorApiStatusForHook = String(
     summaryForHook?.coordinatorDecisionStatus ?? "",
   ).toUpperCase();
   const isAlreadyEvaluated =
-    coordinatorApiStatusForHook === "APPROVED" || coordinatorApiStatusForHook === "REJECTED";
+    coordinatorApiStatusForHook === "APPROVED" ||
+    coordinatorApiStatusForHook === "REJECTED";
 
   const detail = useEvaluationDetail({
     user,
@@ -151,8 +117,6 @@ export default function CoordinatorEvaluationDetailPage() {
   const selected = detail.selectedDetail;
   const analysis = selected?.analysis ?? null;
   const interview = selected?.interview ?? null;
-
-  // ✅ Reuse summaryForHook (already computed above)
   const summary = summaryForHook;
 
   const candidateName =
@@ -167,7 +131,6 @@ export default function CoordinatorEvaluationDetailPage() {
     return Number.isFinite(v) ? Math.round(v * 10) / 10 : 0;
   }, [analysis]);
 
-  // ✅ Reuse coordinatorApiStatusForHook from above
   const evaluatedVerdictLabel =
     coordinatorApiStatusForHook === "APPROVED"
       ? "APROBADO"
@@ -175,23 +138,24 @@ export default function CoordinatorEvaluationDetailPage() {
         ? "RECHAZADO"
         : "PENDIENTE";
 
-  const risk = useMemo(
-    () => String(analysis?.overallRiskLevel ?? ""),
-    [analysis],
-  );
-  const verdict = useMemo(
-    () => String(analysis?.finalVerdict ?? ""),
-    [analysis],
-  );
+  const risk = useMemo(() => String(analysis?.overallRiskLevel ?? ""), [analysis]);
+  const verdict = useMemo(() => String(analysis?.finalVerdict ?? ""), [analysis]);
   const executive = useMemo(
     () => String(analysis?.executiveSummary ?? ""),
+    [analysis],
+  );
+  const retention = useMemo(
+    () => String(analysis?.resignationRiskWindow ?? ""),
+    [analysis],
+  );
+  const mitigations = useMemo(
+    () => (Array.isArray(analysis?.mitigationRecommendations) ? analysis!.mitigationRecommendations : []),
     [analysis],
   );
 
   const loading = detail.loadingDetail;
   const canExport = !!analysis && !loading;
 
-  // Entrevistas del candidato (ordenadas desc por fecha)
   const interviewsSorted = useMemo(() => {
     const list = ((detail.candidateGroup as any)?.interviews ?? []) as any[];
     return [...list].sort(
@@ -201,11 +165,9 @@ export default function CoordinatorEvaluationDetailPage() {
     );
   }, [detail.candidateGroup]);
 
-  // Elegir pareja para comparar: (actual) + (más reciente diferente)
   const compareWithId = useMemo(() => {
     if (!id) return null;
     if (interviewsSorted.length < 2) return null;
-
     const other = interviewsSorted.find((ev) => String(ev?.id) !== String(id));
     return other?.id ? String(other.id) : null;
   }, [interviewsSorted, id]);
@@ -216,53 +178,25 @@ export default function CoordinatorEvaluationDetailPage() {
     );
   };
 
-  const goToCompare = () => {
-    if (!id || !compareWithId) return;
-    navigate(
-      `/coordinator/evaluations/${encodeURIComponent(String(id))}/report?compareWith=${encodeURIComponent(
-        String(compareWithId),
-      )}`,
-    );
-  };
-
-  // --- ✅ Comparación IA (inline) ---
   const [compareLoading, setCompareLoading] = useState(false);
   const [compareError, setCompareError] = useState("");
   const [comparison, setComparison] = useState<any>(null);
 
-  const canCompareInline = !!id && !!compareWithId;
-
   const runCompareInline = async () => {
     if (!id || !compareWithId) return;
-
     setCompareError("");
     setComparison(null);
     setCompareLoading(true);
-
     try {
-      // 1) Traer IA guardada de ambas entrevistas
       const [a, b] = await Promise.all([
         getTeacherEvaluationById(String(id)),
         getTeacherEvaluationById(String(compareWithId)),
       ]);
-
-      // Ajusta el nombre de la propiedad si tu backend usa otro
-      const aJson =
-        (a as any)?.aiRawJson ??
-        (a as any)?.aiResult ??
-        (a as any)?.ai_raw_json;
-      const bJson =
-        (b as any)?.aiRawJson ??
-        (b as any)?.aiResult ??
-        (b as any)?.ai_raw_json;
-
+      const aJson = (a as any)?.aiRawJson ?? (a as any)?.aiResult ?? (a as any)?.ai_raw_json;
+      const bJson = (b as any)?.aiRawJson ?? (b as any)?.aiResult ?? (b as any)?.ai_raw_json;
       if (!aJson || !bJson) {
-        throw new Error(
-          "Falta el reporte IA guardado en una de las entrevistas.",
-        );
+        throw new Error("Falta el reporte IA guardado en una de las entrevistas.");
       }
-
-      // 2) Comparar con Gemini
       const result = await compareInterviewsWithGemini({
         interviewA: aJson,
         interviewB: bJson,
@@ -276,7 +210,6 @@ export default function CoordinatorEvaluationDetailPage() {
           createdAtB: (b as any)?.createdAt ?? null,
         },
       });
-
       setComparison(result);
     } catch (e: any) {
       setCompareError(e?.message ?? "No se pudo comparar con IA.");
@@ -285,487 +218,217 @@ export default function CoordinatorEvaluationDetailPage() {
     }
   };
 
-  // Background sofisticado
-  const BackgroundEffects = () => (
-    <div className="fixed inset-0 pointer-events-none overflow-hidden -z-10 bg-[#061419]">
-      <div className="absolute top-[-20%] left-[-10%] w-[800px] h-[800px] bg-[#347c70]/[0.06] rounded-full blur-[120px] mix-blend-screen opacity-40" />
-      <div className="absolute bottom-[-10%] right-[-10%] w-[600px] h-[600px] bg-[#315b73]/[0.04] rounded-full blur-[100px] mix-blend-screen opacity-30" />
-    </div>
-  );
+  const shell = isDark
+    ? "border-white/[0.08] bg-[#0d252b]"
+    : "border-slate-200/80 bg-white shadow-[0_14px_36px_-28px_rgba(15,23,42,0.18)]";
 
   return (
     <div
-      className={`min-h-screen w-full font-sans selection:bg-brand-500/30 ${
+      className={`min-h-[100dvh] w-full overflow-x-hidden font-sans xl:fixed xl:inset-0 xl:flex xl:h-[100dvh] xl:min-h-0 xl:flex-col xl:overflow-hidden ${
         isDark ? "bg-[#061419] text-slate-200" : "bg-[#F4F7FB] text-slate-900"
       }`}
     >
-      {isDark && <BackgroundEffects />}
+      <CoordinatorModeHeader
+        mode="evaluations"
+        onChangeMode={handleChangeMode}
+        onLogout={handleLogout}
+        statusLabel={loading ? "Cargando..." : evaluatedVerdictLabel}
+      />
 
-      <div className="max-w-[1500px] mx-auto px-6 py-8 space-y-8">
-        {/* --- HEADER --- */}
-        <header className="flex flex-col md:flex-row md:items-center justify-between gap-6">
+      <main
+        className={`mx-auto flex w-full max-w-[1760px] flex-col gap-3 px-4 py-3 pb-4 md:px-6 md:py-3 md:pb-4 xl:min-h-0 xl:flex-1 ${
+          showHistory ? "xl:overflow-y-auto" : "xl:overflow-hidden"
+        }`}
+      >
+        {/* Subheader de detalle */}
+        <header className="flex shrink-0 items-center justify-between gap-3">
           <button
-            onClick={() => navigate("/coordinator")}
-            className={`group flex items-center gap-3 text-sm font-medium transition-colors pl-1 ${
+            type="button"
+            onClick={() => navigate("/coordinator", { state: { tab: "evaluations" } })}
+            className={`group inline-flex items-center gap-2.5 text-sm font-medium transition ${
               isDark
-                ? "text-slate-400 hover:text-brand-400"
-                : "text-slate-600 hover:text-brand-700"
+                ? "text-slate-400 hover:text-emerald-300"
+                : "text-slate-600 hover:text-emerald-700"
             }`}
           >
-            <div
-              className={`flex items-center justify-center w-8 h-8 rounded-xl border transition-all ${
+            <span
+              className={`flex h-8 w-8 items-center justify-center rounded-xl border transition ${
                 isDark
-                  ? "bg-white/[0.03] border-white/[0.06] group-hover:border-brand-500/25 group-hover:bg-brand-500/5"
-                  : "bg-white border-slate-200 group-hover:border-brand-300 group-hover:bg-brand-50 shadow-sm"
+                  ? "border-white/[0.08] bg-white/[0.03] group-hover:border-emerald-400/30"
+                  : "border-slate-200 bg-white group-hover:border-emerald-200"
               }`}
             >
-              <ArrowLeft className="w-4 h-4" />
-            </div>
-            <span className="tracking-wide">Volver a la Bandeja</span>
+              <ArrowLeft className="h-4 w-4" />
+            </span>
+            Volver a la bandeja
           </button>
 
-          <div className="flex items-center gap-4">
+          <div className="flex flex-wrap items-center gap-2.5">
             <StatusBadge
-              status={
-                (detail.decisionStatus as any) ?? (detail.decision as any)
-              }
+              status={(detail.decisionStatus as any) ?? (detail.decision as any)}
             />
-
-            <div
-              className={`h-6 w-px mx-1 hidden md:block ${
-                isDark ? "bg-white/10" : "bg-slate-200"
-              }`}
-            ></div>
-
             <button
+              type="button"
               onClick={detail.exportPdf}
               disabled={!canExport}
-              className={`flex items-center gap-2 px-5 py-2.5 rounded-xl border text-sm font-semibold transition-all shadow-lg
-                ${
-                  canExport
-                    ? isDark
-                      ? "bg-[#102a30] border-[#579689]/30 text-[#72c4ae] hover:bg-[#178b70] hover:text-white hover:border-transparent hover:shadow-[0_0_20px_rgba(88,190,161,0.22)]"
-                      : "bg-brand-500 border-brand-500 text-white hover:bg-brand-600 hover:shadow-[0_18px_40px_rgba(16,185,129,0.45)]"
-                    : isDark
-                      ? "bg-white/[0.02] border-white/5 text-white/10 cursor-not-allowed"
-                      : "bg-slate-100 border-slate-200 text-slate-400 cursor-not-allowed"
-                }`}
+              className={`inline-flex items-center gap-1.5 rounded-xl border px-3.5 py-2 text-xs font-semibold transition ${
+                canExport
+                  ? isDark
+                    ? "border-emerald-400/30 text-emerald-300 hover:bg-emerald-500/10"
+                    : "border-emerald-300 text-emerald-700 hover:bg-emerald-50"
+                  : isDark
+                    ? "cursor-not-allowed border-white/5 text-slate-600"
+                    : "cursor-not-allowed border-slate-200 text-slate-400"
+              }`}
             >
-              <FileText className="w-4 h-4" />
-              <span>Exportar Reporte</span>
+              <FileText className="h-3.5 w-3.5" />
+              Exportar reporte
+            </button>
+            <button
+              type="button"
+              onClick={() => setShowHistory((v) => !v)}
+              className={`inline-flex h-9 w-9 items-center justify-center rounded-xl border transition ${
+                isDark
+                  ? "border-white/[0.08] text-slate-400 hover:bg-white/[0.04] hover:text-white"
+                  : "border-slate-200 text-slate-500 hover:bg-slate-50 hover:text-slate-800"
+              }`}
+              title="Historial de entrevistas"
+            >
+              <MoreHorizontal className="h-4 w-4" />
             </button>
           </div>
         </header>
 
         {loading ? (
-          <div className="h-[60vh] flex flex-col items-center justify-center space-y-6">
-            <div className="relative w-16 h-16">
-              <div className="absolute inset-0 rounded-full border-2 border-brand-500/20"></div>
-              <div className="absolute inset-0 rounded-full border-t-2 border-brand-500 animate-spin"></div>
+          <div className="flex min-h-[calc(100dvh-11rem)] flex-col items-center justify-center gap-4">
+            <div className="relative h-12 w-12">
+              <div className="absolute inset-0 rounded-full border-2 border-emerald-500/20" />
+              <div className="absolute inset-0 animate-spin rounded-full border-t-2 border-emerald-500" />
             </div>
-            <p className="text-sm font-medium text-brand-500/50 animate-pulse tracking-widest uppercase">
-              Cargando Analisis...
+            <p className={`text-xs font-semibold uppercase tracking-[0.16em] ${isDark ? "text-emerald-400/70" : "text-emerald-700/70"}`}>
+              Cargando decisión...
             </p>
           </div>
         ) : !selected ? (
-          <div className="p-16 text-center rounded-[32px] border border-dashed border-white/10 bg-white/[0.02]">
-            <p className="text-slate-500">
-              No se encontró información disponible para esta evaluación.
-            </p>
+          <div
+            className={`rounded-2xl border border-dashed p-8 text-center ${
+              isDark ? "border-white/10 text-slate-500" : "border-slate-200 text-slate-500"
+            }`}
+          >
+            No se encontró información disponible para esta evaluación.
           </div>
-        ) : (
-          <div className="grid grid-cols-12 gap-8 items-start">
-            {/* --- COLUMNA IZQUIERDA --- */}
-            <div className="col-span-12 lg:col-span-7 space-y-6">
-              <EvaluationSummaryCard
-                candidateName={candidateName}
-                program={program}
-                school={school}
-                score={score}
-                risk={risk}
-                verdict={verdict}
-                coordinatorDecisionStatus={
-                  summary?.coordinatorDecisionStatus ?? null
-                }
-                adminDecisionStatus={summary?.adminDecisionStatus ?? null}
-              />
-
-              {/* Timeline del proceso */}
-              {summary && (
-                <div
-                  className={`rounded-2xl border p-5 ${
-                    isDark
-                      ? "bg-white/[0.02] border-white/10"
-                      : "bg-slate-50 border-slate-200"
-                  }`}
-                >
-                  <h3
-                    className={`text-xs font-bold uppercase tracking-widest mb-4 ${
-                      isDark ? "text-slate-400" : "text-slate-600"
-                    }`}
-                  >
-                    Trazabilidad del proceso
-                  </h3>
-                  <ProcessTimeline events={buildTimelineEvents(summary)} />
-                </div>
-              )}
-
-              {/* Documentos del candidato */}
-              {id && (
-                <div
-                  className={`rounded-2xl border p-5 ${
-                    isDark
-                      ? "bg-white/[0.02] border-white/10"
-                      : "bg-slate-50 border-slate-200"
-                  }`}
-                >
-                  <h3
-                    className={`text-xs font-bold uppercase tracking-widest mb-4 ${
-                      isDark ? "text-slate-400" : "text-slate-600"
-                    }`}
-                  >
-                    Soportes documentales
-                  </h3>
-                  <CoordinatorDocumentsSection evaluationId={id} />
-                </div>
-              )}
-
-              {/* Tabs de Detalle */}
-              <div className="pt-2">
-                <div
-                  className={`flex items-center gap-8 border-b mb-6 ${
-                    isDark ? "border-white/5" : "border-slate-200"
-                  }`}
-                >
-                  <button
-                    onClick={() => setActiveTab("details")}
-                    className={`pb-3 text-sm font-semibold tracking-wide transition-colors relative ${
-                      activeTab === "details"
-                        ? isDark
-                          ? "text-brand-400"
-                          : "text-brand-600"
-                        : isDark
-                          ? "text-slate-500 hover:text-slate-300"
-                          : "text-slate-500 hover:text-slate-700"
-                    }`}
-                  >
-                    Analisis Inteligente
-                    {activeTab === "details" && (
-                      <div
-                        className={`absolute bottom-0 left-0 w-full h-0.5 bg-brand-500 ${
-                          isDark
-                            ? "shadow-[0_0_12px_#10B981]"
-                            : "shadow-[0_0_8px_rgba(16,185,129,0.6)]"
-                        }`}
-                      />
-                    )}
-                  </button>
-
-                  <button
-                    onClick={() => setActiveTab("interviews")}
-                    className={`pb-3 text-sm font-semibold tracking-wide transition-colors relative ${
-                      activeTab === "interviews"
-                        ? isDark
-                          ? "text-brand-400"
-                          : "text-brand-600"
-                        : isDark
-                          ? "text-slate-500 hover:text-slate-300"
-                          : "text-slate-500 hover:text-slate-700"
-                    }`}
-                  >
-                    Historial Entrevistas
-                    {activeTab === "interviews" && (
-                      <div
-                        className={`absolute bottom-0 left-0 w-full h-0.5 bg-brand-500 ${
-                          isDark
-                            ? "shadow-[0_0_12px_#10B981]"
-                            : "shadow-[0_0_8px_rgba(16,185,129,0.6)]"
-                        }`}
-                      />
-                    )}
-                  </button>
-
-                  {/* ❌ QUITAMOS el botón de comparar de aquí */}
-                </div>
-
-                {activeTab === "details" && (
-                  <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
-                    <GlassCard className="p-8">
-                      <h3
-                        className={`text-lg font-bold mb-4 flex items-center gap-2 ${
-                          isDark ? "text-white" : "text-slate-900"
-                        }`}
-                      >
-                        <Activity
-                          className={`w-5 h-5 ${
-                            isDark ? "text-emerald-500" : "text-emerald-600"
-                          }`}
-                        />{" "}
-                        Veredicto del Sistema
-                      </h3>
-                      <div
-                        className={`rounded-xl p-6 border ${
-                          isDark
-                            ? "bg-[#07171c]/60 border-[#579689]/14"
-                            : "bg-slate-100 border-slate-200"
-                        }`}
-                      >
-                        <p
-                          className={`leading-7 text-[15px] ${
-                            isDark ? "text-slate-300" : "text-slate-700"
-                          }`}
-                        >
-                          {verdict || "Sin veredicto disponible."}
-                        </p>
-                      </div>
-                    </GlassCard>
-
-                    <GlassCard className="p-8">
-                      <h3
-                        className={`text-lg font-bold mb-4 ${
-                          isDark ? "text-white" : "text-slate-900"
-                        }`}
-                      >
-                        Resumen Ejecutivo
-                      </h3>
-                      <p
-                        className={`leading-7 text-sm whitespace-pre-wrap ${
-                          isDark ? "text-slate-400" : "text-slate-700"
-                        }`}
-                      >
-                        {executive || "Sin resumen ejecutivo disponible."}
-                      </p>
-                    </GlassCard>
-                  </div>
-                )}
-
-                {activeTab === "interviews" && (
-                  <div className="space-y-3 animate-in fade-in slide-in-from-right-4 duration-300">
-                    <EvaluationComparisonPreview
-                      interviewsCount={interviewsSorted.length}
-                      candidateName={candidateName}
-                      hasComparisonData={!!comparison}
-                      onCompare={runCompareInline}
-                      compareLoading={compareLoading}
-                      compareError={compareError}
-                    />
-
-                    {/* ✅ Error Premium (compacto) */}
-                    {compareError && (
-                      <div
-                        className={`rounded-2xl border px-4 py-3 flex items-start gap-3 ${
-                          isDark
-                            ? "border-rose-500/20 bg-rose-500/10"
-                            : "border-rose-200 bg-rose-50"
-                        }`}
-                      >
-                        <div
-                          className={`mt-0.5 w-9 h-9 rounded-xl border flex items-center justify-center ${
-                            isDark
-                              ? "bg-rose-500/10 border-rose-500/20"
-                              : "bg-white border-rose-200"
-                          }`}
-                        >
-                          <AlertTriangle
-                            className={`w-5 h-5 ${
-                              isDark ? "text-rose-300" : "text-rose-500"
-                            }`}
-                          />
-                        </div>
-                        <div className="min-w-0 flex-1">
-                          <div
-                            className={`text-[11px] font-black uppercase tracking-[0.18em] ${
-                              isDark ? "text-rose-200" : "text-rose-600"
-                            }`}
-                          >
-                            No se pudo generar la comparación IA
-                          </div>
-                          <div
-                            className={`mt-1 text-sm ${
-                              isDark ? "text-rose-100/80" : "text-rose-700"
-                            }`}
-                          >
-                            {compareError}
-                          </div>
-
-                          <div className="mt-3 flex items-center gap-2">
-                            <button
-                              type="button"
-                              onClick={runCompareInline}
-                              disabled={compareLoading}
-                              className={`inline-flex items-center gap-2 rounded-lg px-3 py-1.5 text-[11px] font-black uppercase tracking-wider border transition-all disabled:opacity-50 ${
-                                isDark
-                                  ? "border-rose-500/20 bg-rose-500/10 text-rose-200 hover:bg-rose-500/15"
-                                  : "border-rose-300 bg-rose-100 text-rose-700 hover:bg-rose-200"
-                              }`}
-                            >
-                              <Sparkles className="w-4 h-4" />
-                              Reintentar
-                            </button>
-
-                            <button
-                              type="button"
-                              onClick={() => setCompareError("")}
-                              className={`text-[11px] font-bold transition-colors ${
-                                isDark
-                                  ? "text-slate-400 hover:text-slate-200"
-                                  : "text-slate-500 hover:text-slate-700"
-                              }`}
-                            >
-                              Ocultar
-                            </button>
-                          </div>
-                        </div>
-                      </div>
-                    )}
-
-                    {/* ✅ Resultado Premium */}
-                    {comparison && (
-                      <GlassCard className="p-6" glowing>
-                        <div className="flex items-center justify-between gap-4">
-                          <div>
-                            <div className="text-[10px] font-black uppercase tracking-[0.22em] text-emerald-400">
-                              Resultado Comparativo IA
-                            </div>
-                            <div
-                              className={`mt-1 text-sm ${
-                                isDark ? "text-slate-300" : "text-slate-700"
-                              }`}
-                            >
-                              Diferencias clave y recomendación final.
-                            </div>
-                          </div>
-
-                          <button
-                            type="button"
-                            onClick={() => setComparison(null)}
-                            className={`px-3 py-1.5 rounded-lg text-[11px] font-black uppercase tracking-wider border transition-all ${
-                              isDark
-                                ? "border-white/10 bg-white/[0.02] text-slate-300 hover:bg-white/[0.04]"
-                                : "border-slate-200 bg-white text-slate-700 hover:bg-slate-50"
-                            }`}
-                          >
-                            Cerrar
-                          </button>
-                        </div>
-
-                        <div
-                          className={`mt-4 rounded-xl border p-5 ${
-                            isDark
-                              ? "border-[#579689]/16 bg-[#07171c]/55"
-                              : "border-slate-200 bg-slate-50"
-                          }`}
-                        >
-                          {typeof comparison?.executiveSummary === "string" ? (
-                            <p
-                              className={`text-sm whitespace-pre-wrap leading-7 ${
-                                isDark
-                                  ? "text-slate-200/90"
-                                  : "text-slate-800"
-                              }`}
-                            >
-                              {comparison.executiveSummary}
-                            </p>
-                          ) : (
-                            <pre className="text-xs text-slate-600 whitespace-pre-wrap break-words">
-                              {JSON.stringify(comparison, null, 2)}
-                            </pre>
-                          )}
-                        </div>
-                      </GlassCard>
-                    )}
-
-                    {/* --- Lista Entrevistas --- */}
-                    {interviewsSorted.map((ev: any) => {
-                      const evId = String(ev?.id ?? "");
-                      const dateStr = String(ev?.createdAt ?? "").slice(0, 10);
-
-                      return (
-                        <div
-                          key={evId}
-                          className={`group flex items-center justify-between p-5 rounded-2xl border transition-all
-                            ${
-                              isDark
-                                ? "bg-[#091d22] border-[#579689]/14 hover:border-[#58bea1]/30 hover:bg-[#102a30]"
-                                : "bg-white border-slate-200 hover:border-emerald-200 hover:bg-emerald-50/40 shadow-[0_10px_30px_rgba(15,23,42,0.08)]"
-                            }`}
-                        >
-                          {/* ✅ Click en el bloque: ir a REPORTE IA */}
-                          <button
-                            type="button"
-                            className="flex flex-1 items-center gap-4 text-left"
-                            onClick={() => goToReport(evId)}
-                            title="Abrir análisis IA"
-                          >
-                            <div
-                              className={`w-12 h-12 rounded-full flex items-center justify-center transition-all
-                                ${
-                                  isDark
-                                    ? "bg-[#151a20] text-slate-500 group-hover:text-emerald-400 group-hover:shadow-[0_0_15px_rgba(16,185,129,0.2)]"
-                                    : "bg-emerald-50 text-emerald-600 group-hover:bg-emerald-100"
-                                }`}
-                            >
-                              <FileText className="w-5 h-5" />
-                            </div>
-
-                            <div className="min-w-0">
-                              <div
-                                className={`font-semibold transition-colors truncate ${
-                                  isDark
-                                    ? "text-white group-hover:text-emerald-300"
-                                    : "text-slate-900 group-hover:text-emerald-700"
-                                }`}
-                              >
-                                {String(
-                                  ev?.candidate?.fullName ?? "Entrevista",
-                                )}
-                              </div>
-                              <div
-                                className={`text-xs mt-1 ${
-                                  isDark ? "text-slate-500" : "text-slate-500"
-                                }`}
-                              >
-                                {dateStr || "Fecha N/A"}
-                              </div>
-                            </div>
-                          </button>
-
-                          {/* ✅ Acciones rápidas */}
-                          <div className="flex items-center gap-2 ml-4">
-                            <div
-                              className={`h-8 w-8 rounded-full border flex items-center justify-center transition-all
-                                ${
-                                  isDark
-                                    ? "border-white/5 group-hover:bg-emerald-500 group-hover:text-black group-hover:border-transparent"
-                                    : "border-slate-200 bg-white text-slate-500 group-hover:bg-emerald-500 group-hover:text-white group-hover:border-emerald-500"
-                                }`}
-                            >
-                              <ChevronRight className="w-4 h-4" />
-                            </div>
-                          </div>
-                        </div>
-                      );
-                    })}
-
-                    {interviewsSorted.length === 0 && (
-                      <div
-                        className={`text-sm italic p-8 text-center border border-dashed rounded-2xl ${
-                          isDark
-                            ? "text-slate-500 border-white/10 bg-white/[0.01]"
-                            : "text-slate-500 border-slate-200 bg-slate-50"
-                        }`}
-                      >
-                        No hay historial disponible.
-                      </div>
-                    )}
-                  </div>
-                )}
-              </div>
+        ) : showHistory ? (
+          <section className={`rounded-2xl border p-4 ${shell}`}>
+            <div className="mb-3 flex items-center gap-2">
+              <History className={`h-4 w-4 ${isDark ? "text-emerald-400" : "text-emerald-600"}`} />
+              <h3 className={`text-sm font-bold ${isDark ? "text-white" : "text-slate-900"}`}>
+                Historial de entrevistas
+              </h3>
             </div>
 
-            {/* --- COLUMNA DERECHA --- */}
-            <div className="col-span-12 lg:col-span-5 relative">
-              <div className="sticky top-6">
+            <EvaluationComparisonPreview
+              interviewsCount={interviewsSorted.length}
+              candidateName={candidateName}
+              hasComparisonData={!!comparison}
+              onCompare={runCompareInline}
+              compareLoading={compareLoading}
+              compareError={compareError}
+            />
+
+            {comparison?.executiveSummary && (
+              <div
+                className={`mt-3 rounded-xl border p-3 text-sm leading-6 ${
+                  isDark
+                    ? "border-white/[0.08] bg-[#07171c]/70 text-slate-300"
+                    : "border-slate-200 bg-slate-50 text-slate-700"
+                }`}
+              >
+                {String(comparison.executiveSummary)}
+              </div>
+            )}
+
+            <div className="mt-3 space-y-2">
+              {interviewsSorted.map((ev: any) => {
+                const evId = String(ev?.id ?? "");
+                const dateStr = String(ev?.createdAt ?? "").slice(0, 10);
+                return (
+                  <button
+                    key={evId}
+                    type="button"
+                    onClick={() => goToReport(evId)}
+                    className={`flex w-full items-center justify-between rounded-xl border px-4 py-2.5 text-left transition ${
+                      isDark
+                        ? "border-white/[0.06] bg-[#07171c]/55 hover:border-emerald-400/20"
+                        : "border-slate-200 bg-slate-50 hover:border-emerald-200 hover:bg-white"
+                    }`}
+                  >
+                    <div>
+                      <p className={`text-sm font-semibold ${isDark ? "text-white" : "text-slate-900"}`}>
+                        {String(ev?.candidate?.fullName ?? candidateName)}
+                      </p>
+                      <p className={`text-[11px] ${isDark ? "text-slate-500" : "text-slate-400"}`}>
+                        {dateStr || "Fecha N/A"}
+                      </p>
+                    </div>
+                    <ChevronRight className={`h-4 w-4 ${isDark ? "text-slate-500" : "text-slate-400"}`} />
+                  </button>
+                );
+              })}
+              {interviewsSorted.length === 0 && (
+                <p className={`py-6 text-center text-sm ${isDark ? "text-slate-500" : "text-slate-400"}`}>
+                  No hay historial disponible.
+                </p>
+              )}
+            </div>
+          </section>
+        ) : (
+          <div className="pb-2">
+            <div className="grid grid-cols-1 items-start gap-4 xl:grid-cols-[minmax(360px,0.86fr)_minmax(0,1.3fr)]">
+              {/* Columna 1: perfil del candidato */}
+              <div className={`overflow-hidden rounded-2xl border xl:sticky xl:top-4 ${shell}`}>
+                <div className="p-4 md:p-5">
+                  <EvaluationSummaryCard
+                    candidateName={candidateName}
+                    program={program}
+                    school={school}
+                    score={score}
+                    risk={risk}
+                    verdict={verdict}
+                    executive={executive}
+                    retention={retention}
+                    age={interview?.age}
+                    documentNumber={interview?.documentNumber}
+                    coordinatorDecisionStatus={summary?.coordinatorDecisionStatus ?? null}
+                    adminDecisionStatus={summary?.adminDecisionStatus ?? null}
+                    compact
+                    flush
+                  />
+                </div>
+
+                {summary && (
+                  <section
+                    className={`border-t px-5 py-3 md:px-5 ${
+                      isDark ? "border-white/[0.06] bg-white/[0.015]" : "border-slate-100 bg-slate-50/50"
+                    }`}
+                  >
+                    <h3
+                      className={`mb-2.5 text-[11px] font-semibold uppercase tracking-[0.14em] ${
+                        isDark ? "text-slate-400" : "text-slate-500"
+                      }`}
+                    >
+                      Trazabilidad del proceso
+                    </h3>
+                    <ProcessTimeline
+                      events={buildTimelineEvents(summary)}
+                      orientation="horizontal"
+                      compact
+                    />
+                  </section>
+                )}
+              </div>
+
+              {/* Columna 2: decisión y soporte contextual */}
+              <div className="grid grid-cols-1 items-start gap-4 2xl:grid-cols-[minmax(430px,1.18fr)_minmax(300px,0.82fr)]">
                 <CandidateDecisionPanel
                   decision={detail.decision}
                   onApplyDecision={detail.applyDecision}
@@ -780,14 +443,31 @@ export default function CoordinatorEvaluationDetailPage() {
                   isAlreadyEvaluated={isAlreadyEvaluated}
                   evaluatedVerdictLabel={evaluatedVerdictLabel}
                   coordinatorDecisionAt={
-                    summary?.coordinatorDecidedAt ?? summary?.coordinatorDecisionAt ?? undefined
+                    summary?.coordinatorDecidedAt ??
+                    summary?.coordinatorDecisionAt ??
+                    undefined
                   }
+                  hideMissingBlock
+                  compact
+                />
+
+                <DecisionSupportSidebar
+                  evaluationId={id}
+                  missingReasons={detail.missingReasons}
+                  mitigations={mitigations}
+                  lastUpdated={
+                    summary?.coordinatorDecidedAt ??
+                    summary?.coordinatorDecisionAt ??
+                    summary?.createdAt ??
+                    null
+                  }
+                  compact
                 />
               </div>
             </div>
           </div>
         )}
-      </div>
+      </main>
     </div>
   );
 }

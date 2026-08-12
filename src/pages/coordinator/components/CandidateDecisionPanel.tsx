@@ -2,8 +2,7 @@ import React from "react";
 import {
   CheckCircle2,
   XCircle,
-  ArrowLeft,
-  Info,
+  ArrowRight,
   Edit3,
 } from "lucide-react";
 import { useTheme } from "../../../context/ThemeContext";
@@ -24,6 +23,10 @@ interface CandidateDecisionPanelProps {
   isAlreadyEvaluated: boolean;
   evaluatedVerdictLabel: string;
   coordinatorDecisionAt?: string;
+  hideMissingBlock?: boolean;
+  compact?: boolean;
+  /** Sin borde propio (cuando va dentro de un panel compuesto). */
+  embedded?: boolean;
 }
 
 export const CandidateDecisionPanel: React.FC<CandidateDecisionPanelProps> = ({
@@ -40,262 +43,241 @@ export const CandidateDecisionPanel: React.FC<CandidateDecisionPanelProps> = ({
   isAlreadyEvaluated,
   evaluatedVerdictLabel,
   coordinatorDecisionAt,
+  hideMissingBlock = false,
+  compact = false,
+  embedded = false,
 }) => {
   const { theme } = useTheme();
   const isDark = theme === "dark";
-
   const commentLen = (decisionComment ?? "").length;
 
-  const verdictColor = evaluatedVerdictLabel === "APROBADO"
-    ? isDark ? "text-emerald-400" : "text-emerald-700"
-    : isDark ? "text-rose-400" : "text-rose-700";
+  const isApprovedLabel = evaluatedVerdictLabel === "APROBADO";
+  const verdictColor = isApprovedLabel
+    ? isDark
+      ? "text-emerald-300"
+      : "text-emerald-700"
+    : isDark
+      ? "text-rose-300"
+      : "text-rose-700";
+  const verdictBg = isApprovedLabel
+    ? isDark
+      ? "bg-emerald-500/10 border-emerald-400/25"
+      : "bg-emerald-50 border-emerald-200"
+    : isDark
+      ? "bg-rose-500/10 border-rose-400/25"
+      : "bg-rose-50 border-rose-200";
 
-  const verdictBg = evaluatedVerdictLabel === "APROBADO"
-    ? isDark ? "bg-emerald-500/10 border-emerald-500/20" : "bg-emerald-50 border-emerald-200"
-    : isDark ? "bg-rose-500/10 border-rose-500/20" : "bg-rose-50 border-rose-200";
+  const card = isDark
+    ? "border-white/[0.08] bg-[#0d252b]"
+    : "border-slate-200/80 bg-white shadow-[0_14px_36px_-28px_rgba(15,23,42,0.22)]";
 
   return (
-    <div
-      className={`relative rounded-2xl p-[1px] shadow-2xl ${
-        isDark
-          ? "bg-gradient-to-b from-white/10 to-transparent"
-          : "bg-gradient-to-b from-brand-200/40 via-transparent to-transparent"
-      }`}
+    <section
+      className={
+        embedded
+          ? "flex flex-col"
+          : `flex flex-col overflow-hidden rounded-2xl border ${card}`
+      }
     >
       <div
-        className={`rounded-2xl overflow-hidden ${
-          isDark ? "bg-[#091d22]" : "bg-white"
+        className={`border-b px-4 py-4 md:px-5 ${
+          isDark ? "border-white/[0.06] bg-white/[0.02]" : "border-slate-100 bg-slate-50/80"
         }`}
       >
-        <div
-          className={`px-8 py-5 border-b ${
-            isDark
-              ? "bg-[#071a20] border-[#579689]/14"
-              : "bg-slate-50 border-slate-200"
-          }`}
-        >
-          <div className="flex items-center gap-3 mb-1">
-            {isAlreadyEvaluated ? (
-              <div className={`w-2.5 h-2.5 rounded-full ${isDark ? "bg-emerald-400" : "bg-emerald-500"}`} />
-            ) : (
-              <div className="relative flex h-2.5 w-2.5">
-                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-brand-400 opacity-75" />
-                <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-brand-500" />
-              </div>
-            )}
-            <h2
-              className={`text-sm font-bold tracking-tight ${
-                isDark ? "text-white" : "text-slate-900"
-              }`}
-            >
+        <div className="flex items-center justify-between gap-3">
+          <div className="flex min-w-0 items-center gap-2.5">
+            <span className={`h-2 w-2 shrink-0 rounded-full ${isDark ? "bg-emerald-400" : "bg-emerald-500"}`} />
+            <div className="min-w-0">
+            <h2 className={`truncate text-[15px] font-bold tracking-tight ${isDark ? "text-white" : "text-slate-900"}`}>
               {isAlreadyEvaluated ? "Decisión registrada" : "Decisión del coordinador"}
             </h2>
-          </div>
-          <p className={`text-[11px] font-medium ml-5 ${isDark ? "text-slate-500" : "text-slate-400"}`}>
-            {isAlreadyEvaluated
-              ? "Puedes modificar la decisión existente si es necesario."
-              : "Complete los pasos requeridos para finalizar."}
-          </p>
-        </div>
-
-        <div className="p-8 space-y-8">
-          {/* Estado actual */}
-          {isAlreadyEvaluated && (
-            <div className={`rounded-xl border p-4 ${verdictBg}`}>
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  {evaluatedVerdictLabel === "APROBADO" ? (
-                    <CheckCircle2 className={`w-4 h-4 ${verdictColor}`} />
-                  ) : (
-                    <XCircle className={`w-4 h-4 ${verdictColor}`} />
-                  )}
-                  <span className={`text-sm font-bold ${verdictColor}`}>
-                    {evaluatedVerdictLabel}
-                  </span>
-                </div>
-                <div className="flex items-center gap-1.5 text-[10px] text-slate-500">
-                  <Edit3 className="w-3 h-3" />
-                  <span>Modificable</span>
-                </div>
-              </div>
-              {coordinatorDecisionAt && (
-                <p className={`text-[11px] mt-2 ${isDark ? "text-slate-500" : "text-slate-400"}`}>
-                  Registrado: {String(coordinatorDecisionAt).slice(0, 19)}
-                </p>
-              )}
-            </div>
-          )}
-
-          {/* PASO 1 */}
-          <div className="space-y-4">
-            <div className="flex items-center justify-between">
-              <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">
-                1. Veredicto Humano
-              </span>
-              {decision !== "PENDIENTE" && (
-                <span
-                  className={`text-[9px] font-black px-2 py-0.5 rounded border tracking-wider ${
-                    isDark
-                      ? "text-emerald-400 bg-emerald-900/30 border-emerald-500/20"
-                      : "text-emerald-700 bg-emerald-50 border-emerald-200"
-                  }`}
-                >
-                  SELECCIONADO
-                </span>
-              )}
-            </div>
-
-            <div className="grid grid-cols-2 gap-4">
-              <button
-                type="button"
-                onClick={() => onApplyDecision("APROBADO")}
-                className={`relative group rounded-2xl border-2 transition-all duration-300 py-4 flex flex-col items-center justify-center gap-2 ${
-                  String(decision ?? "").includes("APROB")
-                    ? isDark
-                      ? "bg-[#062C1E] border-emerald-500 text-emerald-400 shadow-[0_0_30px_-5px_rgba(16,185,129,0.3)]"
-                      : "bg-emerald-50 border-emerald-500 text-emerald-700 shadow-[0_18px_40px_rgba(16,185,129,0.25)]"
-                    : isDark
-                      ? "bg-[#13181E] border-transparent text-slate-500 hover:border-emerald-500/30 hover:text-emerald-300 hover:bg-[#1A2026]"
-                      : "bg-white border-slate-200 text-slate-500 hover:border-emerald-200 hover:text-emerald-700 hover:bg-emerald-50"
-                }`}
-              >
-                <CheckCircle2
-                  className={`w-6 h-6 transition-transform ${
-                    String(decision ?? "").includes("APROB")
-                      ? "scale-110"
-                      : "group-hover:scale-110"
-                  }`}
-                />
-                <span className="text-xs font-bold uppercase tracking-wider">
-                  Aprobar
-                </span>
-              </button>
-
-              <button
-                type="button"
-                onClick={() => onApplyDecision("RECHAZADO")}
-                className={`relative group rounded-2xl border-2 transition-all duration-300 py-4 flex flex-col items-center justify-center gap-2 ${
-                  String(decision ?? "").includes("RECH")
-                    ? isDark
-                      ? "bg-[#2C0612] border-rose-500 text-rose-400 shadow-[0_0_30px_-5px_rgba(244,63,94,0.3)]"
-                      : "bg-rose-50 border-rose-500 text-rose-700 shadow-[0_18px_40px_rgba(244,63,94,0.25)]"
-                    : isDark
-                      ? "bg-[#13181E] border-transparent text-slate-500 hover:border-rose-500/30 hover:text-rose-300 hover:bg-[#1A2026]"
-                      : "bg-white border-slate-200 text-slate-500 hover:border-rose-200 hover:text-rose-700 hover:bg-rose-50"
-                }`}
-              >
-                <XCircle
-                  className={`w-6 h-6 transition-transform ${
-                    String(decision ?? "").includes("RECH")
-                      ? "scale-110"
-                      : "group-hover:scale-110"
-                  }`}
-                />
-                <span className="text-xs font-bold uppercase tracking-wider">
-                  Rechazar
-                </span>
-              </button>
-            </div>
-          </div>
-
-          {/* PASO 2 */}
-          <TechnicalCriteriaPanel
-            criteria={criteria}
-            setCriteria={setCriteria}
-          />
-
-          {/* PASO 3 */}
-          <div className="space-y-4">
-            <div className="flex items-center justify-between">
-              <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">
-                3. Nota Oficial
-              </span>
-            </div>
-
-            <div className="relative group">
-              <div className="absolute -inset-0.5 bg-gradient-to-r from-emerald-500 to-teal-500 rounded-2xl opacity-0 group-focus-within:opacity-20 transition duration-500" />
-              <textarea
-                value={decisionComment ?? ""}
-                onChange={(e) => setDecisionComment(e.target.value)}
-                placeholder="Escribe tu justificación profesional aquí... (Mínimo 30 caracteres)"
-                className={`relative block w-full h-36 rounded-xl p-4 text-sm resize-none transition-all focus:outline-none ${
-                  isDark
-                    ? "bg-[#0a2025] border border-[#579689]/16 text-slate-200 placeholder:text-slate-600 focus:bg-[#102a30]"
-                    : "bg-white border border-slate-200 text-slate-800 placeholder:text-slate-400 focus:bg-slate-50"
-                }`}
-              />
-              <div
-                className={`absolute bottom-3 right-3 text-[10px] font-mono transition-colors font-bold ${
-                  commentLen < 30
-                    ? "text-rose-500"
-                    : "text-emerald-500"
-                }`}
-              >
-                {commentLen} / 30
-              </div>
-            </div>
-          </div>
-
-          {/* Alertas */}
-          {!canSubmitDecision && missingReasons.length > 0 && (
-            <div
-              className={`rounded-xl border p-4 ${
-                isDark
-                  ? "bg-amber-900/10 border-amber-500/20"
-                  : "bg-amber-50 border-amber-200"
-              }`}
-            >
-              <div className="flex items-center gap-2 text-amber-500 mb-2">
-                <Info className="w-4 h-4" />
-                <span className="text-[10px] font-bold uppercase tracking-wider">
-                  Requisitos Pendientes
-                </span>
-              </div>
-              <ul className="space-y-1">
-                {missingReasons.map((r, i) => (
-                  <li
-                    key={i}
-                    className="text-xs text-amber-500/80 pl-1 border-l-2 border-amber-500/30"
-                  >
-                    {r}
-                  </li>
-                ))}
-              </ul>
-            </div>
-          )}
-
-          {/* BOTÓN */}
-          <div className="pt-2">
-            <button
-              type="button"
-              onClick={onSubmitDecision}
-              disabled={!canSubmitDecision || submittingDecision}
-              className={`w-full py-4 rounded-xl font-bold text-sm tracking-widest uppercase transition-all duration-300 flex items-center justify-center gap-3 group ${
-                canSubmitDecision
-                  ? "bg-gradient-to-r from-emerald-600 to-teal-600 text-white shadow-[0_0_30px_-5px_rgba(16,185,129,0.5)] hover:shadow-[0_0_40px_-5px_rgba(16,185,129,0.7)] hover:scale-[1.02]"
-                  : "bg-[#1A2026] text-slate-600 cursor-not-allowed border border-white/5"
-              }`}
-            >
-              {submittingDecision
-                ? "Enviando..."
-                : canSubmitDecision
-                  ? isAlreadyEvaluated
-                    ? "Actualizar decisión"
-                    : "Registrar decisión oficial"
-                  : "Formulario Incompleto"}
-              {canSubmitDecision && !submittingDecision && (
-                <ArrowLeft className="w-4 h-4 rotate-180 group-hover:translate-x-1 transition-transform" />
-              )}
-            </button>
-            <p className="text-center text-[10px] text-slate-600 mt-4">
+            <p className={`mt-0.5 text-[12px] ${isDark ? "text-slate-500" : "text-slate-400"}`}>
               {isAlreadyEvaluated
-                ? "Al actualizar se registrará una nueva versión de la decisión."
-                : "Esta acción es irreversible y se registrará en la Blockchain."}
+                ? "Puedes modificar la decisión existente si es necesario"
+                : "Completa los pasos para finalizar la evaluación"}
             </p>
+            </div>
           </div>
+          <span
+            className={`hidden shrink-0 rounded-full border px-2.5 py-1 text-[9px] font-bold uppercase tracking-[0.12em] sm:inline-flex ${
+              isDark
+                ? "border-emerald-400/20 bg-emerald-500/[0.08] text-emerald-300"
+                : "border-emerald-200 bg-emerald-50 text-emerald-700"
+            }`}
+          >
+            Revisión final
+          </span>
         </div>
       </div>
-    </div>
+
+      <div className={`flex flex-col ${compact ? "gap-4 p-4 md:p-5" : "gap-5 p-5"}`}>
+        {isAlreadyEvaluated && (
+          <div className={`rounded-xl border px-4 py-3 ${verdictBg}`}>
+            <div className="flex items-center justify-between gap-2">
+              <div className="flex items-center gap-2">
+                {isApprovedLabel ? (
+                  <CheckCircle2 className={`h-4 w-4 ${verdictColor}`} />
+                ) : (
+                  <XCircle className={`h-4 w-4 ${verdictColor}`} />
+                )}
+                <span className={`text-sm font-bold ${verdictColor}`}>{evaluatedVerdictLabel}</span>
+              </div>
+              <span className={`inline-flex items-center gap-1.5 text-[11px] ${isDark ? "text-slate-400" : "text-slate-500"}`}>
+                <Edit3 className="h-3.5 w-3.5" />
+                Modificable
+              </span>
+            </div>
+            {coordinatorDecisionAt && (
+              <p className={`mt-1.5 text-[11px] ${isDark ? "text-slate-500" : "text-slate-400"}`}>
+                Registrado ·{" "}
+                {new Date(coordinatorDecisionAt).toLocaleString("es-CO", {
+                  day: "2-digit",
+                  month: "short",
+                  year: "numeric",
+                  hour: "2-digit",
+                  minute: "2-digit",
+                })}
+              </p>
+            )}
+          </div>
+        )}
+
+        <div className="space-y-3">
+          <div className="flex items-center justify-between">
+            <span className={`text-[11px] font-semibold uppercase tracking-[0.14em] ${isDark ? "text-slate-500" : "text-slate-400"}`}>
+              1. Veredicto humano
+            </span>
+            {decision !== "PENDIENTE" && (
+              <span
+                className={`rounded-lg px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider ${
+                  isDark ? "bg-emerald-500/15 text-emerald-300" : "bg-emerald-50 text-emerald-700"
+                }`}
+              >
+                Seleccionado
+              </span>
+            )}
+          </div>
+
+          <div className="grid grid-cols-2 gap-3">
+            <button
+              type="button"
+              onClick={() => onApplyDecision("APROBADO")}
+              aria-pressed={String(decision ?? "").includes("APROB")}
+              className={`flex items-center justify-center gap-2 rounded-xl border px-3 font-bold transition-all ${compact ? "py-3" : "py-4"} ${
+                String(decision ?? "").includes("APROB")
+                  ? isDark
+                    ? "border-emerald-400 bg-emerald-500/15 text-emerald-300"
+                    : "border-emerald-500 bg-emerald-50 text-emerald-700"
+                  : isDark
+                    ? "border-white/[0.06] bg-[#07171c]/60 text-slate-400 hover:border-emerald-400/30"
+                    : "border-slate-200 bg-slate-50 text-slate-500 hover:border-emerald-200"
+              }`}
+            >
+              <CheckCircle2 className={compact ? "h-5 w-5" : "h-6 w-6"} />
+              <span className="text-[11px] font-bold uppercase tracking-wider">Aprobar</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => onApplyDecision("RECHAZADO")}
+              aria-pressed={String(decision ?? "").includes("RECH")}
+              className={`flex items-center justify-center gap-2 rounded-xl border px-3 font-bold transition-all ${compact ? "py-3" : "py-4"} ${
+                String(decision ?? "").includes("RECH")
+                  ? isDark
+                    ? "border-rose-400 bg-rose-500/15 text-rose-300"
+                    : "border-rose-500 bg-rose-50 text-rose-700"
+                  : isDark
+                    ? "border-white/[0.06] bg-[#07171c]/60 text-slate-400 hover:border-rose-400/30"
+                    : "border-slate-200 bg-slate-50 text-slate-500 hover:border-rose-200"
+              }`}
+            >
+              <XCircle className={compact ? "h-5 w-5" : "h-6 w-6"} />
+              <span className="text-[11px] font-bold uppercase tracking-wider">Rechazar</span>
+            </button>
+          </div>
+        </div>
+
+        <TechnicalCriteriaPanel criteria={criteria} setCriteria={setCriteria} compact={compact} />
+
+        <div className="space-y-3">
+          <span className={`text-[11px] font-semibold uppercase tracking-[0.14em] ${isDark ? "text-slate-500" : "text-slate-400"}`}>
+            3. Nota oficial
+          </span>
+          <div className="relative">
+            <textarea
+              value={decisionComment ?? ""}
+              onChange={(e) => setDecisionComment(e.target.value)}
+              placeholder="Escribe tu justificación profesional aquí..."
+              className={`block w-full resize-none rounded-xl border p-3.5 pb-7 text-sm outline-none transition ${compact ? "h-24" : "h-28"} ${
+                isDark
+                  ? "border-white/[0.08] bg-[#07171c] text-slate-200 placeholder:text-slate-600 focus:border-emerald-400/35"
+                  : "border-slate-200 bg-slate-50 text-slate-800 placeholder:text-slate-400 focus:border-emerald-400/50 focus:bg-white"
+              }`}
+            />
+            <div
+              className={`absolute bottom-2.5 right-3 text-[10px] font-bold tabular-nums ${
+                commentLen < 30
+                  ? isDark
+                    ? "text-rose-400"
+                    : "text-rose-500"
+                  : isDark
+                    ? "text-emerald-400"
+                    : "text-emerald-600"
+              }`}
+            >
+              {commentLen < 30 ? `${commentLen} / 30 mín.` : `${commentLen} ✓`}
+            </div>
+          </div>
+        </div>
+
+        {!hideMissingBlock && !canSubmitDecision && missingReasons.length > 0 && (
+          <div
+            className={`rounded-xl border p-3.5 ${
+              isDark ? "border-amber-400/20 bg-amber-500/[0.07]" : "border-amber-200 bg-amber-50"
+            }`}
+          >
+            <p className={`mb-1.5 text-[11px] font-bold uppercase tracking-wider ${isDark ? "text-amber-300" : "text-amber-700"}`}>
+              Requisitos pendientes
+            </p>
+            <ul className="space-y-1">
+              {missingReasons.map((r, i) => (
+                <li key={i} className={`text-[12px] ${isDark ? "text-amber-100/75" : "text-amber-800"}`}>
+                  · {r}
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
+      </div>
+
+      <div
+        className={`border-t ${compact ? "p-4" : "p-4 md:px-5"} ${
+          isDark ? "border-white/[0.06] bg-white/[0.015]" : "border-slate-100 bg-slate-50/40"
+        }`}
+      >
+        <button
+          type="button"
+          onClick={onSubmitDecision}
+          disabled={!canSubmitDecision || submittingDecision}
+          className={`flex w-full items-center justify-center gap-2 rounded-xl text-sm font-bold uppercase tracking-wider transition ${compact ? "py-3" : "py-3.5"} ${
+            canSubmitDecision
+              ? "bg-emerald-600 text-white hover:bg-emerald-500"
+              : isDark
+                ? "cursor-not-allowed border border-white/[0.06] bg-white/[0.04] text-slate-500"
+                : "cursor-not-allowed border border-slate-200 bg-slate-100 text-slate-400"
+          }`}
+        >
+          {submittingDecision
+            ? "Enviando..."
+            : canSubmitDecision
+              ? isAlreadyEvaluated
+                ? "Actualizar decisión"
+                : "Registrar decisión"
+              : "Formulario incompleto"}
+          {canSubmitDecision && !submittingDecision && <ArrowRight className="h-4 w-4" />}
+        </button>
+      </div>
+    </section>
   );
 };
 

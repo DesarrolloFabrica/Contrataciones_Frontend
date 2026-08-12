@@ -20,15 +20,16 @@ type Props = {
 
 function statusBadge(status: string, isDark: boolean) {
   const s = (status || "").toUpperCase();
-  const base = "inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-[11px] font-bold uppercase tracking-widest border";
+  const base =
+    "inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-[11px] font-bold uppercase tracking-widest border";
 
   if (s === "APPROVED" || s === "APROBADO") {
-    return `${base} ${isDark ? "border-emerald-500/30 bg-emerald-500/10 text-emerald-300" : "border-emerald-200 bg-emerald-50 text-emerald-700"}`;
+    return `${base} ${isDark ? "border-emerald-500/20 bg-emerald-500/10 text-emerald-300" : "border-emerald-200/80 bg-emerald-50 text-emerald-700"}`;
   }
   if (s === "REJECTED" || s === "RECHAZADO") {
-    return `${base} ${isDark ? "border-rose-500/30 bg-rose-500/10 text-rose-300" : "border-rose-200 bg-rose-50 text-rose-700"}`;
+    return `${base} ${isDark ? "border-rose-500/20 bg-rose-500/10 text-rose-300" : "border-rose-200/80 bg-rose-50 text-rose-700"}`;
   }
-  return `${base} ${isDark ? "border-white/10 bg-white/5 text-neutral-300" : "border-slate-200 bg-slate-50 text-slate-600"}`;
+  return `${base} ${isDark ? "border-white/[0.05] bg-white/[0.03] text-neutral-300" : "border-slate-200/70 bg-slate-50 text-slate-600"}`;
 }
 
 function statusIcon(status: string) {
@@ -82,22 +83,37 @@ export default function CoordinatorDecisionCard({
   const criteriaEntries = hasCriteria ? Object.entries(criteria) : [];
 
   return (
-    <div className={`rounded-2xl border overflow-hidden ${isDark ? "border-white/10 bg-white/[0.04]" : "border-slate-200 bg-white shadow-sm"}`}>
-      {/* Header */}
-      <div className={`px-5 py-3 border-b ${isDark ? "border-white/10 bg-white/[0.02]" : "border-slate-200 bg-slate-50"}`}>
+    <div
+      className={`overflow-hidden rounded-2xl border ${
+        isDark
+          ? "border-white/[0.05] bg-white/[0.03]"
+          : "border-slate-200/60 bg-white"
+      }`}
+    >
+      <div
+        className={`border-b px-5 py-3 ${
+          isDark ? "border-white/[0.05] bg-white/[0.02]" : "border-slate-100 bg-slate-50/80"
+        }`}
+      >
         <div className="flex items-center gap-2">
-          <div className={`w-7 h-7 rounded-lg flex items-center justify-center ${isDark ? "bg-brand-500/10" : "bg-brand-100"}`}>
-            <ShieldCheck className={`w-4 h-4 ${isDark ? "text-brand-400" : "text-brand-600"}`} />
+          <div
+            className={`flex h-7 w-7 items-center justify-center rounded-lg ${
+              isDark ? "bg-emerald-500/10" : "bg-emerald-50"
+            }`}
+          >
+            <ShieldCheck className={`h-4 w-4 ${isDark ? "text-emerald-400" : "text-emerald-600"}`} />
           </div>
-          <span className={`text-[10px] font-black uppercase tracking-[0.2em] ${isDark ? "text-brand-300" : "text-brand-700"}`}>
+          <span
+            className={`text-[10px] font-black uppercase tracking-[0.2em] ${
+              isDark ? "text-emerald-300/90" : "text-emerald-700"
+            }`}
+          >
             Decisión oficial del coordinador
           </span>
         </div>
       </div>
 
-      {/* Body */}
-      <div className="p-5 space-y-4">
-        {/* Status */}
+      <div className="space-y-4 p-5">
         <div className="flex items-center gap-3">
           <span className={statusBadge(status || "PENDING", isDark)}>
             {statusIcon(status || "PENDING")}
@@ -105,12 +121,17 @@ export default function CoordinatorDecisionCard({
           </span>
         </div>
 
-        {/* Coordinator info */}
-        <div className={`rounded-xl border p-3 ${isDark ? "border-[#579689]/18 bg-[#07171c]/60" : "border-slate-200 bg-slate-50"}`}>
+        <div
+          className={`rounded-xl border p-3 ${
+            isDark
+              ? "border-white/[0.04] bg-white/[0.025]"
+              : "border-slate-200/60 bg-slate-50/80"
+          }`}
+        >
           <div className="space-y-2 text-sm">
             {coordinatorName && (
               <div className="flex items-center gap-2">
-                <User className={`w-3.5 h-3.5 shrink-0 ${isDark ? "text-neutral-500" : "text-slate-400"}`} />
+                <User className={`h-3.5 w-3.5 shrink-0 ${isDark ? "text-neutral-500" : "text-slate-400"}`} />
                 <span className={isDark ? "text-white" : "text-slate-900"}>{coordinatorName}</span>
               </div>
             )}
@@ -121,7 +142,7 @@ export default function CoordinatorDecisionCard({
             )}
             {decidedAt && (
               <div className="flex items-center gap-2">
-                <Calendar className={`w-3.5 h-3.5 shrink-0 ${isDark ? "text-neutral-500" : "text-slate-400"}`} />
+                <Calendar className={`h-3.5 w-3.5 shrink-0 ${isDark ? "text-neutral-500" : "text-slate-400"}`} />
                 <span className={`text-xs ${isDark ? "text-neutral-400" : "text-slate-500"}`}>
                   {formatDate(decidedAt)}
                 </span>
@@ -130,16 +151,31 @@ export default function CoordinatorDecisionCard({
           </div>
         </div>
 
-        {/* Notes */}
         {notes && notes.trim() && (
           <div>
-            <p className={`text-[10px] uppercase tracking-[0.24em] font-bold mb-2 ${isDark ? "text-white/35" : "text-slate-500"}`}>
+            <p
+              className={`mb-2 text-[10px] font-bold uppercase tracking-[0.24em] ${
+                isDark ? "text-white/35" : "text-slate-500"
+              }`}
+            >
               Nota oficial
             </p>
-            <div className={`rounded-xl border p-3 ${isDark ? "border-[#579689]/18 bg-[#07171c]/60" : "border-slate-200 bg-slate-50"}`}>
+            <div
+              className={`rounded-xl border p-3 ${
+                isDark
+                  ? "border-white/[0.04] bg-white/[0.025]"
+                  : "border-slate-200/60 bg-slate-50/80"
+              }`}
+            >
               <div className="flex items-start gap-2">
-                <MessageSquare className={`w-3.5 h-3.5 shrink-0 mt-0.5 ${isDark ? "text-neutral-500" : "text-slate-400"}`} />
-                <p className={`text-sm whitespace-pre-wrap leading-relaxed ${isDark ? "text-white/80" : "text-slate-700"}`}>
+                <MessageSquare
+                  className={`mt-0.5 h-3.5 w-3.5 shrink-0 ${isDark ? "text-neutral-500" : "text-slate-400"}`}
+                />
+                <p
+                  className={`whitespace-pre-wrap text-sm leading-relaxed ${
+                    isDark ? "text-white/80" : "text-slate-700"
+                  }`}
+                >
                   {notes}
                 </p>
               </div>
@@ -147,10 +183,13 @@ export default function CoordinatorDecisionCard({
           </div>
         )}
 
-        {/* Criteria */}
         {hasCriteria && criteriaEntries.length > 0 && (
           <div>
-            <p className={`text-[10px] uppercase tracking-[0.24em] font-bold mb-2 ${isDark ? "text-white/35" : "text-slate-500"}`}>
+            <p
+              className={`mb-2 text-[10px] font-bold uppercase tracking-[0.24em] ${
+                isDark ? "text-white/35" : "text-slate-500"
+              }`}
+            >
               Criterios técnicos
             </p>
             <div className="grid grid-cols-2 gap-2">
@@ -163,17 +202,17 @@ export default function CoordinatorDecisionCard({
                     className={`flex items-center gap-2 rounded-xl border px-3 py-2 text-xs font-medium ${
                       ok
                         ? isDark
-                          ? "border-emerald-500/20 bg-emerald-500/5 text-emerald-300"
-                          : "border-emerald-200 bg-emerald-50 text-emerald-700"
+                          ? "border-emerald-500/15 bg-emerald-500/5 text-emerald-300"
+                          : "border-emerald-200/80 bg-emerald-50 text-emerald-700"
                         : isDark
-                          ? "border-white/10 bg-white/5 text-neutral-400"
-                          : "border-slate-200 bg-slate-50 text-slate-500"
+                          ? "border-white/[0.04] bg-white/[0.025] text-neutral-400"
+                          : "border-slate-200/60 bg-slate-50 text-slate-500"
                     }`}
                   >
                     {ok ? (
-                      <CheckCircle2 className="w-3.5 h-3.5 shrink-0" />
+                      <CheckCircle2 className="h-3.5 w-3.5 shrink-0" />
                     ) : (
-                      <XCircle className="w-3.5 h-3.5 shrink-0" />
+                      <XCircle className="h-3.5 w-3.5 shrink-0" />
                     )}
                     {label}
                   </div>
@@ -183,8 +222,7 @@ export default function CoordinatorDecisionCard({
           </div>
         )}
 
-        {/* Info footer */}
-        <div className={`pt-3 border-t ${isDark ? "border-white/5" : "border-slate-100"}`}>
+        <div className={`border-t pt-3 ${isDark ? "border-white/[0.04]" : "border-slate-100"}`}>
           <p className={`text-[11px] ${isDark ? "text-white/30" : "text-slate-400"}`}>
             Administración solo consulta esta decisión, sus criterios técnicos y la trazabilidad.
           </p>

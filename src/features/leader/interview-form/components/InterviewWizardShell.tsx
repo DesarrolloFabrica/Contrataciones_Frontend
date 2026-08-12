@@ -26,7 +26,7 @@ export const InterviewWizardShell: React.FC<InterviewWizardShellProps> = ({
         "relative flex w-full flex-col overflow-hidden rounded-2xl border",
         isDark
           ? "border-white/10 bg-gradient-to-b from-[#122226] via-[#0e1c20] to-[#0b171b] shadow-[0_24px_60px_-28px_rgba(0,0,0,0.75),inset_0_1px_0_rgba(255,255,255,0.06)]"
-          : "border-slate-200/90 bg-gradient-to-b from-white via-white to-slate-50 shadow-[0_18px_50px_-28px_rgba(15,23,42,0.28),inset_0_1px_0_rgba(255,255,255,1)]",
+          : "border-slate-200 bg-white shadow-[0_18px_50px_-28px_rgba(15,23,42,0.28)]",
       ].join(" ")}
     >
       <div

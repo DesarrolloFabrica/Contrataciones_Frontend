@@ -2,7 +2,6 @@
 import React, { useMemo, useState } from "react";
 import {
   AlertCircle,
-  CheckCircle2,
   Loader2,
   UserPlus,
   Users,
@@ -63,280 +62,200 @@ const CoordinatorUsersPanel: React.FC = () => {
     !users.error &&
     (users.users?.length ?? 0) === 0;
 
+  const recordCount = users.users?.length ?? 0;
+
   return (
-    <section className="space-y-6">
-      {/* HEADER HERO */}
-      <div className="relative overflow-hidden rounded-2xl border border-t-2 border-t-brand-500">
-        {isDark && (
-          <div className="absolute inset-0 pointer-events-none">
-            <div className="absolute -top-32 -right-16 w-[400px] h-[400px] rounded-full bg-gradient-to-br from-brand-500/8 via-brand-500/4 to-transparent blur-[100px]" />
-            <div className="absolute -bottom-24 -left-12 w-[300px] h-[300px] rounded-full bg-gradient-to-tr from-brand-500/5 to-transparent blur-[80px]" />
-          </div>
-        )}
-
+    <div className="relative w-full space-y-4 animate-in fade-in duration-300">
+      {/* Header — misma línea que historial del líder */}
+      <section
+        className={[
+          "relative overflow-hidden rounded-2xl border px-4 py-4 md:px-5",
+          isDark
+            ? "border-white/[0.08] bg-gradient-to-r from-[#0f1f23] via-[#0d1a1e] to-[#102226]"
+            : "border-slate-200/80 bg-white shadow-[0_12px_32px_-24px_rgba(15,23,42,0.2)]",
+        ].join(" ")}
+      >
         <div
-          className={`relative px-6 py-4 md:px-8 md:py-5 rounded-2xl ${
-            isDark
-              ? "bg-gradient-to-b from-[#0b232a]/92 via-[#091d22]/88 to-[#07171c] border-[#579689]/22 shadow-[0_22px_60px_-45px_rgba(88,190,161,0.28)]"
-              : "bg-gradient-to-b from-white via-slate-50/80 to-white border-brand-500/20 shadow-[0_12px_40px_-12px_rgba(15,23,42,0.06)]"
-          }`}
-        >
-          <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_auto] gap-5 lg:gap-6 items-center">
-            <div className="min-w-0 flex items-center gap-5">
-              <div
-                className="relative shrink-0 flex items-center justify-center overflow-visible pointer-events-none h-16 w-16"
-                aria-hidden
-              >
-                <div
-                  className={`absolute inset-0 rounded-full blur-xl ${
-                    isDark ? "bg-brand-500/20" : "bg-brand-500/15"
-                  }`}
-                />
-                <div
-                  className={`relative z-[1] flex h-12 w-12 items-center justify-center rounded-2xl border backdrop-blur-sm md:h-14 md:w-14 ${
-                    isDark
-                      ? "border-brand-400/25 bg-brand-500/10"
-                      : "border-brand-400/30 bg-brand-500/10"
-                  }`}
-                >
-                  <Users
-                    className={`h-6 w-6 md:h-7 md:w-7 ${
-                      isDark ? "text-brand-200" : "text-brand-700"
-                    }`}
-                  />
-                </div>
-              </div>
+          className={[
+            "pointer-events-none absolute -right-10 -top-12 h-36 w-36 rounded-full blur-3xl",
+            isDark ? "bg-emerald-500/12" : "bg-emerald-400/15",
+          ].join(" ")}
+        />
 
-              <div className="min-w-0 space-y-0.5">
-                <h2
-                  className={`text-xl md:text-2xl font-black leading-tight tracking-tight ${
-                    isDark ? "text-white" : "text-slate-900"
-                  }`}
-                >
-                  Lideres de{" "}
-                  <span className="bg-gradient-to-r from-brand-400 to-brand-400 bg-clip-text text-transparent">
-                    mi escuela
-                  </span>
-                </h2>
-                <p
-                  className={`text-sm max-w-xl leading-relaxed ${
-                    isDark ? "text-slate-400" : "text-slate-500"
-                  }`}
-                >
-                  Crea y gestiona los lideres de tu escuela. Acceden con Google
-                  <span className={`mx-1 font-semibold ${isDark ? "text-slate-300" : "text-slate-700"}`}>@cun.edu.co</span>
-                  una vez dados de alta.
-                </p>
-              </div>
+        <div className="relative flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex min-w-0 items-center gap-3">
+            <div
+              className={[
+                "flex h-11 w-11 shrink-0 items-center justify-center rounded-xl",
+                isDark
+                  ? "bg-emerald-500/15 text-emerald-300"
+                  : "bg-emerald-50 text-emerald-700",
+              ].join(" ")}
+            >
+              <Users className="h-5 w-5" />
             </div>
-
-            <div className="flex items-center gap-2">
-              <button
-                type="button"
-                onClick={openCreate}
-                disabled={!hasSchool}
-                title={!hasSchool ? "Tu usuario no tiene escuela asignada. Pide al administrador que la configure." : "Crear un nuevo lider"}
-                className={[
-                  "inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-[11px] font-bold uppercase tracking-[0.18em] border transition-all duration-200",
-                  hasSchool
-                    ? isDark
-                      ? "bg-gradient-to-r from-brand-500 to-brand-600 text-white border-brand-400/40 shadow-[0_8px_22px_rgba(16,185,129,0.30)] hover:from-brand-400 hover:to-brand-500 hover:shadow-[0_10px_28px_rgba(16,185,129,0.40)]"
-                      : "bg-gradient-to-r from-brand-500 to-brand-600 text-white border-brand-500 shadow-[0_8px_22px_rgba(16,185,129,0.30)] hover:from-brand-600 hover:to-brand-700 hover:shadow-[0_10px_28px_rgba(16,185,129,0.40)]"
-                    : isDark
-                      ? "border-white/10 bg-white/[0.03] text-white/30 cursor-not-allowed"
-                      : "border-slate-200 bg-slate-100 text-slate-400 cursor-not-allowed",
-                ].join(" ")}
-              >
-                <UserPlus className="w-4 h-4" />
-                Crear lider
-              </button>
+            <div className="min-w-0">
+              <h1 className={`text-xl font-bold tracking-tight md:text-2xl ${isDark ? "text-white" : "text-slate-900"}`}>
+                Lideres de{" "}
+                <span className={isDark ? "text-emerald-400" : "text-emerald-600"}>mi escuela</span>
+              </h1>
+              <p className={`text-sm ${isDark ? "text-slate-400" : "text-slate-500"}`}>
+                Crea y gestiona los lideres de tu escuela. Acceden con Google @cun.edu.co
+                {!users.loading && !users.error ? ` · ${recordCount} registro${recordCount === 1 ? "" : "s"}` : ""}
+              </p>
             </div>
           </div>
-        </div>
-      </div>
 
-      {/* WARNING IF NO SCHOOL */}
+          <button
+            type="button"
+            onClick={openCreate}
+            disabled={!hasSchool}
+            title={
+              !hasSchool
+                ? "Tu usuario no tiene escuela asignada. Pide al administrador que la configure."
+                : "Crear un nuevo lider"
+            }
+            className={[
+              "inline-flex shrink-0 items-center gap-2 rounded-xl px-4 py-2.5 text-xs font-semibold text-white transition",
+              hasSchool
+                ? "bg-emerald-600 shadow-[0_10px_24px_-12px_rgba(16,185,129,0.8)] hover:bg-emerald-500"
+                : isDark
+                  ? "cursor-not-allowed bg-white/5 text-white/30"
+                  : "cursor-not-allowed bg-slate-200 text-slate-400",
+            ].join(" ")}
+          >
+            <UserPlus className="h-4 w-4" />
+            Crear lider
+          </button>
+        </div>
+      </section>
+
       {!hasSchool && (
         <div
           className={[
-            "rounded-xl border px-5 py-4 flex items-start gap-3",
+            "flex items-start gap-3 rounded-xl border px-4 py-3",
             isDark
               ? "border-amber-500/25 bg-amber-500/10 text-amber-200"
               : "border-amber-200 bg-amber-50 text-amber-800",
           ].join(" ")}
         >
-          <AlertCircle className="w-4 h-4 mt-0.5 shrink-0" />
+          <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
           <div className="text-xs leading-relaxed">
-            <p className="font-bold mb-1">Sin escuela asignada</p>
+            <p className="mb-0.5 font-bold">Sin escuela asignada</p>
             <p>
-              Tu usuario coordinador no tiene una{" "}
-              <b>escuela asignada</b>. No podras crear lideres hasta que un
-              administrador configure tu escuela.
+              Tu usuario coordinador no tiene una <b>escuela asignada</b>. No podras crear lideres
+              hasta que un administrador configure tu escuela.
             </p>
           </div>
         </div>
       )}
 
-      {/* MAIN CARD: TABLE / LOADING / ERROR / EMPTY */}
-      <div
+      {/* Tabla — un solo card, sin rebordes internos extras */}
+      <section
         className={[
-          "rounded-2xl border border-t-2 border-t-brand-500 overflow-hidden",
+          "overflow-hidden rounded-2xl border",
           isDark
-            ? "bg-[#091d22]/82 border-[#579689]/22 backdrop-blur-xl shadow-[0_24px_80px_-70px_rgba(88,190,161,0.28)]"
-            : "bg-white border-brand-500/20 shadow-[0_18px_60px_rgba(15,23,42,0.08)]",
+            ? "border-white/[0.08] bg-[#0d252b]"
+            : "border-slate-200/80 bg-white shadow-[0_14px_36px_-24px_rgba(15,23,42,0.18)]",
         ].join(" ")}
       >
-        {/* TABLE HEADER STRIP */}
+        <div
+          className={`h-1 w-full ${
+            isDark
+              ? "bg-gradient-to-r from-emerald-500/70 via-teal-400/50 to-transparent"
+              : "bg-gradient-to-r from-emerald-500 via-emerald-400 to-teal-300"
+          }`}
+        />
+
         {!users.loading && !users.error && !showEmpty && (
           <div
             className={[
-              "px-5 md:px-6 py-3 border-b text-[10px] font-bold uppercase tracking-[0.16em] flex items-center justify-between",
+              "flex items-center justify-between border-b px-4 py-2.5 text-[11px] font-semibold uppercase tracking-[0.08em] md:px-5",
               isDark
-                ? "border-brand-500/20 bg-white/[0.02] text-slate-400"
-                : "border-brand-500/15 bg-brand-50/40 text-slate-500",
+                ? "border-white/10 bg-white/[0.03] text-slate-400"
+                : "border-slate-100 bg-slate-50 text-slate-500",
             ].join(" ")}
           >
             <div className="flex items-center gap-2">
-              <Users
-                className={`w-3.5 h-3.5 ${isDark ? "text-brand-400" : "text-brand-600"}`}
-              />
+              <Users className={`h-3.5 w-3.5 ${isDark ? "text-emerald-400" : "text-emerald-600"}`} />
               <span>Listado de lideres</span>
             </div>
             <span
-              className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
+              className={[
+                "rounded-full px-2 py-0.5 text-[10px] font-bold",
                 isDark
-                  ? "bg-brand-500/10 text-brand-300 border border-brand-500/20"
-                  : "bg-brand-50 text-brand-700 border border-brand-200"
-              }`}
+                  ? "bg-emerald-500/10 text-emerald-300"
+                  : "bg-emerald-50 text-emerald-700",
+              ].join(" ")}
             >
-              {users.users?.length ?? 0} registros
+              {recordCount} registros
             </span>
           </div>
         )}
 
         {users.loading && (
-          <div className="flex flex-col items-center justify-center py-20 gap-3">
-            <Loader2
-              className={`w-8 h-8 animate-spin ${
-                isDark ? "text-brand-400" : "text-brand-600"
-              }`}
-            />
-            <p
-              className={`text-sm font-medium ${
-                isDark ? "text-slate-400" : "text-slate-600"
-              }`}
-            >
-              Cargando lideres…
-            </p>
+          <div className={`flex flex-col items-center justify-center gap-3 py-16 ${isDark ? "text-slate-400" : "text-slate-500"}`}>
+            <Loader2 className="h-6 w-6 animate-spin text-emerald-500" />
+            <span className="text-sm">Cargando lideres...</span>
           </div>
         )}
 
         {!users.loading && users.error && (
-          <div
-            className={[
-              "flex flex-col items-center justify-center py-14 gap-3",
-              isDark ? "text-rose-300" : "text-rose-600",
-            ].join(" ")}
-          >
-            <div
-              className={[
-                "p-3 rounded-2xl border",
-                isDark
-                  ? "bg-rose-500/10 border-rose-500/20"
-                  : "bg-rose-50 border-rose-200",
-              ].join(" ")}
-            >
-              <AlertCircle className="w-7 h-7" />
+          <div className="flex flex-col items-center justify-center gap-3 px-4 py-14 text-center">
+            <div className={`rounded-xl p-3 ${isDark ? "bg-rose-500/10" : "bg-rose-50"}`}>
+              <AlertCircle className="h-6 w-6 text-rose-500" />
             </div>
-            <p className="text-sm text-center max-w-md font-medium">
-              {users.error}
-            </p>
-          </div>
-        )}
-
-        {!users.loading && !users.error && !showEmpty && (
-          <div className="p-2 md:p-3">
-            <AdminUsersTable
-              users={users.users}
-              onEdit={openEdit}
-              onToggleActive={users.toggleActive}
-            />
+            <p className={`text-sm ${isDark ? "text-slate-300" : "text-slate-600"}`}>{users.error}</p>
           </div>
         )}
 
         {showEmpty && (
-          <div className="flex flex-col items-center justify-center py-20 px-6 text-center">
+          <div className="flex flex-col items-center justify-center px-4 py-14 text-center">
             <div
               className={[
-                "relative h-16 w-16 rounded-2xl flex items-center justify-center mb-5",
+                "mb-4 flex h-14 w-14 items-center justify-center rounded-2xl border",
                 isDark
-                  ? "bg-brand-500/10 border border-brand-500/25"
-                  : "bg-brand-50 border border-brand-200",
+                  ? "border-white/10 bg-white/[0.04] text-slate-400"
+                  : "border-slate-200 bg-slate-50 text-slate-400",
               ].join(" ")}
             >
-              <Users
-                className={`h-7 w-7 ${isDark ? "text-brand-300" : "text-brand-600"}`}
-              />
+              <Users className="h-6 w-6" />
             </div>
-            <p
-              className={`text-sm font-bold mb-1 ${
-                isDark ? "text-white" : "text-slate-900"
-              }`}
-            >
+            <p className={`text-base font-semibold ${isDark ? "text-white" : "text-slate-900"}`}>
               Aun no hay lideres
             </p>
-            <p
-              className={`text-xs max-w-sm mb-5 ${
-                isDark ? "text-slate-400" : "text-slate-500"
-              }`}
-            >
-              Cuando un administrador te asigne una escuela, podras dar de alta
-              a los lideres que contratan y evaluan docentes.
+            <p className={`mt-1 max-w-sm text-sm ${isDark ? "text-slate-400" : "text-slate-500"}`}>
+              Cuando un administrador te asigne una escuela, podras dar de alta a los lideres que
+              contratan y evaluan docentes.
             </p>
             <button
               type="button"
               onClick={openCreate}
               disabled={!hasSchool}
               className={[
-                "inline-flex items-center gap-2 px-4 py-2 rounded-xl text-[11px] font-bold uppercase tracking-[0.18em] border transition-all duration-200",
+                "mt-4 inline-flex items-center gap-2 rounded-xl px-3.5 py-2 text-xs font-semibold transition",
                 hasSchool
-                  ? isDark
-                    ? "bg-gradient-to-r from-brand-500 to-brand-600 text-white border-brand-400/40 hover:from-brand-400 hover:to-brand-500"
-                    : "bg-gradient-to-r from-brand-500 to-brand-600 text-white border-brand-500 hover:from-brand-600 hover:to-brand-700"
+                  ? "bg-emerald-600 text-white shadow-[0_10px_24px_-12px_rgba(16,185,129,0.8)] hover:bg-emerald-500"
                   : isDark
-                    ? "border-white/10 bg-white/[0.03] text-white/30 cursor-not-allowed"
-                    : "border-slate-200 bg-slate-100 text-slate-400 cursor-not-allowed",
+                    ? "cursor-not-allowed border border-white/10 text-white/30"
+                    : "cursor-not-allowed border border-slate-200 text-slate-400",
               ].join(" ")}
             >
-              <UserPlus className="w-4 h-4" />
+              <UserPlus className="h-3.5 w-3.5" />
               Crear primer lider
             </button>
           </div>
         )}
-      </div>
 
-      {/* FOOTER INFO */}
-      {!showEmpty && !users.loading && !users.error && (
-        <div
-          className={[
-            "rounded-xl border px-4 py-3 flex items-start gap-3",
-            isDark
-              ? "border-brand-500/15 bg-brand-500/[0.04] text-slate-400"
-              : "border-brand-500/15 bg-brand-50/40 text-slate-600",
-          ].join(" ")}
-        >
-          <CheckCircle2
-            className={`w-4 h-4 mt-0.5 shrink-0 ${
-              isDark ? "text-brand-400" : "text-brand-600"
-            }`}
+        {!users.loading && !users.error && !showEmpty && (
+          <AdminUsersTable
+            users={users.users}
+            onEdit={openEdit}
+            onToggleActive={users.toggleActive}
+            variant="embedded"
           />
-          <p className="text-[11px] leading-relaxed">
-            Los lideres dados de alta aqui recibiran un correo para completar
-            su activacion con Google. La gestion de permisos y baja la realiza
-            un administrador.
-          </p>
-        </div>
-      )}
+        )}
+      </section>
 
       <AdminUserFormModal
         open={isCreateOpen}
@@ -344,7 +263,6 @@ const CoordinatorUsersPanel: React.FC = () => {
         forcedRole="LEADER"
         hideRoleSelect
         forcedSchoolId={coordinatorSchoolId}
-
         onCreate={async (dto) => {
           const res = await users.createLeader({
             name: dto.name,
@@ -357,13 +275,10 @@ const CoordinatorUsersPanel: React.FC = () => {
             throw new Error("No se pudo crear el líder.");
           }
         }}
-
         onUpdate={async () => {}}
-
         editingUser={editUser}
       />
-
-    </section>
+    </div>
   );
 };
 

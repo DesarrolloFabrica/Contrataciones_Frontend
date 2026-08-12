@@ -1,9 +1,15 @@
 // src/pages/coordinator/components/EvaluationsListPanel.tsx
 import React, { useEffect, useMemo, useState } from "react";
-import { FileText, Filter, Search, Lock } from "lucide-react";
+import {
+  ChevronLeft,
+  ChevronRight,
+  FileText,
+  Filter,
+  Lock,
+  Search,
+} from "lucide-react";
 import { useNavigate } from "react-router-dom";
 
-import TeacherEvaluationItem from "../../../components/TeacherEvaluationItem";
 import type { DecisionFilter, LocalDecision, CandidateGroup } from "../types";
 import { useTheme } from "../../../context/ThemeContext";
 
@@ -12,17 +18,12 @@ type ProgramOption = { id: string; name: string };
 const normalizeDecision = (value: unknown): LocalDecision => {
   const v = String(value ?? "").trim().toUpperCase();
 
-  // Backend EN
   if (v === "PENDING") return "PENDIENTE";
   if (v === "APPROVED") return "APROBADO";
   if (v === "REJECTED") return "RECHAZADO";
-
-  // ES
   if (v === "PENDIENTE") return "PENDIENTE";
   if (v === "APROBADO") return "APROBADO";
   if (v === "RECHAZADO") return "RECHAZADO";
-
-  // Fallback por contains
   if (v.includes("PEND")) return "PENDIENTE";
   if (v.includes("APROB")) return "APROBADO";
   if (v.includes("RECHAZ")) return "RECHAZADO";
@@ -38,10 +39,6 @@ const toTime = (d?: unknown) => {
 const norm = (v: any) => String(v ?? "").toLowerCase().trim();
 const normDoc = (v: any) => String(v ?? "").replace(/\D/g, "");
 
-/**
- * ✅ Paginación con máximo 5 números visibles
- * Retorna array de (number | "…") manteniendo <= maxNumbers números.
- */
 function buildPageItems(totalPages: number, current: number, maxNumbers = 5) {
   const clamp = (n: number) => Math.max(1, Math.min(totalPages, n));
   const cur = clamp(current);
@@ -50,14 +47,10 @@ function buildPageItems(totalPages: number, current: number, maxNumbers = 5) {
     return Array.from({ length: totalPages }, (_, i) => i + 1);
   }
 
-  // Siempre incluimos 1 y totalPages (cuentan como números)
-  // Dejamos (maxNumbers - 2) espacios para el "centro"
   const centerCount = maxNumbers - 2;
-
   let start = cur - Math.floor(centerCount / 2);
   let end = cur + Math.ceil(centerCount / 2) - 1;
 
-  // Ajustes para no salirnos del rango [2 .. totalPages-1]
   if (start < 2) {
     start = 2;
     end = start + centerCount - 1;
@@ -68,16 +61,54 @@ function buildPageItems(totalPages: number, current: number, maxNumbers = 5) {
   }
 
   const items: Array<number | "…"> = [1];
-
   if (start > 2) items.push("…");
-
   for (let p = start; p <= end; p++) items.push(p);
-
   if (end < totalPages - 1) items.push("…");
-
   items.push(totalPages);
-
   return items;
+}
+
+function getIaShort(verdict: string) {
+  const v = (verdict ?? "").toLowerCase();
+  if (
+    v.includes("no recomend") ||
+    v.includes("no se recomienda") ||
+    v.includes("rechaz") ||
+    v.includes("no apto") ||
+    v.includes("no es apto")
+  ) {
+    return { short: "No recomendado", tone: "rose" as const };
+  }
+  if (
+    v.includes("precauc") ||
+    v.includes("condicion") ||
+    v.includes("reserv") ||
+    v.includes("duda") ||
+    v.includes("riesgo medio")
+  ) {
+    return { short: "Con reservas", tone: "amber" as const };
+  }
+  if (v.includes("recomend") || v.includes("apto") || v.includes("idóneo")) {
+    const strong =
+      v.includes("fuerte") || v.includes("altamente") || v.includes("excepcional");
+    return {
+      short: strong ? "Fuerte" : "Recomendado",
+      tone: "brand" as const,
+    };
+  }
+  return { short: "Sin veredicto", tone: "slate" as const };
+}
+
+function pickScore(ev: any): number {
+  const n =
+    ev?.aiTeachingSuitabilityScore ??
+    ev?.aiGlobalScore ??
+    ev?.aiScore ??
+    ev?.analysis?.globalScore ??
+    ev?.score ??
+    0;
+  const num = Number(n);
+  return Number.isFinite(num) ? Math.max(0, Math.min(100, Math.round(num))) : 0;
 }
 
 type Props = {
@@ -124,7 +155,6 @@ const EvaluationsListPanel: React.FC<Props> = ({
   mustChooseScope,
 
   groupedCandidates,
-  selectedId,
   search,
   setSearch,
   decisionFilter,
@@ -138,15 +168,9 @@ const EvaluationsListPanel: React.FC<Props> = ({
   const { theme } = useTheme();
   const isDark = theme === "dark";
 
-  /**
-   * Estado del candidato:
-   * 1) si existe decisión local para alguna entrevista, toma la más reciente
-   * 2) si_toggle, toma la más reciente del backend
-   */
   const getCandidateDecision = (g: CandidateGroup): LocalDecision => {
     const interviews = Array.isArray(g.interviews) ? g.interviews : [];
 
-    // 1) Local
     const localWithTime = interviews
       .map((ev: any) => ({
         id: ev?.id,
@@ -158,7 +182,6 @@ const EvaluationsListPanel: React.FC<Props> = ({
 
     if (localWithTime.length > 0) return localWithTime[0].local as LocalDecision;
 
-    // 2) Backend (más reciente)
     const backendWithTime = interviews
       .map((ev: any) => {
         const raw =
@@ -166,7 +189,6 @@ const EvaluationsListPanel: React.FC<Props> = ({
           ev?.coordinatorDecision?.verdict ??
           ev?.coordinatorDecision ??
           null;
-
         return {
           t: Math.max(toTime(ev?.updatedAt), toTime(ev?.createdAt)),
           raw,
@@ -175,7 +197,6 @@ const EvaluationsListPanel: React.FC<Props> = ({
       .sort((a, b) => b.t - a.t);
 
     if (backendWithTime.length > 0) return normalizeDecision(backendWithTime[0].raw);
-
     return "PENDIENTE";
   };
 
@@ -186,12 +207,10 @@ const EvaluationsListPanel: React.FC<Props> = ({
     const qDoc = normDoc(search);
 
     return groupedCandidates.filter((g) => {
-      // 1) filtro por estado
       if (decisionFilter !== "ALL" && getCandidateDecision(g) !== decisionFilter) {
         return false;
       }
 
-      // 2) filtro por buscador
       if (!qText && !qDoc) return true;
 
       const name = norm(g.candidateName);
@@ -207,12 +226,7 @@ const EvaluationsListPanel: React.FC<Props> = ({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [mustChooseScope, groupedCandidates, decisionFilter, localDecisions, search]);
 
-  // -----------------------------
-  // ✅ Paginación FIX:
-  // - Máximo 5 resultados por página
-  // - Máximo 5 botones numéricos
-  // -----------------------------
-  const PAGE_SIZE = 5; // ✅ fijo: máximo 5 cards visibles
+  const PAGE_SIZE = 8;
   const [page, setPage] = useState(1);
 
   useEffect(() => {
@@ -229,7 +243,6 @@ const EvaluationsListPanel: React.FC<Props> = ({
   const total = mustChooseScope ? 0 : visibleGroups.length;
   const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
   const safePage = Math.min(page, totalPages);
-
   const start = (safePage - 1) * PAGE_SIZE;
   const end = Math.min(start + PAGE_SIZE, total);
 
@@ -243,122 +256,119 @@ const EvaluationsListPanel: React.FC<Props> = ({
     [totalPages, safePage]
   );
 
-  // -----------------------------
-  // ✅ PREMIUM UI TOKENS (local)
-  // -----------------------------
-  const shellClass = [
-    "relative overflow-hidden rounded-[28px] backdrop-blur-xl border-t-2 border-t-brand-500",
-    isDark
-      ? "border border-[#579689]/22 bg-[#091d22]/82 shadow-[0_24px_80px_-70px_rgba(88,190,161,0.28)]"
-      : "border border-brand-500/20 bg-white shadow-[0_18px_60px_rgba(15,23,42,0.08)]",
-  ].join(" ");
+  const fieldClass = (disabled: boolean) =>
+    [
+      "w-full appearance-none rounded-xl border px-3.5 py-3 text-sm font-medium outline-none transition-all duration-200",
+      disabled
+        ? isDark
+          ? "border-white/[0.05] bg-[#07171c] text-slate-600 cursor-not-allowed"
+          : "border-slate-200 bg-slate-100 text-slate-400 cursor-not-allowed"
+        : isDark
+          ? "border-white/[0.1] bg-[#07171c] text-slate-200 hover:border-white/[0.16] focus:border-emerald-400/40 focus:ring-1 focus:ring-emerald-400/25"
+          : "border-slate-200 bg-slate-50 text-slate-800 hover:bg-slate-100/80 focus:border-emerald-400/50 focus:bg-white focus:ring-1 focus:ring-emerald-500/30",
+    ].join(" ");
 
-  const shellAmbient = (
-    <>
-      {isDark && (
-        <>
-          <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_14%_0%,rgba(16,185,129,0.10),transparent_55%)]" />
-          <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_90%_16%,rgba(52,211,153,0.08),transparent_58%)]" />
-          <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(to_bottom,rgba(255,255,255,0.03),transparent_30%,rgba(255,255,255,0.01))]" />
-        </>
-      )}
-    </>
-  );
+  const decisionBadge = (d: LocalDecision) => {
+    if (d === "APROBADO") {
+      return isDark
+        ? "bg-emerald-500/15 text-emerald-300"
+        : "bg-emerald-50 text-emerald-700";
+    }
+    if (d === "RECHAZADO") {
+      return isDark ? "bg-rose-500/15 text-rose-300" : "bg-rose-50 text-rose-700";
+    }
+    return isDark ? "bg-amber-500/12 text-amber-300" : "bg-amber-50 text-amber-700";
+  };
+
+  const iaToneClass = (tone: "rose" | "amber" | "brand" | "slate") => {
+    if (tone === "rose") {
+      return isDark ? "text-rose-300" : "text-rose-600";
+    }
+    if (tone === "amber") {
+      return isDark ? "text-amber-300" : "text-amber-700";
+    }
+    if (tone === "brand") {
+      return isDark ? "text-emerald-300" : "text-emerald-700";
+    }
+    return isDark ? "text-slate-400" : "text-slate-500";
+  };
 
   const content = (
     <div
-      className={`relative flex flex-col rounded-[24px] border overflow-hidden ${
+      className={`relative flex h-full min-h-0 flex-col overflow-hidden rounded-2xl ${
         isDark
-          ? "border-[#579689]/14 bg-[#091d22] shadow-2xl"
-          : "border-slate-200 bg-white shadow-[0_18px_60px_rgba(15,23,42,0.04)]"
+          ? "border border-white/[0.08] bg-[#0d252b]"
+          : "border border-slate-200/80 bg-white shadow-[0_16px_40px_-28px_rgba(15,23,42,0.22)]"
       }`}
     >
-      {/* Ambient */}
       {isDark && (
-        <>
-          <div className="pointer-events-none absolute top-0 right-0 h-64 w-64 rounded-full bg-brand-500/5 blur-[80px]" />
-          <div className="pointer-events-none absolute bottom-0 left-0 h-64 w-64 rounded-full bg-brand-500/5 blur-[80px]" />
-          <div className="pointer-events-none absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-[0.03]" />
-        </>
+        <div className="pointer-events-none absolute top-0 right-0 h-56 w-56 rounded-full bg-brand-500/5 blur-[90px]" />
       )}
 
-      <div className="relative p-6 md:p-8 flex flex-col">
-        {/* Header (Standalone) */}
-        {variant === "standalone" && (
-          <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-6 mb-8">
-            <div className="flex gap-4">
-              <div
-                className={`shrink-0 grid h-14 w-14 place-items-center rounded-2xl border transition-all duration-300 ${
-                  isDark
-                    ? "border-brand-500/25 bg-gradient-to-br from-brand-500/15 to-brand-500/5 shadow-[0_0_20px_rgba(52,211,153,0.1)]"
-                    : "border-brand-200 bg-gradient-to-br from-brand-50 to-brand-100/50 shadow-sm"
-                }`}
-              >
-                <FileText
-                  className={`w-6 h-6 ${
-                    isDark ? "text-brand-400" : "text-brand-600"
-                  }`}
-                />
-              </div>
-              <div>
-                <h3
-                  className={`text-2xl font-bold tracking-tight ${
-                    isDark ? "text-white" : "text-slate-900"
-                  }`}
-                >
-                  Bandeja de candidatos
-                </h3>
-                <p
-                  className={`mt-1.5 text-sm ${
-                    isDark ? "text-slate-400" : "text-slate-500"
-                  }`}
-                >
-                  Gestion y consulta de evaluaciones docentes.
-                </p>
-              </div>
-            </div>
-
-            <button
-              type="button"
-              className={`inline-flex items-center gap-2 rounded-full border px-4 py-2 text-xs font-semibold transition-all duration-300 cursor-pointer ${
+      <div className="relative flex min-h-0 flex-1 flex-col p-5 md:p-6">
+        {/* Header */}
+        <div className="mb-5 flex shrink-0 flex-col gap-3 md:flex-row md:items-center md:justify-between">
+          <div className="flex items-center gap-3">
+            <div
+              className={`relative grid h-10 w-10 shrink-0 place-items-center rounded-xl ${
                 isDark
-                  ? "border-white/10 bg-white/5 text-slate-300 hover:bg-white/10 hover:text-white hover:border-white/20 hover:shadow-[0_0_15px_rgba(255,255,255,0.05)]"
-                  : "border-slate-200 bg-slate-50 text-slate-600 hover:bg-slate-100 hover:text-slate-900 hover:border-slate-300 shadow-sm"
+                  ? "bg-gradient-to-br from-emerald-400/18 via-teal-400/10 to-transparent text-emerald-300 shadow-[0_0_12px_-6px_rgba(52,211,153,0.35)] ring-1 ring-emerald-400/20"
+                  : "bg-gradient-to-br from-emerald-100 to-teal-50 text-emerald-700 ring-1 ring-emerald-200/80"
               }`}
             >
-              <Filter className="w-3.5 h-3.5" />
-              <span>Filtros avanzados</span>
-            </button>
+              {isDark && (
+                <span
+                  aria-hidden
+                  className="pointer-events-none absolute inset-0 rounded-xl bg-[radial-gradient(circle_at_30%_25%,rgba(52,211,153,0.14),transparent_70%)]"
+                />
+              )}
+              <FileText className="relative h-[18px] w-[18px]" strokeWidth={2} />
+            </div>
+            <div>
+              <h3
+                className={`text-lg font-bold tracking-tight ${
+                  isDark ? "text-white" : "text-slate-900"
+                }`}
+              >
+                Bandeja de candidatos
+              </h3>
+              <p className={`text-xs ${isDark ? "text-slate-400" : "text-slate-500"}`}>
+                Gestión y consulta de evaluaciones docentes
+                {!mustChooseScope && total > 0 ? ` · ${total} resultado${total === 1 ? "" : "s"}` : ""}
+              </p>
+            </div>
           </div>
-        )}
 
-        {/* Scope Filters */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-5 mb-6">
-          {/* Escuela */}
-          <div className="space-y-2 group">
+          <button
+            type="button"
+            className={`inline-flex items-center justify-center gap-2 rounded-xl border px-3.5 py-2 text-xs font-semibold transition-colors ${
+              isDark
+                ? "border-white/[0.1] bg-white/[0.04] text-slate-300 hover:border-white/[0.16] hover:bg-white/[0.08] hover:text-white"
+                : "border-slate-200 bg-slate-100 text-slate-600 hover:bg-slate-200 hover:text-slate-900"
+            }`}
+          >
+            <Filter className="h-3.5 w-3.5" />
+            <span>Filtros avanzados</span>
+          </button>
+        </div>
+
+        {/* Scope filters */}
+        <div className="mb-4 grid shrink-0 grid-cols-1 gap-3 md:grid-cols-2">
+          <div className="space-y-1.5">
             <label
-              className={`text-[10px] font-bold uppercase tracking-widest flex items-center gap-2 transition-colors group-focus-within:text-brand-500 ${
-                isDark ? "text-slate-500" : "text-slate-600"
+              className={`flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-widest ${
+                isDark ? "text-slate-500" : "text-slate-500"
               }`}
             >
               Escuela / Coordinación
-              {lockedSchool && <Lock className="w-3 h-3 text-brand-500" />}
+              {lockedSchool && <Lock className="h-3 w-3 text-emerald-500" />}
             </label>
-
             <div className="relative">
               <select
                 value={schoolFilter}
                 onChange={(e) => setSchoolFilter(e.target.value)}
                 disabled={!!lockedSchool}
-                className={`w-full appearance-none rounded-2xl border px-4 py-3.5 text-sm font-medium outline-none transition-all duration-300 ${
-                  isDark
-                    ? lockedSchool
-                      ? "bg-[#07171c]/55 border-[#579689]/12 text-slate-500 cursor-not-allowed"
-                      : "bg-[#0a2025]/85 border-[#579689]/18 text-slate-200 hover:border-[#579689]/35 focus:border-[#58bea1]/50 focus:bg-[#102a30] focus:shadow-[0_0_15px_rgba(88,190,161,0.08)]"
-                    : lockedSchool
-                      ? "bg-slate-100 border-slate-200 text-slate-400 cursor-not-allowed"
-                      : "bg-white border-slate-200 text-slate-800 hover:border-brand-300 focus:border-brand-500/70 focus:shadow-[0_8px_25px_-5px_rgba(16,185,129,0.12)] shadow-sm"
-                }`}
+                className={fieldClass(!!lockedSchool)}
               >
                 <option value="">Selecciona una escuela…</option>
                 {schoolOptions.map((s) => (
@@ -368,60 +378,36 @@ const EvaluationsListPanel: React.FC<Props> = ({
                 ))}
               </select>
               <div
-                className={`pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 ${
+                className={`pointer-events-none absolute right-3.5 top-1/2 -translate-y-1/2 ${
                   isDark ? "text-slate-500" : "text-slate-400"
                 }`}
               >
-                <svg
-                  width="10"
-                  height="6"
-                  viewBox="0 0 10 6"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="1.5"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                >
+                <svg width="10" height="6" viewBox="0 0 10 6" fill="none" stroke="currentColor" strokeWidth="1.5">
                   <path d="M1 1L5 5L9 1" />
                 </svg>
               </div>
             </div>
-
             {schoolHint && (
-              <p
-                className={`text-[11px] pl-1 ${
-                  isDark ? "text-brand-400/80" : "text-brand-700"
-                }`}
-              >
+              <p className={`pl-0.5 text-[11px] ${isDark ? "text-emerald-400/80" : "text-emerald-700"}`}>
                 {schoolHint}
               </p>
             )}
           </div>
 
-          {/* Programa */}
-          <div className="space-y-2 group">
+          <div className="space-y-1.5">
             <label
-              className={`text-[10px] font-bold uppercase tracking-widest transition-colors group-focus-within:text-brand-500 ${
-                isDark ? "text-slate-500" : "text-slate-600"
+              className={`text-[10px] font-bold uppercase tracking-widest ${
+                isDark ? "text-slate-500" : "text-slate-500"
               }`}
             >
-              Programa Académico
+              Programa académico
             </label>
-
             <div className="relative">
               <select
                 value={programFilter}
                 onChange={(e) => setProgramFilter(e.target.value)}
                 disabled={!schoolFilter}
-                className={`w-full appearance-none rounded-2xl border px-4 py-3.5 text-sm font-medium outline-none transition-all duration-300 ${
-                  isDark
-                    ? !schoolFilter
-                      ? "bg-[#07171c]/55 border-[#579689]/12 text-slate-600 cursor-not-allowed"
-                      : "bg-[#0a2025]/85 border-[#579689]/18 text-slate-200 hover:border-[#579689]/35 focus:border-[#58bea1]/50 focus:bg-[#102a30] focus:shadow-[0_0_15px_rgba(88,190,161,0.08)]"
-                    : !schoolFilter
-                      ? "bg-slate-100 border-slate-200 text-slate-400 cursor-not-allowed"
-                      : "bg-white border-slate-200 text-slate-800 hover:border-brand-300 focus:border-brand-500/70 focus:shadow-[0_8px_25px_-5px_rgba(16,185,129,0.12)] shadow-sm"
-                }`}
+                className={fieldClass(!schoolFilter)}
               >
                 <option value="">
                   {schoolFilter ? "Selecciona un programa…" : "Primero elige escuela…"}
@@ -433,20 +419,11 @@ const EvaluationsListPanel: React.FC<Props> = ({
                 ))}
               </select>
               <div
-                className={`pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 ${
+                className={`pointer-events-none absolute right-3.5 top-1/2 -translate-y-1/2 ${
                   isDark ? "text-slate-500" : "text-slate-400"
                 }`}
               >
-                <svg
-                  width="10"
-                  height="6"
-                  viewBox="0 0 10 6"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="1.5"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                >
+                <svg width="10" height="6" viewBox="0 0 10 6" fill="none" stroke="currentColor" strokeWidth="1.5">
                   <path d="M1 1L5 5L9 1" />
                 </svg>
               </div>
@@ -454,26 +431,34 @@ const EvaluationsListPanel: React.FC<Props> = ({
           </div>
 
           {mustChooseScope && (
-            <div className="md:col-span-2 rounded-2xl border border-amber-500/15 bg-amber-500/[0.03] px-5 py-4 flex items-center gap-4">
-              <div className="h-2 w-2 rounded-full bg-amber-500 animate-pulse" />
-              <p className={`text-xs ${isDark ? "text-amber-200/70" : "text-amber-800/80"}`}>
-                Para ver el historial, es necesario seleccionar{" "}
-                <b className={isDark ? "text-amber-100" : "text-amber-900"}>Escuela</b> y{" "}
-                <b className={isDark ? "text-amber-100" : "text-amber-900"}>Programa</b>.
+            <div
+              className={`md:col-span-2 flex items-center gap-3 rounded-xl border px-4 py-3 ${
+                isDark
+                  ? "border-amber-400/20 bg-amber-500/[0.08]"
+                  : "border-amber-200/80 bg-amber-50"
+              }`}
+            >
+              <div className="h-1.5 w-1.5 shrink-0 rounded-full bg-amber-500" />
+              <p className={`text-xs ${isDark ? "text-amber-200/80" : "text-amber-800/90"}`}>
+                Para ver el historial, selecciona{" "}
+                <span className={isDark ? "font-semibold text-amber-100" : "font-semibold text-amber-900"}>
+                  Escuela
+                </span>{" "}
+                y{" "}
+                <span className={isDark ? "font-semibold text-amber-100" : "font-semibold text-amber-900"}>
+                  Programa
+                </span>
+                .
               </p>
             </div>
           )}
         </div>
 
-        {/* Search & Status */}
-        <div
-          className={`flex flex-col gap-5 mb-8 pb-8 border-b ${
-            isDark ? "border-white/10" : "border-slate-200/60"
-          }`}
-        >
-          <div className="relative group">
+        {/* Search + status */}
+        <div className="mb-5 flex shrink-0 flex-col gap-3.5">
+          <div className="relative">
             <Search
-              className={`w-5 h-5 absolute left-4 top-1/2 -translate-y-1/2 transition-colors group-focus-within:text-brand-400 ${
+              className={`absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 ${
                 isDark ? "text-slate-500" : "text-slate-400"
               }`}
             />
@@ -481,274 +466,282 @@ const EvaluationsListPanel: React.FC<Props> = ({
               type="text"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              placeholder="Buscar candidato por nombre, escuela o programa..."
+              placeholder="Buscar por nombre, escuela o programa…"
               disabled={mustChooseScope}
-              className={`w-full rounded-2xl border pl-12 pr-4 py-3.5 text-sm outline-none transition-all duration-300 ${
-                isDark
-                  ? mustChooseScope
-                    ? "bg-[#07171c]/65 border-[#579689]/12 text-slate-600 cursor-not-allowed"
-                    : "bg-[#0a2025]/85 border-[#579689]/18 text-white placeholder-slate-500 hover:border-[#579689]/35 focus:border-[#58bea1]/50 focus:bg-[#102a30] focus:shadow-[0_0_15px_rgba(88,190,161,0.1)]"
-                  : mustChooseScope
-                    ? "bg-slate-100 border-slate-200 text-slate-400 cursor-not-allowed"
-                    : "bg-white border-slate-200 text-slate-800 placeholder-slate-400 hover:border-brand-300 focus:border-brand-500/70 focus:shadow-[0_8px_25px_-5px_rgba(16,185,129,0.15)] shadow-sm"
+              className={`w-full rounded-xl border py-3 pl-11 pr-4 text-sm outline-none transition-all duration-200 ${
+                mustChooseScope
+                  ? isDark
+                    ? "cursor-not-allowed border-white/[0.05] bg-[#07171c] text-slate-600"
+                    : "cursor-not-allowed border-slate-200 bg-slate-100 text-slate-400"
+                  : isDark
+                    ? "border-white/[0.1] bg-[#07171c] text-white placeholder-slate-500 hover:border-white/[0.16] focus:border-emerald-400/40 focus:ring-1 focus:ring-emerald-400/25"
+                    : "border-slate-200 bg-slate-50 text-slate-800 placeholder-slate-400 hover:bg-slate-100/80 focus:border-emerald-400/50 focus:bg-white focus:ring-1 focus:ring-emerald-500/30"
               }`}
             />
           </div>
 
-          <div className="flex items-center gap-3 overflow-x-auto pb-1 scrollbar-hide">
+          <div className="flex items-center gap-2 overflow-x-auto pb-0.5 scrollbar-hide">
             <span
-              className={`text-[10px] font-bold uppercase tracking-widest shrink-0 ${
-                isDark ? "text-slate-600" : "text-slate-500"
+              className={`shrink-0 text-[10px] font-bold uppercase tracking-widest ${
+                isDark ? "text-slate-600" : "text-slate-400"
               }`}
             >
-              Estado:
+              Estado
             </span>
+            {(["ALL", "PENDIENTE", "APROBADO", "RECHAZADO"] as DecisionFilter[]).map((opt) => {
+              const active = decisionFilter === opt;
+              const disabled = mustChooseScope;
 
-            <div className="flex items-center gap-2">
-              {(["ALL", "PENDIENTE", "APROBADO", "RECHAZADO"] as DecisionFilter[]).map((opt) => {
-                const active = decisionFilter === opt;
-                const disabled = mustChooseScope;
+              let activeCls = isDark
+                ? "bg-white text-slate-900"
+                : "bg-slate-900 text-white";
+              if (opt === "PENDIENTE") {
+                activeCls = isDark
+                  ? "bg-amber-500/20 text-amber-200 ring-1 ring-amber-400/30"
+                  : "bg-amber-100 text-amber-800";
+              } else if (opt === "APROBADO") {
+                activeCls = isDark
+                  ? "bg-emerald-500/20 text-emerald-200 ring-1 ring-emerald-400/30"
+                  : "bg-emerald-100 text-emerald-800";
+              } else if (opt === "RECHAZADO") {
+                activeCls = isDark
+                  ? "bg-rose-500/20 text-rose-200 ring-1 ring-rose-400/30"
+                  : "bg-rose-100 text-rose-800";
+              }
 
-                let activeClass = isDark
-                  ? "bg-white text-black"
-                  : "bg-slate-900 text-white";
-                if (opt === "ALL")
-                  activeClass = isDark
-                    ? "bg-slate-200 text-slate-900 shadow-[0_0_10px_rgba(255,255,255,0.3)]"
-                    : "bg-slate-900 text-white shadow-[0_18px_40px_rgba(15,23,42,0.35)]";
-                if (opt === "PENDIENTE")
-                  activeClass = isDark
-                    ? "bg-amber-500/10 text-amber-400 border border-amber-500/20 shadow-[0_0_10px_rgba(245,158,11,0.15)]"
-                    : "bg-amber-50 text-amber-700 border border-amber-200 shadow-[0_10px_30px_rgba(251,191,36,0.35)]";
-                if (opt === "APROBADO")
-                  activeClass = isDark
-                    ? "bg-brand-500/10 text-brand-400 border border-brand-500/25 shadow-[0_0_10px_rgba(16,185,129,0.15)]"
-                    : "bg-brand-50 text-brand-700 border border-brand-200 shadow-[0_10px_30px_rgba(16,185,129,0.35)]";
-                if (opt === "RECHAZADO")
-                  activeClass = isDark
-                    ? "bg-red-500/10 text-red-400 border border-red-500/20 shadow-[0_0_10px_rgba(239,68,68,0.15)]"
-                    : "bg-rose-50 text-rose-700 border border-rose-200 shadow-[0_10px_30px_rgba(248,113,113,0.35)]";
-
-                return (
-                  <button
-                    key={opt}
-                    type="button"
-                    onClick={() => !disabled && setDecisionFilter(opt)}
-                    disabled={disabled}
-                    className={`
-                      rounded-full px-4 py-1.5 text-[11px] font-bold uppercase tracking-wider transition-all duration-300
-                      ${
-                        disabled
-                          ? "opacity-40 cursor-not-allowed border border-transparent text-slate-600"
-                          : ""
-                      }
-                      ${!disabled && active ? activeClass : ""}
-                      ${
-                        !disabled && !active
-                          ? isDark
-                            ? "bg-white/5 text-slate-400 border border-transparent hover:bg-white/10 hover:text-white"
-                            : "bg-slate-100 text-slate-600 border border-slate-200 hover:bg-slate-200 hover:text-slate-900"
-                          : ""
-                      }
-                    `}
-                  >
-                    {opt === "ALL" ? "Todos" : opt}
-                  </button>
-                );
-              })}
-            </div>
+              return (
+                <button
+                  key={opt}
+                  type="button"
+                  onClick={() => !disabled && setDecisionFilter(opt)}
+                  disabled={disabled}
+                  className={`shrink-0 rounded-lg px-3 py-1.5 text-[11px] font-semibold uppercase tracking-wide transition-colors ${
+                    disabled
+                      ? "cursor-not-allowed opacity-40 text-slate-500"
+                      : active
+                        ? activeCls
+                        : isDark
+                          ? "text-slate-400 hover:bg-white/[0.05] hover:text-slate-200"
+                          : "text-slate-500 hover:bg-slate-100 hover:text-slate-800"
+                  }`}
+                >
+                  {opt === "ALL" ? "Todos" : opt}
+                </button>
+              );
+            })}
           </div>
         </div>
 
-        {/* Results */}
-        <div className="space-y-4 min-h-[200px]">
+        {/* Table */}
+        <div
+          className={`flex min-h-0 flex-1 flex-col overflow-hidden rounded-xl border ${
+            isDark
+              ? "border-white/[0.07] bg-[#07171c]/70"
+              : "border-slate-200/70 bg-slate-50/70"
+          }`}
+        >
           {mustChooseScope && (
-            <div
-              className={`flex h-48 flex-col items-center justify-center rounded-3xl border border-dashed ${
-                isDark
-                  ? "border-white/10 bg-white/[0.02]"
-                  : "border-slate-200 bg-slate-50/50"
-              }`}
-            >
+            <div className="flex min-h-[11rem] flex-1 flex-col items-center justify-center gap-2 px-4 text-center">
               <div
-                className={`mb-3 ${
-                  isDark ? "text-slate-600" : "text-slate-400"
+                className={`mb-3 flex h-14 w-14 items-center justify-center rounded-full ${
+                  isDark
+                    ? "bg-emerald-400/[0.08] text-emerald-400/60 ring-1 ring-emerald-400/15"
+                    : "bg-slate-100 text-slate-400"
                 }`}
               >
-                <Filter className="w-8 h-8 opacity-40" />
+                <Filter className="h-6 w-6" strokeWidth={1.8} />
               </div>
-              <p
-                className={`text-sm font-medium ${
-                  isDark ? "text-slate-500" : "text-slate-600"
-                }`}
-              >
-                Configura los filtros arriba.
+              <p className={`text-sm font-medium ${isDark ? "text-slate-500" : "text-slate-600"}`}>
+                Configura los filtros arriba
               </p>
             </div>
           )}
 
           {!mustChooseScope && visibleGroups.length === 0 && (
-            <div
-              className={`flex h-48 flex-col items-center justify-center rounded-3xl border border-dashed ${
-                isDark
-                  ? "border-white/10 bg-white/[0.02]"
-                  : "border-slate-200 bg-slate-50/50"
-              }`}
-            >
-              <p
-                className={`text-sm font-medium ${
-                  isDark ? "text-slate-500" : "text-slate-600"
-                }`}
-              >
-                No se encontraron resultados.
+            <div className="flex min-h-[11rem] flex-1 flex-col items-center justify-center px-4 text-center">
+              <p className={`text-sm font-medium ${isDark ? "text-slate-500" : "text-slate-600"}`}>
+                No se encontraron resultados
               </p>
             </div>
           )}
 
-          {!mustChooseScope &&
-            pageItems.map((g) => {
-              const ev = g.latest;
-              const candidateDecision = getCandidateDecision(g);
-
-              const cardFooter = (
-                <>
-                  <div className="flex items-center gap-3 text-xs">
-                    <span
-                      className={`font-medium ${
-                        isDark ? "text-slate-500" : "text-slate-600"
-                      }`}
-                    >
-                      Entrevistas:
-                    </span>
-                    <span
-                      className={`flex h-6 min-w-[1.5rem] items-center justify-center rounded-full px-2 font-mono text-xs ${
-                        isDark
-                          ? "bg-brand-500/10 text-brand-400 border border-brand-500/20"
-                          : "bg-brand-50 text-brand-700 border border-brand-200"
-                      }`}
-                    >
-                      {g.interviews.length}
-                    </span>
-                  </div>
-
-                  <button
-                    type="button"
-                    onClick={() =>
-                      navigate(
-                        `/coordinator/evaluations/${encodeURIComponent(ev.id)}?tab=decision`
-                      )
-                    }
-                    className={`flex items-center gap-2 text-[11px] font-bold uppercase tracking-wider transition-all duration-300 group-hover:gap-3 ${
-                      isDark ? "text-brand-400 hover:text-brand-300" : "text-brand-700 hover:text-brand-600"
+          {!mustChooseScope && pageItems.length > 0 && (
+            <div className="min-h-0 flex-1 overflow-x-auto">
+              <table className="w-full min-w-[720px] text-left text-sm">
+                <thead>
+                  <tr
+                    className={`border-b text-[10px] font-bold uppercase tracking-[0.12em] ${
+                      isDark
+                        ? "border-white/[0.06] text-slate-500"
+                        : "border-slate-200/80 text-slate-400"
                     }`}
                   >
-                    Ver Detalle
-                    <div
-                      className={`grid h-6 w-6 place-items-center rounded-full border transition-all duration-300 ${
-                        isDark
-                          ? "border-brand-500/30 bg-brand-500/10 group-hover:bg-brand-500 group-hover:text-black"
-                          : "border-brand-200 bg-brand-50 group-hover:bg-brand-500 group-hover:text-white"
-                      }`}
-                    >
-                      <svg
-                        width="12"
-                        height="12"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="currentColor"
-                        strokeWidth="3"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                      >
-                        <path d="M5 12h14" />
-                        <path d="M12 5l7 7-7 7" />
-                      </svg>
-                    </div>
-                  </button>
-                </>
-              );
+                    <th className="px-4 py-3 font-bold">Candidato</th>
+                    <th className="px-4 py-3 font-bold">Programa</th>
+                    <th className="px-4 py-3 font-bold">Score</th>
+                    <th className="px-4 py-3 font-bold">IA</th>
+                    <th className="px-4 py-3 font-bold">Estado</th>
+                    <th className="px-4 py-3 font-bold text-right">Acción</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {pageItems.map((g) => {
+                    const ev = g.latest as any;
+                    const decision = getCandidateDecision(g);
+                    const score = pickScore(ev);
+                    const ia = getIaShort(String(ev?.aiFinalRecommendation ?? ""));
+                    const scoreColor =
+                      score >= 70
+                        ? isDark
+                          ? "text-emerald-300"
+                          : "text-emerald-600"
+                        : score >= 50
+                          ? isDark
+                            ? "text-amber-300"
+                            : "text-amber-600"
+                          : isDark
+                            ? "text-rose-300"
+                            : "text-rose-600";
+                    const barColor =
+                      score >= 70
+                        ? "bg-emerald-500"
+                        : score >= 50
+                          ? "bg-amber-500"
+                          : "bg-rose-500";
 
-              return (
-                <TeacherEvaluationItem
-                  key={g.key}
-                  evaluation={ev}
-                  selected={selectedId === ev.id}
-                  onClick={() => {}}
-                  decisionStatus={candidateDecision}
-                  footer={cardFooter}
-                />
-              );
-            })}
+                    return (
+                      <tr
+                        key={g.key}
+                        className={`group border-b transition-colors last:border-b-0 ${
+                          isDark
+                            ? "border-white/[0.04] hover:bg-white/[0.03]"
+                            : "border-slate-200/60 hover:bg-white"
+                        }`}
+                      >
+                        <td className="px-4 py-3.5">
+                          <div className="min-w-0">
+                            <p
+                              className={`truncate font-semibold tracking-tight ${
+                                isDark ? "text-white" : "text-slate-900"
+                              }`}
+                            >
+                              {g.candidateName || "Sin nombre"}
+                            </p>
+                            <p className={`mt-0.5 text-[11px] ${isDark ? "text-slate-500" : "text-slate-400"}`}>
+                              {g.documentNumber
+                                ? `CC ${g.documentNumber}`
+                                : `${g.interviews.length} entrevista${g.interviews.length === 1 ? "" : "s"}`}
+                            </p>
+                          </div>
+                        </td>
+                        <td className="px-4 py-3.5">
+                          <p className={`max-w-[200px] truncate text-xs ${isDark ? "text-slate-300" : "text-slate-600"}`}>
+                            {g.program || "—"}
+                          </p>
+                          <p className={`mt-0.5 max-w-[200px] truncate text-[11px] ${isDark ? "text-slate-500" : "text-slate-400"}`}>
+                            {g.school || "—"}
+                          </p>
+                        </td>
+                        <td className="px-4 py-3.5">
+                          <div className="w-[88px]">
+                            <div className="mb-1 flex items-baseline gap-1">
+                              <span className={`text-sm font-bold ${scoreColor}`}>{score}</span>
+                              <span className={`text-[10px] ${isDark ? "text-slate-600" : "text-slate-400"}`}>
+                                /100
+                              </span>
+                            </div>
+                            <div
+                              className={`h-1 overflow-hidden rounded-full ${
+                                isDark ? "bg-white/10" : "bg-slate-200"
+                              }`}
+                            >
+                              <div
+                                className={`h-full rounded-full ${barColor}`}
+                                style={{ width: `${score}%` }}
+                              />
+                            </div>
+                          </div>
+                        </td>
+                        <td className="px-4 py-3.5">
+                          <span className={`text-xs font-medium ${iaToneClass(ia.tone)}`}>
+                            {ia.short}
+                          </span>
+                        </td>
+                        <td className="px-4 py-3.5">
+                          <span
+                            className={`inline-flex rounded-md px-2 py-1 text-[10px] font-bold uppercase tracking-wide ${decisionBadge(decision)}`}
+                          >
+                            {decision}
+                          </span>
+                        </td>
+                        <td className="px-4 py-3.5 text-right">
+                          <button
+                            type="button"
+                            onClick={() =>
+                              navigate(
+                                `/coordinator/evaluations/${encodeURIComponent(ev.id)}?tab=decision`
+                              )
+                            }
+                            className={`inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-[11px] font-semibold transition-colors ${
+                              isDark
+                                ? "text-emerald-300 hover:bg-emerald-400/10"
+                                : "text-emerald-700 hover:bg-emerald-50"
+                            }`}
+                          >
+                            Ver detalle
+                            <ChevronRight className="h-3.5 w-3.5" />
+                          </button>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          )}
         </div>
 
         {/* Pagination */}
-        {!mustChooseScope && totalPages > 1 && (
-          <div className="mt-8 flex items-center justify-between gap-4">
-            <div
-              className={`text-xs ${
-                isDark ? "text-slate-500" : "text-slate-600"
-              }`}
-            >
+        {!mustChooseScope && total > 0 && (
+          <div className="mt-4 flex shrink-0 flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <p className={`text-xs ${isDark ? "text-slate-500" : "text-slate-500"}`}>
               Mostrando{" "}
-              <span className={`font-semibold ${isDark ? "text-white" : "text-slate-900"}`}>
-                {start + 1}
-              </span>{" "}
-              –{" "}
-              <span className={`font-semibold ${isDark ? "text-white" : "text-slate-900"}`}>
-                {end}
+              <span className={`font-semibold ${isDark ? "text-slate-200" : "text-slate-800"}`}>
+                {start + 1}–{end}
               </span>{" "}
               de{" "}
-              <span className={`font-semibold ${isDark ? "text-white" : "text-slate-900"}`}>
+              <span className={`font-semibold ${isDark ? "text-slate-200" : "text-slate-800"}`}>
                 {total}
               </span>
-              <span className={isDark ? "text-slate-600" : "text-slate-400"}>
-                {" "}
-                •{" "}
-              </span>
-              <span className={isDark ? "text-slate-400" : "text-slate-500"}>
-                5 por página
-              </span>
-            </div>
+              <span className={isDark ? "text-slate-600" : "text-slate-400"}> · {PAGE_SIZE} por página</span>
+            </p>
 
-            <div className="flex items-center gap-2">
-              <button
-                type="button"
-                onClick={() => setPage((p) => Math.max(1, p - 1))}
-                disabled={safePage <= 1}
-                className={`grid h-9 w-9 place-items-center rounded-full border transition-all duration-300 ${
-                  safePage <= 1
-                    ? isDark
-                      ? "border-transparent text-slate-700 cursor-not-allowed"
-                      : "border-transparent text-slate-300 cursor-not-allowed"
-                    : isDark
-                      ? "border-white/10 bg-white/5 text-slate-300 hover:bg-white/10 hover:text-white hover:border-white/20"
-                      : "border-slate-200 bg-white text-slate-700 hover:bg-slate-50 hover:border-brand-300 hover:text-brand-700 shadow-sm"
-                }`}
-                aria-label="Anterior"
-              >
-                <svg
-                  width="16"
-                  height="16"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
+            {totalPages > 1 && (
+              <div className="flex items-center gap-1">
+                <button
+                  type="button"
+                  onClick={() => setPage((p) => Math.max(1, p - 1))}
+                  disabled={safePage <= 1}
+                  aria-label="Anterior"
+                  className={`grid h-8 w-8 place-items-center rounded-lg transition-colors ${
+                    safePage <= 1
+                      ? isDark
+                        ? "cursor-not-allowed text-slate-700"
+                        : "cursor-not-allowed text-slate-300"
+                      : isDark
+                        ? "text-slate-300 hover:bg-white/[0.06] hover:text-white"
+                        : "text-slate-600 hover:bg-slate-100 hover:text-slate-900"
+                  }`}
                 >
-                  <path d="M15 18l-6-6 6-6" />
-                </svg>
-              </button>
+                  <ChevronLeft className="h-4 w-4" />
+                </button>
 
-              <div className="flex items-center gap-1.5">
                 {pagerItems.map((it, idx) => {
                   if (it === "…") {
                     return (
                       <span
                         key={`dots-${idx}`}
-                        className={`px-1 text-xs ${
-                          isDark ? "text-slate-600" : "text-slate-500"
-                        }`}
+                        className={`px-1 text-xs ${isDark ? "text-slate-600" : "text-slate-400"}`}
                       >
                         …
                       </span>
@@ -756,61 +749,46 @@ const EvaluationsListPanel: React.FC<Props> = ({
                   }
                   const p = it as number;
                   const isActive = p === safePage;
-
                   return (
                     <button
                       key={p}
                       type="button"
                       onClick={() => setPage(p)}
-                      className={`
-                        h-9 min-w-[2.25rem] rounded-full text-xs font-bold transition-all duration-300
-                        ${
-                          isActive
-                            ? isDark
-                              ? "bg-brand-500 text-black shadow-[0_0_20px_rgba(16,185,129,0.35)] scale-110"
-                              : "bg-brand-500 text-white shadow-[0_0_20px_rgba(16,185,129,0.45)] scale-110"
-                            : isDark
-                              ? "text-slate-500 hover:text-slate-300 hover:bg-white/5"
-                              : "text-slate-500 bg-white border border-slate-200 hover:text-brand-700 hover:border-brand-300 hover:bg-brand-50 shadow-sm"
-                        }
-                      `}
                       aria-current={isActive ? "page" : undefined}
+                      className={`grid h-8 min-w-[2rem] place-items-center rounded-lg px-2 text-xs font-semibold transition-colors ${
+                        isActive
+                          ? isDark
+                            ? "bg-emerald-500 text-black"
+                            : "bg-emerald-600 text-white"
+                          : isDark
+                            ? "text-slate-400 hover:bg-white/[0.06] hover:text-white"
+                            : "text-slate-500 hover:bg-slate-100 hover:text-slate-800"
+                      }`}
                     >
                       {p}
                     </button>
                   );
                 })}
-              </div>
 
-              <button
-                type="button"
-                onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
-                disabled={safePage >= totalPages}
-                className={`grid h-9 w-9 place-items-center rounded-full border transition-all duration-300 ${
-                  safePage >= totalPages
-                    ? isDark
-                      ? "border-transparent text-slate-700 cursor-not-allowed"
-                      : "border-transparent text-slate-300 cursor-not-allowed"
-                    : isDark
-                      ? "border-white/10 bg-white/5 text-slate-300 hover:bg-white/10 hover:text-white hover:border-white/20"
-                      : "border-slate-200 bg-white text-slate-700 hover:bg-slate-50 hover:border-brand-300 hover:text-brand-700 shadow-sm"
-                }`}
-                aria-label="Siguiente"
-              >
-                <svg
-                  width="16"
-                  height="16"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
+                <button
+                  type="button"
+                  onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+                  disabled={safePage >= totalPages}
+                  aria-label="Siguiente"
+                  className={`grid h-8 w-8 place-items-center rounded-lg transition-colors ${
+                    safePage >= totalPages
+                      ? isDark
+                        ? "cursor-not-allowed text-slate-700"
+                        : "cursor-not-allowed text-slate-300"
+                      : isDark
+                        ? "text-slate-300 hover:bg-white/[0.06] hover:text-white"
+                        : "text-slate-600 hover:bg-slate-100 hover:text-slate-900"
+                  }`}
                 >
-                  <path d="M9 18l6-6-6-6" />
-                </svg>
-              </button>
-            </div>
+                  <ChevronRight className="h-4 w-4" />
+                </button>
+              </div>
+            )}
           </div>
         )}
       </div>
@@ -820,8 +798,13 @@ const EvaluationsListPanel: React.FC<Props> = ({
   if (variant === "embedded") return content;
 
   return (
-    <div className={shellClass}>
-      {shellAmbient}
+    <div
+      className={`relative overflow-hidden rounded-2xl ${
+        isDark
+          ? "border border-white/[0.08] bg-[#0d252b]"
+          : "border border-slate-200/80 bg-white shadow-[0_16px_40px_-28px_rgba(15,23,42,0.18)]"
+      }`}
+    >
       {content}
     </div>
   );

@@ -172,16 +172,15 @@ const TeacherEvaluationItem: React.FC<TeacherEvaluationItemProps> = ({
         }
       }}
       className={[
-        "w-full text-left px-4 py-3 rounded-2xl border border-t-2 border-t-brand-500 transition-all duration-300",
-        "flex flex-col gap-2.5",
+        "flex w-full flex-col gap-2.5 rounded-2xl px-4 py-3 text-left transition-all duration-300",
         "focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-500/30 focus-visible:ring-offset-0",
         selected
           ? isDark
-            ? "border-brand-500/60 bg-brand-500/5 shadow-[0_0_30px_-10px_rgba(16,185,129,0.2)]"
-            : "border-brand-400 bg-brand-50 shadow-[0_18px_40px_rgba(16,185,129,0.25)]"
+            ? "bg-emerald-500/10 ring-1 ring-emerald-400/30"
+            : "bg-emerald-50 ring-1 ring-emerald-200"
           : isDark
-            ? "border-[#579689]/22 bg-[#091d22]/84 hover:border-[#58bea1]/38 hover:bg-[#102a30] hover:shadow-lg"
-            : "border-brand-500/20 bg-white hover:border-brand-500/40 hover:shadow-[0_18px_50px_rgba(15,23,42,0.08)]",
+            ? "bg-white/[0.03] hover:bg-white/[0.06]"
+            : "bg-white shadow-[0_8px_24px_-18px_rgba(15,23,42,0.25)] hover:bg-slate-50",
         clickableCls,
       ].join(" ")}
     >

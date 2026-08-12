@@ -15,41 +15,25 @@ export const StatCard: React.FC<StatCardProps> = ({ label, value, icon, sub }) =
   return (
     <div
       className={[
-        "relative overflow-hidden group p-5 rounded-2xl transition-all duration-300 border border-t-2 border-t-brand-500",
-        isDark
-          ? "bg-gradient-to-b from-[#102a30]/88 via-[#0d252b]/82 to-[#0a2025]/72 border-[#579689]/22 hover:border-[#58bea1]/40 hover:shadow-[0_18px_38px_-22px_rgba(44,126,108,0.34)]"
-          : "bg-white border-brand-500/20 hover:border-brand-500/40 shadow-[0_4px_20px_-6px_rgba(15,23,42,0.06)] hover:shadow-[0_8px_30px_-6px_rgba(15,23,42,0.1)]",
+        "relative p-4 rounded-xl transition-colors",
+        isDark ? "bg-white/[0.03]" : "bg-slate-50",
       ].join(" ")}
     >
-      <div className="absolute top-0 right-0 p-4 opacity-15 group-hover:opacity-30 transition-opacity duration-300">
-        {icon}
-      </div>
-      <div className="flex flex-col relative z-10">
+      <div className="flex flex-col">
         <span
           className={[
-            "text-[10px] font-bold uppercase tracking-[0.16em] mb-2 flex items-center gap-2",
+            "mb-2 flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-[0.12em]",
             isDark ? "text-slate-500" : "text-slate-400",
           ].join(" ")}
         >
-          {icon} {label}
+          <span className={isDark ? "text-emerald-400/80" : "text-emerald-600"}>{icon}</span>
+          {label}
         </span>
-        <div
-          className={[
-            "text-2xl font-black tracking-tight",
-            isDark ? "text-white" : "text-slate-900",
-          ].join(" ")}
-        >
+        <div className={`text-xl font-bold tracking-tight ${isDark ? "text-white" : "text-slate-900"}`}>
           {value}
         </div>
         {sub && (
-          <div
-            className={[
-              "mt-1 text-[11px] font-medium",
-              isDark ? "text-slate-500" : "text-slate-400",
-            ].join(" ")}
-          >
-            {sub}
-          </div>
+          <div className={`mt-1 text-[11px] ${isDark ? "text-slate-500" : "text-slate-400"}`}>{sub}</div>
         )}
       </div>
     </div>

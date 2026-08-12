@@ -1,122 +1,201 @@
 import React from "react";
-import { TrendingUp, AlertOctagon } from "lucide-react";
+import {
+  TrendingUp,
+  Info,
+  GraduationCap,
+  Brain,
+  Users,
+  Shield,
+  BookOpen,
+  Target,
+  Briefcase,
+  ChevronDown,
+} from "lucide-react";
 import { useTheme } from "../../../../context/ThemeContext";
-import { getScoreDetails } from "../utils/analysisResultStyles";
 
 interface DimensionCardProps {
   cat: any;
+  roleAverage?: number;
+  open: boolean;
+  onToggle: () => void;
+  /** Primera / última fila del listado unificado */
+  isFirst?: boolean;
+  isLast?: boolean;
 }
 
-export const DimensionCard: React.FC<DimensionCardProps> = ({ cat }) => {
-  const styles = getScoreDetails(cat.score);
+const pickIcon = (category: string) => {
+  const c = (category || "").toLowerCase();
+  if (c.includes("experiencia") || c.includes("trayector")) return Briefcase;
+  if (c.includes("pedagog") || c.includes("aula") || c.includes("manejo")) return BookOpen;
+  if (c.includes("ia") || c.includes("actitud")) return Brain;
+  if (c.includes("ética") || c.includes("etica") || c.includes("escenario") || c.includes("coherencia"))
+    return Shield;
+  if (c.includes("disponib")) return Users;
+  if (c.includes("programa") || c.includes("académ")) return GraduationCap;
+  return Target;
+};
+
+export const DimensionCard: React.FC<DimensionCardProps> = ({
+  cat,
+  roleAverage = 72,
+  open,
+  onToggle,
+  isFirst = false,
+  isLast = false,
+}) => {
   const { theme } = useTheme();
   const isDark = theme === "dark";
+  const Icon = pickIcon(cat.category);
+  const score = Math.round(Number(cat.score) || 0);
+  const avg = Math.min(100, Math.max(0, roleAverage));
 
   return (
-    <div
+    <article
       className={[
-        "group relative rounded-2xl transition-all duration-300 overflow-hidden border border-t-2 border-t-brand-500",
-        isDark
-          ? "bg-gradient-to-b from-[#102a30]/90 via-[#0d252b]/82 to-[#0a2025]/74 border-[#579689]/22 hover:border-[#58bea1]/38"
-          : "bg-white border-brand-500/20 hover:border-brand-500/40 shadow-[0_4px_20px_-6px_rgba(15,23,42,0.06)]",
+        "border-b last:border-b-0",
+        isDark ? "border-white/[0.06]" : "border-slate-100",
+        open
+          ? isDark
+            ? "bg-emerald-500/[0.04]"
+            : "bg-emerald-50/40"
+          : "",
+        isFirst ? "rounded-t-xl" : "",
+        isLast && !open ? "rounded-b-xl" : "",
+        isLast && open ? "rounded-b-xl" : "",
       ].join(" ")}
     >
-      <div
-        className={`absolute top-0 left-0 w-[3px] h-full transition-all duration-300 opacity-50 group-hover:opacity-100 ${
-          cat.score >= 80 ? "bg-brand-500" : cat.score >= 60 ? "bg-amber-500" : "bg-rose-500"
-        }`}
-      />
+      <button
+        type="button"
+        onClick={onToggle}
+        className={[
+          "grid w-full grid-cols-[auto_minmax(0,1fr)_auto] items-start gap-3 px-3.5 py-3 text-left transition-colors md:grid-cols-[auto_minmax(0,1fr)_7.5rem_auto] md:px-4",
+          open ? "pb-2.5" : "",
+          isDark ? "hover:bg-white/[0.02]" : "hover:bg-slate-50/80",
+        ].join(" ")}
+        aria-expanded={open}
+      >
+        <span
+          className={[
+            "mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border",
+            isDark
+              ? "border-emerald-400/20 bg-emerald-500/[0.08] text-emerald-300"
+              : "border-emerald-200 bg-emerald-50 text-emerald-700",
+          ].join(" ")}
+        >
+          <Icon className="h-3.5 w-3.5" strokeWidth={1.9} />
+        </span>
 
-      <div className="p-6">
-        <div className="flex justify-between items-start mb-4">
-          <div>
-            <h4
-              className={[
-                "font-bold text-sm tracking-wide",
-                isDark ? "text-slate-200" : "text-slate-900",
-              ].join(" ")}
-            >
+        <span className="min-w-0">
+          <span className="flex flex-wrap items-baseline gap-x-2 gap-y-0.5">
+            <span className={`text-[13px] font-semibold leading-5 ${isDark ? "text-white" : "text-slate-900"}`}>
               {cat.category}
-            </h4>
+            </span>
+            <span className={`text-[13px] font-bold tabular-nums leading-5 ${isDark ? "text-emerald-400" : "text-emerald-600"}`}>
+              {score}
+              <span className={`font-medium ${isDark ? "text-slate-500" : "text-slate-400"}`}> / 100</span>
+            </span>
+          </span>
+          {!open && (
+            <span className={`mt-0.5 block truncate text-[11px] leading-4 ${isDark ? "text-slate-500" : "text-slate-500"}`}>
+              {cat.reporteAnalitico}
+            </span>
+          )}
+        </span>
+
+        <span className="hidden w-[7.5rem] shrink-0 self-center md:block">
+          <span className={`mb-1 block h-1 overflow-hidden rounded-full ${isDark ? "bg-white/[0.06]" : "bg-slate-100"}`}>
+            <span className="block h-full rounded-full bg-emerald-500" style={{ width: `${score}%` }} />
+          </span>
+          <span className={`block h-1 overflow-hidden rounded-full ${isDark ? "bg-white/[0.06]" : "bg-slate-100"}`}>
             <span
-              className={[
-                "text-[10px] uppercase font-semibold mt-0.5 block tracking-wider",
-                isDark ? "text-slate-500" : "text-slate-400",
-              ].join(" ")}
-            >
-              Analisis Vectorial
-            </span>
-          </div>
-          <div
-            className={`flex items-center justify-center w-10 h-10 rounded-xl ${styles.bg} ${styles.border} border`}
-          >
-            <span className={`text-sm font-bold ${styles.color}`}>
-              {Math.round(cat.score)}
-            </span>
-          </div>
-        </div>
+              className={`block h-full rounded-full ${isDark ? "bg-emerald-500/35" : "bg-emerald-300"}`}
+              style={{ width: `${avg}%` }}
+            />
+          </span>
+        </span>
 
-        <div className="space-y-4">
-          <p
-            className={`text-xs leading-relaxed border-l-2 pl-3 ${
-              isDark
-                ? "text-slate-400 border-brand-500/20"
-                : "text-slate-600 border-brand-300"
-            }`}
-          >
-            {cat.reporteAnalitico}
-          </p>
+        <ChevronDown
+          className={[
+            "mt-1.5 h-4 w-4 shrink-0 transition-transform duration-200",
+            open ? "rotate-180" : "",
+            isDark ? "text-slate-500" : "text-slate-400",
+          ].join(" ")}
+        />
+      </button>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-3 pt-1">
+      {open && (
+        <div className="space-y-3.5 px-3.5 pb-4 pt-1 md:px-4 md:pl-[3.25rem]">
+          <div className="grid gap-2.5 sm:grid-cols-2">
+            <div>
+              <div className="mb-1 flex items-center justify-between text-[10px]">
+                <span className={isDark ? "text-slate-500" : "text-slate-400"}>Candidato</span>
+                <span className={`font-semibold ${isDark ? "text-emerald-400" : "text-emerald-600"}`}>{score}</span>
+              </div>
+              <div className={`h-1.5 overflow-hidden rounded-full ${isDark ? "bg-white/[0.06]" : "bg-slate-100"}`}>
+                <div className="h-full rounded-full bg-emerald-500" style={{ width: `${score}%` }} />
+              </div>
+            </div>
+            <div>
+              <div className="mb-1 flex items-center justify-between text-[10px]">
+                <span className={isDark ? "text-slate-500" : "text-slate-400"}>Promedio del rol</span>
+                <span className={isDark ? "text-slate-400" : "text-slate-500"}>{avg}</span>
+              </div>
+              <div className={`h-1.5 overflow-hidden rounded-full ${isDark ? "bg-white/[0.06]" : "bg-slate-100"}`}>
+                <div
+                  className={`h-full rounded-full ${isDark ? "bg-emerald-500/35" : "bg-emerald-300"}`}
+                  style={{ width: `${avg}%` }}
+                />
+              </div>
+            </div>
+          </div>
+
+          <div>
+            <p className={`mb-1 text-[10px] font-semibold uppercase tracking-[0.12em] ${isDark ? "text-slate-500" : "text-slate-400"}`}>
+              Analisis
+            </p>
+            <p className={`text-[13px] leading-6 ${isDark ? "text-slate-300" : "text-slate-600"}`}>
+              {cat.reporteAnalitico}
+            </p>
+          </div>
+
+          <div className="grid gap-2.5 md:grid-cols-2">
             <div
               className={[
-                "p-3 rounded-xl border transition-colors",
-                isDark
-                  ? "bg-brand-500/5 border-brand-500/15"
-                  : "bg-brand-50 border-brand-200",
+                "rounded-lg p-3",
+                isDark ? "bg-emerald-500/[0.07]" : "bg-emerald-50",
               ].join(" ")}
             >
-              <div className="flex items-center gap-1.5 mb-2">
-                <TrendingUp className={`w-3 h-3 ${isDark ? "text-brand-400" : "text-brand-600"}`} />
-                <span className={`text-[10px] font-bold uppercase tracking-wider ${isDark ? "text-brand-300" : "text-brand-700"}`}>
+              <div className="mb-1.5 flex items-center gap-1.5">
+                <TrendingUp className={`h-3.5 w-3.5 shrink-0 ${isDark ? "text-emerald-400" : "text-emerald-600"}`} />
+                <span className={`text-[10px] font-semibold uppercase tracking-[0.12em] ${isDark ? "text-emerald-300" : "text-emerald-700"}`}>
                   Fortaleza
                 </span>
               </div>
-              <p
-                className={`text-[11px] leading-snug ${
-                  isDark ? "text-slate-400" : "text-slate-600"
-                }`}
-              >
+              <p className={`text-[12px] leading-5 ${isDark ? "text-slate-300" : "text-slate-700"}`}>
                 {cat.oportunidades}
               </p>
             </div>
 
             <div
               className={[
-                "p-3 rounded-xl border transition-colors",
-                isDark
-                  ? "bg-amber-500/5 border-amber-500/15"
-                  : "bg-amber-50 border-amber-200",
+                "rounded-lg p-3",
+                isDark ? "bg-amber-500/[0.07]" : "bg-amber-50",
               ].join(" ")}
             >
-              <div className="flex items-center gap-1.5 mb-2">
-                <AlertOctagon className={`w-3 h-3 ${isDark ? "text-amber-400" : "text-amber-600"}`} />
-                <span className={`text-[10px] font-bold uppercase tracking-wider ${isDark ? "text-amber-300" : "text-amber-700"}`}>
+              <div className="mb-1.5 flex items-center gap-1.5">
+                <Info className={`h-3.5 w-3.5 shrink-0 ${isDark ? "text-amber-400" : "text-amber-600"}`} />
+                <span className={`text-[10px] font-semibold uppercase tracking-[0.12em] ${isDark ? "text-amber-300" : "text-amber-700"}`}>
                   A mejorar
                 </span>
               </div>
-              <p
-                className={`text-[11px] leading-snug ${
-                  isDark ? "text-slate-400" : "text-slate-600"
-                }`}
-              >
+              <p className={`text-[12px] leading-5 ${isDark ? "text-slate-300" : "text-slate-700"}`}>
                 {cat.recomendaciones}
               </p>
             </div>
           </div>
         </div>
-      </div>
-    </div>
+      )}
+    </article>
   );
 };
 

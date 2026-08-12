@@ -1,68 +1,49 @@
 import React from "react";
 import { useTheme } from "../../../context/ThemeContext";
 
-/** Fondo decorativo sutil para el área de trabajo del líder */
+/**
+ * Fondo del área principal.
+ * - Oscuro: fondolider como atmósfera neon (funciona bien).
+ * - Claro: canvas institucional claro; la foto se usa solo como textura muy suave.
+ */
 export function LeaderAmbientDecor() {
   const { theme } = useTheme();
   const isDark = theme === "dark";
 
+  if (isDark) {
+    return (
+      <div className="pointer-events-none absolute inset-0 z-0 overflow-hidden" aria-hidden>
+        <div className="absolute inset-0 bg-[#071214]" />
+        <img
+          src="/fondolider.png"
+          alt=""
+          className="absolute left-1/2 top-1/2 h-full w-full max-w-none -translate-x-1/2 -translate-y-1/2 object-cover object-[center_35%] opacity-50 saturate-[0.7] brightness-[0.62]"
+        />
+        <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(7,18,20,0.4)_0%,rgba(7,24,28,0.55)_55%,rgba(5,16,18,0.72)_100%)]" />
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_70%_20%,rgba(16,185,129,0.12),transparent_55%)]" />
+      </div>
+    );
+  }
+
+  // Modo claro: sutil pero perceptible detrás de las tarjetas
   return (
-    <div className="pointer-events-none absolute inset-0 overflow-hidden" aria-hidden>
-      <div
-        className={[
-          "absolute inset-0",
-          isDark
-            ? "bg-[radial-gradient(ellipse_at_0%_0%,rgba(16,185,129,0.14),transparent_42%),radial-gradient(ellipse_at_100%_10%,rgba(45,212,191,0.08),transparent_36%),linear-gradient(180deg,#071214_0%,#0a181c_48%,#071214_100%)]"
-            : "bg-[radial-gradient(ellipse_at_0%_0%,rgba(16,185,129,0.10),transparent_40%),radial-gradient(ellipse_at_100%_0%,rgba(148,163,184,0.12),transparent_38%),linear-gradient(180deg,#f8fafc_0%,#f1f5f9_100%)]",
-        ].join(" ")}
+    <div className="pointer-events-none absolute inset-0 z-0 overflow-hidden" aria-hidden>
+      <div className="absolute inset-0 bg-[#eef3f5]" />
+
+      <img
+        src="/fondolider.png"
+        alt=""
+        className="absolute left-1/2 top-1/2 h-full w-full max-w-none -translate-x-1/2 -translate-y-1/2 object-cover object-[center_40%] opacity-[0.26] saturate-[0.4] brightness-[1.28] contrast-[0.95]"
       />
 
-      <div
-        className={[
-          "absolute -left-24 top-10 h-72 w-72 rounded-full blur-3xl",
-          isDark ? "bg-emerald-500/10" : "bg-emerald-400/15",
-        ].join(" ")}
-      />
-      <div
-        className={[
-          "absolute -right-16 top-40 h-80 w-80 rounded-full blur-3xl",
-          isDark ? "bg-teal-400/8" : "bg-cyan-200/30",
-        ].join(" ")}
-      />
-      <div
-        className={[
-          "absolute bottom-0 left-1/3 h-64 w-64 rounded-full blur-3xl",
-          isDark ? "bg-emerald-600/8" : "bg-emerald-200/25",
-        ].join(" ")}
-      />
+      {/* Lavado ligero: deja entrever la ciudad sin ensuciar el UI */}
+      <div className="absolute inset-0 bg-[linear-gradient(165deg,rgba(255,255,255,0.72)_0%,rgba(248,250,252,0.58)_40%,rgba(236,253,245,0.52)_72%,rgba(241,245,249,0.68)_100%)]" />
+      <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_85%_10%,rgba(16,185,129,0.1),transparent_42%),radial-gradient(ellipse_at_15%_85%,rgba(255,255,255,0.35),transparent_50%)]" />
 
-      <div
-        className={[
-          "absolute inset-0 opacity-[0.35]",
-          isDark
-            ? "[background-image:linear-gradient(rgba(255,255,255,0.03)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.03)_1px,transparent_1px)] [background-size:48px_48px]"
-            : "[background-image:linear-gradient(rgba(15,23,42,0.035)_1px,transparent_1px),linear-gradient(90deg,rgba(15,23,42,0.035)_1px,transparent_1px)] [background-size:48px_48px]",
-        ].join(" ")}
-      />
+      <div className="absolute -right-16 top-16 h-72 w-72 rounded-full bg-emerald-300/15 blur-3xl" />
+      <div className="absolute -left-20 bottom-10 h-64 w-64 rounded-full bg-sky-200/18 blur-3xl" />
 
-      <div
-        className={[
-          "absolute right-10 top-24 h-28 w-28 rounded-full border",
-          isDark ? "border-emerald-400/10" : "border-emerald-500/15",
-        ].join(" ")}
-      />
-      <div
-        className={[
-          "absolute right-16 top-32 h-16 w-16 rounded-full border",
-          isDark ? "border-emerald-400/15" : "border-emerald-500/20",
-        ].join(" ")}
-      />
-      <span
-        className={[
-          "absolute right-[4.75rem] top-[7.75rem] h-1.5 w-1.5 rounded-full",
-          isDark ? "bg-emerald-400/50 shadow-[0_0_12px_rgba(52,211,153,0.55)]" : "bg-emerald-500/60",
-        ].join(" ")}
-      />
+      <div className="absolute inset-0 opacity-[0.28] [background-image:linear-gradient(rgba(15,23,42,0.03)_1px,transparent_1px),linear-gradient(90deg,rgba(15,23,42,0.03)_1px,transparent_1px)] [background-size:44px_44px]" />
     </div>
   );
 }

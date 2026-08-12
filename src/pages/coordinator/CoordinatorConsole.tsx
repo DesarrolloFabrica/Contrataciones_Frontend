@@ -3,12 +3,13 @@ import React, { useEffect, useMemo, useRef, useState } from "react";
 import {
   Activity,
   AlertCircle,
+  CheckCircle2,
   Loader2,
-  ShieldAlert,
+  ShieldCheck,
   TrendingUp,
   Sparkles,
 } from "lucide-react";
-import { useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 
 import { useAuth } from "../../context/AuthContext";
 import { useTheme } from "../../context/ThemeContext";
@@ -281,6 +282,7 @@ const CoordinatorConsole: React.FC = () => {
   const { user, logout } = useAuth();
   actorFromUser(user);
   const navigate = useNavigate();
+  const location = useLocation();
   const { theme } = useTheme();
 
   const isDark = theme === "dark";
@@ -289,9 +291,18 @@ const CoordinatorConsole: React.FC = () => {
   const evals = useCoordinatorEvaluations();
 
   // 2) Tabs principales
-  const [mainTab, setMainTab] = useState<"evaluations" | "users">(
-    "evaluations",
-  );
+  const initialTab =
+    (location.state as { tab?: "evaluations" | "users" } | null)?.tab === "users"
+      ? "users"
+      : "evaluations";
+  const [mainTab, setMainTab] = useState<"evaluations" | "users">(initialTab);
+
+  useEffect(() => {
+    const tab = (location.state as { tab?: "evaluations" | "users" } | null)?.tab;
+    if (tab === "evaluations" || tab === "users") {
+      setMainTab(tab);
+    }
+  }, [location.state]);
 
   // Scope por schoolId del usuario
   const userSchoolId: string | null =
@@ -608,142 +619,145 @@ const CoordinatorConsole: React.FC = () => {
       <main className="flex-1 relative z-10 w-full">
         <AnimatedBackground />
 
-        <div className="max-w-7xl mx-auto px-4 md:px-8 py-6 md:py-8 relative z-10 space-y-6">
-          {/* HERO */}
-          <section className="relative overflow-hidden rounded-2xl border border-t-2 border-t-brand-500">
-            {isDark && (
-              <div className="absolute inset-0 pointer-events-none">
-                <div className="absolute -top-32 -right-16 w-[400px] h-[400px] rounded-full bg-gradient-to-br from-brand-500/8 via-brand-500/4 to-transparent blur-[100px]" />
-                <div className="absolute -bottom-24 -left-12 w-[300px] h-[300px] rounded-full bg-gradient-to-tr from-brand-500/5 to-transparent blur-[80px]" />
-              </div>
-            )}
+        <div className="relative z-10 mx-auto max-w-[1560px] space-y-5 px-4 py-5 md:px-7 md:py-6">
+          {mainTab === "users" && (
+            <div className="animate-[fadeInUp_400ms_ease-out]">
+              <CoordinatorUsersPanel />
+            </div>
+          )}
 
+          {/* HERO (solo pestaña Evaluaciones) */}
+          {mainTab === "evaluations" && (
+          <section
+            className={`relative overflow-hidden rounded-2xl ${
+              isDark
+                ? "border border-white/[0.08] bg-gradient-to-br from-[#0d252b] via-[#0a1f24] to-[#08191e]"
+                : "border border-slate-200/80 bg-gradient-to-br from-white via-white to-emerald-50/40 shadow-[0_16px_40px_-28px_rgba(15,23,42,0.2)]"
+            }`}
+          >
             <div
-              className={`relative px-6 py-4 md:px-8 md:py-5 rounded-2xl ${
+              aria-hidden="true"
+              className={`pointer-events-none absolute inset-y-0 right-0 w-[46%] ${
                 isDark
-                  ? "bg-gradient-to-b from-[#0b232a]/92 via-[#091d22]/88 to-[#07171c] border-[#579689]/22 shadow-[0_22px_60px_-45px_rgba(88,190,161,0.28)]"
-                  : "bg-gradient-to-b from-white via-slate-50/80 to-white border-brand-500/20 shadow-[0_12px_40px_-12px_rgba(15,23,42,0.06)]"
+                  ? "bg-[radial-gradient(ellipse_at_right,rgba(16,185,129,0.09),transparent_68%)]"
+                  : "bg-[radial-gradient(ellipse_at_right,rgba(16,185,129,0.1),transparent_70%)]"
               }`}
-            >
-              <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_280px] gap-5 lg:gap-6 items-start">
-                <div className="min-w-0 space-y-4">
-                  <div className="flex flex-row items-center gap-5 md:gap-7">
-                    <div
-                      className="relative shrink-0 flex items-center justify-center overflow-visible pointer-events-none h-16 w-16 md:h-20 md:w-20"
-                      aria-hidden
-                    >
-                      <div
-                        className={`absolute inset-0 rounded-full blur-xl ${
-                          isDark ? "bg-brand-500/20" : "bg-brand-500/15"
-                        }`}
-                      />
-                      <div
-                        className={`relative z-[1] flex h-14 w-14 items-center justify-center rounded-2xl border backdrop-blur-sm md:h-16 md:w-16 ${
-                          isDark
-                            ? "border-brand-400/25 bg-brand-500/10"
-                            : "border-brand-400/30 bg-brand-500/10"
-                        }`}
-                      >
-                        <ShieldAlert
-                          className={`h-7 w-7 md:h-8 md:w-8 ${
-                            isDark ? "text-brand-200" : "text-brand-700"
-                          }`}
-                        />
-                      </div>
-                    </div>
+            />
 
-                    <div className="min-w-0 space-y-0.5">
-                      <h1
-                        className={`text-xl md:text-2xl font-black leading-tight tracking-tight ${
-                          isDark ? "text-white" : "text-slate-900"
-                        }`}
-                      >
-                        Bandeja de{" "}
-                        <span className="bg-gradient-to-r from-brand-400 to-brand-400 bg-clip-text text-transparent">
-                          Revision
-                        </span>
-                      </h1>
-                      <p
-                        className={`text-sm max-w-lg leading-relaxed ${
-                          isDark ? "text-slate-400" : "text-slate-500"
-                        }`}
-                      >
-                        Evalua candidatos, valida riesgos y toma decisiones con trazabilidad.
-                      </p>
-                    </div>
-                  </div>
-
-                  <div className="flex flex-wrap items-center gap-2">
+            <div className="relative grid gap-6 px-6 py-6 lg:grid-cols-[minmax(0,1.15fr)_minmax(420px,0.85fr)] lg:items-center lg:px-8">
+              <div className="flex min-w-0 items-center gap-5 md:gap-7">
+                <div
+                  className={`relative flex h-16 w-16 shrink-0 items-center justify-center rounded-2xl ${
+                    isDark
+                      ? "bg-gradient-to-br from-emerald-400/20 via-teal-400/10 to-transparent text-emerald-300 shadow-[0_0_20px_-8px_rgba(52,211,153,0.4)] ring-1 ring-emerald-400/25"
+                      : "bg-gradient-to-br from-emerald-100 to-teal-50 text-emerald-700 ring-1 ring-emerald-200"
+                  }`}
+                  aria-hidden="true"
+                >
+                  {isDark && (
                     <span
-                      className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-[10px] font-bold uppercase tracking-[0.18em] ${
+                      aria-hidden
+                      className="pointer-events-none absolute inset-0 rounded-2xl bg-[radial-gradient(circle_at_30%_25%,rgba(52,211,153,0.18),transparent_70%)]"
+                    />
+                  )}
+                  <ShieldCheck
+                    className={`relative h-8 w-8 ${isDark ? "drop-shadow-[0_0_6px_rgba(52,211,153,0.4)]" : ""}`}
+                    strokeWidth={1.9}
+                  />
+                </div>
+
+                <div className="min-w-0">
+                  <p className={`text-sm ${isDark ? "text-slate-400" : "text-slate-500"}`}>
+                    Bienvenido, coordinador
+                  </p>
+                  <h1
+                    className={`mt-1 text-2xl font-bold tracking-[-0.025em] md:text-[30px] ${
+                      isDark ? "text-white" : "text-slate-950"
+                    }`}
+                  >
+                    Panel de{" "}
+                    <span className={isDark ? "text-emerald-400" : "text-emerald-500"}>
+                      evaluaciones
+                    </span>
+                  </h1>
+                  <p className={`mt-1.5 max-w-2xl text-sm leading-6 ${isDark ? "text-slate-400" : "text-slate-600"}`}>
+                    Gestiona y da seguimiento a las evaluaciones docentes con trazabilidad y eficiencia.
+                  </p>
+                  <div className="mt-4 flex flex-wrap items-center gap-2">
+                    <span
+                      className={`inline-flex items-center gap-2 rounded-full px-3 py-1 text-[11px] font-semibold ${
                         isDark
-                          ? "border-brand-400/30 bg-brand-500/10 text-brand-200"
-                          : "border-brand-200 bg-brand-50 text-brand-700"
+                          ? "bg-emerald-400/12 text-emerald-300 ring-1 ring-emerald-400/20"
+                          : "bg-emerald-100/80 text-emerald-800"
                       }`}
                     >
-                      <Activity className="h-3.5 w-3.5" />
-                      Coordinacion activa
+                      <Activity className="h-3.5 w-3.5" strokeWidth={2} />
+                      Coordinación activa
                     </span>
                     <span
-                      className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-[10px] font-bold uppercase tracking-[0.18em] ${
+                      className={`rounded-full px-3 py-1 text-[11px] font-medium ${
                         isDark
-                          ? "border-white/10 bg-white/[0.03] text-slate-300"
-                          : "border-slate-200 bg-white text-slate-600"
+                          ? "bg-white/[0.04] text-slate-300"
+                          : "bg-slate-100/80 text-slate-600"
                       }`}
                     >
                       Trazabilidad total
                     </span>
                   </div>
                 </div>
+              </div>
 
-                <div
-                  className={`rounded-xl border border-t-2 border-t-brand-500 p-3 space-y-2.5 ${
-                    isDark ? "bg-white/[0.02] border-brand-500/25" : "bg-white/80 border-brand-500/20"
-                  }`}
-                >
-                  <p
-                    className={`text-[10px] font-bold uppercase tracking-[0.2em] ${
-                      isDark ? "text-brand-300" : "text-brand-700"
-                    }`}
-                  >
-                    Recomendado para iniciar
-                  </p>
-                  <div className="space-y-2">
-                    {[
-                      "Selecciona escuela y programa para acotar la bandeja.",
-                      "Abre el detalle de cada candidato para validar el analisis.",
-                      "Aprueba o rechaza con un comentario trazable.",
-                    ].map((item) => (
-                      <div key={item} className="flex items-start gap-2">
-                        <span
-                          className={`mt-0.5 h-1.5 w-1.5 rounded-full shrink-0 ${
-                            isDark ? "bg-brand-400/80" : "bg-brand-500/80"
-                          }`}
-                        />
-                        <p
-                          className={`text-[11px] leading-snug ${
-                            isDark ? "text-slate-300" : "text-slate-600"
-                          }`}
-                        >
-                          {item}
-                        </p>
-                      </div>
-                    ))}
-                  </div>
+              <div
+                className={`relative isolate overflow-hidden rounded-2xl border px-5 py-5 pr-32 sm:pr-40 ${
+                  isDark
+                    ? "border-white/[0.07] bg-black/20"
+                    : "border-emerald-100/80 bg-emerald-50/50"
+                }`}
+              >
+                <p className={`text-[10px] font-bold uppercase tracking-[0.16em] ${isDark ? "text-emerald-300/90" : "text-emerald-700"}`}>
+                  Recomendado para iniciar
+                </p>
+                <div className="mt-3 space-y-2.5">
+                  {[
+                    "Selecciona escuela y programa para acotar la bandeja.",
+                    "Abre el detalle de cada candidato para validar el análisis.",
+                    "Aprueba o rechaza con un comentario trazable.",
+                  ].map((item) => (
+                    <div key={item} className="flex items-start gap-2.5">
+                      <CheckCircle2
+                        className={`mt-0.5 h-4 w-4 shrink-0 ${
+                          isDark ? "text-emerald-400" : "text-emerald-600"
+                        }`}
+                        strokeWidth={2}
+                      />
+                      <p className={`text-[11px] leading-5 ${isDark ? "text-slate-300" : "text-slate-600"}`}>
+                        {item}
+                      </p>
+                    </div>
+                  ))}
                 </div>
+                <img
+                  aria-hidden="true"
+                  alt=""
+                  src="/coordinator-recommendation-clipboard.png"
+                  className={`pointer-events-none absolute -bottom-[30%] -right-2 -z-10 h-[165%] w-auto max-w-none select-none object-contain object-right ${
+                    isDark ? "opacity-90" : "opacity-70"
+                  }`}
+                />
               </div>
             </div>
           </section>
+          )}
 
-          {/* ESTADO CARGA / ERROR */}
-          {showLoading && (
+          {/* ESTADO CARGA / ERROR (solo Evaluaciones) */}
+          {mainTab === "evaluations" && showLoading && (
             <div className="flex flex-col items-center justify-center py-20 gap-3">
               <Loader2 className={`w-8 h-8 animate-spin ${isDark ? "text-brand-400" : "text-brand-500"}`} />
               <p className={`text-sm ${isDark ? "text-slate-400" : "text-slate-500"}`}>Cargando historial...</p>
             </div>
           )}
 
-          {showError && (
+          {mainTab === "evaluations" && showError && (
             <div className="flex flex-col items-center justify-center py-16 gap-2">
               <div className={`p-3 rounded-xl ${isDark ? "bg-rose-500/10" : "bg-rose-50"}`}>
                 <AlertCircle className="w-6 h-6 text-rose-500" />
@@ -752,9 +766,7 @@ const CoordinatorConsole: React.FC = () => {
             </div>
           )}
 
-          {!showLoading && !showError && (
-            <>
-              {mainTab === "evaluations" && (
+          {mainTab === "evaluations" && !showLoading && !showError && (
                 <section className="space-y-6 animate-[fadeInUp_400ms_ease-out]">
                     {/* KPI Strip - Full Width */}
                     <CoordinatorKpiStrip
@@ -763,65 +775,95 @@ const CoordinatorConsole: React.FC = () => {
                       isScoped={!!userSchoolId}
                     />
 
-                    {/* 3-Panel Dashboard Grid */}
-                    <div className="grid grid-cols-12 gap-5 items-start">
-                      {/* PANEL 1: Prioridad de revision (Compact Sidebar) */}
-                      <div className="col-span-12 lg:col-span-4 xl:col-span-3">
+                    {/* Bandeja principal + columna de apoyo */}
+                    <div className="grid grid-cols-1 items-stretch gap-5 xl:grid-cols-[minmax(0,2.25fr)_minmax(300px,1fr)]">
+                      {/* PANEL 1: Bandeja de candidatos */}
+                      <div id="evaluaciones-registradas" className="flex min-h-0 min-w-0 scroll-mt-28 flex-col xl:h-full [&_>_*]:h-full [&_>_*]:min-h-0">
+                        <EvaluationsListPanel
+                          variant="embedded"
+                          schoolFilter={schoolFilter}
+                          setSchoolFilter={setSchoolFilter}
+                          programFilter={programFilter}
+                          setProgramFilter={setProgramFilter}
+                          schoolOptions={schoolOptions}
+                          programOptions={programOptions}
+                          mustChooseScope={mustChooseScope}
+                          groupedCandidates={groupedCandidates}
+                          selectedId={null}
+                          search={String(evals.search ?? "")}
+                          setSearch={(v) => evals.setSearch(String(v ?? ""))}
+                          decisionFilter={evals.decisionFilter}
+                          setDecisionFilter={evals.setDecisionFilter}
+                          localDecisions={evals.localDecisions}
+                          lockedSchool={!!userSchoolId}
+                          schoolHint={
+                            scopeLoading
+                              ? "Cargando programas de tu escuela…"
+                              : userSchoolId
+                                ? "Escuela asignada por tu usuario."
+                                : undefined
+                          }
+                        />
+                      </div>
+
+                      {/* PANEL 2: Contexto de apoyo */}
+                      <aside className="grid min-w-0 content-start gap-4 md:grid-cols-2 xl:grid-cols-1">
+                        {/* Prioridad de revisión */}
                         <div
                           className={[
-                            "relative overflow-hidden rounded-2xl border border-t-2 border-t-brand-500 transition-all duration-300 flex flex-col",
+                            "relative flex flex-col overflow-hidden rounded-2xl",
                             isDark
-                              ? "bg-gradient-to-b from-[#0b232a] to-[#091d22] border-[#579689]/22 shadow-[0_22px_60px_-45px_rgba(88,190,161,0.28)]"
-                              : "bg-white border-brand-500/20 shadow-[0_4px_20px_-6px_rgba(15,23,42,0.06)]",
+                              ? "border border-white/[0.08] bg-[#0d252b]"
+                              : "border border-slate-200/80 bg-white shadow-[0_14px_36px_-28px_rgba(15,23,42,0.25)]",
                           ].join(" ")}
                         >
-                          {isDark && (
-                            <div className="pointer-events-none absolute top-0 right-0 -mt-20 -mr-20 h-72 w-72 rounded-full bg-brand-500/5 blur-[80px]" />
-                          )}
-
-                          <div className="relative p-5 flex flex-col">
-                            {/* Header */}
-                            <div className="flex items-center gap-3 mb-4">
+                          <div className="relative flex flex-col p-5">
+                            <div className="mb-4 flex items-center gap-3">
                               <div
                                 className={[
-                                  "shrink-0 w-8 h-8 rounded-lg flex items-center justify-center border",
+                                  "relative flex h-8 w-8 shrink-0 items-center justify-center rounded-lg",
                                   isDark
-                                    ? "border-brand-500/25 bg-brand-500/10"
-                                    : "border-brand-200 bg-brand-50",
+                                    ? "bg-gradient-to-br from-emerald-400/18 to-transparent text-emerald-300 shadow-[0_0_12px_-6px_rgba(52,211,153,0.35)] ring-1 ring-emerald-400/20"
+                                    : "bg-emerald-50 text-emerald-600",
                                 ].join(" ")}
                               >
-                                <TrendingUp className={`w-4 h-4 ${isDark ? "text-brand-400" : "text-brand-600"}`} />
+                                <TrendingUp className="h-4 w-4" strokeWidth={2} />
                               </div>
                               <div className="min-w-0">
-                                <h3 className={`text-xs font-bold tracking-tight truncate ${isDark ? "text-white" : "text-slate-900"}`}>
+                                <h3 className={`truncate text-xs font-bold tracking-tight ${isDark ? "text-white" : "text-slate-900"}`}>
                                   Prioridad
                                 </h3>
-                                <p className={`text-[10px] truncate ${isDark ? "text-slate-500" : "text-slate-400"}`}>
+                                <p className={`truncate text-[10px] ${isDark ? "text-slate-500" : "text-slate-400"}`}>
                                   Ranking por score
                                 </p>
                               </div>
                             </div>
 
-                            {/* Card list */}
-                            <div className="space-y-2.5">
+                            <div className="space-y-2">
                               {topPageItems.length === 0 ? (
                                 <div
-                                  className={`flex flex-col items-center justify-center rounded-xl border border-dashed p-8 text-center ${
+                                  className={`flex min-h-[108px] flex-col items-center justify-center rounded-xl border border-dashed p-6 text-center ${
                                     isDark
-                                      ? "border-white/10 bg-white/[0.02]"
+                                      ? "border-white/[0.1] bg-[#07171c]/60"
                                       : "border-slate-200 bg-slate-50"
                                   }`}
                                 >
-                                  <div className="text-slate-500 mb-2">
-                                    <TrendingUp className="h-6 w-6 opacity-30" />
+                                  <div
+                                    className={`mb-2 flex h-12 w-12 items-center justify-center rounded-full ${
+                                      isDark
+                                        ? "bg-emerald-400/[0.08] text-emerald-400/55 ring-1 ring-emerald-400/15"
+                                        : "bg-slate-100 text-slate-400"
+                                    }`}
+                                  >
+                                    <TrendingUp className="h-6 w-6" strokeWidth={1.8} />
                                   </div>
                                   <p className={`text-xs font-medium ${isDark ? "text-slate-500" : "text-slate-600"}`}>
-                                    Sin datos suficientes.
+                                    Sin datos suficientes
                                   </p>
                                 </div>
                               ) : (
-                                topPageItems.map((c) => {
-                                  const rank = topStart + topPageItems.indexOf(c) + 1;
+                                topPageItems.map((c, idx) => {
+                                  const rank = topStart + idx + 1;
                                   const score = Number.isFinite(Number(c.score))
                                     ? Math.max(0, Math.min(100, Number(c.score)))
                                     : 0;
@@ -832,12 +874,9 @@ const CoordinatorConsole: React.FC = () => {
                                   let toneColor = isDark ? "text-slate-400" : "text-slate-500";
                                   let toneBg = "bg-slate-500";
 
-                                  if (isHigh) {
-                                    toneColor = isDark ? "text-brand-400" : "text-brand-600";
-                                    toneBg = "bg-brand-500";
-                                  } else if (isMed) {
-                                    toneColor = isDark ? "text-brand-400" : "text-brand-600";
-                                    toneBg = "bg-brand-500";
+                                  if (isHigh || isMed) {
+                                    toneColor = isDark ? "text-emerald-300" : "text-emerald-600";
+                                    toneBg = "bg-emerald-500";
                                   }
 
                                   return (
@@ -849,44 +888,46 @@ const CoordinatorConsole: React.FC = () => {
                                           `/coordinator/evaluations/${encodeURIComponent(c.id)}/report`,
                                         )
                                       }
-                                      className={`group w-full flex items-center gap-3 rounded-xl border p-3 text-left transition-all duration-200 hover:-translate-y-0.5 ${
+                                      className={`group flex w-full items-center gap-3 rounded-xl border p-3 text-left transition-colors ${
                                         isDark
-                                          ? "border-[#579689]/18 bg-[#102a30] hover:border-[#58bea1]/35 hover:shadow-[0_8px_22px_-12px_rgba(40,120,105,0.28)]"
-                                          : "border-slate-200 bg-white hover:border-brand-300 hover:shadow-[0_8px_25px_-8px_rgba(15,23,42,0.1)]"
+                                          ? "border-white/[0.06] bg-[#07171c]/55 hover:border-white/[0.12] hover:bg-[#0a1f24]"
+                                          : "border-slate-200/70 bg-slate-50 hover:bg-slate-100/80"
                                       }`}
                                     >
                                       <span
-                                        className={`shrink-0 flex h-7 w-7 items-center justify-center rounded-lg text-[10px] font-bold font-mono ${toneColor} ${
-                                          isDark ? "bg-white/5" : "bg-slate-50 border border-slate-200"
+                                        className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-lg font-mono text-[10px] font-bold ${toneColor} ${
+                                          isDark ? "bg-white/[0.05]" : "bg-white"
                                         }`}
                                       >
                                         #{rank}
                                       </span>
 
                                       <div className="min-w-0 flex-1">
-                                        <p className={`text-xs font-bold truncate group-hover:text-brand-400 ${isDark ? "text-white" : "text-slate-900"}`}>
+                                        <p className={`truncate text-xs font-bold group-hover:text-emerald-400 ${isDark ? "text-white" : "text-slate-900"}`}>
                                           {c.name}
                                         </p>
-                                        <div className="flex items-center gap-2 mt-1">
-                                          <div className={`h-1.5 flex-1 rounded-full overflow-hidden ${isDark ? "bg-white/10" : "bg-slate-100"}`}>
+                                        <div className="mt-1 flex items-center gap-2">
+                                          <div className={`h-1.5 flex-1 overflow-hidden rounded-full ${isDark ? "bg-white/10" : "bg-slate-200"}`}>
                                             <div
-                                              className={`h-full rounded-full ${toneBg} ${isHigh ? "shadow-[0_0_8px_rgba(16,185,129,0.3)]" : ""}`}
+                                              className={`h-full rounded-full ${toneBg}`}
                                               style={{ width: `${score}%` }}
                                             />
                                           </div>
-                                          <span className={`text-[10px] font-bold shrink-0 ${toneColor}`}>
+                                          <span className={`shrink-0 text-[10px] font-bold ${toneColor}`}>
                                             {Math.round(score)}
                                           </span>
                                         </div>
                                       </div>
 
                                       <span
-                                        className={`shrink-0 rounded-md border px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wider ${
-                                          isHigh
-                                            ? isDark ? "border-brand-500/25 bg-brand-500/10 text-brand-300" : "border-brand-200 bg-brand-50 text-brand-700"
-                                            : isMed
-                                              ? isDark ? "border-brand-500/25 bg-brand-500/10 text-brand-300" : "border-brand-200 bg-brand-50 text-brand-700"
-                                              : isDark ? "border-white/10 bg-white/5 text-slate-400" : "border-slate-200 bg-slate-50 text-slate-600"
+                                        className={`shrink-0 rounded-md px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wider ${
+                                          isHigh || isMed
+                                            ? isDark
+                                              ? "bg-emerald-500/10 text-emerald-300"
+                                              : "bg-emerald-50 text-emerald-700"
+                                            : isDark
+                                              ? "bg-white/5 text-slate-400"
+                                              : "bg-slate-100 text-slate-600"
                                         }`}
                                       >
                                         {c.verdictShort === "Sin veredicto" ? "Pend." : c.verdictShort?.slice(0, 8)}
@@ -897,13 +938,8 @@ const CoordinatorConsole: React.FC = () => {
                               )}
                             </div>
 
-                            {/* Pagination */}
                             {topTotal > TOP_PAGE_SIZE && (
-                              <div
-                                className={`mt-4 pt-3 border-t flex items-center justify-between ${
-                                  isDark ? "border-white/5" : "border-slate-200"
-                                }`}
-                              >
+                              <div className="mt-4 flex items-center justify-between pt-1">
                                 <span className={`text-[10px] ${isDark ? "text-slate-500" : "text-slate-400"}`}>
                                   {topStart + 1}–{topEnd} de {topTotal}
                                 </span>
@@ -912,25 +948,33 @@ const CoordinatorConsole: React.FC = () => {
                                     type="button"
                                     onClick={() => setTopPage((p) => Math.max(1, p - 1))}
                                     disabled={safeTopPage <= 1}
-                                    className={`grid h-6 w-6 place-items-center rounded-md border text-[10px] transition ${
+                                    className={`grid h-7 w-7 place-items-center rounded-md text-[11px] transition ${
                                       safeTopPage <= 1
-                                        ? isDark ? "border-transparent text-slate-700 cursor-not-allowed" : "border-transparent text-slate-300 cursor-not-allowed"
-                                        : isDark ? "border-white/10 bg-white/5 text-slate-300 hover:bg-white/10" : "border-slate-200 bg-white text-slate-600 hover:bg-slate-50"
+                                        ? isDark
+                                          ? "cursor-not-allowed text-slate-700"
+                                          : "cursor-not-allowed text-slate-300"
+                                        : isDark
+                                          ? "text-slate-300 hover:bg-white/[0.06]"
+                                          : "text-slate-600 hover:bg-slate-100"
                                     }`}
                                   >
                                     ‹
                                   </button>
-                                  <span className={`text-[10px] font-medium min-w-[2rem] text-center ${isDark ? "text-slate-400" : "text-slate-500"}`}>
+                                  <span className={`min-w-[2rem] text-center text-[10px] font-medium ${isDark ? "text-slate-400" : "text-slate-500"}`}>
                                     {safeTopPage}/{topTotalPages}
                                   </span>
                                   <button
                                     type="button"
                                     onClick={() => setTopPage((p) => Math.min(topTotalPages, p + 1))}
                                     disabled={safeTopPage >= topTotalPages}
-                                    className={`grid h-6 w-6 place-items-center rounded-md border text-[10px] transition ${
+                                    className={`grid h-7 w-7 place-items-center rounded-md text-[11px] transition ${
                                       safeTopPage >= topTotalPages
-                                        ? isDark ? "border-transparent text-slate-700 cursor-not-allowed" : "border-transparent text-slate-300 cursor-not-allowed"
-                                        : isDark ? "border-white/10 bg-white/5 text-slate-300 hover:bg-white/10" : "border-slate-200 bg-white text-slate-600 hover:bg-slate-50"
+                                        ? isDark
+                                          ? "cursor-not-allowed text-slate-700"
+                                          : "cursor-not-allowed text-slate-300"
+                                        : isDark
+                                          ? "text-slate-300 hover:bg-white/[0.06]"
+                                          : "text-slate-600 hover:bg-slate-100"
                                     }`}
                                   >
                                     ›
@@ -940,77 +984,47 @@ const CoordinatorConsole: React.FC = () => {
                             )}
                           </div>
                         </div>
-                      </div>
 
-                      {/* PANEL 2: Bandeja de candidatos (Main Content) */}
-                      <div className="col-span-12 lg:col-span-8 xl:col-span-6">
-                        <div id="evaluaciones-registradas" className="scroll-mt-28">
-                          <EvaluationsListPanel
-                            schoolFilter={schoolFilter}
-                            setSchoolFilter={setSchoolFilter}
-                            programFilter={programFilter}
-                            setProgramFilter={setProgramFilter}
-                            schoolOptions={schoolOptions}
-                            programOptions={programOptions}
-                            mustChooseScope={mustChooseScope}
-                            groupedCandidates={groupedCandidates}
-                            selectedId={null}
-                            search={String(evals.search ?? "")}
-                            setSearch={(v) => evals.setSearch(String(v ?? ""))}
-                            decisionFilter={evals.decisionFilter}
-                            setDecisionFilter={evals.setDecisionFilter}
-                            localDecisions={evals.localDecisions}
-                            lockedSchool={!!userSchoolId}
-                            schoolHint={
-                              scopeLoading
-                                ? "Cargando programas de tu escuela…"
-                                : userSchoolId
-                                  ? "Escuela asignada por tu usuario."
-                                  : undefined
-                            }
-                          />
-                        </div>
-                      </div>
-
-                      {/* PANEL 3: Guia rapida (Compact Sidebar) */}
-                      <aside className="col-span-12 xl:col-span-3">
+                        {/* Guía rápida */}
                         <div
-                          className={`relative overflow-hidden rounded-2xl border border-t-2 border-t-brand-500 p-5 ${
+                          className={`relative overflow-hidden rounded-2xl p-5 ${
                             isDark
-                              ? "bg-gradient-to-b from-[#0b232a] to-[#091d22] border-[#579689]/22 shadow-[0_22px_60px_-45px_rgba(88,190,161,0.28)]"
-                              : "bg-white border-brand-500/20 shadow-[0_4px_20px_-6px_rgba(15,23,42,0.06)]"
+                              ? "border border-white/[0.08] bg-[#0d252b]"
+                              : "border border-slate-200/80 bg-white shadow-[0_14px_36px_-28px_rgba(15,23,42,0.25)]"
                           }`}
                         >
-                          {isDark && (
-                            <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_85%_0%,rgba(16,185,129,0.06),transparent_55%)]" />
-                          )}
                           <div className="relative">
-                            <div
-                              className={`inline-flex items-center gap-2 rounded-full border px-3 py-1 text-[10px] font-bold uppercase tracking-[0.16em] ${
-                                isDark
-                                  ? "border-brand-400/30 bg-brand-500/10 text-brand-200"
-                                  : "border-brand-100 bg-brand-50 text-brand-700"
-                              }`}
-                            >
-                              <Sparkles className={`h-3.5 w-3.5 ${isDark ? "text-brand-400" : "text-brand-600"}`} />
-                              Guia
+                            <div className="flex items-center gap-3">
+                              <span
+                                className={`relative flex h-8 w-8 items-center justify-center rounded-lg ${
+                                  isDark
+                                    ? "bg-gradient-to-br from-emerald-400/18 to-transparent text-emerald-300 shadow-[0_0_12px_-6px_rgba(52,211,153,0.35)] ring-1 ring-emerald-400/20"
+                                    : "bg-emerald-50 text-emerald-700"
+                                }`}
+                              >
+                                <Sparkles className="h-4 w-4" strokeWidth={2} />
+                              </span>
+                              <div>
+                                <div className={`text-xs font-semibold ${isDark ? "text-white" : "text-slate-900"}`}>
+                                  Guía rápida
+                                </div>
+                                <p className={`mt-0.5 text-[10px] ${isDark ? "text-slate-500" : "text-slate-400"}`}>
+                                  Flujo recomendado
+                                </p>
+                              </div>
                             </div>
 
-                            <div className={`mt-3 text-xs font-semibold ${isDark ? "text-white" : "text-slate-900"}`}>
-                              Flujo recomendado
-                            </div>
-
-                            <ul className={`mt-3 space-y-3 text-[11px] leading-relaxed ${isDark ? "text-slate-400" : "text-slate-500"}`}>
+                            <ul className={`mt-4 space-y-3 text-[11px] leading-relaxed ${isDark ? "text-slate-400" : "text-slate-500"}`}>
                               <li className="flex gap-2.5">
-                                <span className={`shrink-0 flex h-5 w-5 items-center justify-center rounded-md text-[9px] font-bold ${isDark ? "bg-brand-500/10 text-brand-400" : "bg-brand-100 text-brand-700"}`}>1</span>
-                                <span>Revisa <b className={isDark ? "text-white" : "text-slate-800"}>Prioridad</b> para decisiones rapidas.</span>
+                                <span className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-md text-[9px] font-bold ${isDark ? "bg-emerald-400/15 text-emerald-300" : "bg-emerald-100 text-emerald-700"}`}>1</span>
+                                <span>Revisa <b className={isDark ? "text-white" : "text-slate-800"}>Prioridad</b> para decisiones rápidas.</span>
                               </li>
                               <li className="flex gap-2.5">
-                                <span className={`shrink-0 flex h-5 w-5 items-center justify-center rounded-md text-[9px] font-bold ${isDark ? "bg-brand-500/10 text-brand-400" : "bg-brand-100 text-brand-700"}`}>2</span>
+                                <span className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-md text-[9px] font-bold ${isDark ? "bg-emerald-400/15 text-emerald-300" : "bg-emerald-100 text-emerald-700"}`}>2</span>
                                 <span>En <b className={isDark ? "text-white" : "text-slate-800"}>Bandeja</b>, filtra por programa.</span>
                               </li>
                               <li className="flex gap-2.5">
-                                <span className={`shrink-0 flex h-5 w-5 items-center justify-center rounded-md text-[9px] font-bold ${isDark ? "bg-brand-500/10 text-brand-400" : "bg-brand-100 text-brand-700"}`}>3</span>
+                                <span className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-md text-[9px] font-bold ${isDark ? "bg-emerald-400/15 text-emerald-300" : "bg-emerald-100 text-emerald-700"}`}>3</span>
                                 <span>Abre detalle: apruebas/rechazas y exportas PDF.</span>
                               </li>
                             </ul>
@@ -1018,7 +1032,7 @@ const CoordinatorConsole: React.FC = () => {
                             <div
                               className={`mt-4 rounded-xl border p-3 text-[10px] leading-relaxed ${
                                 isDark
-                                  ? "border-white/[0.06] bg-white/[0.02] text-slate-500"
+                                  ? "border-white/[0.07] bg-[#07171c]/50 text-slate-500"
                                   : "border-slate-200 bg-slate-50 text-slate-500"
                               }`}
                             >
@@ -1029,14 +1043,6 @@ const CoordinatorConsole: React.FC = () => {
                       </aside>
                     </div>
                   </section>
-              )}
-
-              {mainTab === "users" && (
-                <div className="animate-[fadeInUp_400ms_ease-out]">
-                  <CoordinatorUsersPanel />
-                </div>
-              )}
-            </>
           )}
         </div>
       </main>
