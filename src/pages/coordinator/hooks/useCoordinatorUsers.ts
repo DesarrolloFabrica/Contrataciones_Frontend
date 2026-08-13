@@ -18,7 +18,7 @@ type UseCoordinatorUsersResult = {
   createLeader: (
     dto: Omit<CreateAdminUserDto, "role" | "schoolId">
   ) => Promise<{ ok: boolean; user?: AdminUser }>;
-  toggleActive: (id: string) => Promise<void>;
+  toggleActive: (id: string) => Promise<{ ok: boolean }>;
 };
 
 const norm = (v: any) => String(v ?? "").trim().toLowerCase();
@@ -143,10 +143,11 @@ export function useCoordinatorUsers(): UseCoordinatorUsersResult {
   const toggleActive = useCallback(
     async (id: string) => {
       const u = users.find((x) => x.id === id);
-      if (!u) return;
+      if (!u) return { ok: false };
 
       const nextActive = u.status !== "ACTIVE";
       await setActiveMutation.mutateAsync({ userId: id, isActive: nextActive });
+      return { ok: true };
     },
     [users, setActiveMutation]
   );

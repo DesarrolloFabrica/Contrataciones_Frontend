@@ -1,51 +1,53 @@
 import React from "react";
 import {
   ArrowRight,
-  BrainCircuit,
   CheckCircle2,
-  ClipboardList,
-  FileText,
+  CircleDot,
+  CalendarClock,
   Headphones,
   History,
   LayoutDashboard,
   MessageSquareText,
-  UserRound,
 } from "lucide-react";
 import { useTheme } from "../../../context/ThemeContext";
 
 type ViewMode = "analyze" | "history";
 type WizardStep = 1 | 2 | 3 | 4 | 5;
 
+type InterviewerCounts = {
+  pending: number;
+  inProgress: number;
+  completed: number;
+};
+
 type Props = {
   mode: ViewMode;
+  /** Conservado para la siguiente fase (formulario dinámico / wizard). */
   currentStep: WizardStep;
   onChangeMode: (mode: ViewMode) => void;
+  /** Conservado para la siguiente fase; no se usa en la bandeja. */
   onSelectStep: (step: WizardStep) => void;
   onOpenHelp: () => void;
+  counts?: InterviewerCounts | null;
 };
 
 const WORKSPACE_ITEMS = [
-  { id: "analyze" as const, label: "Nueva entrevista", icon: BrainCircuit },
+  { id: "analyze" as const, label: "Mis charlas", icon: MessageSquareText },
   { id: "history" as const, label: "Historial", icon: History },
-];
-
-const FLOW_STEPS: Array<{ id: WizardStep; label: string; hint: string; icon: typeof FileText }> = [
-  { id: 1, label: "Contexto", hint: "Vacante y perfil", icon: ClipboardList },
-  { id: 2, label: "Documentos", hint: "Soportes del candidato", icon: FileText },
-  { id: 3, label: "Candidato", hint: "Datos de identidad", icon: UserRound },
-  { id: 4, label: "Entrevista", hint: "Respuestas de la charla", icon: MessageSquareText },
-  { id: 5, label: "Revisión", hint: "Validar y enviar", icon: CheckCircle2 },
 ];
 
 export function LeaderWorkspaceSidebar({
   mode,
-  currentStep,
+  currentStep: _currentStep,
   onChangeMode,
-  onSelectStep,
+  onSelectStep: _onSelectStep,
   onOpenHelp,
+  counts = null,
 }: Props) {
   const { theme } = useTheme();
   const isDark = theme === "dark";
+  void _currentStep;
+  void _onSelectStep;
 
   return (
     <aside
@@ -77,10 +79,10 @@ export function LeaderWorkspaceSidebar({
           </span>
           <span className="min-w-0">
             <span className={`block text-[13px] font-semibold leading-5 ${isDark ? "text-white" : "text-slate-900"}`}>
-              Panel del líder
+              Panel del entrevistador
             </span>
             <span className={`block text-[10px] leading-4 ${isDark ? "text-emerald-100/55" : "text-slate-500"}`}>
-              Contratación docente
+              CHARLAS
             </span>
           </span>
         </div>
@@ -95,7 +97,7 @@ export function LeaderWorkspaceSidebar({
             Espacio de trabajo
           </p>
 
-          <nav className="space-y-1.5" aria-label="Navegación del líder">
+          <nav className="space-y-1.5" aria-label="Navegación del entrevistador">
             {WORKSPACE_ITEMS.map(({ id, label, icon: Icon }) => {
               const active = mode === id;
 
@@ -134,84 +136,39 @@ export function LeaderWorkspaceSidebar({
             })}
           </nav>
 
-          <div className={`my-5 h-px ${isDark ? "bg-white/[0.07]" : "bg-slate-200"}`} />
-
-          <div className="mb-2.5 flex items-center justify-between px-2">
-            <p
-              className={[
-                "text-[9px] font-semibold uppercase tracking-[0.14em]",
-                isDark ? "text-slate-400/70" : "text-slate-400",
-              ].join(" ")}
-            >
-              Flujo actual
-            </p>
-            <span
-              className={[
-                "rounded-full px-2 py-0.5 text-[9px] font-bold tabular-nums",
-                isDark
-                  ? "bg-emerald-400/[0.12] text-emerald-300"
-                  : "bg-emerald-50 text-emerald-700",
-              ].join(" ")}
-            >
-              {currentStep}/5
-            </span>
-          </div>
-
-          <div className="space-y-1">
-            {FLOW_STEPS.map(({ id, label, hint, icon: Icon }) => {
-              const active = mode === "analyze" && currentStep === id;
-              const complete = mode === "analyze" && id < currentStep;
-
-              return (
-                <button
-                  key={id}
-                  type="button"
-                  onClick={() => onSelectStep(id)}
-                  aria-current={active ? "step" : undefined}
-                  className={[
-                    "group flex w-full items-center gap-2.5 rounded-xl border px-2.5 py-2 text-left transition-all duration-200",
-                    active
-                      ? isDark
-                        ? "border-emerald-300/[0.12] bg-white/[0.065] text-white shadow-[0_12px_28px_-24px_rgba(16,185,129,0.8)]"
-                        : "border-emerald-200 bg-emerald-50/80 text-slate-900"
-                      : isDark
-                        ? "border-transparent text-slate-400 hover:bg-white/[0.035] hover:text-slate-200"
-                        : "border-transparent text-slate-500 hover:bg-slate-50 hover:text-slate-800",
-                  ].join(" ")}
-                >
-                  <span
-                    className={[
-                      "flex h-7 w-7 shrink-0 items-center justify-center rounded-lg border transition-colors",
-                      active || complete
-                        ? isDark
-                          ? "border-emerald-400/[0.12] bg-emerald-400/[0.12] text-emerald-300"
-                          : "border-emerald-200 bg-white text-emerald-700"
-                        : isDark
-                          ? "border-white/[0.035] bg-white/[0.045] text-slate-500 group-hover:text-slate-300"
-                          : "border-slate-200 bg-slate-100 text-slate-400 group-hover:text-slate-600",
-                    ].join(" ")}
-                  >
-                    {complete ? (
-                      <CheckCircle2 className="h-3.5 w-3.5" strokeWidth={1.8} />
-                    ) : (
-                      <Icon className="h-3.5 w-3.5" strokeWidth={1.8} />
-                    )}
-                  </span>
-                  <span className="min-w-0">
-                    <span className="block text-[12px] font-medium leading-4">{label}</span>
-                    <span
-                      className={[
-                        "block truncate text-[9px] leading-4",
-                        isDark ? "text-slate-500" : "text-slate-400",
-                      ].join(" ")}
-                    >
-                      {hint}
-                    </span>
-                  </span>
-                </button>
-              );
-            })}
-          </div>
+          {counts && (
+            <>
+              <div className={`my-5 h-px ${isDark ? "bg-white/[0.07]" : "bg-slate-200"}`} />
+              <p
+                className={[
+                  "mb-2.5 px-2 text-[9px] font-semibold uppercase tracking-[0.14em]",
+                  isDark ? "text-slate-400/70" : "text-slate-400",
+                ].join(" ")}
+              >
+                Resumen
+              </p>
+              <div className="space-y-1.5">
+                <SummaryRow
+                  isDark={isDark}
+                  icon={CalendarClock}
+                  label="Pendientes"
+                  value={counts.pending}
+                />
+                <SummaryRow
+                  isDark={isDark}
+                  icon={CircleDot}
+                  label="En progreso"
+                  value={counts.inProgress}
+                />
+                <SummaryRow
+                  isDark={isDark}
+                  icon={CheckCircle2}
+                  label="Completadas"
+                  value={counts.completed}
+                />
+              </div>
+            </>
+          )}
         </div>
 
         <div className="relative mt-5 shrink-0">
@@ -241,7 +198,7 @@ export function LeaderWorkspaceSidebar({
                   ¿Necesitas ayuda?
                 </span>
                 <span className={`block text-[9px] leading-[13px] ${isDark ? "text-slate-400" : "text-slate-500"}`}>
-                  Consulta la guía completa del proceso.
+                  Consulta la guía del espacio de trabajo.
                 </span>
               </span>
             </span>
@@ -260,6 +217,42 @@ export function LeaderWorkspaceSidebar({
         </div>
       </div>
     </aside>
+  );
+}
+
+function SummaryRow({
+  isDark,
+  icon: Icon,
+  label,
+  value,
+}: {
+  isDark: boolean;
+  icon: typeof CalendarClock;
+  label: string;
+  value: number;
+}) {
+  return (
+    <div
+      className={[
+        "flex items-center gap-2.5 rounded-xl border px-2.5 py-2",
+        isDark ? "border-transparent text-slate-300" : "border-transparent text-slate-600",
+      ].join(" ")}
+    >
+      <span
+        className={[
+          "flex h-7 w-7 shrink-0 items-center justify-center rounded-lg border",
+          isDark
+            ? "border-white/[0.035] bg-white/[0.045] text-emerald-300"
+            : "border-slate-200 bg-slate-100 text-emerald-700",
+        ].join(" ")}
+      >
+        <Icon className="h-3.5 w-3.5" strokeWidth={1.8} />
+      </span>
+      <span className="min-w-0 flex-1 text-[12px] font-medium">{label}</span>
+      <span className={`text-[12px] font-bold tabular-nums ${isDark ? "text-white" : "text-slate-900"}`}>
+        {value}
+      </span>
+    </div>
   );
 }
 

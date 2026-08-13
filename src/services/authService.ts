@@ -7,7 +7,33 @@ export type LoginResponseUser = {
   schoolId: string | null;
   fullName?: string;
   googlePicture?: string | null;
+  productRole?: "ADMIN" | "INTERVIEWER";
+  capabilities?: SelectionCapability[];
 };
+
+export type SelectionCapability =
+  | "vacancy.read"
+  | "vacancy.sync"
+  | "process.read"
+  | "process.read_all"
+  | "process.manage"
+  | "candidate.read"
+  | "candidate.manage"
+  | "application.manage"
+  | "template.read"
+  | "template.manage"
+  | "template.publish"
+  | "participant.read"
+  | "participant.manage"
+  | "interview.read"
+  | "interview.assign"
+  | "interview.execute"
+  | "interview.read_all"
+  | "intelligence.read"
+  | "intelligence.generate"
+  | "intelligence.regenerate"
+  | "decision.read"
+  | "decision.manage";
 
 export type LoginResponse = {
   accessToken: string;

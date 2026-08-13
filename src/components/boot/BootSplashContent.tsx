@@ -1,9 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { motion, useReducedMotion } from "framer-motion";
-import { LockKeyhole } from "lucide-react";
+import { BriefcaseBusiness, LockKeyhole } from "lucide-react";
 import { useTheme } from "../../context/ThemeContext";
-
-const MARK_LOGO = "/LogoContratacion_sintexto.png";
 
 interface BootSplashContentProps {
   animate?: boolean;
@@ -93,11 +91,7 @@ export const BootSplashContent: React.FC<BootSplashContentProps> = ({
               : "border-white/90 bg-white/75 shadow-[0_22px_55px_-26px_rgba(15,23,42,0.32)]",
           ].join(" ")}
         >
-          <img
-            src={MARK_LOGO}
-            alt="Contratación Académica CUN"
-            className="h-[62%] w-[62%] object-contain drop-shadow-[0_8px_15px_rgba(5,150,105,0.24)]"
-          />
+          <BriefcaseBusiness aria-label="CHARLAS CUN" className="h-14 w-14 text-emerald-600" />
         </div>
       </div>
 
@@ -107,7 +101,7 @@ export const BootSplashContent: React.FC<BootSplashContentProps> = ({
             isDark ? "text-white" : "text-slate-950"
           }`}
         >
-          Contratación Académica <span className={isDark ? "text-emerald-400" : "text-emerald-600"}>CUN</span>
+          CHARLAS <span className={isDark ? "text-emerald-400" : "text-emerald-600"}>CUN</span>
         </h1>
         <p className={`mt-2 text-sm font-medium sm:text-base ${isDark ? "text-slate-400" : "text-slate-600"}`}>
           Preparando tu espacio de trabajo

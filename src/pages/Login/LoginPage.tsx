@@ -2,10 +2,10 @@ import React, { useEffect, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { useGoogleLogin } from "@react-oauth/google";
 import { motion } from "framer-motion";
-import { ArrowRight, Mail, ShieldCheck } from "lucide-react";
+import { ArrowRight, BriefcaseBusiness, Mail, ShieldCheck } from "lucide-react";
 
 import { useAuth } from "../../context/AuthContext";
-import { AppLogo, BrandPanel, LoginBackground } from "../../components/brand";
+import { BrandPanel, LoginBackground } from "../../components/brand";
 import ThemeToggle from "../../components/ThemeToggle";
 
 const devEmailLoginEnabled = import.meta.env.VITE_DEV_EMAIL_LOGIN_ENABLED === "true";
@@ -55,16 +55,13 @@ const LoginPage: React.FC = () => {
   const from = location.state?.from;
   const loading = googleLoading || emailLoading;
 
-  const navigateRole = (authUser: { role?: string }) => {
+  const navigateRole = (_authUser: { role?: string }) => {
     if (from?.pathname) {
       navigate(from.pathname, { replace: true });
       return;
     }
 
-    const role = (authUser.role || "").toLowerCase();
-    if (role === "leader") navigate("/leader", { replace: true });
-    else if (role === "coordinator") navigate("/coordinator", { replace: true });
-    else navigate("/admin", { replace: true });
+    navigate("/charlas", { replace: true });
   };
 
   useEffect(() => {
@@ -150,9 +147,9 @@ const LoginPage: React.FC = () => {
               transition={{ duration: 0.45 }}
               className="mb-6 flex flex-col items-center text-center lg:hidden"
             >
-              <AppLogo variant="login" bare />
+              <span className="flex h-[4.5rem] w-[4.5rem] items-center justify-center rounded-2xl bg-emerald-600 text-white shadow-lg"><BriefcaseBusiness className="h-8 w-8" /></span>
               <h1 className="mt-4 text-2xl font-black tracking-[-0.035em] text-slate-950 dark:text-white">
-                Contratación Académica <span className="text-brand-700 dark:text-[#58bea1]">CUN</span>
+                CHARLAS <span className="text-brand-700 dark:text-[#58bea1]">CUN</span>
               </h1>
             </motion.div>
 

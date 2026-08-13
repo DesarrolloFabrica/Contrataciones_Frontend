@@ -1,6 +1,6 @@
 // src/pages/leader/LeaderConsole.tsx
 import React, { useState, useCallback, useEffect, useMemo } from "react";
-import { useLocation } from "react-router-dom";
+import { useLocation, useSearchParams } from "react-router-dom";
 // Types & Services
 import type {
   InterviewData,
@@ -41,12 +41,20 @@ import { LeaderModeHeader } from "../../features/leader/components/LeaderModeHea
 import { LeaderWorkspaceSidebar } from "../../features/leader/components/LeaderWorkspaceSidebar";
 import { LeaderAmbientDecor } from "../../features/leader/components/LeaderAmbientDecor";
 import { toBackendTeacherForm, mapFormToInterviewData } from "../../features/leader/utils/leaderMappers";
+import { InterviewerInbox } from "../../features/interviews/InterviewerInbox";
 
 const ORG_ID = import.meta.env.VITE_ORG_ID ?? "ORG_DEFAULT";
+
+/**
+ * Convergencia INTERVIEWER: la bandeja CHARLAS es la experiencia principal.
+ * El formulario/historial teacher legacy se conserva detrás de este flag para la siguiente fase.
+ */
+const ENABLE_LEGACY_INTERVIEWER_FORM = false as boolean;
 
 type ViewMode = "analyze" | "history";
 type ExamplePreset = "approved" | "medium" | "rejected" | null;
 type WizardStep = 1 | 2 | 3 | 4 | 5;
+type InterviewerCounts = { pending: number; inProgress: number; completed: number };
 
 type SchoolWithPrograms = {
   id?: string;
@@ -88,7 +96,22 @@ async function resolveSchoolAndProgramIds(
 }
 
 const LeaderConsole: React.FC = () => {
-  const [mode, setMode] = useState<ViewMode>("analyze");
+  const [searchParams, setSearchParams] = useSearchParams();
+  const mode: ViewMode = searchParams.get("view") === "history" ? "history" : "analyze";
+  const setMode = useCallback(
+    (next: ViewMode) => {
+      setSearchParams(
+        (prev) => {
+          const params = new URLSearchParams(prev);
+          if (next === "history") params.set("view", "history");
+          else params.delete("view");
+          return params;
+        },
+        { replace: false },
+      );
+    },
+    [setSearchParams],
+  );
   const { user, logout } = useAuth();
   const { theme } = useTheme();
   const isDark = theme === "dark";
@@ -104,6 +127,7 @@ const LeaderConsole: React.FC = () => {
   const [wizardStep, setWizardStep] = useState<WizardStep>(1);
   const [requestedWizardStep, setRequestedWizardStep] = useState<WizardStep | null>(null);
   const [examplePreset, setExamplePreset] = useState<ExamplePreset>(null);
+  const [interviewerCounts, setInterviewerCounts] = useState<InterviewerCounts | null>(null);
 
   const handleFormSubmit = useCallback(
     async (data: InterviewData) => {
@@ -435,11 +459,21 @@ const LeaderConsole: React.FC = () => {
   }, [logout]);
 
   const statusLabel = useMemo(() => {
+    if (!ENABLE_LEGACY_INTERVIEWER_FORM) {
+      if (!interviewerCounts) return "Mis charlas";
+      const open = interviewerCounts.pending + interviewerCounts.inProgress;
+      if (open > 0) return `${open} por atender`;
+      return "Al día";
+    }
     if (isLoading) return "Procesando...";
     if (error) return "Error";
     if (analysisResult) return "Completado";
     return "Listo";
-  }, [isLoading, error, analysisResult]);
+  }, [isLoading, error, analysisResult, interviewerCounts]);
+
+  const handleInterviewerCounts = useCallback((counts: InterviewerCounts) => {
+    setInterviewerCounts(counts);
+  }, []);
 
   return (
     <div
@@ -463,19 +497,34 @@ const LeaderConsole: React.FC = () => {
           onChangeMode={setMode}
           onSelectStep={handleSelectWizardStep}
           onOpenHelp={() => setIsFlowHelpOpen(true)}
+          counts={ENABLE_LEGACY_INTERVIEWER_FORM ? null : interviewerCounts}
         />
 
         <main className="relative z-10 flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
           <LeaderAmbientDecor />
           <div className="relative z-10 min-h-0 flex-1 overflow-y-auto">
             <div className="mx-auto w-full max-w-[1400px] px-4 py-4 md:px-6 md:py-5">
-              {mode === "analyze" && (
+              {!ENABLE_LEGACY_INTERVIEWER_FORM && (
+                <div className="space-y-4 animate-[fadeInUp_400ms_ease-out]">
+                  {mode === "analyze" && (
+                    <LeaderHero
+                      counts={interviewerCounts}
+                      onOpenHelp={() => setIsFlowHelpOpen(true)}
+                    />
+                  )}
+                  <InterviewerInbox
+                    mode={mode === "history" ? "history" : "inbox"}
+                    onCountsChange={handleInterviewerCounts}
+                  />
+                </div>
+              )}
+
+              {ENABLE_LEGACY_INTERVIEWER_FORM && mode === "analyze" && (
                 <div className="space-y-4 animate-[fadeInUp_400ms_ease-out]">
                   {!analysisResult && (
                     <LeaderHero
-                      currentStep={wizardStep}
+                      counts={null}
                       onOpenHelp={() => setIsFlowHelpOpen(true)}
-                      onLoadExample={setExamplePreset}
                     />
                   )}
 
@@ -532,7 +581,7 @@ const LeaderConsole: React.FC = () => {
                 </div>
               )}
 
-              {mode === "history" && (
+              {ENABLE_LEGACY_INTERVIEWER_FORM && mode === "history" && (
                 <div className="animate-[fadeInUp_400ms_ease-out]">
                   <EvaluationsHistory
                     onBackToAnalyze={() => setMode("analyze")}

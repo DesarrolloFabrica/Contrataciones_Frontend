@@ -5,20 +5,11 @@ import { useNavigate } from "react-router-dom";
 
 import { AdminModeHeader, type AdminView } from "../../features/admin/components/AdminModeHeader";
 import AdminScopeBar from "./components/AdminScopeBar";
-import AdminHomeView from "./components/home/AdminHomeView";
-import AdminEvaluationsPanel from "./components/evaluations/AdminEvaluationsPanel";
-import AdminDetailPanel from "./components/evaluations/AdminDetailPanel";
-import AdminUsersPanel from "./components/users/AdminUsersPanel";
 import AnimatedBackground from "../../components/AnimatedBackground";
-
-import AdminAuditTimelinePreview from "./components/audit/AdminAuditTimelinePreview";
-import AdminAuditGlobalPanel from "./components/audit/AdminAuditGlobalPanel";
 
 import { useAdminAudit } from "./hooks/useAdminAudit";
 import { useAdminEvaluations } from "./hooks/useAdminEvaluations";
 import { useAdminEvaluationDetail } from "./hooks/useAdminEvaluationDetail";
-
-import AdminScopeWizard from "./components/scope/AdminScopeWizard";
 
 import {
   listProgramsBySchool,
@@ -26,9 +17,17 @@ import {
   type ProgramOption,
   type SchoolOption,
 } from "../../services/adminScopeService";
-import AdminDashboardPanel from "./components/dashboard/AdminDashboardPanel";
 import { useTheme } from "../../context/ThemeContext";
 import { useAuth } from "../../context/AuthContext";
+
+const AdminHomeView = React.lazy(() => import("./components/home/AdminHomeView"));
+const AdminEvaluationsPanel = React.lazy(() => import("./components/evaluations/AdminEvaluationsPanel"));
+const AdminDetailPanel = React.lazy(() => import("./components/evaluations/AdminDetailPanel"));
+const AdminUsersPanel = React.lazy(() => import("./components/users/AdminUsersPanel"));
+const AdminAuditTimelinePreview = React.lazy(() => import("./components/audit/AdminAuditTimelinePreview"));
+const AdminAuditGlobalPanel = React.lazy(() => import("./components/audit/AdminAuditGlobalPanel"));
+const AdminScopeWizard = React.lazy(() => import("./components/scope/AdminScopeWizard"));
+const AdminDashboardPanel = React.lazy(() => import("./components/dashboard/AdminDashboardPanel"));
 
 // ── Scope helpers ─────────────────────────────────────────────────────────────
 
@@ -286,6 +285,7 @@ const AdminConsole: React.FC = () => {
   // ── Render ──────────────────────────────────────────────────────────────────
 
   return (
+    <React.Suspense fallback={<div className="flex min-h-screen items-center justify-center bg-[#061419] text-sm text-slate-300">Cargando sistema anterior…</div>}>
     <div
       className={[
         "min-h-[100dvh] w-full font-sans overflow-x-hidden flex flex-col",
@@ -601,6 +601,7 @@ const AdminConsole: React.FC = () => {
         </div>
       )}
     </div>
+    </React.Suspense>
   );
 };
 

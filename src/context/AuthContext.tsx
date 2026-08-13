@@ -3,13 +3,14 @@ import React, { createContext, useCallback, useContext, useEffect, useMemo, useS
 import api, { AUTH_STORAGE_KEY, setUnauthorizedHandler, isTokenExpired, getTokenExpiration, clearAuthStorage } from "../services/apiClient";
 import { auditAppend } from "../services/auditService";
 import * as authService from "../services/authService";
-import type { LoginResponseUser } from "../services/authService";
+import type { LoginResponseUser, SelectionCapability } from "../services/authService";
 import type { AuditActor } from "../types";
 import { markBootPending, clearBootPending } from "../features/boot/appBootStorage";
 
 export type Role = "leader" | "coordinator" | "admin";
 
 export type BackendRole = "ADMIN" | "COORDINADOR" | "LIDER";
+export type CharlasProductRole = "ADMIN" | "INTERVIEWER";
 
 export interface AuthUser {
   id: string;
@@ -17,9 +18,11 @@ export interface AuthUser {
   email: string;
   role: Role;
   backendRole: BackendRole;
+  productRole: CharlasProductRole;
   schoolId: string | null;
   /** URL de foto de perfil desde Google OAuth */
   googlePicture?: string | null;
+  capabilities: SelectionCapability[];
 }
 
 type StoredAuth = {
@@ -76,6 +79,14 @@ function readStoredAuth(): StoredAuth | null {
       return null;
     }
 
+    if (parsed.user) {
+      parsed.user.productRole =
+        parsed.user.productRole ??
+        (parsed.user.backendRole === "ADMIN" ? "ADMIN" : "INTERVIEWER");
+      // Recalcula el mapping para que sesiones persistidas no conserven
+      // capacidades legacy retiradas por una nueva versión del producto.
+      parsed.user.capabilities = capabilitiesForRole(parsed.user.backendRole);
+    }
     setAxiosAuthHeader(parsed.accessToken);
     return parsed;
   } catch (err) {
@@ -95,9 +106,67 @@ function buildAuthUser(backendUser: LoginResponseUser): AuthUser {
     name: backendUser.fullName || backendUser.email.split("@")[0],
     role: uiRole,
     backendRole: backendUser.role,
+    productRole:
+      backendUser.productRole ??
+      (backendUser.role === "ADMIN" ? "ADMIN" : "INTERVIEWER"),
     schoolId: backendUser.schoolId,
     googlePicture: backendUser.googlePicture ?? null,
+    capabilities: [
+      ...new Set([
+        ...capabilitiesForRole(backendUser.role),
+        ...(backendUser.capabilities ?? []),
+      ]),
+    ],
   };
+}
+
+function capabilitiesForRole(role: BackendRole): SelectionCapability[] {
+  const interviewer: SelectionCapability[] = [
+    "vacancy.read",
+    "process.read",
+    "candidate.read",
+    "participant.read",
+    "interview.read",
+    "interview.execute",
+  ];
+  if (role === "ADMIN") {
+    return [
+      ...interviewer,
+      "process.read_all",
+      "vacancy.sync",
+      "process.manage",
+      "candidate.manage",
+      "application.manage",
+      "template.read",
+      "template.manage",
+      "template.publish",
+      "participant.manage",
+      "interview.assign",
+      "interview.read_all",
+      "intelligence.read",
+      "intelligence.generate",
+      "intelligence.regenerate",
+      "decision.read",
+      "decision.manage",
+    ];
+  }
+  if (role === "COORDINADOR") {
+    return [
+      ...interviewer,
+      "process.read_all",
+      "process.manage",
+      "candidate.manage",
+      "application.manage",
+      "template.read",
+      "participant.manage",
+      "interview.assign",
+      "interview.read_all",
+      "intelligence.read",
+      "intelligence.generate",
+      "decision.read",
+    ];
+  }
+  return interviewer;
 }
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({

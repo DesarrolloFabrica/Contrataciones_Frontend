@@ -1,26 +1,16 @@
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import {
   BookOpen,
+  BriefcaseBusiness,
   ChevronDown,
   LogOut,
   Moon,
   Sun,
 } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import { useTheme } from "../context/ThemeContext";
 import { cn } from "../utils/cn";
-
-const roleLine: Record<string, string> = {
-  admin: "Administrador",
-  coordinator: "Coordinador",
-  leader: "Líder",
-};
-
-const backendRoleLine: Record<string, string> = {
-  ADMIN: "Administrador",
-  COORDINADOR: "Coordinador",
-  LIDER: "Líder",
-};
 
 type Props = {
   onLogout: () => void;
@@ -29,6 +19,7 @@ type Props = {
 
 export function UserAccountMenu({ onLogout, onOpenHelp }: Props) {
   const { user } = useAuth();
+  const navigate = useNavigate();
   const { theme, toggleTheme } = useTheme();
   const isDark = theme === "dark";
   const [open, setOpen] = useState(false);
@@ -70,7 +61,7 @@ export function UserAccountMenu({ onLogout, onOpenHelp }: Props) {
   ).toUpperCase();
 
   const subtitle =
-    roleLine[user.role] ?? backendRoleLine[user.backendRole] ?? user.email;
+    user.productRole === "ADMIN" ? "Administrador CHARLAS" : "Entrevistador";
   const showImg = Boolean(user.googlePicture?.trim() && !imgError);
 
   const handleLogout = () => {
@@ -118,6 +109,7 @@ export function UserAccountMenu({ onLogout, onOpenHelp }: Props) {
         onClick={() => setOpen((prev) => !prev)}
         aria-expanded={open}
         aria-haspopup="menu"
+        title={displayName}
         className={cn(
           "flex items-center gap-2 rounded-full py-1 pl-1 pr-2 transition-colors duration-200",
           "focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/40",
@@ -137,6 +129,7 @@ export function UserAccountMenu({ onLogout, onOpenHelp }: Props) {
               "truncate text-[13px] font-medium leading-tight",
               isDark ? "text-white" : "text-slate-800",
             )}
+            title={displayName}
           >
             {displayName}
           </p>
@@ -191,6 +184,25 @@ export function UserAccountMenu({ onLogout, onOpenHelp }: Props) {
           />
 
           <div className="p-1.5">
+            {user.capabilities.includes("vacancy.read") && (
+              <button
+                type="button"
+                role="menuitem"
+                onClick={() => {
+                  close();
+                  navigate("/charlas");
+                }}
+                className={itemClass}
+              >
+                <BriefcaseBusiness
+                  className={cn(
+                    "h-4 w-4 shrink-0",
+                    isDark ? "text-emerald-400" : "text-emerald-600",
+                  )}
+                />
+                Ir a CHARLAS
+              </button>
+            )}
             {onOpenHelp && (
               <button
                 type="button"

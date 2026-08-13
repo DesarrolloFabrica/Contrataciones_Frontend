@@ -16,7 +16,7 @@ type Props = {
 };
 
 const NAV_ITEMS: { id: ViewMode; label: string; icon: typeof MessageSquareText }[] = [
-  { id: "analyze", label: "Entrevista", icon: MessageSquareText },
+  { id: "analyze", label: "Mis charlas", icon: MessageSquareText },
   { id: "history", label: "Historial", icon: History },
 ];
 
@@ -121,7 +121,7 @@ export function LeaderModeHeader({
                   isDark ? "text-white" : "text-slate-900",
                 )}
               >
-                Contratación Académica CUN
+                CHARLAS
               </p>
               <div className="mt-1 flex flex-wrap items-center gap-2">
                 <span
@@ -133,7 +133,7 @@ export function LeaderModeHeader({
                   )}
                 >
                   <span className="inline-flex h-1.5 w-1.5 rounded-full bg-emerald-500" />
-                  Sistema activo
+                  Panel del entrevistador
                 </span>
                 {statusLabel && (
                   <span
